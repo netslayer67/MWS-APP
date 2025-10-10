@@ -1,0 +1,372 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* SURFACES & TYPOGRAPHY */
+:root {
+    --background: 32 16% 97%;
+    --surface: 32 14% 96%;
+    --card: 32 16% 100%;
+    --foreground: 210 8% 16%;
+    --muted: 220 10% 90%;
+    --muted-foreground: 220 8% 38%;
+    /* BRAND */
+    --primary: 357 71% 29%;
+    --primary-foreground: 0 0% 100%;
+    /* LUXURY ACCENTS */
+    --gold: 42 72% 46%;
+    --gold-foreground: 220 8% 12%;
+    --emerald: 143 60% 34%;
+    --emerald-foreground: 0 0% 100%;
+    /* UI */
+    --border: 220 8% 88%;
+    --input: 220 8% 97%;
+    --ring: 357 71% 33%;
+    --radius: 14px;
+    --transition: 320ms;
+    --easing: cubic-bezier(.2, .9, .1, 1);
+    /* LIQUID GLASS PARAMETERS (the formula knobs) */
+    --glass-strength: 0.14;
+    /* overall effect strength (0.06 .. 0.30) */
+    --glass-frost: 0.18;
+    /* local frost / haze inside glass (0..1) */
+    --glass-refraction: 0.12;
+    /* refraction layer opacity */
+    --glass-dispersion: 0.8;
+    /* chroma dispersion mixing factor */
+    --glass-sheen-angle: -18deg;
+    /* sheen sweep angle */
+    --glass-sheen-strength: 0.22;
+    /* sheen layer opacity */
+    --glass-rim-strength: 0.12;
+    /* rim highlight opacity */
+    --glass-roughness: 0.035;
+    /* noise opacity */
+    --glass-specular: 0.16;
+    /* glossy specular accent */
+    --glass-shadow-elev: 0.06;
+    /* shadow intensity for lifted glass */
+}
+
+/* Dark mode overrides (toggle html.dark) */
+html.dark {
+    --background: 210 12% 7%;
+    --surface: 210 12% 9%;
+    --card: 210 12% 8%;
+    --foreground: 210 12% 96%;
+    --muted: 210 12% 6%;
+    --muted-foreground: 210 12% 70%;
+    --glass-strength: 0.08;
+    --glass-frost: 0.06;
+    --glass-roughness: 0.02;
+    --glass-specular: 0.10;
+    --glass-rim-strength: 0.06;
+}
+
+/* ------------------------- Base page styles ------------------------- */
+html,
+body {
+    height: 100%
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    color: hsl(var(--foreground));
+    background: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--surface)) 100%);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background var(--transition) var(--easing), color var(--transition) var(--easing);
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* ------------------------- Tiny SVG noise - very small, low-cost ------------------------- */
+:root {
+    --glass-noise-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cfilter id='g'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='1' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.02'/%3E%3C/svg%3E");
+}
+
+/* ------------------------- Liquid glass component (formula implemented here) - use class: .glass - tuning via CSS vars on the element ------------------------- */
+.glass {
+    --gs: calc(var(--glass-strength));
+    position: relative;
+    display: block;
+    background: linear-gradient(180deg, color-mix(in srgb, hsl(var(--card)) calc(95% - var(--gs)*20%), white 0%), color-mix(in srgb, hsl(var(--card)) calc(92% - var(--gs)*25%), white 0%));
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, hsl(var(--border)) 75%, rgba(255, 255, 255, 0.04));
+    box-shadow: 0 6px 18px rgba(16, 24, 40, calc(var(--glass-shadow-elev) + var(--gs) * 0.02)), 0 1px 0 rgba(255, 255, 255, calc(0.03 + var(--gs) * 0.02));
+    transition: transform var(--transition) var(--easing), box-shadow var(--transition) var(--easing), background var(--transition) var(--easing);
+    /* Only use backdrop-filter where supported; limit cost */
+    -webkit-backdrop-filter: blur(calc(8px * var(--gs))) saturate(120%);
+    backdrop-filter: blur(calc(8px * var(--gs))) saturate(120%);
+}
+
+/* CONTENTS of the glass must be above pseudo layers */
+.glass>* {
+    position: relative;
+    z-index: 2
+}
+
+/* ------------------------- Sheen (specular sweep) - pseudo element - uses conic/linear gradient + transform for sweep - GPU friendly: transform + opacity animation ------------------------- */
+.glass::before {
+    content: '';
+    pointer-events: none;
+    position: absolute;
+    inset: -40% -40% auto -40%;
+    height: 60%;
+    background: linear-gradient(var(--glass-sheen-angle), rgba(255, 255, 255, calc(var(--glass-sheen-strength) * 0.95)) 0%, rgba(255, 255, 255, calc(var(--glass-sheen-strength) * 0.38)) 16%, rgba(255, 255, 255, 0.02) 45%, rgba(255, 255, 255, 0) 100%);
+    transform: translate3d(-20%, -10%, 0) rotate(-6deg);
+    mix-blend-mode: screen;
+    filter: blur(calc(10px * var(--gs)));
+    opacity: calc(0.9 * var(--glass-sheen-strength));
+    transition: opacity var(--transition) var(--easing), transform var(--transition) var(--easing);
+    z-index: 0;
+}
+
+/* sheen sweep animation (subtle, transform only) */
+@keyframes glassSheen {
+    0% {
+        transform: translate3d(-30%, -8%, 0) rotate(-6deg);
+        opacity: 0.0;
+    }
+
+    15% {
+        opacity: calc(0.45 * var(--glass-sheen-strength));
+    }
+
+    50% {
+        transform: translate3d(8%, -18%, 0) rotate(-8deg);
+        opacity: calc(0.9 * var(--glass-sheen-strength));
+    }
+
+    100% {
+        transform: translate3d(30%, -30%, 0) rotate(-10deg);
+        opacity: 0.0;
+    }
+}
+
+/* only animate if user doesn't prefer reduced motion */
+@media (prefers-reduced-motion: no-preference) {
+    .glass.sheen-animate::before {
+        animation: glassSheen 6.4s var(--easing) 1.2s both;
+    }
+}
+
+/* ------------------------- Rim highlight (thin, crisp edge highlight) - uses inset box-shadow + radial gradient for soft corners ------------------------- */
+.glass::after {
+    content: '';
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    z-index: 1;
+    background: radial-gradient(120% 80% at 10% 10%, rgba(255, 255, 255, calc(var(--glass-rim-strength) * 0.9)) 0%, rgba(255, 255, 255, 0) 10%), linear-gradient(180deg, rgba(255, 255, 255, calc(var(--glass-rim-strength) * 0.22)) 0%, rgba(255, 255, 255, 0) 20%, rgba(0, 0, 0, 0) 80%);
+    mix-blend-mode: overlay;
+    opacity: calc(var(--glass-rim-strength) + var(--glass-frost)*0.3);
+    pointer-events: none;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, calc(0.02 + var(--glass-frost)*0.02)), inset 0 -16px 48px rgba(0, 0, 0, calc(0.03 + var(--glass-frost)*0.05));
+}
+
+/* ------------------------- Refractive patch layer: simulates light-bending (local halo) - Use a positioned child element .glass__refract for content that needs refractive distortion - this avoids repeating heavy backdrop filters on the container ------------------------- */
+.glass__refract {
+    position: absolute;
+    top: 8%;
+    left: 6%;
+    width: 36%;
+    height: 36%;
+    pointer-events: none;
+    z-index: 0;
+    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, calc(var(--glass-refraction) * 0.75)), rgba(255, 255, 255, calc(var(--glass-refraction) * 0.18)) 18%, rgba(255, 255, 255, 0) 42%);
+    filter: blur(calc(8px * var(--gs)));
+    mix-blend-mode: screen;
+    opacity: calc(var(--glass-refraction) + var(--glass-frost)*0.2);
+}
+
+/* additional soft refract patch (opposite corner) */
+.glass__refract--soft {
+    position: absolute;
+    right: 6%;
+    bottom: 8%;
+    width: 22%;
+    height: 22%;
+    pointer-events: none;
+    z-index: 0;
+    background: radial-gradient(circle at 70% 70%, rgba(255, 255, 255, calc(var(--glass-refraction) * 0.55)), rgba(255, 255, 255, 0) 55%);
+    filter: blur(calc(6px * var(--gs)));
+    mix-blend-mode: screen;
+    opacity: calc(var(--glass-refraction) * 0.9);
+}
+
+/* ------------------------- Noise / roughness overlay (subtle micro texture) - tiny SVG data-URI used above - opacity controlled by var --glass-roughness ------------------------- */
+.glass__noise {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background-image: var(--glass-noise-svg);
+    background-size: 20px 20px;
+    opacity: var(--glass-roughness);
+    mix-blend-mode: overlay;
+    filter: blur(0.3px);
+}
+
+/* ------------------------- Inner frosted inset (optional, cheap) - lightweight frosted center create depth without heavy filters ------------------------- */
+.glass--frosted {
+    background: linear-gradient(180deg, color-mix(in srgb, hsl(var(--card)) calc(94% - var(--glass-frost)*20%), rgba(255, 255, 255, 0.02) 0%), color-mix(in srgb, hsl(var(--card)) calc(90% - var(--glass-frost)*25%), rgba(255, 255, 255, 0.00) 100%));
+}
+
+.glass--deep {
+    box-shadow: 0 18px 60px rgba(16, 24, 40, calc(var(--glass-shadow-elev) + var(--gs) * 0.04)), 0 2px 0 rgba(255, 255, 255, 0.02);
+}
+
+/* ------------------------- Small utility classes & accessibility ------------------------- */
+.glass.hover-lift:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 26px 80px rgba(16, 24, 40, calc(var(--glass-shadow-elev) + var(--gs) * 0.06));
+}
+
+.glass-focusable:focus-within,
+.glass-focusable:focus {
+    outline: none;
+    box-shadow: 0 10px 40px rgba(16, 24, 40, 0.06), 0 0 0 6px color-mix(in srgb, hsl(var(--ring)) 14%, rgba(255, 255, 255, 0.02));
+}
+
+/* responsive tweaks (reduce filters on small devices) */
+@media (max-width: 768px) {
+    .glass {
+        -webkit-backdrop-filter: blur(calc(6px * var(--gs)));
+        backdrop-filter: blur(calc(6px * var(--gs)));
+    }
+
+    .glass__refract,
+    .glass__refract--soft {
+        display: none;
+        /* skip refract patch on mobile for perf */
+    }
+
+    .glass__noise {
+        opacity: calc(var(--glass-roughness) * 0.75);
+    }
+}
+
+/* reduce motion - remove sheen animations & heavy transforms */
+@media (prefers-reduced-motion: reduce) {
+    .glass.sheen-animate::before {
+        animation: none;
+        opacity: 0 !important;
+    }
+
+    .blob,
+    .glass ::before,
+    .glass ::after {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+/* ------------------------- Convenience: example usage classes (tailwind users can call) ------------------------- */
+/* .glass-card -> small elevated glass card with refract & noise */
+.glass-card {
+    padding: 1rem;
+    border-radius: calc(var(--radius) - 2px);
+}
+
+.glass-card .glass__refract {
+    top: 10%;
+    left: 10%;
+    width: 28%;
+    height: 28%
+}
+
+/* ------------------------- Tiny helpers & tokens for other styles (kept minimal) ------------------------- */
+.h1 {
+    font-size: clamp(2.3rem, 3.8vw, 3.8rem);
+    line-height: 1.03;
+    font-weight: 800;
+    color: hsl(var(--foreground));
+}
+
+.text-muted {
+    color: hsl(var(--muted-foreground));
+}
+
+.container-tight {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+/* Finished glass CSS */
+
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+::-webkit-scrollbar {
+    width: 0px;
+}
+
+::-webkit-scrollbar-track {
+    background: #00000000;
+    width: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #00687d;
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: #00687d;
+}
+
+/* Styling for React Big Calendar */
+.rbc-pro-style .rbc-toolbar {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
+.rbc-pro-style .rbc-toolbar .rbc-toolbar-label {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.rbc-pro-style .rbc-btn-group button {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 0.5rem 1rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.rbc-pro-style .rbc-btn-group button:hover,
+.rbc-pro-style .rbc-btn-group button.rbc-active {
+    background: #0ea5e9;
+    /* sky-500 */
+    border-color: #0ea5e9;
+    box-shadow: 0 0 15px rgba(14, 165, 233, 0.4);
+}
+
+.rbc-pro-style .rbc-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.75rem 0;
+    font-weight: 500;
+    color: #9ca3af;
+}
+
+.rbc-pro-style .rbc-day-bg,
+.rbc-pro-style .rbc-month-row {
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.rbc-pro-style .rbc-today {
+    background-color: rgba(14, 165, 233, 0.1);
+}
