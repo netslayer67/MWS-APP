@@ -1,137 +1,218 @@
-import React from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { memo } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Briefcase } from "lucide-react";
-import AnimatedPage from "@/components/AnimatedPage";
-import { Helmet } from "react-helmet";
-import { useToast } from "@/components/ui/use-toast";
+import { motion } from "framer-motion";
+import { Heart, Brain, Sparkles, ChevronRight } from "lucide-react";
 
-const springy = {
-    whileHover: { scale: 1.04, y: -2 },
-    whileTap: { scale: 0.96 },
-    transition: { type: "spring", stiffness: 240, damping: 20 },
-};
+/* ==================== DECORATIVE ELEMENTS ==================== */
+const Blob = memo(({ className, delay = 0 }) => (
+    <motion.div
+        className={`absolute rounded-full blur-3xl pointer-events-none ${className}`}
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{
+            scale: [1, 1.05, 1],
+            opacity: [0.03, 0.06, 0.03]
+        }}
+        transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay
+        }}
+    />
+));
 
-const RoleCard = ({ icon: Icon, title, subtitle, onClick, ariaLabel }) => (
+const Grid = memo(() => (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-[0.01]">
+        <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+                    <path d="M 24 0 L 0 0 0 24" fill="none" stroke="currentColor" strokeWidth="0.3" />
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" className="text-foreground" />
+        </svg>
+    </div>
+));
+
+/* ==================== METHOD CARD ==================== */
+const MethodCard = memo(({ icon: Icon, title, desc, features, isPremium, onClick }) => (
     <motion.button
-        type="button"
-        aria-label={ariaLabel}
         onClick={onClick}
-        className="group relative flex w-full flex-col items-center justify-center 
-               rounded-2xl border border-border/50 bg-background/40 
-               px-6 py-8 text-foreground shadow-lg backdrop-blur-xl 
-               transition-all duration-300 focus-visible:outline-none 
-               focus-visible:ring-2 focus-visible:ring-accent/70 focus-visible:ring-offset-2 
-               focus-visible:ring-offset-background hover:border-accent hover:bg-accent/5 hover:shadow-xl"
-        {...springy}
+        className="group relative w-full text-left glass glass--frosted p-4 md:p-5 rounded-xl md:rounded-2xl transition-all duration-300"
+        whileHover={{ scale: 1.008, y: -2 }}
+        whileTap={{ scale: 0.995 }}
     >
-        {/* gradient glass overlay */}
-        <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br 
-                    from-accent/15 via-transparent to-transparent opacity-70 mix-blend-overlay" />
-        <div className="pointer-events-none absolute -inset-px rounded-2xl ring-1 ring-inset ring-border/50" />
+        <div className="glass__refract" />
+        <div className="glass__noise" />
 
-        <div className="relative z-10 flex flex-col items-center gap-3">
-            <div className="rounded-xl bg-secondary/30 p-4 shadow-inner backdrop-blur-xl 
-                      transition-colors duration-300 group-hover:bg-secondary/50">
-                <Icon className="h-12 w-12 text-accent transition-colors duration-300 group-hover:text-primary" />
+        <div className="relative space-y-3">
+            {/* Header */}
+            <div className="flex items-start gap-3">
+                <div className={`p-2 md:p-2.5 rounded-lg md:rounded-xl flex-shrink-0 ${isPremium
+                    ? 'bg-primary shadow-md shadow-primary/15'
+                    : 'bg-surface border border-border'
+                    }`}>
+                    <Icon className={`w-5 h-5 md:w-6 md:h-6 ${isPremium ? 'text-primary-foreground' : 'text-primary'
+                        }`} />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                    <h3 className="text-base md:text-lg font-bold text-foreground mb-0.5">
+                        {title}
+                    </h3>
+                    <p className="text-[11px] md:text-xs text-muted-foreground leading-snug">
+                        {desc}
+                    </p>
+                </div>
+
+                {isPremium && (
+                    <div className="hidden md:flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/25 flex-shrink-0">
+                        <Sparkles className="w-2.5 h-2.5 text-primary" />
+                        <span className="text-[9px] font-semibold text-primary uppercase tracking-wide">AI</span>
+                    </div>
+                )}
             </div>
-            <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-            <p className="text-sm text-muted-foreground max-w-[26ch]">{subtitle}</p>
+
+            {/* Features */}
+            <div className="space-y-1.5">
+                {features.map((feature, i) => (
+                    <motion.div
+                        key={i}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.06 }}
+                        className="flex items-start gap-2 text-[10px] md:text-[11px]"
+                    >
+                        <div className="w-1 h-1 rounded-full bg-primary mt-1.5 flex-shrink-0" />
+                        <span className="text-foreground leading-snug">{feature}</span>
+                    </motion.div>
+                ))}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between pt-2 border-t border-border/30">
+                <span className="text-[9px] md:text-[10px] text-muted-foreground">
+                    {isPremium ? 'Advanced analysis' : 'Traditional method'}
+                </span>
+                <ChevronRight className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary transition-transform duration-300 group-hover:translate-x-1" />
+            </div>
         </div>
 
-        {/* subtle hover glow */}
-        <div
-            className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 blur-2xl 
-                 transition-opacity duration-300 group-hover:opacity-100"
-            style={{
-                background:
-                    "radial-gradient(45% 40% at 50% 0%, hsl(var(--accent)/0.22) 0%, transparent 70%)",
-            }}
-        />
+        {/* Hover glow */}
+        <div className="absolute inset-0 rounded-xl md:rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none">
+            <div className="absolute inset-0 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/4 to-transparent" />
+        </div>
     </motion.button>
-);
+));
 
-const RoleSelectionPage = () => {
+/* ==================== MAIN COMPONENT ==================== */
+const RoleSelection = memo(() => {
     const navigate = useNavigate();
-    const prefersReducedMotion = useReducedMotion();
-    const { toast } = useToast();
 
-    const selectRole = (role) => {
-        const message =
-            role === "client"
-                ? "Anda memilih peran Klien"
-                : "Anda memilih peran Pekerja";
-
-        // trigger toast visual
-        toast({
-            title: "Peran dipilih",
-            description: message,
-            duration: 2500,
-        });
-
-        // navigate setelah sedikit delay
-        setTimeout(() => {
-            if (role === "client") navigate("/client/dashboard");
-            else navigate("/worker/dashboard");
-        }, 600);
+    const selectMethod = (method) => {
+        if (method === 'manual') {
+            navigate('/emotional-checkin/staff');
+        } else if (method === 'ai') {
+            navigate('/emotional-checkin/face-scan');
+        }
     };
 
     return (
-        <AnimatedPage>
-            <Helmet>
-                <title>Pilih Peran — Kerjain</title>
-                <meta
-                    name="description"
-                    content="Pilih peran pertama Anda di Kerjain: posting pekerjaan atau mencari pekerjaan."
-                />
-            </Helmet>
+        <div className="relative min-h-screen bg-background text-foreground overflow-hidden">
+            <Blob className="top-0 left-0 w-80 h-80 md:w-96 md:h-96 bg-primary/8" delay={0} />
+            <Blob className="bottom-0 right-0 w-72 h-72 md:w-80 md:h-80 bg-primary/6" delay={0.8} />
+            <Grid />
 
-            <div className="relative flex min-h-svh items-center justify-center px-4 py-16 sm:py-20">
+            <div className="relative z-10 min-h-screen flex items-center justify-center p-3 md:p-5">
                 <motion.div
-                    initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 20 }}
+                    initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
-                    className="relative z-10 w-full max-w-3xl text-center"
+                    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                    className="w-full max-w-2xl"
                 >
-                    {/* Title */}
-                    <div className="mx-auto mb-10 max-w-xl">
-                        <h1 className="mb-2 text-3xl font-bold text-foreground md:text-4xl">
-                            Pilih Peran Anda
+                    {/* Header */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.1 }}
+                        className="text-center mb-6 md:mb-8"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9 }}
+                            animate={{ scale: 1 }}
+                            transition={{ duration: 0.8, delay: 0.15 }}
+                            className="w-12 h-12 md:w-14 md:h-14 mx-auto rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/15 mb-4"
+                        >
+                            <Heart className="w-6 h-6 md:w-7 md:h-7 text-primary-foreground" />
+                        </motion.div>
+
+                        <h1 className="text-xl md:text-2xl font-bold text-foreground mb-2">
+                            Choose Check-in Method
                         </h1>
-                        <p className="text-sm text-muted-foreground md:text-base">
-                            Tentukan cara Anda menggunakan{" "}
-                            <span className="text-accent font-medium">Kerjain</span>.
+                        <p className="text-[11px] md:text-xs text-muted-foreground max-w-md mx-auto leading-relaxed px-4">
+                            Select your preferred emotional check-in method. Both are confidential and support your wellbeing.
                         </p>
-                    </div>
+                    </motion.div>
 
-                    {/* Options */}
-                    <div className="grid gap-5 md:grid-cols-2">
-                        <RoleCard
-                            icon={User}
-                            title="Saya Butuh Bantuan"
-                            subtitle="Posting pekerjaan & temukan pekerja yang tepat"
-                            ariaLabel="Pilih peran sebagai klien"
-                            onClick={() => selectRole("client")}
+                    {/* Method Cards */}
+                    <div className="space-y-3 md:space-y-4">
+                        <MethodCard
+                            icon={Heart}
+                            title="Manual Check-in"
+                            desc="Traditional form-based assessment with weather metaphors and detailed reflection"
+                            features={[
+                                "Weather-based mood selection",
+                                "Detailed emotional reflection",
+                                "Presence & capacity ratings",
+                                "Support contact selection"
+                            ]}
+                            isPremium={false}
+                            onClick={() => selectMethod('manual')}
                         />
 
-                        <RoleCard
-                            icon={Briefcase}
-                            title="Saya Ingin Bekerja"
-                            subtitle="Cari pekerjaan & bangun reputasi Anda"
-                            ariaLabel="Pilih peran sebagai pekerja"
-                            onClick={() => selectRole("worker")}
+                        <MethodCard
+                            icon={Brain}
+                            title="AI Emotional Analysis"
+                            desc="Face scan technology detects authentic micro-expressions beyond conscious control"
+                            features={[
+                                "Real-time facial expression analysis",
+                                "43 landmark micro-expression detection",
+                                "AI psychologist insights & recommendations",
+                                "Detects concealed emotions accurately"
+                            ]}
+                            isPremium={true}
+                            onClick={() => selectMethod('ai')}
                         />
                     </div>
 
-                    {/* Note */}
-                    <p className="mt-6 text-xs text-muted-foreground">
-                        Tenang, Anda bisa mengganti peran kapan saja di halaman{" "}
-                        <span className="text-accent font-medium">Profil</span>.
-                    </p>
+                    {/* Footer */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.5, delay: 0.6 }}
+                        className="mt-6 md:mt-8"
+                    >
+                        <div className="glass rounded-lg md:rounded-xl p-3 md:p-4">
+                            <p className="text-[9px] md:text-[10px] text-muted-foreground leading-relaxed text-center">
+                                Your emotional wellbeing is our priority. All check-ins are confidential, processed securely, and designed to support your mental health journey.
+                            </p>
+                        </div>
+                    </motion.div>
+
+                    <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.7 }}
+                        className="mt-3 text-center text-[8px] md:text-[9px] text-muted-foreground/70"
+                    >
+                        Millennia World School • Emotional wellness platform
+                    </motion.p>
                 </motion.div>
             </div>
-        </AnimatedPage>
+        </div>
     );
-};
+});
 
-export default RoleSelectionPage;
+RoleSelection.displayName = 'RoleSelection';
+
+export default RoleSelection;

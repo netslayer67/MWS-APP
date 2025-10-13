@@ -1,9 +1,9 @@
 // PageLoader.jsx
-import React from "react";
+import React, { memo } from "react";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 
-const PageLoader = () => {
+const PageLoader = memo(() => {
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background">
             {/* Background grid with liquid glass mask */}
@@ -54,6 +54,8 @@ const PageLoader = () => {
             </motion.div>
         </div>
     );
-};
+});
+
+PageLoader.displayName = 'PageLoader';
 
 export default PageLoader;

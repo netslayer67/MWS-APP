@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, memo, useCallback } from "react";
 import { Outlet, useLocation, Link } from "react-router-dom";
 import {
     Home,
@@ -25,11 +25,64 @@ const navItemsWorker = [
     { path: "/worker/chat", icon: MessageSquare, label: "Obrolan" },
 ];
 
-const AppLayout = () => {
+// Memoized navigation item component
+const NavItem = memo(({ item, isActive, onClick }) => {
+    const IconComponent = item.icon;
+    return (
+        <Link
+            to={item.path}
+            onClick={onClick}
+            className={`nav-item hover-card flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium ${isActive
+                ? "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-sm ring-1 ring-accent/20"
+                : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
+                }`}
+            aria-current={isActive ? "page" : undefined}
+        >
+            <IconComponent className="h-5 w-5" aria-hidden />
+            <span className="text-compact">{item.label}</span>
+        </Link>
+    );
+});
+NavItem.displayName = 'NavItem';
+
+// Memoized mobile nav item component
+const MobileNavItem = memo(({ item, isActive }) => {
+    const IconComponent = item.icon;
+    return (
+        <li>
+            <Link
+                to={item.path}
+                className={`nav-item hover-card flex flex-col items-center gap-1 rounded-lg p-2 ${isActive ? "text-accent" : "text-muted-foreground hover:text-foreground hover:bg-secondary/30"
+                    }`}
+                aria-current={isActive ? "page" : undefined}
+            >
+                <IconComponent
+                    className={`h-6 w-6 ${isActive ? "text-primary" : "text-muted-foreground"}`}
+                    aria-hidden
+                />
+                {isActive && (
+                    <motion.div
+                        layoutId="active-nav-indicator"
+                        className="mt-1 h-1.5 w-1.5 rounded-full bg-primary"
+                        aria-hidden
+                    />
+                )}
+            </Link>
+        </li>
+    );
+});
+MobileNavItem.displayName = 'MobileNavItem';
+
+const AppLayout = memo(() => {
     const location = useLocation();
     const isWorker = location.pathname.startsWith("/worker");
 
     const navItems = useMemo(() => (isWorker ? navItemsWorker : navItemsClient), [isWorker]);
+
+    const handleNavClick = useCallback((path) => {
+        // Preload route on hover for better UX
+        // This can be enhanced with route preloading
+    }, []);
 
     return (
         <div className="flex min-h-screen flex-col bg-background text-foreground">
@@ -52,20 +105,13 @@ const AppLayout = () => {
                         <nav className="hidden md:flex items-center gap-2">
                             {navItems.map((item) => {
                                 const active = location.pathname.startsWith(item.path);
-                                const ActiveIcon = item.icon;
                                 return (
-                                    <Link
+                                    <NavItem
                                         key={item.path}
-                                        to={item.path}
-                                        className={`nav-item hover-card flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium ${active
-                                                ? "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-sm ring-1 ring-accent/20"
-                                                : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
-                                            }`}
-                                        aria-current={active ? "page" : undefined}
-                                    >
-                                        <ActiveIcon className="h-5 w-5" aria-hidden />
-                                        <span className="text-compact">{item.label}</span>
-                                    </Link>
+                                        item={item}
+                                        isActive={active}
+                                        onClick={() => handleNavClick(item.path)}
+                                    />
                                 );
                             })}
                         </nav>
@@ -102,28 +148,12 @@ const AppLayout = () => {
                     <ul className="flex items-center justify-around">
                         {navItems.map((item) => {
                             const active = location.pathname.startsWith(item.path);
-                            const ActiveIcon = item.icon;
                             return (
-                                <li key={item.path}>
-                                    <Link
-                                        to={item.path}
-                                        className={`nav-item hover-card flex flex-col items-center gap-1 rounded-lg p-2 ${active ? "text-accent" : "text-muted-foreground hover:text-foreground hover:bg-secondary/30"
-                                            }`}
-                                        aria-current={active ? "page" : undefined}
-                                    >
-                                        <ActiveIcon
-                                            className={`h-6 w-6 ${active ? "text-primary" : "text-muted-foreground"}`}
-                                            aria-hidden
-                                        />
-                                        {active && (
-                                            <motion.div
-                                                layoutId="active-nav-indicator"
-                                                className="mt-1 h-1.5 w-1.5 rounded-full bg-primary"
-                                                aria-hidden
-                                            />
-                                        )}
-                                    </Link>
-                                </li>
+                                <MobileNavItem
+                                    key={item.path}
+                                    item={item}
+                                    isActive={active}
+                                />
                             );
                         })}
                     </ul>
@@ -131,6 +161,8 @@ const AppLayout = () => {
             </footer>
         </div>
     );
-};
+});
+
+AppLayout.displayName = 'AppLayout';
 
 export default AppLayout;
