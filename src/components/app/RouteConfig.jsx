@@ -49,7 +49,10 @@ const publicRoutes = [
     <Route key="register" path="/register" element={<MemoizedPageTransition><SignupPage /></MemoizedPageTransition>} />,
     <Route key="face-scan" path="/emotional-checkin/face-scan" element={<MemoizedPageTransition><EmotionalCheckinFaceScanPage /></MemoizedPageTransition>} />,
     <Route key="select-role" path="/select-role" element={<MemoizedPageTransition><RoleSelectionPage /></MemoizedPageTransition>} />,
-    <Route key="job-status" path="/job/:id/status" element={<MemoizedPageTransition><JobStatusPage /></MemoizedPageTransition>} />
+    <Route key="job-status" path="/job/:id/status" element={<MemoizedPageTransition><JobStatusPage /></MemoizedPageTransition>} />,
+    <Route key="emotional-checkin" path="/emotional-checkin" element={<MemoizedPageTransition><EmotionalCheckinPage /></MemoizedPageTransition>} />,
+    <Route key="emotional-checkin-staff" path="/emotional-checkin/staff" element={<MemoizedPageTransition><EmotionalCheckinStaffPage /></MemoizedPageTransition>} />,
+    <Route key="emotional-checkin-dashboard" path="/emotional-checkin/dashboard" element={<MemoizedPageTransition><EmotionalCheckinDashboard /></MemoizedPageTransition>} />
 ];
 
 const clientRoutes = [
@@ -79,9 +82,6 @@ const sharedRoutes = [
     <Route key="gamification" path="/gamification" element={<MemoizedPageTransition><GamificationPage /></MemoizedPageTransition>} />,
     <Route key="notifications" path="/notifications" element={<MemoizedPageTransition><NotificationPage /></MemoizedPageTransition>} />,
     <Route key="notifications-settings" path="/notifications/settings" element={<MemoizedPageTransition><NotificationSettingsPage /></MemoizedPageTransition>} />,
-    <Route key="emotional-checkin" path="/emotional-checkin" element={<MemoizedPageTransition><EmotionalCheckinPage /></MemoizedPageTransition>} />,
-    <Route key="emotional-checkin-staff" path="/emotional-checkin/staff" element={<MemoizedPageTransition><EmotionalCheckinStaffPage /></MemoizedPageTransition>} />,
-    <Route key="emotional-checkin-dashboard" path="/emotional-checkin/dashboard" element={<MemoizedPageTransition><EmotionalCheckinDashboard /></MemoizedPageTransition>} />
 ];
 
 // ---- Main route config ----

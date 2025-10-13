@@ -1,0 +1,118 @@
+import React, { memo, useState } from "react";
+import { Cloud, Sun, CloudRain, Zap, Tornado, Snowflake, Eye, Users } from "lucide-react";
+
+const InternalWeather = memo(({ weatherData, moodLists }) => {
+    const [selectedWeather, setSelectedWeather] = useState(null);
+
+    const weatherTypes = [
+        { key: "sunny", label: "Sunny & Clear", icon: Sun, color: "gold", desc: "Upbeat, calm, full of clarity" },
+        { key: "cloudy", label: "Partly Cloudy", icon: Cloud, color: "muted", desc: "Doing alright, but there's something lingering in the background—mild stress or distraction" },
+        { key: "rain", label: "Light Rain", icon: CloudRain, color: "primary", desc: "Reflective or tired" },
+        { key: "storm", label: "Thunderstorms", icon: Zap, color: "primary", desc: "Intense feelings, anxiety" },
+        { key: "tornado", label: "Chaotic", icon: Tornado, color: "primary", desc: "Hard to focus" },
+        { key: "snow", label: "Snowy & Still", icon: Snowflake, color: "emerald", desc: "Slow, introspective" }
+    ];
+
+    const maxCount = Math.max(...Object.values(weatherData));
+
+    // Get staff names for selected weather based on mood correlation
+    const getWeatherStaff = (weatherKey) => {
+        const moodMapping = {
+            sunny: ['happy', 'excited', 'calm', 'hopeful'],
+            cloudy: ['tired', 'hungry', 'lonely', 'scattered'],
+            rain: ['sad', 'anxious'],
+            storm: ['fear', 'angry', 'overwhelmed'],
+            tornado: ['scattered', 'overwhelmed'],
+            snow: ['calm', 'hopeful']
+        };
+
+        const relevantMoods = moodMapping[weatherKey] || [];
+        const staffNames = [];
+
+        relevantMoods.forEach(mood => {
+            if (moodLists[mood]) {
+                staffNames.push(...moodLists[mood]);
+            }
+        });
+
+        return [...new Set(staffNames)]; // Remove duplicates
+    };
+
+    return (
+        <div className="glass glass-card transition-all duration-300">
+            <div className="glass__refract" />
+            <div className="glass__noise" />
+
+            <div className="relative z-10 p-4 md:p-6">
+                <div className="flex items-center gap-2 mb-4">
+                    <Eye className="w-4 h-4 text-primary" />
+                    <h2 className="text-base md:text-lg font-semibold text-foreground">
+                        Internal Weather
+                    </h2>
+                </div>
+
+                <p className="text-sm text-muted-foreground mb-4">
+                    Click a bar to see the description.
+                </p>
+
+                <div className="space-y-3">
+                    {weatherTypes.map(({ key, label, icon: Icon, color, desc }) => {
+                        const count = weatherData[key] || 0;
+                        const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
+                        const isSelected = selectedWeather === key;
+
+                        return (
+                            <button
+                                key={key}
+                                onClick={() => setSelectedWeather(isSelected ? null : key)}
+                                className="w-full glass glass-card transition-all duration-300"
+                            >
+                                <div className="glass__refract" />
+                                <div className="glass__noise" />
+
+                                <div className="relative z-10 p-3 md:p-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-3">
+                                            <Icon className={`w-5 h-5 text-${color}`} />
+                                            <span className="font-medium text-foreground text-sm md:text-base">
+                                                {label}
+                                            </span>
+                                        </div>
+                                        <span className="text-sm font-bold text-foreground">
+                                            {count}
+                                        </span>
+                                    </div>
+
+                                    <div className="w-full bg-muted/30 rounded-full h-2 overflow-hidden">
+                                        <div
+                                            className={`h-full bg-gradient-to-r from-${color} to-${color}/70 transition-all duration-500 ease-out`}
+                                            style={{ width: `${percentage}%` }}
+                                        />
+                                    </div>
+
+                                    {isSelected && (
+                                        <div className="mt-3 p-3 bg-card/50 rounded-lg border border-border/30">
+                                            <div className="flex items-start gap-2 mb-2">
+                                                <span className="text-lg">{Icon && <Icon className={`w-4 h-4 text-${color}`} />}</span>
+                                                <p className="text-sm text-muted-foreground flex-1">
+                                                    {label} – {desc}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                <Users className="w-3 h-3" />
+                                                <span>Chosen by: {getWeatherStaff(key).join(', ')}</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+        </div>
+    );
+});
+
+InternalWeather.displayName = 'InternalWeather';
+export default InternalWeather;
