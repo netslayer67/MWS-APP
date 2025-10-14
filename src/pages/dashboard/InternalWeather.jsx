@@ -73,7 +73,7 @@ const InternalWeather = memo(({ weatherData, moodLists }) => {
                                 <div className="relative z-10 p-3 md:p-4">
                                     <div className="flex items-center justify-between mb-2">
                                         <div className="flex items-center gap-3">
-                                            <Icon className={`w-5 h-5 text-${color}`} />
+                                            <Icon className={`w-5 h-5 ${color === 'gold' ? 'text-gold' : color === 'muted' ? 'text-muted-foreground' : color === 'primary' ? 'text-primary' : color === 'emerald' ? 'text-emerald' : 'text-foreground'}`} />
                                             <span className="font-medium text-foreground text-sm md:text-base">
                                                 {label}
                                             </span>
@@ -85,7 +85,12 @@ const InternalWeather = memo(({ weatherData, moodLists }) => {
 
                                     <div className="w-full bg-muted/30 rounded-full h-2 overflow-hidden">
                                         <div
-                                            className={`h-full bg-gradient-to-r from-${color} to-${color}/70 transition-all duration-500 ease-out`}
+                                            className={`h-full transition-all duration-500 ease-out ${color === 'gold' ? 'bg-gradient-to-r from-gold to-gold/70' :
+                                                color === 'muted' ? 'bg-gradient-to-r from-muted to-muted/70' :
+                                                    color === 'primary' ? 'bg-gradient-to-r from-primary to-primary/70' :
+                                                        color === 'emerald' ? 'bg-gradient-to-r from-emerald to-emerald/70' :
+                                                            'bg-gradient-to-r from-primary to-primary/70'
+                                                }`}
                                             style={{ width: `${percentage}%` }}
                                         />
                                     </div>
@@ -93,7 +98,14 @@ const InternalWeather = memo(({ weatherData, moodLists }) => {
                                     {isSelected && (
                                         <div className="mt-3 p-3 bg-card/50 rounded-lg border border-border/30">
                                             <div className="flex items-start gap-2 mb-2">
-                                                <span className="text-lg">{Icon && <Icon className={`w-4 h-4 text-${color}`} />}</span>
+                                                <span className="text-lg">
+                                                    <Icon className={`w-4 h-4 ${color === 'gold' ? 'text-gold' :
+                                                            color === 'muted' ? 'text-muted-foreground' :
+                                                                color === 'primary' ? 'text-primary' :
+                                                                    color === 'emerald' ? 'text-emerald' :
+                                                                        'text-foreground'
+                                                        }`} />
+                                                </span>
                                                 <p className="text-sm text-muted-foreground flex-1">
                                                     {label} – {desc}
                                                 </p>
