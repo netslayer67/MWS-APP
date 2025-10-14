@@ -7,7 +7,7 @@ export default defineConfig({
     plugins: [
         react(),
         VitePWA({
-            registerType: 'autoUpdate',
+            registerType: 'prompt',
             includeAssets: ['vite.svg', 'Millennia.webp'],
             manifest: {
                 name: 'MWS IntegraLearn - Premium Education Platform',
@@ -108,7 +108,10 @@ export default defineConfig({
                     }
                 ],
                 navigateFallback: '/index.html',
-                navigateFallbackDenylist: [/^\/api\//]
+                navigateFallbackDenylist: [/^\/api\//],
+                // Disable auto service worker registration since we handle it manually
+                skipWaiting: true,
+                clientsClaim: true
             },
             devOptions: {
                 enabled: true,
