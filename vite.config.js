@@ -7,7 +7,8 @@ export default defineConfig({
     plugins: [
         react(),
         VitePWA({
-            registerType: 'prompt',
+            strategies: 'generateSW',
+            registerType: 'autoUpdate',
             includeAssets: ['vite.svg', 'Millennia.webp'],
             manifest: {
                 name: 'MWS IntegraLearn - Premium Education Platform',
@@ -22,12 +23,6 @@ export default defineConfig({
                 icons: [
                     {
                         src: 'Millennia.webp',
-                        sizes: 'any',
-                        type: 'image/svg+xml',
-                        purpose: 'any maskable'
-                    },
-                    {
-                        src: 'Millennia.webp',
                         sizes: '192x192',
                         type: 'image/webp',
                         purpose: 'any maskable'
@@ -40,23 +35,7 @@ export default defineConfig({
                     }
                 ],
                 categories: ['education', 'productivity'],
-                lang: 'id-ID',
-                shortcuts: [
-                    {
-                        name: 'Dashboard',
-                        short_name: 'Dashboard',
-                        description: 'Access your learning dashboard',
-                        url: '/dashboard',
-                        icons: [{ src: 'vite.svg', sizes: '96x96' }]
-                    },
-                    {
-                        name: 'Profile',
-                        short_name: 'Profile',
-                        description: 'View and edit your profile',
-                        url: '/profile',
-                        icons: [{ src: 'vite.svg', sizes: '96x96' }]
-                    }
-                ]
+                lang: 'id-ID'
             },
             workbox: {
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
