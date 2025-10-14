@@ -52,37 +52,11 @@ const publicRoutes = [
     <Route key="job-status" path="/job/:id/status" element={<MemoizedPageTransition><JobStatusPage /></MemoizedPageTransition>} />,
     <Route key="emotional-checkin" path="/emotional-checkin" element={<MemoizedPageTransition><EmotionalCheckinPage /></MemoizedPageTransition>} />,
     <Route key="emotional-checkin-staff" path="/emotional-checkin/staff" element={<MemoizedPageTransition><EmotionalCheckinStaffPage /></MemoizedPageTransition>} />,
+    <Route key="rate" path="/emotional-checkin/rate" element={<MemoizedPageTransition><RatingPage /></MemoizedPageTransition>} />,
     <Route key="emotional-checkin-dashboard" path="/emotional-checkin/dashboard" element={<MemoizedPageTransition><EmotionalCheckinDashboard /></MemoizedPageTransition>} />
 ];
 
-const clientRoutes = [
-    <Route key="client-dashboard" path="/client/dashboard" element={<MemoizedPageTransition><ClientDashboard /></MemoizedPageTransition>} />,
-    <Route key="client-wallet" path="/client/wallet" element={<MemoizedPageTransition><WalletPage role="client" /></MemoizedPageTransition>} />,
-    <Route key="client-history" path="/client/history" element={<MemoizedPageTransition><HistoryPage role="client" /></MemoizedPageTransition>} />,
-    <Route key="client-offers" path="/client/offers" element={<MemoizedPageTransition><OffersInboxPage /></MemoizedPageTransition>} />
-];
 
-const workerRoutes = [
-    <Route key="worker-dashboard" path="/worker/dashboard" element={<MemoizedPageTransition><WorkerDashboard /></MemoizedPageTransition>} />,
-    <Route key="worker-jobs" path="/worker/jobs" element={<MemoizedPageTransition><JobPage /></MemoizedPageTransition>} />,
-    <Route key="worker-wallet" path="/worker/wallet" element={<MemoizedPageTransition><WalletPage role="worker" /></MemoizedPageTransition>} />,
-    <Route key="worker-history" path="/worker/history" element={<MemoizedPageTransition><HistoryPage role="worker" /></MemoizedPageTransition>} />,
-    <Route key="worker-chat" path="/worker/chat" element={<MemoizedPageTransition><ChatPage role="worker" /></MemoizedPageTransition>} />
-];
-
-const sharedRoutes = [
-    <Route key="post-job" path="/post-job" element={<MemoizedPageTransition><PostJobPage /></MemoizedPageTransition>} />,
-    <Route key="job-track" path="/job/:id/track" element={<MemoizedPageTransition><JobTrackingPage /></MemoizedPageTransition>} />,
-    <Route key="profile" path="/profile" element={<MemoizedPageTransition><ProfilePage /></MemoizedPageTransition>} />,
-    <Route key="profile-security" path="/profile/security" element={<MemoizedPageTransition><SecurityPage /></MemoizedPageTransition>} />,
-    <Route key="job-rate" path="/job/:id/rate" element={<MemoizedPageTransition><RatingPage /></MemoizedPageTransition>} />,
-    <Route key="dispute" path="/dispute" element={<MemoizedPageTransition><DisputePage /></MemoizedPageTransition>} />,
-    <Route key="help" path="/help" element={<MemoizedPageTransition><HelpCenterPage /></MemoizedPageTransition>} />,
-    <Route key="referral" path="/referral" element={<MemoizedPageTransition><ReferralPage /></MemoizedPageTransition>} />,
-    <Route key="gamification" path="/gamification" element={<MemoizedPageTransition><GamificationPage /></MemoizedPageTransition>} />,
-    <Route key="notifications" path="/notifications" element={<MemoizedPageTransition><NotificationPage /></MemoizedPageTransition>} />,
-    <Route key="notifications-settings" path="/notifications/settings" element={<MemoizedPageTransition><NotificationSettingsPage /></MemoizedPageTransition>} />,
-];
 
 // ---- Main route config ----
 const RouteConfig = memo(() => (
@@ -91,12 +65,7 @@ const RouteConfig = memo(() => (
             {/* Public routes (insert array so <Routes> sees raw <Route/> children) */}
             {publicRoutes}
 
-            {/* Protected routes with AppLayout (children must also be <Route/>) */}
-            <Route element={<AppLayout />}>
-                {clientRoutes}
-                {workerRoutes}
-                {sharedRoutes}
-            </Route>
+
 
             {/* Standalone routes */}
             <Route path="/chat/:id" element={<MemoizedPageTransition><RoomChat /></MemoizedPageTransition>} />

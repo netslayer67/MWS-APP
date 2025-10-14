@@ -2,16 +2,16 @@ import React, { memo, useMemo } from "react";
 import WeatherCard from "./components/WeatherCard";
 
 const weatherOptions = [
-    { icon: "Sun", label: "Sunny & Clear", labelFull: "Sunny and Clear", desc: "Upbeat, calm, full of clarity", value: "sunny", color: "gold" },
-    { icon: "Cloud", label: "Partly Cloudy", labelFull: "Partly Cloudy", desc: "Mild stress or distraction", value: "cloudy", color: "muted" },
-    { icon: "CloudRain", label: "Light Rain", labelFull: "Light Rain", desc: "Reflective or tired", value: "rain", color: "primary" },
-    { icon: "Zap", label: "Thunderstorms", labelFull: "Thunderstorms", desc: "Intense feelings, anxiety", value: "storm", color: "primary" },
-    { icon: "Tornado", label: "Chaotic", labelFull: "Tornado Watch", desc: "Hard to focus", value: "tornado", color: "primary" },
-    { icon: "Snowflake", label: "Snowy & Still", labelFull: "Snowy and Still", desc: "Slow, introspective", value: "snow", color: "emerald" },
-    { icon: "Rainbow", label: "Rainbow", labelFull: "Post-Storm Rainbow", desc: "Hope emerging", value: "rainbow", color: "emerald" },
-    { icon: "CloudFog", label: "Foggy", labelFull: "Foggy", desc: "Unclear, seeking direction", value: "foggy", color: "muted" },
-    { icon: "Flame", label: "Heatwave", labelFull: "Heatwave", desc: "Burnt out, overstimulated", value: "heatwave", color: "gold" },
-    { icon: "Wind", label: "Windy", labelFull: "Windy", desc: "Restless, in transition", value: "windy", color: "emerald" }
+    { icon: "Sun", label: "Sunny & Clear", labelFull: "Sunny and Clear", desc: "☀️ Sunny and Clear – Feeling upbeat, calm, and full of clarity. Everything's flowing smoothly. / Cerah Tanpa Awan – Merasa bersemangat, tenang, dan pikiran jernih. Semuanya berjalan lancar.", value: "sunny", color: "gold" },
+    { icon: "Cloud", label: "Partly Cloudy", labelFull: "Partly Cloudy", desc: "⛅ Partly Cloudy – Doing alright, but there's something lingering in the background—mild stress or distraction. / Berawan Sebagian – Kondisi baik-baik saja, tetapi ada sesuatu yang mengganjal di latar belakang—stres ringan atau distraksi.", value: "cloudy", color: "muted" },
+    { icon: "CloudRain", label: "Light Rain", labelFull: "Light Rain", desc: "🌧️ Light Rain – A little heavy emotionally, maybe reflective or tired. Nothing overwhelming, just a quiet drizzle. / Hujan Ringan – Merasa sedikit berat secara emosional, mungkin sedang merenung atau lelah. Tidak ada yang berlebihan, hanya suasana yang tenang.", value: "rain", color: "primary" },
+    { icon: "Zap", label: "Thunderstorms", labelFull: "Thunderstorms", desc: "🌩️ Thunderstorms – Intense feelings brewing—frustration, anxiety, or emotional overload. Seeking shelter. / Badai Petir – Perasaan yang intens sedang berkecamuk—frustrasi, cemas, atau beban emosional berlebih. Butuh tempat untuk menenangkan diri.", value: "storm", color: "primary" },
+    { icon: "Tornado", label: "Chaotic", labelFull: "Tornado Watch", desc: "🌪️ Tornado Watch – Everything feels chaotic. Thoughts are swirling, hard to focus. May need grounding soon. / Waspada Tornado – Semuanya terasa kacau. Pikiran berputar-putar, sulit untuk fokus. Mungkin perlu menenangkan diri segera.", value: "tornado", color: "primary" },
+    { icon: "Snowflake", label: "Snowy & Still", labelFull: "Snowy and Still", desc: "🌨️ Snowy and Still – Feeling slow, introspective, or emotionally frozen. Not bad, just… still. / Bersalju dan Tenang – Merasa lambat, introspektif, atau seakan 'membeku' secara emosional. Bukan perasaan buruk, hanya… diam dan tenang.", value: "snow", color: "emerald" },
+    { icon: "Rainbow", label: "Rainbow", labelFull: "Post-Storm Rainbow", desc: "🌈 Post-Storm Rainbow – Just came through something difficult, but there's hope and beauty emerging now. / Pelangi Setelah Badai – Baru saja melewati masa sulit, tetapi kini ada harapan dan keindahan yang mulai muncul.", value: "rainbow", color: "emerald" },
+    { icon: "CloudFog", label: "Foggy", labelFull: "Foggy", desc: "🌫️ Foggy – Mentally fuzzy, unclear, maybe a bit lost. Looking for direction or clarity. / Berkabut – Pikiran sedang kabur, tidak jernih, mungkin merasa sedikit tersesat. Sedang mencari arah atau kejelasan.", value: "foggy", color: "muted" },
+    { icon: "Flame", label: "Heatwave", labelFull: "Heatwave", desc: "🔥 Heatwave – Energetic but possibly burnt out or overstimulated. Too much going on at once. / Gelombang Panas – Penuh energi tetapi ada kemungkinan merasa burn out (terbakar) atau terlalu terstimulasi. Terlalu banyak hal terjadi sekaligus.", value: "heatwave", color: "gold" },
+    { icon: "Wind", label: "Windy", labelFull: "Windy", desc: "🌬️ Windy – Restless, scattered, or in transition. Things are moving quickly, hard to settle down. / Berangin – Gelisah, pikiran tidak fokus, atau sedang dalam masa transisi. Segalanya bergerak cepat, sulit untuk merasa tenang.", value: "windy", color: "emerald" }
 ];
 
 const Header = memo(() => (

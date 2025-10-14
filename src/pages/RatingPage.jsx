@@ -1,142 +1,115 @@
-// src/pages/RatingPage.jsx
-import React, { useState } from "react";
+import React, { memo, useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
-import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
-import { ArrowLeft, Star, Send } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { useLocation } from "react-router-dom";
 import AnimatedPage from "@/components/AnimatedPage";
-import { useToast } from "@/components/ui/use-toast";
+import PageLoader from "@/components/PageLoader";
 import { Helmet } from "react-helmet";
+import { DUMMY_CHECKIN_DATA } from "@/lib/ratingConstants";
+import { generateAnalysis, generateRecommendations } from "@/lib/ratingUtils";
+import { DecorativeBlobs, GridPattern } from "@/components/rating/DecorativeElements";
 
-/* -------- Utils: sanitize input -------- */
-const safeInput = (v) =>
-    String(v || "")
-        .replace(/<[^>]*>/g, "") // block script tags
-        .replace(/https?:\/\/[^\s]+/gi, "") // block links
-        .slice(0, 500); // limit length
+// Lazy load components for code splitting
+const HeaderSection = lazy(() => import("@/components/rating/HeaderSection"));
+const StatusBadge = lazy(() => import("@/components/rating/StatusBadge"));
+const MetricsGrid = lazy(() => import("@/components/rating/MetricsGrid"));
+const RecommendationCard = lazy(() => import("@/components/rating/RecommendationCard"));
+const SupportSection = lazy(() => import("@/components/rating/SupportSection"));
+const BackHomeButton = lazy(() => import("@/components/rating/BackHomeButton"));
 
-export default function RatingPage() {
-    const [rating, setRating] = useState(0);
-    const [hoverRating, setHoverRating] = useState(0);
-    const [comment, setComment] = useState("");
-    const { toast } = useToast();
-    const navigate = useNavigate();
-    const { id } = useParams();
+// ============= MAIN COMPONENT =============
+const RatingPage = memo(function RatingPage() {
+    const [isLoading, setIsLoading] = useState(true);
     const location = useLocation();
 
-    const role = location.state?.role || "client";
-    const target = location.state?.target || {
-        name: "User",
-        jobTitle: "Tugas Anda",
-    };
+    // Use location.state data if available, otherwise use dummy data for demo
+    const checkInData = useMemo(() => {
+        const data = location.state?.checkInData || DUMMY_CHECKIN_DATA;
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (rating === 0) {
-            toast({
-                title: "Belum ada rating",
-                description: "Silakan pilih bintang dulu ya.",
-                variant: "destructive",
-            });
-            return;
-        }
+        // Sanitize all string inputs
+        return {
+            ...data,
+            name: data.name || "User",
+            emotionsDetails: data.emotionsDetails || "",
+            supportPerson: data.supportPerson || "No Need"
+        };
+    }, [location.state]);
 
-        toast({
-            title: "Terima kasih!",
-            description: "Ulasan berhasil dikirim.",
-        });
+    const analysis = useMemo(() => generateAnalysis(checkInData), [checkInData]);
+    const recommendations = useMemo(() => generateRecommendations(analysis, checkInData), [analysis, checkInData]);
 
-        setTimeout(() => {
-            navigate(role === "client" ? "/client/dashboard" : "/worker/dashboard");
-        }, 1200);
-    };
+    useEffect(() => {
+        const timer = setTimeout(() => setIsLoading(false), 1500); // Reduced from 2500 to 1500 for better UX
+        return () => clearTimeout(timer);
+    }, []);
+
+    if (isLoading) {
+        return <PageLoader />;
+    }
 
     return (
         <AnimatedPage>
             <Helmet>
-                <title>Beri Ulasan — Kerjain</title>
+                <title>Emotional Wellness Results — Millennia World School</title>
+                <meta name="description" content="Your personalized emotional wellness analysis and recommendations" />
             </Helmet>
 
-            <div className="relative min-h-dvh w-full px-4 py-6 md:px-6 text-foreground">
-                {/* Header */}
-                <motion.div
-                    initial={{ opacity: 0, y: -12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35, ease: "easeOut" }}
-                    className="mb-6 flex items-center gap-3"
-                >
-                    <Link to={-1}>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="rounded-full bg-card/40 hover:bg-accent/20 transition-colors duration-300"
+            <div className="relative min-h-screen text-foreground overflow-hidden">
+                <DecorativeBlobs />
+                <GridPattern />
+
+                <div className="relative z-10 min-h-screen flex items-center justify-center py-8 md:py-12 px-4 md:px-6">
+                    <div className="w-full max-w-5xl space-y-6 md:space-y-8">
+                        <Suspense fallback={<div className="h-32 animate-pulse bg-muted/20 rounded-lg" />}>
+                            <HeaderSection name={checkInData.name} analysis={analysis} />
+                        </Suspense>
+                        <Suspense fallback={<div className="h-16 animate-pulse bg-muted/20 rounded-lg" />}>
+                            <StatusBadge analysis={analysis} />
+                        </Suspense>
+                        <Suspense fallback={<div className="h-40 animate-pulse bg-muted/20 rounded-lg" />}>
+                            <MetricsGrid data={checkInData} analysis={analysis} />
+                        </Suspense>
+
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.6, delay: 0.7 }}
+                            className="space-y-4 md:space-y-6 px-2"
                         >
-                            <ArrowLeft className="h-5 w-5" />
-                        </Button>
-                    </Link>
-                    <h1 className="text-lg font-semibold">Beri Ulasan</h1>
-                </motion.div>
+                            <motion.h2
+                                className="text-lg md:text-2xl font-semibold text-foreground text-center"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.75, duration: 0.5 }}
+                            >
+                                Personalized Recommendations
+                            </motion.h2>
 
-                {/* Rating Card */}
-                <motion.div
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35, ease: "easeOut" }}
-                >
-                    <Card className="rounded-3xl border border-border/30 bg-background/50 shadow-lg backdrop-blur-xl">
-                        <CardContent className="p-6 text-center space-y-6">
-                            <h2 className="text-base font-medium">
-                                Nilai {role === "client" ? "Kinerja" : "Klien"}{" "}
-                                <span className="text-primary font-semibold">{target.name}</span>
-                            </h2>
-                            <p className="text-xs text-muted-foreground">{target.jobTitle}</p>
-
-                            {/* Stars */}
-                            <div className="flex justify-center gap-4">
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                    <motion.div
-                                        key={star}
-                                        whileHover={{ scale: 1.15 }}
-                                        whileTap={{ scale: 0.9 }}
-                                        className="transition-transform duration-300"
-                                    >
-                                        <Star
-                                            className={`h-9 w-9 cursor-pointer transition-colors duration-300 ${(hoverRating || rating) >= star
-                                                    ? "text-accent fill-accent"
-                                                    : "text-muted-foreground"
-                                                }`}
-                                            onClick={() => setRating(star)}
-                                            onMouseEnter={() => setHoverRating(star)}
-                                            onMouseLeave={() => setHoverRating(0)}
-                                        />
-                                    </motion.div>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-5">
+                                {recommendations.map((rec, index) => (
+                                    <Suspense key={index} fallback={<div className="h-32 animate-pulse bg-muted/20 rounded-lg" />}>
+                                        <RecommendationCard recommendation={rec} index={index} />
+                                    </Suspense>
                                 ))}
                             </div>
+                        </motion.div>
 
-                            {/* Form */}
-                            <form onSubmit={handleSubmit} className="space-y-4">
-                                <textarea
-                                    placeholder="Tulis komentar singkat (opsional)..."
-                                    rows="3"
-                                    value={comment}
-                                    onChange={(e) => setComment(safeInput(e.target.value))}
-                                    className="w-full rounded-2xl border border-border/40 bg-background/40 px-3 py-2 text-sm resize-none transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                                />
+                        <Suspense fallback={<div className="h-24 animate-pulse bg-muted/20 rounded-lg" />}>
+                            <SupportSection
+                                supportPerson={checkInData.supportPerson}
+                                needsSupport={analysis.needsSupport}
+                            />
+                        </Suspense>
 
-                                <Button
-                                    type="submit"
-                                    size="lg"
-                                    className="w-full rounded-2xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-medium shadow transition-all duration-350 hover:opacity-90 group"
-                                >
-                                    Kirim
-                                    <Send className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
-                                </Button>
-                            </form>
-                        </CardContent>
-                    </Card>
-                </motion.div>
+                        <Suspense fallback={<div className="h-16 animate-pulse bg-muted/20 rounded-lg" />}>
+                            <BackHomeButton />
+                        </Suspense>
+                    </div>
+                </div>
             </div>
         </AnimatedPage>
     );
-}
+});
+
+RatingPage.displayName = 'RatingPage';
+
+export default RatingPage;

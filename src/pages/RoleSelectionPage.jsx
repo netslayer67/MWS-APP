@@ -118,7 +118,7 @@ const RoleSelection = memo(() => {
     };
 
     return (
-        <div className="relative min-h-screen bg-background text-foreground overflow-hidden">
+        <div className="relative min-h-screen text-foreground overflow-hidden">
             <Blob className="top-0 left-0 w-80 h-80 md:w-96 md:h-96 bg-primary/8" delay={0} />
             <Blob className="bottom-0 right-0 w-72 h-72 md:w-80 md:h-80 bg-primary/6" delay={0.8} />
             <Grid />
