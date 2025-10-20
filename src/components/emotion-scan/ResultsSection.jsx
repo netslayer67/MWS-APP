@@ -9,9 +9,9 @@ import AIAnalysis from "./results/AIAnalysis";
 import PsychologicalInsight from "./results/PsychologicalInsight";
 import AIReasoning from "./results/AIReasoning";
 import PersonalizedRecommendation from "./results/PersonalizedRecommendation";
-import SupportContacts from "./results/SupportContacts";
+import SupportSelector from "@/components/emotion-staff/SupportSelector";
 
-const ResultsSection = memo(({ analysis, onReset, onComplete }) => (
+const ResultsSection = memo(({ analysis, onReset, onComplete, onSupportChange }) => (
     <motion.div
         key="results"
         initial={{ opacity: 0 }}
@@ -33,11 +33,25 @@ const ResultsSection = memo(({ analysis, onReset, onComplete }) => (
                 <h2 className="text-lg font-bold text-foreground">
                     {analysis.detectedEmotion}
                 </h2>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/30">
-                    <span className="text-sm font-semibold text-primary">
-                        {analysis.confidence}% Confidence
-                    </span>
+                <div className="flex items-center justify-center gap-2">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/30">
+                        <span className="text-sm font-semibold text-primary">
+                            {analysis.confidence}% Confidence
+                        </span>
+                    </div>
+                    {analysis.aiDetected && (
+                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30">
+                            <span className="text-xs font-medium text-emerald-600">
+                                AI Detected
+                            </span>
+                        </div>
+                    )}
                 </div>
+                {analysis.explanations && analysis.explanations.length > 0 && (
+                    <div className="text-xs text-muted-foreground max-w-xs mx-auto">
+                        {analysis.explanations[0]}
+                    </div>
+                )}
             </div>
         </div>
 
@@ -60,9 +74,16 @@ const ResultsSection = memo(({ analysis, onReset, onComplete }) => (
                 actions={analysis.suggestedActions}
             />
 
-            <SupportContacts
-                contacts={['Ms. Mahrukh', 'Ms. Latifah', 'Ms. Kholida', 'Mr. Aria']}
-                lowPresence={analysis.presenceCapacity.estimatedPresence < 5}
+            <SupportSelector
+                supportContact={analysis.selectedSupportContact || ""}
+                onSupportChange={(contact) => {
+                    // Store selected contact for later use in check-in
+                    console.log('Selected support contact:', contact);
+                    // Pass to parent component for storage
+                    if (onSupportChange) {
+                        onSupportChange(contact);
+                    }
+                }}
             />
         </div>
 
@@ -73,6 +94,7 @@ const ResultsSection = memo(({ analysis, onReset, onComplete }) => (
                 className="py-3 rounded-xl border-2 border-border bg-surface text-foreground font-medium hover:bg-surface/80 hover:border-primary/40 transition-all duration-300"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
+                aria-label="Scan again for new AI emotional analysis"
             >
                 Scan Again
             </motion.button>
@@ -81,8 +103,9 @@ const ResultsSection = memo(({ analysis, onReset, onComplete }) => (
                 className="py-3 rounded-xl bg-primary text-primary-foreground font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/35 transition-all duration-300"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
+                aria-label="Complete check-in and proceed to results"
             >
-                Complete
+                Complete Check-in
             </motion.button>
         </div>
     </motion.div>

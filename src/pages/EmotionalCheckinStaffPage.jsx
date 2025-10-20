@@ -1,8 +1,11 @@
 import React, { useState, memo, Suspense, lazy } from "react";
 import { Helmet } from "react-helmet";
+import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import AnimatedPage from "@/components/AnimatedPage";
 import DecorativeElements from "@/components/emotion-staff/DecorativeElements";
 import { useToast } from "@/components/ui/use-toast";
+import { submitCheckin } from "../store/slices/checkinSlice";
 
 // Lazy load components for better performance
 const WelcomeSection = lazy(() => import("@/components/emotion-staff/WelcomeSection"));
@@ -30,13 +33,17 @@ const ComponentLoader = memo(() => (
 ComponentLoader.displayName = 'ComponentLoader';
 
 const EmotionalCheckinStaffPage = memo(function EmotionalCheckinStaffPage() {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const { loading } = useSelector((state) => state.checkin);
+    const { contacts: supportContacts } = useSelector((state) => state.support);
+
     const [selectedWeather, setSelectedWeather] = useState(null);
     const [selectedMoods, setSelectedMoods] = useState([]);
     const [details, setDetails] = useState("");
     const [presence, setPresence] = useState([5]);
     const [capacity, setCapacity] = useState([5]);
     const [supportContact, setSupportContact] = useState("");
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const toggleMood = (mood) => {
         setSelectedMoods(prev =>
@@ -51,33 +58,75 @@ const EmotionalCheckinStaffPage = memo(function EmotionalCheckinStaffPage() {
     const handleSubmit = async () => {
         if (!selectedWeather || selectedMoods.length === 0) return;
 
-        setIsSubmitting(true);
+        // Find the selected support contact details
+        const selectedContact = supportContacts.find(c => c.name === supportContact);
+        const supportContactUserId = selectedContact && selectedContact.id !== "no-need" && selectedContact.id !== "no_need" ? selectedContact.id : null;
+
+        const checkinData = {
+            weatherType: selectedWeather,
+            selectedMoods,
+            details,
+            presenceLevel: presence[0],
+            capacityLevel: capacity[0],
+            supportContactUserId
+        };
+
+        console.log('Selected support contact:', selectedContact);
+        console.log('Support contact user ID:', supportContactUserId);
+        console.log('Support contact name from state:', supportContact);
+        console.log('Available support contacts:', supportContacts);
+        console.log('Weather type:', selectedWeather);
+        console.log('Moods:', selectedMoods);
+        console.log('Complete checkin data:', checkinData);
+
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            const resultAction = await dispatch(submitCheckin(checkinData));
 
-            toast({
-                title: "Check-in Submitted Successfully! 🎉",
-                description: "Thank you for sharing your feelings. Your well-being matters to us.",
-                duration: 5000,
-            });
+            if (submitCheckin.fulfilled.match(resultAction)) {
+                toast({
+                    title: "Check-in Submitted Successfully! 🎉",
+                    description: "Thank you for sharing your feelings. Your well-being matters to us.",
+                    duration: 5000,
+                });
 
-            // Reset form
-            setSelectedWeather(null);
-            setSelectedMoods([]);
-            setDetails("");
-            setPresence([5]);
-            setCapacity([5]);
-            setSupportContact("");
+                // Navigate to rating page after successful submission with checkin data
+                setTimeout(() => {
+                    const checkinId = resultAction.payload?.data?.checkin?.id;
+                    console.log('Navigation: checkinId from payload:', checkinId);
+                    console.log('Navigation: full payload:', resultAction.payload);
+                    console.log('Navigation: data.checkin:', resultAction.payload?.data?.checkin);
+                    if (checkinId) {
+                        console.log('Navigating to:', `/emotional-checkin/rate/${checkinId}`);
+                        navigate(`/emotional-checkin/rate/${checkinId}`);
+                    } else {
+                        console.log('No checkinId found, navigating to general rate page');
+                        // Fallback to general rate page if no ID
+                        navigate('/emotional-checkin/rate');
+                    }
+                }, 2000);
+
+                // Reset form
+                setSelectedWeather(null);
+                setSelectedMoods([]);
+                setDetails("");
+                setPresence([5]);
+                setCapacity([5]);
+                setSupportContact("");
+            } else {
+                toast({
+                    title: "Submission Failed",
+                    description: resultAction.payload || "Please try again. If the problem persists, contact support.",
+                    variant: "destructive",
+                    duration: 5000,
+                });
+            }
         } catch (error) {
             toast({
-                title: "Submission Failed",
-                description: "Please try again. If the problem persists, contact support.",
+                title: "Submission Error",
+                description: "An unexpected error occurred. Please try again.",
                 variant: "destructive",
                 duration: 5000,
             });
-        } finally {
-            setIsSubmitting(false);
         }
     };
 
@@ -143,7 +192,7 @@ const EmotionalCheckinStaffPage = memo(function EmotionalCheckinStaffPage() {
                             <Suspense fallback={<ComponentLoader />}>
                                 <SubmitSection
                                     onSubmit={handleSubmit}
-                                    isSubmitting={isSubmitting}
+                                    isSubmitting={loading}
                                     isValid={isValid}
                                 />
                             </Suspense>

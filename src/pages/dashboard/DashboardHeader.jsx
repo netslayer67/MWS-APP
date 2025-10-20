@@ -1,9 +1,8 @@
-import React, { memo, useState } from "react";
-import { Calendar, Filter, ChevronDown } from "lucide-react";
+import React, { memo } from "react";
+import { Calendar, Filter } from "lucide-react";
 import { periodOptions } from "./utils";
 
 const DashboardHeader = memo(({ selectedPeriod, onPeriodChange, selectedDate, onDateChange }) => {
-    const [showDatePicker, setShowDatePicker] = useState(false);
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -61,13 +60,14 @@ const DashboardHeader = memo(({ selectedPeriod, onPeriodChange, selectedDate, on
                 {/* Date Selector */}
                 <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-foreground">Select Date:</span>
-                    <button
-                        onClick={() => setShowDatePicker(!showDatePicker)}
-                        className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-card/50 border border-border/50 rounded-lg hover:border-primary/40 hover:bg-card/80 transition-all duration-300"
-                    >
-                        <span className="text-sm text-foreground">{formatDate(selectedDate)}</span>
-                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                    </button>
+                    <div className="relative">
+                        <input
+                            type="date"
+                            value={selectedDate}
+                            onChange={(e) => onDateChange(e.target.value)}
+                            className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-card/50 border border-border/50 rounded-lg hover:border-primary/40 hover:bg-card/80 transition-all duration-300 text-sm text-foreground"
+                        />
+                    </div>
                 </div>
 
                 {/* View Toggle */}

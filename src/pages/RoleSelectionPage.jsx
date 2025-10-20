@@ -1,7 +1,8 @@
 import { memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Heart, Brain, Sparkles, ChevronRight } from "lucide-react";
+import { Heart, Brain, Sparkles, ChevronRight, BarChart3 } from "lucide-react";
+import { useSelector } from "react-redux";
 
 /* ==================== DECORATIVE ELEMENTS ==================== */
 const Blob = memo(({ className, delay = 0 }) => (
@@ -108,12 +109,15 @@ const MethodCard = memo(({ icon: Icon, title, desc, features, isPremium, onClick
 /* ==================== MAIN COMPONENT ==================== */
 const RoleSelection = memo(() => {
     const navigate = useNavigate();
+    const { user } = useSelector((state) => state.auth);
 
     const selectMethod = (method) => {
         if (method === 'manual') {
             navigate('/emotional-checkin/staff');
         } else if (method === 'ai') {
             navigate('/emotional-checkin/face-scan');
+        } else if (method === 'dashboard') {
+            navigate('/emotional-checkin/dashboard');
         }
     };
 
@@ -183,6 +187,23 @@ const RoleSelection = memo(() => {
                             isPremium={true}
                             onClick={() => selectMethod('ai')}
                         />
+
+                        {/* Dashboard Access for Directorate Academic */}
+                        {user && user.role === 'directorate' && user.department === 'Academic' && (
+                            <MethodCard
+                                icon={BarChart3}
+                                title="Go to Dashboard"
+                                desc="Access comprehensive emotional wellness dashboard and analytics"
+                                features={[
+                                    "Real-time staff wellness monitoring",
+                                    "Emotional check-in analytics",
+                                    "Support tracking and interventions",
+                                    "Period-based reporting (daily/weekly/monthly/semesterly)"
+                                ]}
+                                isPremium={false}
+                                onClick={() => selectMethod('dashboard')}
+                            />
+                        )}
                     </div>
 
                     {/* Footer */}

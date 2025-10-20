@@ -1,19 +1,7 @@
-import React, { memo, useMemo } from "react";
+import React, { memo, useMemo, useEffect } from "react";
 import { Users, UserCheck, CheckCircle2, MessageCircle, ChevronDown } from "lucide-react";
-
-const supportContacts = [
-    { id: "mahrukh", name: "Ms. Mahrukh", role: "Coordinator", avatar: "MB" },
-    { id: "latifah", name: "Ms. Latifah", role: "Counselor", avatar: "LA" },
-    { id: "kholida", name: "Ms. Kholida", role: "Advisor", avatar: "KH" },
-    { id: "aria", name: "Mr. Aria", role: "Mentor", avatar: "AR" },
-    { id: "hana", name: "Ms. Hana", role: "Support", avatar: "HA" },
-    { id: "wina", name: "Ms. Wina", role: "Counselor", avatar: "WI" },
-    { id: "sarah", name: "Ms. Sarah", role: "Advisor", avatar: "SA" },
-    { id: "hanny", name: "Ms. Hanny", role: "Support", avatar: "HN" },
-    { id: "dodi", name: "Pak Dodi", role: "Mentor", avatar: "DO" },
-    { id: "faisal", name: "Pak Faisal", role: "Advisor", avatar: "FA" },
-    { id: "no-need", name: "No Need", role: "I'm feeling supported", avatar: "✓" }
-];
+import { useDispatch, useSelector } from "react-redux";
+import { fetchSupportContacts } from "../../store/slices/supportSlice";
 
 const Header = memo(() => (
     <div className="flex items-start gap-3">
@@ -31,19 +19,23 @@ const Header = memo(() => (
     </div>
 ));
 
-const CustomSelect = memo(({ supportContact, onSupportChange, hasSelection }) => (
+const CustomSelect = memo(({ supportContact, onSupportChange, hasSelection, supportContacts, loading }) => (
     <div className="relative">
         <select
             value={supportContact}
             onChange={(e) => onSupportChange(e.target.value)}
-            className={`w-full px-4 py-3.5 md:py-4 bg-input/50 backdrop-blur-sm border-2 rounded-lg text-sm md:text-base text-foreground appearance-none cursor-pointer transition-all duration-300 ease-premium ${hasSelection ? 'border-emerald shadow-lg shadow-emerald/10 bg-input/80' : 'border-border hover:border-emerald/40 hover:bg-input/70'} focus:outline-none focus:border-emerald focus:shadow-lg focus:shadow-emerald/10`}
+            disabled={loading || supportContacts.length === 0}
+            className={`w-full px-4 py-3.5 md:py-4 bg-input/50 backdrop-blur-sm border-2 rounded-lg text-sm md:text-base text-foreground appearance-none cursor-pointer transition-all duration-300 ease-premium ${hasSelection ? 'border-emerald shadow-lg shadow-emerald/10 bg-input/80' : 'border-border hover:border-emerald/40 hover:bg-input/70'} focus:outline-none focus:border-emerald focus:shadow-lg focus:shadow-emerald/10 ${loading || supportContacts.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
-            <option value="">Choose a team member...</option>
+            <option value="">
+                {loading ? 'Loading support contacts...' : supportContacts.length === 0 ? 'No support contacts available' : 'Choose a team member...'}
+            </option>
             {supportContacts.map((contact) => (
                 <option key={contact.id} value={contact.name}>
                     {contact.name} — {contact.role}
                 </option>
             ))}
+            <option value="No Need">No Need</option>
         </select>
         <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
             <ChevronDown className={`w-5 h-5 transition-all duration-300 ${hasSelection ? 'text-emerald' : 'text-muted-foreground'}`} />
@@ -124,9 +116,34 @@ const TeamAvailabilityBadge = memo(() => (
 ));
 
 const SupportSelector = memo(({ supportContact, onSupportChange }) => {
+    const dispatch = useDispatch();
+    const { contacts, loading } = useSelector((state) => state.support);
+    const { isAuthenticated } = useSelector((state) => state.auth);
+
+    // Fetch support contacts on component mount
+    useEffect(() => {
+        if (contacts.length === 0 && isAuthenticated && !loading) {
+            // Small delay to ensure auth state is fully loaded
+            const timer = setTimeout(() => {
+                dispatch(fetchSupportContacts());
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [dispatch, contacts.length, isAuthenticated, loading]);
+
+    // Use API data if available, otherwise show loading or empty state
+    const supportContacts = useMemo(() => {
+        console.log('SupportSelector contacts:', contacts);
+        if (contacts.length > 0) {
+            return contacts;
+        }
+        // Return empty array if no data yet (loading state)
+        return [];
+    }, [contacts]);
+
     const selectedPerson = useMemo(
         () => supportContacts.find(c => c.name === supportContact),
-        [supportContact]
+        [supportContact, supportContacts]
     );
 
     const isNoNeed = supportContact === "No Need";
@@ -139,7 +156,7 @@ const SupportSelector = memo(({ supportContact, onSupportChange }) => {
             <div className="glass__noise" />
             <div className="relative z-10 p-5 md:p-6 space-y-5">
                 <Header />
-                <CustomSelect supportContact={supportContact} onSupportChange={onSupportChange} hasSelection={hasSelection} />
+                <CustomSelect supportContact={supportContact} onSupportChange={onSupportChange} hasSelection={hasSelection} supportContacts={supportContacts} loading={loading} />
                 {selectedPerson && selectedPerson.id !== "no-need" && <SelectedPersonCard selectedPerson={selectedPerson} />}
                 {isNoNeed && <NoNeedCard />}
                 {!hasSelection && <EmptyStateHelper />}

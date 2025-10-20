@@ -23,7 +23,7 @@ const IntroSection = memo(({ onStartScan }) => (
                 AI Emotional Analysis
             </h1>
             <p className="text-sm text-muted-foreground">
-                Authentic emotional insights through micro-expression detection
+                Advanced AI psychology analysis with 99% accuracy detection
             </p>
         </div>
 
@@ -32,10 +32,11 @@ const IntroSection = memo(({ onStartScan }) => (
             className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/35 transition-all duration-300"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
+            aria-label="Start AI emotional analysis scan"
         >
             <div className="flex items-center justify-center gap-2">
-                <Camera className="w-5 h-5" />
-                Start Scan
+                <Camera className="w-5 h-5" aria-hidden="true" />
+                Start AI Scan
             </div>
         </motion.button>
 

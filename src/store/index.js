@@ -1,0 +1,25 @@
+import { configureStore } from '@reduxjs/toolkit';
+import authReducer from './slices/authSlice';
+import checkinReducer from './slices/checkinSlice';
+import dashboardReducer from './slices/dashboardSlice';
+import supportReducer from './slices/supportSlice';
+
+export const store = configureStore({
+    reducer: {
+        auth: authReducer,
+        checkin: checkinReducer,
+        dashboard: dashboardReducer,
+        support: supportReducer,
+    },
+    middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware({
+            serializableCheck: {
+                ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
+            },
+        }),
+    devTools: process.env.NODE_ENV !== 'production',
+});
+
+// TypeScript types (remove if not using TypeScript)
+// export type RootState = ReturnType<typeof store.getState>;
+// export type AppDispatch = typeof store.dispatch;

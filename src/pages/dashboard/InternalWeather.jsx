@@ -1,16 +1,22 @@
 import React, { memo, useState } from "react";
-import { Cloud, Sun, CloudRain, Zap, Tornado, Snowflake, Eye, Users } from "lucide-react";
+import { Cloud, Sun, CloudRain, Zap, Tornado, Snowflake, Eye, Users, Rainbow, Flame, Wind } from "lucide-react";
 
 const InternalWeather = memo(({ weatherData, moodLists }) => {
+    // moodLists now contains user names directly from backend
+    const transformedMoodLists = moodLists || {};
     const [selectedWeather, setSelectedWeather] = useState(null);
 
     const weatherTypes = [
         { key: "sunny", label: "Sunny & Clear", icon: Sun, color: "gold", desc: "Upbeat, calm, full of clarity" },
-        { key: "cloudy", label: "Partly Cloudy", icon: Cloud, color: "muted", desc: "Doing alright, but there's something lingering in the background—mild stress or distraction" },
-        { key: "rain", label: "Light Rain", icon: CloudRain, color: "primary", desc: "Reflective or tired" },
-        { key: "storm", label: "Thunderstorms", icon: Zap, color: "primary", desc: "Intense feelings, anxiety" },
+        { key: "partly-cloudy", label: "Partly Cloudy", icon: Cloud, color: "muted", desc: "Doing alright, but there's something lingering in the background—mild stress or distraction" },
+        { key: "light-rain", label: "Light Rain", icon: CloudRain, color: "primary", desc: "Reflective or tired" },
+        { key: "thunderstorms", label: "Thunderstorms", icon: Zap, color: "primary", desc: "Intense feelings, anxiety" },
         { key: "tornado", label: "Chaotic", icon: Tornado, color: "primary", desc: "Hard to focus" },
-        { key: "snow", label: "Snowy & Still", icon: Snowflake, color: "emerald", desc: "Slow, introspective" }
+        { key: "snowy", label: "Snowy & Still", icon: Snowflake, color: "emerald", desc: "Slow, introspective" },
+        { key: "rainbow", label: "Rainbow", icon: Rainbow, color: "emerald", desc: "Just came through something difficult, but there's hope and beauty emerging now" },
+        { key: "foggy", label: "Foggy", icon: Cloud, color: "muted", desc: "Mentally fuzzy, unclear, maybe a bit lost" },
+        { key: "heatwave", label: "Heatwave", icon: Flame, color: "gold", desc: "Energetic but possibly burnt out or overstimulated" },
+        { key: "windy", label: "Windy", icon: Wind, color: "emerald", desc: "Restless, scattered, or in transition" }
     ];
 
     const maxCount = Math.max(...Object.values(weatherData));
@@ -19,19 +25,23 @@ const InternalWeather = memo(({ weatherData, moodLists }) => {
     const getWeatherStaff = (weatherKey) => {
         const moodMapping = {
             sunny: ['happy', 'excited', 'calm', 'hopeful'],
-            cloudy: ['tired', 'hungry', 'lonely', 'scattered'],
-            rain: ['sad', 'anxious'],
-            storm: ['fear', 'angry', 'overwhelmed'],
+            'partly-cloudy': ['tired', 'hungry', 'lonely', 'scattered'],
+            'light-rain': ['sad', 'anxious'],
+            thunderstorms: ['fear', 'angry', 'overwhelmed'],
             tornado: ['scattered', 'overwhelmed'],
-            snow: ['calm', 'hopeful']
+            snowy: ['calm', 'hopeful'],
+            rainbow: ['hopeful', 'calm'],
+            foggy: ['scattered', 'tired'],
+            heatwave: ['excited', 'happy'],
+            windy: ['scattered', 'anxious']
         };
 
         const relevantMoods = moodMapping[weatherKey] || [];
         const staffNames = [];
 
         relevantMoods.forEach(mood => {
-            if (moodLists[mood]) {
-                staffNames.push(...moodLists[mood]);
+            if (transformedMoodLists[mood]) {
+                staffNames.push(...transformedMoodLists[mood]);
             }
         });
 
@@ -100,10 +110,10 @@ const InternalWeather = memo(({ weatherData, moodLists }) => {
                                             <div className="flex items-start gap-2 mb-2">
                                                 <span className="text-lg">
                                                     <Icon className={`w-4 h-4 ${color === 'gold' ? 'text-gold' :
-                                                            color === 'muted' ? 'text-muted-foreground' :
-                                                                color === 'primary' ? 'text-primary' :
-                                                                    color === 'emerald' ? 'text-emerald' :
-                                                                        'text-foreground'
+                                                        color === 'muted' ? 'text-muted-foreground' :
+                                                            color === 'primary' ? 'text-primary' :
+                                                                color === 'emerald' ? 'text-emerald' :
+                                                                    'text-foreground'
                                                         }`} />
                                                 </span>
                                                 <p className="text-sm text-muted-foreground flex-1">

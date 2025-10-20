@@ -120,5 +120,6 @@ export const moodConfig = {
 export const periodOptions = [
     { id: "today", label: "Today" },
     { id: "week", label: "Week" },
-    { id: "month", label: "Month" }
+    { id: "month", label: "Month" },
+    { id: "semester", label: "Semester" }
 ];

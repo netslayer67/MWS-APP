@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, Sun, Cloud, CloudRain, Zap, Wind, Snowflake, Rainbow, Droplets, Flame } from "lucide-react";
 import { sanitizeInput } from "@/lib/ratingUtils";
@@ -19,6 +19,50 @@ const HeaderSection = memo(({ name, analysis }) => {
     };
 
     const WeatherIcon = iconMap[analysis.weatherValue] || Cloud;
+
+    // Use AI-generated personalized greeting if available, otherwise fallback to dynamic greeting
+    const dynamicGreeting = useMemo(() => {
+        // Check if we have an AI-generated personalized greeting
+        if (analysis.personalizedGreeting) {
+            return analysis.personalizedGreeting;
+        }
+
+        // Fallback to dynamic greeting based on emotional state
+        const greetings = {
+            positive: [
+                "Welcome back, sunshine! 🌞",
+                "Hello there, beautiful soul! ✨",
+                "Good to see you thriving! 🌟",
+                "Welcome, radiant one! 💫",
+                "Hello, wonderful you! 🌈"
+            ],
+            challenging: [
+                "Welcome, brave heart 💪",
+                "Hello there, you're doing great 🌱",
+                "Welcome back, strong one 🌟",
+                "Hello, resilient spirit ✨",
+                "Good to see you, warrior soul 🛡️"
+            ],
+            balanced: [
+                "Welcome, wise one 🧘",
+                "Hello there, mindful friend 🌸",
+                "Welcome back, centered soul ✨",
+                "Hello, peaceful presence 🌺",
+                "Good to see you, balanced being ⚖️"
+            ],
+            depleted: [
+                "Welcome, gentle heart 💙",
+                "Hello there, you're not alone 🌟",
+                "Welcome back, precious one ✨",
+                "Hello, worthy soul 🌸",
+                "Good to see you, loved one 💕"
+            ]
+        };
+
+        const emotionalState = analysis.emotionalState || 'balanced';
+        const availableGreetings = greetings[emotionalState] || greetings.balanced;
+        return availableGreetings[Math.floor(Math.random() * availableGreetings.length)];
+    }, [analysis.emotionalState, analysis.personalizedGreeting]);
 
     return (
         <motion.div
@@ -54,7 +98,7 @@ const HeaderSection = memo(({ name, analysis }) => {
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.3, duration: 0.6 }}
                 >
-                    Welcome, {sanitizeInput(name.split(' ')[0])}
+                    {dynamicGreeting}, {sanitizeInput(name)}
                 </motion.h1>
                 <motion.p
                     className="text-sm md:text-base text-muted-foreground max-w-md mx-auto leading-relaxed px-4"
@@ -62,7 +106,7 @@ const HeaderSection = memo(({ name, analysis }) => {
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.4, duration: 0.6 }}
                 >
-                    Your wellness analysis is complete. Here's what we discovered.
+                    Your wellness analysis is complete. Here's what we discovered about your emotional landscape.
                 </motion.p>
             </div>
         </motion.div>

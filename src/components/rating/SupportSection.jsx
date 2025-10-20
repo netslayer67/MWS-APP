@@ -3,8 +3,9 @@ import { motion } from "framer-motion";
 import { MessageSquare } from "lucide-react";
 import { sanitizeInput } from "@/lib/ratingUtils";
 
-const SupportSection = memo(({ supportPerson, needsSupport }) => {
-    if (!supportPerson || supportPerson === "No Need") return null;
+const SupportSection = memo(({ supportPerson, needsSupport, motivationalMessage }) => {
+    // Always show the component, even if no support person is selected
+    // if (!supportPerson || supportPerson === "No Need") return null;
 
     return (
         <motion.div
@@ -30,9 +31,12 @@ const SupportSection = memo(({ supportPerson, needsSupport }) => {
                             {needsSupport ? 'Priority Support Requested' : 'Support Connection'}
                         </h3>
                         <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
-                            {needsSupport
-                                ? `We've notified ${sanitizeInput(supportPerson)} about your check-in. They'll reach out to you today to provide support.`
-                                : `${sanitizeInput(supportPerson)} will check in with you as requested. Feel free to reach out directly as well.`
+                            {supportPerson && supportPerson !== "No Need"
+                                ? (needsSupport
+                                    ? `We've notified ${sanitizeInput(supportPerson)} about your check-in. They'll reach out to you today to provide support.`
+                                    : `${sanitizeInput(supportPerson)} will check in with you as requested. Feel free to reach out directly as well.`
+                                )
+                                : "Remember that support is always available when you need it. Your well-being is important to us."
                             }
                         </p>
                     </div>

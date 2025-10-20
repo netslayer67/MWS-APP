@@ -1,10 +1,11 @@
 import React, { useState, memo } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import AnimatedPage from "@/components/AnimatedPage";
 import { Helmet } from "react-helmet";
-import { Smile, Frown, Meh, Heart, Save, Send } from "lucide-react";
+import { Smile, Frown, Meh, Heart, Save, Send, Camera, Brain } from "lucide-react";
 
 /* --- Mood options --- */
 const moodOptions = [
@@ -44,6 +45,7 @@ const EmotionalCheckinPage = memo(function EmotionalCheckinPage() {
     const [selectedMood, setSelectedMood] = useState(null);
     const [reflection, setReflection] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const navigate = useNavigate();
 
     const handleSubmit = async () => {
         if (!selectedMood) return;
@@ -139,25 +141,48 @@ const EmotionalCheckinPage = memo(function EmotionalCheckinPage() {
                             </div>
                         </motion.div>
 
-                        {/* Submit */}
+                        {/* Check-in Options */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.3, delay: 0.3 }}
-                            className="flex gap-3"
+                            className="space-y-4"
                         >
+                            {/* Manual Check-in */}
                             <Button
                                 onClick={handleSubmit}
                                 disabled={!selectedMood || isSubmitting}
-                                className="flex-1 bg-gradient-to-r from-primary to-accent text-primary-foreground hover-card transition-all duration-300"
+                                className="w-full bg-gradient-to-r from-primary to-accent text-primary-foreground hover-card transition-all duration-300"
                             >
                                 {isSubmitting ? (
                                     <Save className="w-4 h-4 mr-2 animate-spin" />
                                 ) : (
                                     <Send className="w-4 h-4 mr-2" />
                                 )}
-                                {isSubmitting ? "Saving..." : "Submit Check-in"}
+                                {isSubmitting ? "Saving..." : "Manual Check-in"}
                             </Button>
+
+                            {/* Divider */}
+                            <div className="flex items-center gap-4">
+                                <div className="flex-1 h-px bg-border" />
+                                <span className="text-xs text-muted-foreground font-medium">OR</span>
+                                <div className="flex-1 h-px bg-border" />
+                            </div>
+
+                            {/* AI Emotional Analysis */}
+                            <Button
+                                onClick={() => navigate('/emotional-checkin/face-scan')}
+                                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90 transition-all duration-300"
+                                variant="outline"
+                            >
+                                <Brain className="w-4 h-4 mr-2" />
+                                <Camera className="w-4 h-4 mr-2" />
+                                AI Emotional Analysis
+                            </Button>
+
+                            <p className="text-xs text-muted-foreground text-center">
+                                Advanced AI facial analysis for accurate emotional insights
+                            </p>
                         </motion.div>
                     </div>
                 </div>

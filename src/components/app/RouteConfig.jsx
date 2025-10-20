@@ -4,6 +4,7 @@ import { Routes, Route } from "react-router-dom";
 import PageLoader from "@/components/PageLoader";
 import AppLayout from "@/components/Layout/AppLayout";
 import PageTransition from "./PageTransition";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 // Lazy pages (kept as you had them)
 const LandingPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/LandingPage'));
@@ -26,11 +27,12 @@ MemoizedPageTransition.displayName = 'MemoizedPageTransition';
 const publicRoutes = [
     <Route key="landing" path="/" element={<MemoizedPageTransition><LandingPage /></MemoizedPageTransition>} />,
     <Route key="face-scan" path="/emotional-checkin/face-scan" element={<MemoizedPageTransition><EmotionalCheckinFaceScanPage /></MemoizedPageTransition>} />,
-    <Route key="select-role" path="/select-role" element={<MemoizedPageTransition><RoleSelectionPage /></MemoizedPageTransition>} />,
+    <Route key="select-role" path="/select-role" element={<ProtectedRoute><MemoizedPageTransition><RoleSelectionPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="emotional-checkin" path="/emotional-checkin" element={<MemoizedPageTransition><EmotionalCheckinPage /></MemoizedPageTransition>} />,
-    <Route key="emotional-checkin-staff" path="/emotional-checkin/staff" element={<MemoizedPageTransition><EmotionalCheckinStaffPage /></MemoizedPageTransition>} />,
-    <Route key="rate" path="/emotional-checkin/rate" element={<MemoizedPageTransition><RatingPage /></MemoizedPageTransition>} />,
-    <Route key="emotional-checkin-dashboard" path="/emotional-checkin/dashboard" element={<MemoizedPageTransition><EmotionalCheckinDashboard /></MemoizedPageTransition>} />,
+    <Route key="emotional-checkin-staff" path="/emotional-checkin/staff" element={<ProtectedRoute><MemoizedPageTransition><EmotionalCheckinStaffPage /></MemoizedPageTransition></ProtectedRoute>} />,
+    <Route key="rate" path="/emotional-checkin/rate" element={<ProtectedRoute><MemoizedPageTransition><RatingPage /></MemoizedPageTransition></ProtectedRoute>} />,
+    <Route key="rate-with-id" path="/emotional-checkin/rate/:checkinId" element={<ProtectedRoute><MemoizedPageTransition><RatingPage /></MemoizedPageTransition></ProtectedRoute>} />,
+    <Route key="emotional-checkin-dashboard" path="/emotional-checkin/dashboard" element={<ProtectedRoute requireDirectorateAcademic={true}><MemoizedPageTransition><EmotionalCheckinDashboard /></MemoizedPageTransition></ProtectedRoute>} />,
 ];
 
 
