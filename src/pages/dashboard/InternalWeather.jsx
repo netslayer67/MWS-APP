@@ -6,7 +6,8 @@ const InternalWeather = memo(({ weatherData, moodLists }) => {
     const transformedMoodLists = moodLists || {};
     const [selectedWeather, setSelectedWeather] = useState(null);
 
-    const weatherTypes = [
+    // Dynamic weather types that can be extended with AI-generated ones
+    const baseWeatherTypes = [
         { key: "sunny", label: "Sunny & Clear", icon: Sun, color: "gold", desc: "Upbeat, calm, full of clarity" },
         { key: "partly-cloudy", label: "Partly Cloudy", icon: Cloud, color: "muted", desc: "Doing alright, but there's something lingering in the background—mild stress or distraction" },
         { key: "light-rain", label: "Light Rain", icon: CloudRain, color: "primary", desc: "Reflective or tired" },
@@ -18,6 +19,24 @@ const InternalWeather = memo(({ weatherData, moodLists }) => {
         { key: "heatwave", label: "Heatwave", icon: Flame, color: "gold", desc: "Energetic but possibly burnt out or overstimulated" },
         { key: "windy", label: "Windy", icon: Wind, color: "emerald", desc: "Restless, scattered, or in transition" }
     ];
+
+    // Add AI-generated weather types if they exist in the data
+    const aiWeatherTypes = [];
+    Object.keys(weatherData).forEach(weatherKey => {
+        if (!baseWeatherTypes.find(w => w.key === weatherKey)) {
+            // This is an AI-generated weather type
+            aiWeatherTypes.push({
+                key: weatherKey,
+                label: weatherKey.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                icon: Cloud, // Default icon for AI-generated types
+                color: "primary",
+                desc: `AI-detected emotional weather pattern: ${weatherKey}`,
+                isAIGenerated: true
+            });
+        }
+    });
+
+    const weatherTypes = [...baseWeatherTypes, ...aiWeatherTypes];
 
     const maxCount = Math.max(...Object.values(weatherData));
 
@@ -66,7 +85,8 @@ const InternalWeather = memo(({ weatherData, moodLists }) => {
                 </p>
 
                 <div className="space-y-3">
-                    {weatherTypes.map(({ key, label, icon: Icon, color, desc }) => {
+                    {weatherTypes.map((weather) => {
+                        const { key, label, icon: Icon, color, desc } = weather;
                         const count = weatherData[key] || 0;
                         const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
                         const isSelected = selectedWeather === key;
@@ -118,6 +138,11 @@ const InternalWeather = memo(({ weatherData, moodLists }) => {
                                                 </span>
                                                 <p className="text-sm text-muted-foreground flex-1">
                                                     {label} – {desc}
+                                                    {weather.isAIGenerated && (
+                                                        <span className="ml-2 px-1.5 py-0.5 bg-primary/20 text-primary text-xs rounded">
+                                                            AI-Generated
+                                                        </span>
+                                                    )}
                                                 </p>
                                             </div>
                                             <div className="flex items-center gap-2 text-xs text-muted-foreground">

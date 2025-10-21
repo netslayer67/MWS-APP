@@ -66,6 +66,17 @@ const authSlice = createSlice({
             state.token = action.payload.token;
             state.isAuthenticated = true;
         },
+        loginSuccess: (state, action) => {
+            state.user = action.payload.user;
+            state.token = action.payload.token;
+            state.isAuthenticated = true;
+            state.loading = false;
+            state.error = null;
+            // Store in localStorage
+            localStorage.setItem('auth_token', action.payload.token);
+            localStorage.setItem('auth_user', JSON.stringify(action.payload.user));
+            console.log('OAuth login success - Token saved to localStorage:', action.payload.token);
+        },
         clearAuth: (state) => {
             state.user = null;
             state.token = null;
@@ -138,5 +149,5 @@ const authSlice = createSlice({
     },
 });
 
-export const { clearError, setUser, clearAuth } = authSlice.actions;
+export const { clearError, setUser, clearAuth, loginSuccess } = authSlice.actions;
 export default authSlice.reducer;

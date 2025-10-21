@@ -13,7 +13,6 @@ const PrimaryNavButtons = lazy(() =>
 const DashboardHeader = lazy(() =>
     import(/* webpackChunkName: "dashboard-header" */ "./dashboard/DashboardHeader")
 );
-
 // New optimized component imports
 const StatsGrid = lazy(() =>
     import(/* webpackChunkName: "stats-grid" */ "./dashboard/components/StatsGrid")
@@ -51,8 +50,7 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
         const hasDashboardAccess = user && (
             user.role === 'directorate' ||
             user.role === 'superadmin' ||
-            user.role === 'admin' ||
-            (user.role === 'directorate' && user.department === 'Academic')
+            user.role === 'admin'
         );
 
         if (hasDashboardAccess) {
@@ -177,14 +175,16 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
                 </div>
 
                 <Suspense fallback={<LoadingFallback />}>
-                    {/* Primary Navigation Buttons */}
+                    {/* Primary Navigation Buttons
                     <PrimaryNavButtons
                         onMTSSClick={handleMTSSClick}
                         onDailyCheckinClick={handleDailyCheckinClick}
-                    />
+                    /> */}
                 </Suspense>
 
-                {/* Optimized Stats Grid */}
+
+
+                Optimized Stats Grid
                 <Suspense fallback={<LoadingFallback />}>
                     <StatsGrid
                         mockData={mockData}

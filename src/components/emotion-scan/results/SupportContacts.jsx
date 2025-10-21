@@ -8,20 +8,23 @@ const SupportContacts = memo(({ contacts, lowPresence }) => (
             <User className="w-3 h-3" />
             Support Contacts
         </h4>
-        <div className="grid grid-cols-2 gap-1.5">
-            {contacts.map((person, i) => (
-                <motion.button
+        <div className="grid grid-cols-1 gap-1.5">
+            {contacts.map((contact, i) => (
+                <motion.div
                     key={i}
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: i * 0.03 }}
-                    className={`px-2 py-1.5 rounded text-xs font-medium transition-all duration-300 ${i === 0
+                    className={`px-3 py-2 rounded text-xs font-medium transition-all duration-300 ${i === 0
                         ? 'bg-primary text-primary-foreground shadow-sm'
                         : 'bg-surface border border-border hover:border-primary/40 text-foreground'
                         }`}
                 >
-                    {person}
-                </motion.button>
+                    <div className="font-semibold">{contact.name}</div>
+                    <div className="text-[10px] opacity-75">
+                        {contact.role} {contact.jobLevel && contact.jobLevel !== 'N/A' ? `(${contact.jobLevel})` : ''} {contact.department && contact.department !== 'N/A' ? `- ${contact.department}` : ''}
+                    </div>
+                </motion.div>
             ))}
         </div>
         <p className="text-[10px] text-muted-foreground mt-2">

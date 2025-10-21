@@ -188,8 +188,8 @@ const RoleSelection = memo(() => {
                             onClick={() => selectMethod('ai')}
                         />
 
-                        {/* Dashboard Access for Directorate Academic */}
-                        {user && user.role === 'directorate' && user.department === 'Academic' && (
+                        {/* Dashboard Access for Directorate */}
+                        {user && user.role === 'directorate' && (
                             <MethodCard
                                 icon={BarChart3}
                                 title="Go to Dashboard"
@@ -202,6 +202,23 @@ const RoleSelection = memo(() => {
                                 ]}
                                 isPremium={false}
                                 onClick={() => selectMethod('dashboard')}
+                            />
+                        )}
+
+                        {/* User Management Access for Directorate and Admin */}
+                        {(user && (user.role === 'directorate' || user.role === 'admin' || user.role === 'superadmin')) && (
+                            <MethodCard
+                                icon={BarChart3}
+                                title="User Management"
+                                desc="Manage users, roles, and organizational structure"
+                                features={[
+                                    "User account management",
+                                    "Role and permission settings",
+                                    "Organizational hierarchy",
+                                    "Advanced user analytics"
+                                ]}
+                                isPremium={false}
+                                onClick={() => navigate('/user-management')}
                             />
                         )}
                     </div>

@@ -10,7 +10,7 @@ const RecentActivitySection = memo(({ activities = [] }) => {
 
     const handleUserClick = (activity) => {
         setSelectedUser({
-            id: activity.id,
+            id: activity.userId, // Use userId instead of id
             name: activity.userName,
             role: activity.role,
             department: activity.department

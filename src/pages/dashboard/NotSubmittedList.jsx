@@ -30,16 +30,18 @@ const NotSubmittedList = memo(({ notSubmitted }) => {
                 </button>
 
                 {isExpanded && (
-                    <div className="">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                            {notSubmitted.map((name, index) => (
-                                <div
-                                    key={index}
-                                    className="text-sm text-muted-foreground bg-card/20 px-3 py-2 rounded-lg border border-border/20"
-                                >
-                                    {name}
-                                </div>
-                            ))}
+                    <div className="pb-4">
+                        <div className="border-t border-border/30 pt-3">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                                {notSubmitted.map((name, index) => (
+                                    <div
+                                        key={index}
+                                        className="text-sm text-muted-foreground bg-card/20 px-3 py-2 rounded-lg border border-border/20"
+                                    >
+                                        {name}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 )}

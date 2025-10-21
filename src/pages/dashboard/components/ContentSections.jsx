@@ -116,6 +116,13 @@ const ContentSections = memo(({ mockData, realData, loading, selectedPeriod }) =
             </Suspense>
 
             <Suspense fallback={<ContentFallback />}>
+                {/* Not Submitted Users */}
+                <div className="mb-4 md:mb-6">
+                    <NotSubmittedList notSubmitted={data?.notSubmittedUsers || []} />
+                </div>
+            </Suspense>
+
+            <Suspense fallback={<ContentFallback />}>
                 {/* Check-in Requests */}
                 <div className="mb-4 md:mb-6">
                     <CheckInRequests requests={data?.checkinRequests || []} />

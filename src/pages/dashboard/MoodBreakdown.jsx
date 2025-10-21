@@ -8,7 +8,8 @@ const MoodBreakdown = memo(({ moodLists, moodDistribution }) => {
     const transformedMoodLists = moodLists || {};
     const [expandedMood, setExpandedMood] = useState(null);
 
-    const moodCategories = [
+    // Base mood categories
+    const baseMoodCategories = [
         { key: "happy", label: "Happy", color: "gold", icon: "😊" },
         { key: "excited", label: "Excited", color: "gold", icon: "⚡" },
         { key: "calm", label: "Calm", color: "emerald", icon: "🧘" },
@@ -24,6 +25,23 @@ const MoodBreakdown = memo(({ moodLists, moodDistribution }) => {
         { key: "bored", label: "Bored", color: "muted", icon: "😑" },
         { key: "scattered", label: "Scattered", color: "muted", icon: "💭" }
     ];
+
+    // Add AI-generated moods if they exist in the data
+    const aiMoodCategories = [];
+    Object.keys(moodDistribution).forEach(moodKey => {
+        if (!baseMoodCategories.find(m => m.key === moodKey)) {
+            // This is an AI-generated mood
+            aiMoodCategories.push({
+                key: moodKey,
+                label: moodKey.charAt(0).toUpperCase() + moodKey.slice(1),
+                color: "primary",
+                icon: "🤖",
+                isAIGenerated: true
+            });
+        }
+    });
+
+    const moodCategories = [...baseMoodCategories, ...aiMoodCategories];
 
     const toggleMood = (moodKey) => {
         setExpandedMood(expandedMood === moodKey ? null : moodKey);
@@ -43,7 +61,8 @@ const MoodBreakdown = memo(({ moodLists, moodDistribution }) => {
                 </div>
 
                 <div className="space-y-2">
-                    {moodCategories.map(({ key, label, color, icon }) => {
+                    {moodCategories.map((mood) => {
+                        const { key, label, color, icon } = mood;
                         const count = moodDistribution[key] || 0;
                         const names = transformedMoodLists[key] || [];
                         const isExpanded = expandedMood === key;
@@ -67,7 +86,14 @@ const MoodBreakdown = memo(({ moodLists, moodDistribution }) => {
                                             <div className="flex items-center gap-3">
                                                 <span className="text-lg">{icon}</span>
                                                 <div>
-                                                    <span className={`font-medium ${hasData ? 'text-foreground' : 'text-muted-foreground'}`}>{label}</span>
+                                                    <span className={`font-medium ${hasData ? 'text-foreground' : 'text-muted-foreground'}`}>
+                                                        {label}
+                                                        {mood.isAIGenerated && (
+                                                            <span className="ml-2 px-1.5 py-0.5 bg-primary/20 text-primary text-xs rounded">
+                                                                AI
+                                                            </span>
+                                                        )}
+                                                    </span>
                                                     <span className="ml-2 text-sm text-muted-foreground">
                                                         {count} {count === 1 ? 'person' : 'people'}
                                                     </span>

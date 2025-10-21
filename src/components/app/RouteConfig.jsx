@@ -1,6 +1,7 @@
 // RouteConfig.jsx
 import React, { Suspense, lazy, memo } from "react";
 import { Routes, Route } from "react-router-dom";
+import { useSelector } from "react-redux";
 import PageLoader from "@/components/PageLoader";
 import AppLayout from "@/components/Layout/AppLayout";
 import PageTransition from "./PageTransition";
@@ -8,6 +9,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 // Lazy pages (kept as you had them)
 const LandingPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/LandingPage'));
+const AuthCallback = lazy(() => import(/* webpackPrefetch: true */ '@/pages/AuthCallback'));
 const EmotionalCheckinFaceScanPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/VerificationPage'));
 const RoleSelectionPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/RoleSelectionPage'));
 const RoomChat = lazy(() => import(/* webpackPrefetch: true */ '@/pages/RoomChat'));
@@ -15,6 +17,7 @@ const RatingPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/Rating
 const EmotionalCheckinPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/EmotionalCheckinPage'));
 const EmotionalCheckinStaffPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/EmotionalCheckinStaffPage'));
 const EmotionalCheckinDashboard = lazy(() => import(/* webpackPrefetch: true */ '@/pages/EmotionalCheckinDashboard'));
+const UserManagementDashboard = lazy(() => import(/* webpackPrefetch: true */ '@/pages/UserManagementDashboard'));
 const NotFound = lazy(() => import(/* webpackPrefetch: true */ '@/pages/NotFound'));
 
 // Keep PageTransition memoized for perf if you want
@@ -23,9 +26,39 @@ const MemoizedPageTransition = memo(({ children }) => (
 ));
 MemoizedPageTransition.displayName = 'MemoizedPageTransition';
 
+// Protected route for admin access
+const AdminProtectedRoute = memo(({ children }) => {
+    const { user } = useSelector((state) => state.auth);
+
+    const hasAdminAccess = user && (
+        user.role === 'directorate' ||
+        user.role === 'superadmin' ||
+        user.role === 'admin'
+    );
+
+    if (!hasAdminAccess) {
+        return (
+            <MemoizedPageTransition>
+                <div className="min-h-screen flex items-center justify-center">
+                    <div className="glass glass-card p-8 text-center">
+                        <h2 className="text-2xl font-bold text-destructive mb-4">Access Denied</h2>
+                        <p className="text-muted-foreground">
+                            You don't have permission to access this page.
+                        </p>
+                    </div>
+                </div>
+            </MemoizedPageTransition>
+        );
+    }
+
+    return <MemoizedPageTransition>{children}</MemoizedPageTransition>;
+});
+AdminProtectedRoute.displayName = 'AdminProtectedRoute';
+
 // ---- Route groups as plain arrays (NOT memoized components) ----
 const publicRoutes = [
     <Route key="landing" path="/" element={<MemoizedPageTransition><LandingPage /></MemoizedPageTransition>} />,
+    <Route key="auth-callback" path="/auth/callback" element={<MemoizedPageTransition><AuthCallback /></MemoizedPageTransition>} />,
     <Route key="face-scan" path="/emotional-checkin/face-scan" element={<MemoizedPageTransition><EmotionalCheckinFaceScanPage /></MemoizedPageTransition>} />,
     <Route key="select-role" path="/select-role" element={<ProtectedRoute><MemoizedPageTransition><RoleSelectionPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="emotional-checkin" path="/emotional-checkin" element={<MemoizedPageTransition><EmotionalCheckinPage /></MemoizedPageTransition>} />,
@@ -33,6 +66,7 @@ const publicRoutes = [
     <Route key="rate" path="/emotional-checkin/rate" element={<ProtectedRoute><MemoizedPageTransition><RatingPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="rate-with-id" path="/emotional-checkin/rate/:checkinId" element={<ProtectedRoute><MemoizedPageTransition><RatingPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="emotional-checkin-dashboard" path="/emotional-checkin/dashboard" element={<ProtectedRoute requireDirectorateAcademic={true}><MemoizedPageTransition><EmotionalCheckinDashboard /></MemoizedPageTransition></ProtectedRoute>} />,
+    <Route key="user-management" path="/user-management" element={<AdminProtectedRoute><UserManagementDashboard /></AdminProtectedRoute>} />,
 ];
 
 

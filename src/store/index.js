@@ -3,6 +3,7 @@ import authReducer from './slices/authSlice';
 import checkinReducer from './slices/checkinSlice';
 import dashboardReducer from './slices/dashboardSlice';
 import supportReducer from './slices/supportSlice';
+import userReducer from './slices/userSlice';
 
 export const store = configureStore({
     reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
         checkin: checkinReducer,
         dashboard: dashboardReducer,
         support: supportReducer,
+        users: userReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({

@@ -60,7 +60,7 @@ const EmotionalCheckinStaffPage = memo(function EmotionalCheckinStaffPage() {
 
         // Find the selected support contact details
         const selectedContact = supportContacts.find(c => c.name === supportContact);
-        const supportContactUserId = selectedContact && selectedContact.id !== "no-need" && selectedContact.id !== "no_need" ? selectedContact.id : null;
+        const supportContactUserId = selectedContact && selectedContact.id !== "no-need" ? selectedContact.id : null;
 
         const checkinData = {
             weatherType: selectedWeather,

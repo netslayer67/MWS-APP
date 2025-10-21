@@ -693,7 +693,7 @@ const EmotionalCheckinFaceScanPage = memo(() => {
             console.log('💾 Auto-saving AI emotion check-in to database...');
 
             // Check authentication first
-            const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+            const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
             console.log('🔑 Token check:', token ? 'Found' : 'Not found');
             console.log('🔍 Available tokens:', {
                 token: localStorage.getItem('token'),
@@ -782,25 +782,13 @@ const EmotionalCheckinFaceScanPage = memo(() => {
             console.log('🔍 Support contacts in Redux:', supportContacts);
             console.log('🔍 Selected support contact state:', selectedSupportContact);
 
-            // Auto-save to database
-            const response = await fetch('http://localhost:3003/api/checkin/submit', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(checkInData)
-            });
+            // Auto-save to database using the auth service API instance
+            const authService = (await import('../services/authService')).default;
+            const response = await authService.post('/checkin/submit', checkInData);
 
-            console.log('📥 Response status:', response.status);
+            console.log('📥 Response received:', response);
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('❌ Save failed with response:', errorText);
-                throw new Error(`Failed to save check-in: ${response.status}`);
-            }
-
-            const result = await response.json();
+            const result = response.data;
             console.log('📥 Full API response:', JSON.stringify(result, null, 2));
             const checkinId = result.checkin?.id || result.checkin?._id || result.data?.checkin?.id || result.data?.checkin?._id;
             console.log('🔍 Extracted checkinId:', checkinId, 'Type:', typeof checkinId);
@@ -817,9 +805,10 @@ const EmotionalCheckinFaceScanPage = memo(() => {
 
         } catch (error) {
             console.error('❌ Failed to auto-save check-in:', error);
+            const errorMessage = error.response?.data?.message || error.message || "Unable to save your check-in. Please try again.";
             toast({
                 title: "Save Failed",
-                description: "Unable to save your check-in. Please try again.",
+                description: errorMessage,
                 variant: "destructive"
             });
         }

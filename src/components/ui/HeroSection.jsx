@@ -20,9 +20,10 @@ const HeroSection = memo(() => {
     const [showPassword, setShowPassword] = useState(false);
 
     const handleGoogleSignIn = useCallback(() => {
-        // Simulate Google OAuth flow
         console.log("Initiating Google Sign-in...");
-        // In production: window.location.href = '/api/auth/google';
+        // Redirect to backend Google OAuth
+        const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3003';
+        window.location.href = `${backendUrl}/auth/google`;
     }, []);
 
     const handleEmailLogin = useCallback(async (e) => {

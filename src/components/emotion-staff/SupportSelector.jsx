@@ -32,7 +32,10 @@ const CustomSelect = memo(({ supportContact, onSupportChange, hasSelection, supp
             </option>
             {supportContacts.map((contact) => (
                 <option key={contact.id} value={contact.name}>
-                    {contact.name} — {contact.role}
+                    {contact.isClassTeacher
+                        ? `${contact.name} — Class Teacher ${contact.classInfo ? `(${contact.classInfo})` : ''}`
+                        : `${contact.name} — ${contact.displayRole || contact.role} ${contact.jobLevel && contact.jobLevel !== 'N/A' ? `(${contact.jobLevel})` : ''} ${contact.department && contact.department !== 'N/A' ? `- ${contact.department}` : ''}`
+                    }
                 </option>
             ))}
             <option value="No Need">No Need</option>
@@ -142,7 +145,15 @@ const SupportSelector = memo(({ supportContact, onSupportChange }) => {
     }, [contacts]);
 
     const selectedPerson = useMemo(
-        () => supportContacts.find(c => c.name === supportContact),
+        () => supportContacts.find(c => c.name === supportContact) || {
+            name: supportContact,
+            role: 'Support Contact',
+            department: 'N/A',
+            jobLevel: 'N/A',
+            unit: 'N/A',
+            jobPosition: 'N/A',
+            avatar: supportContact.charAt(0).toUpperCase()
+        },
         [supportContact, supportContacts]
     );
 
