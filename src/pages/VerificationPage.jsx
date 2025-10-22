@@ -147,7 +147,7 @@ const EmotionalCheckinFaceScanPage = memo(() => {
 
             // Send to backend for emotion analysis (only the image)
 
-            const apiResponse = await fetch('http://localhost:3003/api/checkin/emotion/analyze', {
+            const apiResponse = await fetch(`${import.meta.env.VITE_API_BASE}/checkin/emotion/analyze`, {
                 method: 'POST',
                 body: formData
             });
