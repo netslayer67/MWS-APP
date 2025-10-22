@@ -745,11 +745,11 @@ const EmotionalCheckinFaceScanPage = memo(() => {
             const checkInData = {
                 weatherType: analysis?.internalWeather?.toLowerCase().replace(/\s+/g, '-') || 'partly-cloudy', // Use AI-detected weather
                 selectedMoods: analysis?.selfreportedEmotions || [], // Include AI-detected emotions as moods
-                details: analysis?.psychologicalInsight || '',
+                details: analysis?.userReflection || analysis?.psychologicalInsight || '', // Use user reflection as details, fallback to AI insight
                 presenceLevel: analysis?.presenceCapacity?.estimatedPresence || 7,
                 capacityLevel: analysis?.presenceCapacity?.estimatedCapacity || 7,
                 supportContactUserId,
-                userReflection: '', // Will be filled on rating page
+                userReflection: analysis?.userReflection || '', // Include user reflection for enhanced AI analysis
                 aiEmotionScan: {
                     valence: analysis?.valence || 0,
                     arousal: analysis?.arousal || 0,

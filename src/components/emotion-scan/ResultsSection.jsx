@@ -60,7 +60,8 @@ const ResultsSection = memo(({ analysis, onReset, onComplete, onSupportChange })
             <WeatherReport analysis={analysis} />
             <EmotionsDetected emotions={analysis.selfreportedEmotions} />
             <UserReflectionInput onReflectionChange={(reflection) => {
-                // Could store reflection for future use or send to backend
+                // Store reflection in analysis for backend submission
+                analysis.userReflection = reflection;
                 console.log('User reflection:', reflection);
             }} />
             <MicroExpressions expressions={analysis.microExpressions} />
