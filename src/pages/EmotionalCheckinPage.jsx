@@ -1,11 +1,13 @@
-import React, { useState, memo } from "react";
+import React, { useState, memo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import AnimatedPage from "@/components/AnimatedPage";
 import { Helmet } from "react-helmet";
-import { Smile, Frown, Meh, Heart, Save, Send, Camera, Brain } from "lucide-react";
+import { Smile, Frown, Meh, Heart, Save, Send, Camera, Brain, CheckCircle, XCircle } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import checkinService from "@/services/checkinService";
 
 /* --- Mood options --- */
 const moodOptions = [
@@ -45,19 +47,72 @@ const EmotionalCheckinPage = memo(function EmotionalCheckinPage() {
     const [selectedMood, setSelectedMood] = useState(null);
     const [reflection, setReflection] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [checkinStatus, setCheckinStatus] = useState(null);
+    const [isLoadingStatus, setIsLoadingStatus] = useState(true);
     const navigate = useNavigate();
+    const { toast } = useToast();
+
+    // Load check-in status on component mount
+    useEffect(() => {
+        const loadCheckinStatus = async () => {
+            try {
+                const response = await checkinService.getTodayCheckinStatus();
+                setCheckinStatus(response.data.status);
+            } catch (error) {
+                console.error('Failed to load check-in status:', error);
+                toast({
+                    title: "Error",
+                    description: "Failed to load check-in status. Please refresh the page.",
+                    variant: "destructive"
+                });
+            } finally {
+                setIsLoadingStatus(false);
+            }
+        };
+
+        loadCheckinStatus();
+    }, [toast]);
 
     const handleSubmit = async () => {
         if (!selectedMood) return;
 
         setIsSubmitting(true);
-        // Simulate API call
-        setTimeout(() => {
-            alert("Check-in saved successfully!");
+        try {
+            // Submit manual check-in
+            const checkinData = {
+                weatherType: 'sunny', // Default weather for manual check-in
+                selectedMoods: [selectedMood],
+                details: reflection,
+                presenceLevel: 7, // Default values for manual check-in
+                capacityLevel: 7,
+                supportContactUserId: 'no_need'
+            };
+
+            await checkinService.submitCheckin(checkinData);
+
+            toast({
+                title: "Check-in Successful",
+                description: "Your manual check-in has been saved successfully!",
+            });
+
+            // Reload status to update UI
+            const response = await checkinService.getTodayCheckinStatus();
+            setCheckinStatus(response.data.status);
+
+            // Reset form
             setSelectedMood(null);
             setReflection("");
+
+        } catch (error) {
+            console.error('Check-in submission failed:', error);
+            toast({
+                title: "Check-in Failed",
+                description: error.response?.data?.message || "Failed to save your check-in. Please try again.",
+                variant: "destructive"
+            });
+        } finally {
             setIsSubmitting(false);
-        }, 1000);
+        }
     };
 
     return (
@@ -141,6 +196,36 @@ const EmotionalCheckinPage = memo(function EmotionalCheckinPage() {
                             </div>
                         </motion.div>
 
+                        {/* Check-in Status Indicators */}
+                        {checkinStatus && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3, delay: 0.25 }}
+                                className="glass-strong rounded-2xl p-4 mb-6"
+                            >
+                                <h3 className="text-sm font-semibold text-foreground mb-3">Today's Check-in Status</h3>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className={`flex items-center gap-2 p-3 rounded-lg ${checkinStatus.hasManualCheckin ? 'bg-green-500/10 border border-green-500/30' : 'bg-muted/50 border border-border/40'}`}>
+                                        {checkinStatus.hasManualCheckin ? (
+                                            <CheckCircle className="w-4 h-4 text-green-500" />
+                                        ) : (
+                                            <XCircle className="w-4 h-4 text-muted-foreground" />
+                                        )}
+                                        <span className="text-xs font-medium text-foreground">Manual Check-in</span>
+                                    </div>
+                                    <div className={`flex items-center gap-2 p-3 rounded-lg ${checkinStatus.hasAICheckin ? 'bg-green-500/10 border border-green-500/30' : 'bg-muted/50 border border-border/40'}`}>
+                                        {checkinStatus.hasAICheckin ? (
+                                            <CheckCircle className="w-4 h-4 text-green-500" />
+                                        ) : (
+                                            <XCircle className="w-4 h-4 text-muted-foreground" />
+                                        )}
+                                        <span className="text-xs font-medium text-foreground">AI Analysis</span>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+
                         {/* Check-in Options */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
@@ -149,18 +234,25 @@ const EmotionalCheckinPage = memo(function EmotionalCheckinPage() {
                             className="space-y-4"
                         >
                             {/* Manual Check-in */}
-                            <Button
-                                onClick={handleSubmit}
-                                disabled={!selectedMood || isSubmitting}
-                                className="w-full bg-gradient-to-r from-primary to-accent text-primary-foreground hover-card transition-all duration-300"
-                            >
-                                {isSubmitting ? (
-                                    <Save className="w-4 h-4 mr-2 animate-spin" />
-                                ) : (
-                                    <Send className="w-4 h-4 mr-2" />
+                            <div className="space-y-2">
+                                <Button
+                                    onClick={handleSubmit}
+                                    disabled={!selectedMood || isSubmitting || (checkinStatus && checkinStatus.hasManualCheckin)}
+                                    className="w-full bg-gradient-to-r from-primary to-accent text-primary-foreground hover-card transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isSubmitting ? (
+                                        <Save className="w-4 h-4 mr-2 animate-spin" />
+                                    ) : (
+                                        <Send className="w-4 h-4 mr-2" />
+                                    )}
+                                    {isSubmitting ? "Saving..." : checkinStatus?.hasManualCheckin ? "Manual Check-in Completed" : "Manual Check-in"}
+                                </Button>
+                                {checkinStatus?.hasManualCheckin && (
+                                    <p className="text-xs text-green-600 text-center font-medium">
+                                        ✅ You have already completed manual check-in today
+                                    </p>
                                 )}
-                                {isSubmitting ? "Saving..." : "Manual Check-in"}
-                            </Button>
+                            </div>
 
                             {/* Divider */}
                             <div className="flex items-center gap-4">
@@ -170,19 +262,28 @@ const EmotionalCheckinPage = memo(function EmotionalCheckinPage() {
                             </div>
 
                             {/* AI Emotional Analysis */}
-                            <Button
-                                onClick={() => navigate('/emotional-checkin/face-scan')}
-                                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90 transition-all duration-300"
-                                variant="outline"
-                            >
-                                <Brain className="w-4 h-4 mr-2" />
-                                <Camera className="w-4 h-4 mr-2" />
-                                AI Emotional Analysis
-                            </Button>
-
-                            <p className="text-xs text-muted-foreground text-center">
-                                Advanced AI facial analysis for accurate emotional insights
-                            </p>
+                            <div className="space-y-2">
+                                <Button
+                                    onClick={() => navigate('/emotional-checkin/face-scan')}
+                                    disabled={checkinStatus && checkinStatus.hasAICheckin}
+                                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    variant="outline"
+                                >
+                                    <Brain className="w-4 h-4 mr-2" />
+                                    <Camera className="w-4 h-4 mr-2" />
+                                    {checkinStatus?.hasAICheckin ? "AI Analysis Completed" : "AI Emotional Analysis"}
+                                </Button>
+                                {checkinStatus?.hasAICheckin && (
+                                    <p className="text-xs text-green-600 text-center font-medium">
+                                        ✅ You have already completed AI analysis today
+                                    </p>
+                                )}
+                                {!checkinStatus?.hasAICheckin && (
+                                    <p className="text-xs text-muted-foreground text-center">
+                                        Advanced AI facial analysis for accurate emotional insights
+                                    </p>
+                                )}
+                            </div>
                         </motion.div>
                     </div>
                 </div>

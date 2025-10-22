@@ -100,13 +100,27 @@ const ResultsSection = memo(({ analysis, onReset, onComplete, onSupportChange })
                 Scan Again
             </motion.button>
             <motion.button
-                onClick={onComplete}
-                className="py-3 rounded-xl bg-primary text-primary-foreground font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/35 transition-all duration-300"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                    // Update analysis state to show loading
+                    if (analysis) {
+                        analysis.isSubmitting = true;
+                    }
+                    onComplete();
+                }}
+                disabled={analysis?.isSubmitting}
+                className="py-3 rounded-xl bg-primary text-primary-foreground font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/35 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                whileHover={{ scale: analysis?.isSubmitting ? 1 : 1.02 }}
+                whileTap={{ scale: analysis?.isSubmitting ? 1 : 0.98 }}
                 aria-label="Complete check-in and proceed to results"
             >
-                Complete Check-in
+                {analysis?.isSubmitting ? (
+                    <div className="flex items-center justify-center gap-2">
+                        <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin"></div>
+                        Processing...
+                    </div>
+                ) : (
+                    "Complete Check-in"
+                )}
             </motion.button>
         </div>
     </motion.div>

@@ -22,3 +22,19 @@ export const getCheckinHistory = async (page = 1, limit = 10) => {
     });
     return response;
 };
+
+export const getTodayCheckinStatus = async () => {
+    const response = await api.get('/checkin/today/status');
+    return response;
+};
+
+// Default export for backward compatibility
+const checkinService = {
+    submitCheckin,
+    getTodayCheckin,
+    getCheckinResults,
+    getCheckinHistory,
+    getTodayCheckinStatus
+};
+
+export default checkinService;

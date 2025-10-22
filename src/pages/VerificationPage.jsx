@@ -59,6 +59,7 @@ const EmotionalCheckinFaceScanPage = memo(() => {
     const [detectedFeatures, setDetectedFeatures] = useState([]);
     const [aiEmotionResult, setAiEmotionResult] = useState(null);
     const [selectedSupportContact, setSelectedSupportContact] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const videoRef = useRef(null);
     const scanIntervalRef = useRef(null);
     const navigate = useNavigate();
@@ -679,6 +680,7 @@ const EmotionalCheckinFaceScanPage = memo(() => {
         console.log('✅ Analysis complete, setting results:', finalAnalysis);
         // Add selected support contact to analysis for persistence
         finalAnalysis.selectedSupportContact = selectedSupportContact;
+        finalAnalysis.isSubmitting = false; // Initialize submitting state
         setAnalysis(finalAnalysis);
         setStage('results');
         console.log('🎯 Moving to results stage');
@@ -689,6 +691,7 @@ const EmotionalCheckinFaceScanPage = memo(() => {
     }, [aiEmotionResult, toast]);
 
     const completeCheckin = useCallback(async () => {
+        setIsSubmitting(true);
         try {
             console.log('💾 Auto-saving AI emotion check-in to database...');
 
@@ -811,6 +814,8 @@ const EmotionalCheckinFaceScanPage = memo(() => {
                 description: errorMessage,
                 variant: "destructive"
             });
+        } finally {
+            setIsSubmitting(false);
         }
     }, [navigate, analysis, selectedSupportContact, supportContacts, toast]);
 
