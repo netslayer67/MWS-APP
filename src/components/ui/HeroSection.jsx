@@ -22,7 +22,7 @@ const HeroSection = memo(() => {
     const handleGoogleSignIn = useCallback(() => {
         console.log("Initiating Google Sign-in...");
         // Redirect to backend Google OAuth
-        const backendUrl = import.meta.env.VITE_API_BASE?.replace('/api', '') || 'https://bemws-production.up.railway.app';
+        const backendUrl = import.meta.env.VITE_API_BASE?.replace('/api/v1', '') || 'https://bemws-production.up.railway.app';
         window.location.href = `${backendUrl}/auth/google`;
     }, []);
 
