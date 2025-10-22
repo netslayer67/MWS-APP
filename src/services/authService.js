@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3003/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE || 'https://bemws-production.up.railway.app/api';
 
 // Create axios instance with default config
 const api = axios.create({

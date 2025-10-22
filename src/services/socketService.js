@@ -11,7 +11,7 @@ class SocketService {
             return this.socket;
         }
 
-        const API_BASE = import.meta.env.VITE_API_BASE?.replace('/api/v1', '') || 'http://localhost:3003';
+        const API_BASE = import.meta.env.VITE_API_BASE?.replace('/api/v1', '') || 'https://bemws-production.up.railway.app';
 
         this.socket = io(API_BASE, {
             transports: ['websocket', 'polling'],
