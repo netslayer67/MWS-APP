@@ -53,6 +53,9 @@ const PredictiveAnalytics = lazy(() =>
 const ComparativeAnalysis = lazy(() =>
     import(/* webpackChunkName: "comparative-analysis" */ "./ComparativeAnalysis")
 );
+const UserHistorySection = lazy(() =>
+    import(/* webpackChunkName: "user-history" */ "./UserHistorySection")
+);
 
 // Optimized loading fallback - minimal animations for performance
 const ContentFallback = memo(() => (
@@ -68,71 +71,46 @@ const ContentFallback = memo(() => (
 
 ContentFallback.displayName = 'ContentFallback';
 
-const ContentSections = memo(({ mockData, realData, loading, selectedPeriod }) => {
+const ContentSections = memo(({ mockData, realData, loading, selectedPeriod, userId }) => {
     // Use real data if available, otherwise fall back to mock data
     const data = realData || {};
 
     return (
         <>
-            {/* AI Insights Panel */}
-            <Suspense fallback={<ContentFallback />}>
-                <InsightsPanel insights={data?.insights || []} />
-            </Suspense>
+            {/* Critical Information - Prioritized at top */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
+                <Suspense fallback={<ContentFallback />}>
+                    {/* Check-in Requests - Prioritized for immediate attention */}
+                    <CheckInRequests requests={data?.checkinRequests || []} />
+                </Suspense>
 
-            {/* Role Breakdown Chart */}
-            <Suspense fallback={<ContentFallback />}>
-                <div className="mb-4 md:mb-6">
-                    <div className="glass glass-card p-4 md:p-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-foreground">Role-Based Analytics</h3>
-                            <ExportButton period={selectedPeriod} />
-                        </div>
-                        <RoleBreakdownChart
-                            roleBreakdown={data?.roleBreakdown || []}
-                            viewMode="bar"
-                        />
-                    </div>
-                </div>
-            </Suspense>
+                <Suspense fallback={<ContentFallback />}>
+                    {/* Flagged Users - Need Support - Prioritized for immediate attention */}
+                    <FlaggedUsers users={data?.flaggedUsers || []} />
+                </Suspense>
+            </div>
 
-            <Suspense fallback={<ContentFallback />}>
-                {/* Today's Moods Breakdown */}
-                <div className="mb-4 md:mb-6">
+            {/* Today's Mood and Internal Weather - Side by Side */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
+                <Suspense fallback={<ContentFallback />}>
                     <MoodBreakdown
                         moodLists={data?.moodLists || {}}
                         moodDistribution={data?.moodDistribution || {}}
                     />
-                </div>
-            </Suspense>
+                </Suspense>
 
-            <Suspense fallback={<ContentFallback />}>
-                {/* Internal Weather */}
-                <div className="mb-4 md:mb-6">
+                <Suspense fallback={<ContentFallback />}>
                     <InternalWeather
                         weatherData={data?.weatherDistribution || {}}
                         moodLists={data?.moodLists || {}}
                     />
-                </div>
-            </Suspense>
+                </Suspense>
+            </div>
 
             <Suspense fallback={<ContentFallback />}>
                 {/* Not Submitted Users */}
                 <div className="mb-4 md:mb-6">
                     <NotSubmittedList notSubmitted={data?.notSubmittedUsers || []} />
-                </div>
-            </Suspense>
-
-            <Suspense fallback={<ContentFallback />}>
-                {/* Check-in Requests */}
-                <div className="mb-4 md:mb-6">
-                    <CheckInRequests requests={data?.checkinRequests || []} />
-                </div>
-            </Suspense>
-
-            <Suspense fallback={<ContentFallback />}>
-                {/* Flagged Users */}
-                <div className="mb-4 md:mb-6">
-                    <FlaggedUsers users={data?.flaggedUsers || []} />
                 </div>
             </Suspense>
 
@@ -146,7 +124,7 @@ const ContentSections = memo(({ mockData, realData, loading, selectedPeriod }) =
             <Suspense fallback={<ContentFallback />}>
                 {/* Percentage Analytics */}
                 <div className="mb-4 md:mb-6">
-                    <PercentageAnalytics data={data} />
+                    <PercentageAnalytics data={data} period={selectedPeriod} />
                 </div>
             </Suspense>
 
@@ -191,6 +169,20 @@ const ContentSections = memo(({ mockData, realData, loading, selectedPeriod }) =
                     <UserTrendChart userData={data?.recentActivity || []} period={selectedPeriod} />
                 </div>
             </Suspense>
+
+            {/* AI Insights Panel - Trigger-based loading */}
+            <Suspense fallback={<ContentFallback />}>
+                <InsightsPanel insights={data?.insights || []} />
+            </Suspense>
+
+            {/* User Check-in History - Only show if userId is provided (individual dashboard) */}
+            {userId && (
+                <Suspense fallback={<ContentFallback />}>
+                    <div className="mb-4 md:mb-6">
+                        <UserHistorySection userId={userId} />
+                    </div>
+                </Suspense>
+            )}
         </>
     );
 });

@@ -89,20 +89,11 @@ const EmotionalCheckinStaffPage = memo(function EmotionalCheckinStaffPage() {
                     duration: 5000,
                 });
 
-                // Navigate to rating page after successful submission with checkin data
+                // Navigate to rating page after successful submission
                 setTimeout(() => {
-                    const checkinId = resultAction.payload?.data?.checkin?.id;
-                    console.log('Navigation: checkinId from payload:', checkinId);
-                    console.log('Navigation: full payload:', resultAction.payload);
-                    console.log('Navigation: data.checkin:', resultAction.payload?.data?.checkin);
-                    if (checkinId) {
-                        console.log('Navigating to:', `/emotional-checkin/rate/${checkinId}`);
-                        navigate(`/emotional-checkin/rate/${checkinId}`);
-                    } else {
-                        console.log('No checkinId found, navigating to general rate page');
-                        // Fallback to general rate page if no ID
-                        navigate('/emotional-checkin/rate');
-                    }
+                    const checkinId = resultAction.payload.data.checkin.id;
+                    console.log('Navigating to rating page after check-in submission:', checkinId);
+                    navigate(`/emotional-checkin/rate/${checkinId}`);
                 }, 2000);
 
                 // Reset form

@@ -143,8 +143,8 @@ const checkinSlice = createSlice({
             })
             .addCase(getCheckinHistory.fulfilled, (state, action) => {
                 state.loading = false;
-                state.checkinHistory = action.payload.checkins;
-                state.pagination = action.payload.pagination;
+                state.checkinHistory = action.payload.data.checkins;
+                state.pagination = action.payload.data.pagination;
                 state.error = null;
             })
             .addCase(getCheckinHistory.rejected, (state, action) => {

@@ -1,5 +1,5 @@
 import React, { memo } from "react";
-import { MessageCircle, User } from "lucide-react";
+import { MessageCircle, User, CheckCircle } from "lucide-react";
 
 const CheckInRequests = memo(({ requests }) => {
     if (!requests || requests.length === 0) return null;
@@ -37,8 +37,18 @@ const CheckInRequests = memo(({ requests }) => {
                                             <span className="font-semibold text-foreground text-sm md:text-base">
                                                 {request.contact}
                                             </span>
-                                            <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-full">
-                                                requested
+                                            <span className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${request.status === 'handled' || request.status === 'acknowledged'
+                                                    ? 'text-green-700 bg-green-100'
+                                                    : 'text-orange-700 bg-orange-100'
+                                                }`}>
+                                                {request.status === 'handled' || request.status === 'acknowledged' ? (
+                                                    <>
+                                                        <CheckCircle className="w-3 h-3" />
+                                                        completed
+                                                    </>
+                                                ) : (
+                                                    'requested'
+                                                )}
                                             </span>
                                         </div>
                                         <p className="text-sm text-muted-foreground">

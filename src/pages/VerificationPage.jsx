@@ -776,7 +776,9 @@ const EmotionalCheckinFaceScanPage = memo(() => {
                     needsSupport: (analysis?.presenceCapacity?.estimatedPresence || 7) < 5 || (analysis?.presenceCapacity?.estimatedCapacity || 7) < 5,
                     confidence: analysis?.confidence || 75,
                     personalizedGreeting: `Hello, ${analysis?.detectedEmotion?.toLowerCase() || 'balanced'} soul`
-                }
+                },
+                // Add flag to trigger notifications for AI scans
+                needsSupport: (analysis?.presenceCapacity?.estimatedPresence || 7) < 5 || (analysis?.presenceCapacity?.estimatedCapacity || 7) < 5
             };
 
             // checkInData is prepared but not sent here - it's sent in completeCheckin

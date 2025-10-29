@@ -85,19 +85,24 @@ const EmotionalCheckinPage = memo(function EmotionalCheckinPage() {
                 details: reflection,
                 presenceLevel: 7, // Default values for manual check-in
                 capacityLevel: 7,
-                supportContactUserId: 'no_need'
+                supportContactUserId: 'no_need',
+                // Add flag to trigger notifications
+                needsSupport: false // Manual check-in doesn't automatically trigger support notifications
             };
 
-            await checkinService.submitCheckin(checkinData);
+            const response = await checkinService.submitCheckin(checkinData);
+            const checkinId = response.data.data.checkin.id;
 
             toast({
                 title: "Check-in Successful",
                 description: "Your manual check-in has been saved successfully!",
             });
 
-            // Reload status to update UI
-            const response = await checkinService.getTodayCheckinStatus();
-            setCheckinStatus(response.data.status);
+            // Navigate to rating page after successful submission
+            setTimeout(() => {
+                console.log('Navigating to rating page after manual check-in submission:', checkinId);
+                navigate(`/emotional-checkin/rate/${checkinId}`);
+            }, 2000);
 
             // Reset form
             setSelectedMood(null);

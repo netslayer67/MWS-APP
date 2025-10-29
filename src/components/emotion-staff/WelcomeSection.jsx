@@ -78,7 +78,7 @@ const MainContent = memo(() => (
                 </div>
                 <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground">Mahrukh Bashir</p>
-                    <p className="text-xs text-muted-foreground">Wellness Coordinator</p>
+                    <p className="text-xs text-muted-foreground">Director, Millennia World School</p>
                 </div>
             </div>
         </div>

@@ -1,6 +1,6 @@
 import React, { useState, memo, useMemo, useCallback, Suspense, lazy, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { fetchDashboardStats, setSelectedPeriod, setSelectedDate } from "../store/slices/dashboardSlice";
+import { fetchDashboardStats, setSelectedPeriod, setSelectedDate, removeFlaggedUser } from "../store/slices/dashboardSlice";
 import socketService from "../services/socketService";
 import { mockData } from "./dashboard/utils";
 import AdvancedFilters from "./dashboard/components/AdvancedFilters";
@@ -80,15 +80,22 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
                 // Could dispatch a specific action for flagged users
             };
 
+            const handleSupportRequestHandled = (data) => {
+                console.log('Support request handled, removing from flagged users:', data);
+                dispatch(removeFlaggedUser(data));
+            };
+
             socketService.onDashboardUpdate(handleDashboardUpdate);
             socketService.onNewCheckin(handleNewCheckin);
             socketService.onUserFlagged(handleUserFlagged);
+            socketService.onSupportRequestHandled(handleSupportRequestHandled);
 
             // Cleanup on unmount
             return () => {
                 socketService.offDashboardUpdate(handleDashboardUpdate);
                 socketService.offNewCheckin(handleNewCheckin);
                 socketService.offUserFlagged(handleUserFlagged);
+                socketService.offSupportRequestHandled(handleSupportRequestHandled);
                 socketService.leaveDashboard();
             };
         } else {
@@ -200,6 +207,7 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
                         realData={stats?.stats}
                         loading={loading}
                         selectedPeriod={selectedPeriod}
+                        userId={user?.id}
                     />
                 </Suspense>
             </div>

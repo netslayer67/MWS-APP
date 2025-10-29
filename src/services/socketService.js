@@ -57,6 +57,19 @@ class SocketService {
         }
     }
 
+    // Personal specific methods
+    joinPersonal(userId) {
+        if (this.socket && this.isConnected) {
+            this.socket.emit('join-personal', userId);
+        }
+    }
+
+    leavePersonal() {
+        if (this.socket && this.isConnected) {
+            this.socket.emit('leave-personal');
+        }
+    }
+
     // Event listeners for dashboard updates
     onDashboardUpdate(callback) {
         if (this.socket) {
@@ -76,6 +89,19 @@ class SocketService {
         }
     }
 
+    onSupportRequestHandled(callback) {
+        if (this.socket) {
+            this.socket.on('support_request_handled', callback);
+        }
+    }
+
+    // Event listeners for personal updates
+    onPersonalNewCheckin(callback) {
+        if (this.socket) {
+            this.socket.on('personal:new-checkin', callback);
+        }
+    }
+
     // Remove listeners
     offDashboardUpdate(callback) {
         if (this.socket) {
@@ -92,6 +118,19 @@ class SocketService {
     offUserFlagged(callback) {
         if (this.socket) {
             this.socket.off('user:flagged', callback);
+        }
+    }
+
+    offSupportRequestHandled(callback) {
+        if (this.socket) {
+            this.socket.off('support_request_handled', callback);
+        }
+    }
+
+    // Remove personal listeners
+    offPersonalNewCheckin(callback) {
+        if (this.socket) {
+            this.socket.off('personal:new-checkin', callback);
         }
     }
 

@@ -1,8 +1,17 @@
-import React, { memo, useMemo } from "react";
+import React, { memo, useMemo, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { TrendingUp, User } from "lucide-react";
+import UserListModal from "./UserListModal";
 
 const UserTrendChart = memo(({ userData = [], selectedUser = null, period = 'week' }) => {
+    const [modalState, setModalState] = useState({
+        isOpen: false,
+        title: '',
+        users: [],
+        totalUsers: 0,
+        type: ''
+    });
+
     const chartData = useMemo(() => {
         if (!userData || userData.length === 0) return [];
 
@@ -16,24 +25,44 @@ const UserTrendChart = memo(({ userData = [], selectedUser = null, period = 'wee
                     date,
                     presence: [],
                     capacity: [],
-                    count: 0
+                    count: 0,
+                    users: []
                 };
             }
             dateGroups[date].presence.push(checkin.presenceLevel);
             dateGroups[date].capacity.push(checkin.capacityLevel);
             dateGroups[date].count++;
+            dateGroups[date].users.push(checkin);
         });
 
         return Object.values(dateGroups).map(group => ({
             date: group.date,
             presence: group.presence.reduce((a, b) => a + b, 0) / group.presence.length,
             capacity: group.capacity.reduce((a, b) => a + b, 0) / group.capacity.length,
-            submissions: group.count
+            submissions: group.count,
+            users: group.users || [] // Store users for each date
         })).sort((a, b) => new Date(a.date) - new Date(b.date));
     }, [userData]);
 
+    const handleSubmissionsClick = (data) => {
+        if (data && data.users) {
+            setModalState({
+                isOpen: true,
+                title: `Submissions on ${data.date}`,
+                users: data.users,
+                totalUsers: data.submissions,
+                type: 'submissions'
+            });
+        }
+    };
+
+    const closeModal = () => {
+        setModalState({ isOpen: false, title: '', users: [], totalUsers: 0, type: '' });
+    };
+
     const CustomTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
+            const data = chartData.find(d => d.date === label);
             return (
                 <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
                     <p className="font-medium text-foreground mb-2">{label}</p>
@@ -43,6 +72,14 @@ const UserTrendChart = memo(({ userData = [], selectedUser = null, period = 'wee
                             {entry.dataKey === 'submissions' ? '' : '/10'}
                         </p>
                     ))}
+                    {data && data.submissions > 0 && (
+                        <button
+                            onClick={() => handleSubmissionsClick(data)}
+                            className="mt-2 text-xs text-primary hover:underline"
+                        >
+                            View {data.submissions} submissions
+                        </button>
+                    )}
                 </div>
             );
         }
@@ -130,6 +167,15 @@ const UserTrendChart = memo(({ userData = [], selectedUser = null, period = 'wee
                     </div>
                 </div>
             </div>
+
+            <UserListModal
+                isOpen={modalState.isOpen}
+                onClose={closeModal}
+                title={modalState.title}
+                users={modalState.users}
+                totalUsers={modalState.totalUsers}
+                type={modalState.type}
+            />
         </div>
     );
 });

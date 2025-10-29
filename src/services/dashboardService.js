@@ -41,3 +41,10 @@ export const getUserTrends = async (userId, period = 'month') => {
     });
     return response;
 };
+
+export const getUserCheckinHistory = async (userId, limit = 50, offset = 0) => {
+    const response = await api.get('/dashboard/user-history', {
+        params: { userId, limit, offset }
+    });
+    return response;
+};

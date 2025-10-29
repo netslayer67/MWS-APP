@@ -26,10 +26,23 @@ export const fetchMoodDistribution = createAsyncThunk(
     }
 );
 
+export const fetchUserCheckinHistory = createAsyncThunk(
+    'dashboard/fetchUserCheckinHistory',
+    async ({ userId, limit = 50, offset = 0 }, { rejectWithValue }) => {
+        try {
+            const response = await getUserCheckinHistory(userId, limit, offset);
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to fetch user check-in history');
+        }
+    }
+);
+
 // Initial state
 const initialState = {
     stats: null,
     moodDistribution: null,
+    userCheckinHistory: null,
     loading: false,
     error: null,
     lastUpdated: null,
@@ -52,6 +65,7 @@ const dashboardSlice = createSlice({
         clearStats: (state) => {
             state.stats = null;
             state.moodDistribution = null;
+            state.userCheckinHistory = null;
             state.lastUpdated = null;
         },
         setSelectedPeriod: (state, action) => {
@@ -59,6 +73,13 @@ const dashboardSlice = createSlice({
         },
         setSelectedDate: (state, action) => {
             state.selectedDate = action.payload;
+        },
+        removeFlaggedUser: (state, action) => {
+            if (state.stats?.flaggedUsers) {
+                state.stats.flaggedUsers = state.stats.flaggedUsers.filter(
+                    user => user.id !== action.payload.requestId
+                );
+            }
         },
     },
     extraReducers: (builder) => {
@@ -91,9 +112,23 @@ const dashboardSlice = createSlice({
             .addCase(fetchMoodDistribution.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
+            })
+            // Fetch user check-in history
+            .addCase(fetchUserCheckinHistory.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchUserCheckinHistory.fulfilled, (state, action) => {
+                state.loading = false;
+                state.userCheckinHistory = action.payload;
+                state.error = null;
+            })
+            .addCase(fetchUserCheckinHistory.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
             });
     },
 });
 
-export const { clearError, updateStats, clearStats, setSelectedPeriod, setSelectedDate } = dashboardSlice.actions;
+export const { clearError, updateStats, clearStats, setSelectedPeriod, setSelectedDate, removeFlaggedUser } = dashboardSlice.actions;
 export default dashboardSlice.reducer;

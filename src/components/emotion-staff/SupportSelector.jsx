@@ -1,91 +1,84 @@
-import React, { memo, useMemo, useEffect } from "react";
+import React, { memo, useMemo, useEffect, useState } from "react";
 import { Users, UserCheck, CheckCircle2, MessageCircle, ChevronDown } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchSupportContacts } from "../../store/slices/supportSlice";
 
 const Header = memo(() => (
-    <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-emerald/10 to-emerald/5 border border-emerald/20 flex items-center justify-center transition-all duration-300 hover:scale-105">
-            <Users className="w-6 h-6 md:w-7 md:h-7 text-emerald" />
+    <div className="flex items-center gap-3">
+        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald/10 border border-emerald/20 flex items-center justify-center">
+            <Users className="w-5 h-5 text-emerald" />
         </div>
         <div className="flex-1 min-w-0">
-            <h2 className="text-lg md:text-xl font-semibold text-foreground tracking-tight">
+            <h3 className="text-base font-semibold text-foreground">
                 Need Support?
-            </h2>
-            <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
+            </h3>
+            <p className="text-xs text-foreground/70">
                 Select someone to check in with you today
             </p>
         </div>
     </div>
 ));
 
-const CustomSelect = memo(({ supportContact, onSupportChange, hasSelection, supportContacts, loading }) => (
+const CustomSelect = memo(({ internalSelection, onInternalChange, hasSelection, supportContacts, loading }) => (
     <div className="relative">
         <select
-            value={supportContact}
-            onChange={(e) => onSupportChange(e.target.value)}
+            value={internalSelection}
+            onChange={(e) => onInternalChange(e.target.value)}
             disabled={loading || supportContacts.length === 0}
-            className={`w-full px-4 py-3.5 md:py-4 bg-input/50 backdrop-blur-sm border-2 rounded-lg text-sm md:text-base text-foreground appearance-none cursor-pointer transition-all duration-300 ease-premium ${hasSelection ? 'border-emerald shadow-lg shadow-emerald/10 bg-input/80' : 'border-border hover:border-emerald/40 hover:bg-input/70'} focus:outline-none focus:border-emerald focus:shadow-lg focus:shadow-emerald/10 ${loading || supportContacts.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`w-full px-3 py-2.5 bg-card/50 border border-border/60 rounded-lg text-sm text-foreground appearance-none cursor-pointer transition-all duration-300 ${hasSelection ? 'border-emerald/50 bg-emerald/5' : 'hover:border-emerald/30'} focus:outline-none focus:border-emerald focus:ring-1 focus:ring-emerald/20 ${loading || supportContacts.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
             <option value="">
-                {loading ? 'Loading support contacts...' : supportContacts.length === 0 ? 'No support contacts available' : 'Choose a team member...'}
+                {loading ? 'Loading...' : supportContacts.length === 0 ? 'No contacts available' : 'Choose a team member...'}
             </option>
             {supportContacts.map((contact) => (
                 <option key={contact.id} value={contact.name}>
                     {contact.isClassTeacher
-                        ? `${contact.name} — Class Teacher ${contact.classInfo ? `(${contact.classInfo})` : ''}`
-                        : `${contact.name} — ${contact.displayRole || contact.role} ${contact.jobLevel && contact.jobLevel !== 'N/A' ? `(${contact.jobLevel})` : ''} ${contact.department && contact.department !== 'N/A' ? `- ${contact.department}` : ''}`
+                        ? `${contact.name} — Class Teacher`
+                        : `${contact.name} — ${contact.displayRole || contact.role}`
                     }
                 </option>
             ))}
             <option value="No Need">No Need</option>
         </select>
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-            <ChevronDown className={`w-5 h-5 transition-all duration-300 ${hasSelection ? 'text-emerald' : 'text-muted-foreground'}`} />
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+            <ChevronDown className={`w-4 h-4 transition-colors ${hasSelection ? 'text-emerald' : 'text-foreground/50'}`} />
         </div>
     </div>
 ));
 
 const SelectedPersonCard = memo(({ selectedPerson }) => (
-    <div className="p-4 rounded-lg border backdrop-blur-sm animate-in fade-in slide-in-from-bottom-2 duration-300 bg-emerald/5 border-emerald/20">
-        <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-emerald to-emerald/70 flex items-center justify-center shadow-lg shadow-emerald/20">
-                <span className="text-sm font-bold text-white">
+    <div className="p-3 rounded-lg bg-emerald/5 border border-emerald/20">
+        <div className="flex items-center gap-3">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald/20 flex items-center justify-center">
+                <span className="text-xs font-semibold text-emerald">
                     {selectedPerson.avatar}
                 </span>
             </div>
             <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                    <UserCheck className="w-4 h-4 text-emerald flex-shrink-0" />
-                    <p className="text-sm md:text-base font-semibold text-emerald">
+                <div className="flex items-center gap-2">
+                    <UserCheck className="w-3.5 h-3.5 text-emerald flex-shrink-0" />
+                    <p className="text-sm font-medium text-emerald truncate">
                         {selectedPerson.name}
                     </p>
                 </div>
-                <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
+                <p className="text-xs text-foreground/70">
                     We'll arrange for {selectedPerson.name} to connect with you today.
-                    You can also reach out directly if needed.
                 </p>
-            </div>
-        </div>
-        <div className="mt-3 pt-3 border-t border-emerald/10">
-            <div className="flex items-center gap-2 text-xs text-emerald">
-                <MessageCircle className="w-3.5 h-3.5" />
-                <span>Available for check-in or direct contact</span>
             </div>
         </div>
     </div>
 ));
 
 const NoNeedCard = memo(() => (
-    <div className="p-4 rounded-lg border backdrop-blur-sm animate-in fade-in slide-in-from-bottom-2 duration-300 bg-emerald/5 border-emerald/20">
-        <div className="flex items-start gap-3">
-            <CheckCircle2 className="w-6 h-6 text-emerald flex-shrink-0 mt-0.5" />
+    <div className="p-3 rounded-lg bg-emerald/5 border border-emerald/20">
+        <div className="flex items-center gap-3">
+            <CheckCircle2 className="w-5 h-5 text-emerald flex-shrink-0" />
             <div className="flex-1">
-                <p className="text-sm md:text-base font-semibold text-emerald mb-1">
+                <p className="text-sm font-medium text-emerald">
                     Great! You're feeling supported
                 </p>
-                <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
-                    Remember, our team is always here when you need us. Don't hesitate to reach out anytime.
+                <p className="text-xs text-foreground/70">
+                    Remember, our team is always here when you need us.
                 </p>
             </div>
         </div>
@@ -93,13 +86,13 @@ const NoNeedCard = memo(() => (
 ));
 
 const EmptyStateHelper = memo(() => (
-    <div className="p-4 rounded-lg bg-muted/10 border border-border/50">
+    <div className="p-3 rounded-lg bg-card/30 border border-border/40">
         <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-base">💬</span>
+            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-sm">💬</span>
             </div>
             <div className="flex-1">
-                <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
+                <p className="text-xs text-foreground/70 leading-relaxed">
                     <span className="font-medium text-foreground">Tip:</span> Select a team member
                     if you'd like someone to check in with you, or choose "No Need" if you're
                     feeling well-supported today.
@@ -111,8 +104,8 @@ const EmptyStateHelper = memo(() => (
 
 const TeamAvailabilityBadge = memo(() => (
     <div className="flex items-center justify-center gap-2 pt-2">
-        <div className="w-2 h-2 rounded-full bg-emerald animate-pulse" />
-        <p className="text-xs text-muted-foreground">
+        <div className="w-1.5 h-1.5 rounded-full bg-emerald animate-pulse" />
+        <p className="text-xs text-foreground/60">
             Our support team is available today
         </p>
     </div>
@@ -122,6 +115,9 @@ const SupportSelector = memo(({ supportContact, onSupportChange }) => {
     const dispatch = useDispatch();
     const { contacts, loading } = useSelector((state) => state.support);
     const { isAuthenticated } = useSelector((state) => state.auth);
+
+    // Internal state for immediate UI updates
+    const [internalSelection, setInternalSelection] = useState(supportContact || "");
 
     // Fetch support contacts on component mount
     useEffect(() => {
@@ -134,6 +130,11 @@ const SupportSelector = memo(({ supportContact, onSupportChange }) => {
         }
     }, [dispatch, contacts.length, isAuthenticated, loading]);
 
+    // Sync internal state with prop
+    useEffect(() => {
+        setInternalSelection(supportContact || "");
+    }, [supportContact]);
+
     // Use API data if available, otherwise show loading or empty state
     const supportContacts = useMemo(() => {
         console.log('SupportSelector contacts:', contacts);
@@ -145,34 +146,36 @@ const SupportSelector = memo(({ supportContact, onSupportChange }) => {
     }, [contacts]);
 
     const selectedPerson = useMemo(
-        () => supportContacts.find(c => c.name === supportContact) || {
-            name: supportContact,
+        () => supportContacts.find(c => c.name === internalSelection) || {
+            name: internalSelection,
             role: 'Support Contact',
             department: 'N/A',
             jobLevel: 'N/A',
             unit: 'N/A',
             jobPosition: 'N/A',
-            avatar: supportContact.charAt(0).toUpperCase()
+            avatar: internalSelection ? internalSelection.charAt(0).toUpperCase() : '?'
         },
-        [supportContact, supportContacts]
+        [internalSelection, supportContacts]
     );
 
-    const isNoNeed = supportContact === "No Need";
-    const hasSelection = !!supportContact;
+    const isNoNeed = internalSelection === "No Need";
+    const hasSelection = !!internalSelection;
+
+    const handleInternalChange = (value) => {
+        setInternalSelection(value);
+        if (onSupportChange) {
+            onSupportChange(value);
+        }
+    };
 
     return (
-        <div className="glass glass-card hover-lift transition-all duration-300">
-            <div className="glass__refract" />
-            <div className="glass__refract--soft" />
-            <div className="glass__noise" />
-            <div className="relative z-10 p-5 md:p-6 space-y-5">
-                <Header />
-                <CustomSelect supportContact={supportContact} onSupportChange={onSupportChange} hasSelection={hasSelection} supportContacts={supportContacts} loading={loading} />
-                {selectedPerson && selectedPerson.id !== "no-need" && <SelectedPersonCard selectedPerson={selectedPerson} />}
-                {isNoNeed && <NoNeedCard />}
-                {!hasSelection && <EmptyStateHelper />}
-                <TeamAvailabilityBadge />
-            </div>
+        <div className="bg-card/30 border border-border/40 rounded-lg p-4 space-y-4">
+            <Header />
+            <CustomSelect internalSelection={internalSelection} onInternalChange={handleInternalChange} hasSelection={hasSelection} supportContacts={supportContacts} loading={loading} />
+            {selectedPerson && selectedPerson.id !== "no-need" && <SelectedPersonCard selectedPerson={selectedPerson} />}
+            {isNoNeed && <NoNeedCard />}
+            {!hasSelection && <EmptyStateHelper />}
+            <TeamAvailabilityBadge />
         </div>
     );
 });
