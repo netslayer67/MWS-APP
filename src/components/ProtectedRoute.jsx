@@ -19,12 +19,13 @@ const ProtectedRoute = ({ children, allowedRoles = [], allowedDepartments = [], 
         return <Navigate to="/" replace />;
     }
 
-    // Special check for dashboard access (directorate + academic department)
+    // Special check for dashboard access (directorate + academic department + head_unit)
     if (requireDirectorateAcademic) {
         const hasDashboardAccess = user && (
             user.role === 'directorate' ||
             user.role === 'superadmin' ||
             user.role === 'admin' ||
+            user.role === 'head_unit' ||
             (user.role === 'directorate' && user.department === 'Academic')
         );
 

@@ -48,9 +48,9 @@ export const getCheckinResults = createAsyncThunk(
 
 export const getCheckinHistory = createAsyncThunk(
     'checkin/getCheckinHistory',
-    async ({ page = 1, limit = 10 } = {}, { rejectWithValue }) => {
+    async ({ page = 1, limit = 10, userId = null } = {}, { rejectWithValue }) => {
         try {
-            const response = await getCheckinHistoryApi(page, limit);
+            const response = await getCheckinHistoryApi(page, limit, userId);
             return response.data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to fetch check-in history');
@@ -143,8 +143,13 @@ const checkinSlice = createSlice({
             })
             .addCase(getCheckinHistory.fulfilled, (state, action) => {
                 state.loading = false;
-                state.checkinHistory = action.payload.data.checkins;
-                state.pagination = action.payload.data.pagination;
+                state.checkinHistory = action.payload.data?.checkins || action.payload.checkins || [];
+                state.pagination = action.payload.data?.pagination || action.payload.pagination || {
+                    page: 1,
+                    limit: 10,
+                    total: 0,
+                    pages: 0
+                };
                 state.error = null;
             })
             .addCase(getCheckinHistory.rejected, (state, action) => {

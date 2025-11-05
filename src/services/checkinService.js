@@ -1,5 +1,8 @@
 import api from './authService';
 
+// Update API base URL to use v1 endpoints
+const checkinApi = api;
+
 // Check-in API functions
 export const submitCheckin = async (checkinData) => {
     const response = await api.post('/checkin/submit', checkinData);
@@ -16,10 +19,12 @@ export const getCheckinResults = async (checkinId) => {
     return response;
 };
 
-export const getCheckinHistory = async (page = 1, limit = 10) => {
-    const response = await api.get('/checkin/history', {
-        params: { page, limit }
-    });
+export const getCheckinHistory = async (page = 1, limit = 10, userId = null) => {
+    const params = { page, limit };
+    if (userId) {
+        params.userId = userId;
+    }
+    const response = await api.get('/checkin/history', { params });
     return response;
 };
 

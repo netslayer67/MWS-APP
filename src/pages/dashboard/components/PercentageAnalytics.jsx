@@ -1,5 +1,5 @@
 import React, { memo, useMemo, useState } from "react";
-import { TrendingUp, Users, Target, AlertCircle, Download } from "lucide-react";
+import { TrendingUp, Users, Target, AlertCircle, Download, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import ExportButton from "./ExportButton";
 import UserListModal from "./UserListModal";
@@ -26,32 +26,82 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
         const readinessPercentage = 100 - flaggedPercentage;
         const participationRate = submissionRate;
 
-        // Mood distribution percentages
+        // Mood distribution percentages (including AI-detected moods)
         const moodDistribution = data.moodDistribution || {};
+        const aiMoodIndicators = data.aiMoodIndicators || {};
         const totalMoods = Object.values(moodDistribution).reduce((sum, count) => sum + count, 0);
         const moodPercentages = Object.entries(moodDistribution).map(([mood, count]) => ({
             mood: mood.charAt(0).toUpperCase() + mood.slice(1),
             count,
-            percentage: totalMoods > 0 ? Math.round((count / totalMoods) * 100) : 0
+            percentage: totalMoods > 0 ? Math.round((count / totalMoods) * 100) : 0,
+            isAIGenerated: aiMoodIndicators[mood] || mood.includes('ai') || mood.includes('AI') || mood.includes('detected') // Mark AI-generated moods
         })).sort((a, b) => b.percentage - a.percentage);
 
-        // Weather distribution percentages
+        // Weather distribution percentages (including AI-analyzed weather patterns)
         const weatherDistribution = data.weatherDistribution || {};
+        const aiWeatherIndicators = data.aiWeatherIndicators || {};
         const totalWeather = Object.values(weatherDistribution).reduce((sum, count) => sum + count, 0);
         const weatherPercentages = Object.entries(weatherDistribution).map(([weather, count]) => ({
             weather: weather.charAt(0).toUpperCase() + weather.slice(1),
             count,
-            percentage: totalWeather > 0 ? Math.round((count / totalWeather) * 100) : 0
+            percentage: totalWeather > 0 ? Math.round((count / totalWeather) * 100) : 0,
+            isAIGenerated: aiWeatherIndicators[weather] || weather.includes('ai') || weather.includes('AI') || weather.includes('pattern') || weather.includes('analyzed') // Mark AI-analyzed weather
         })).sort((a, b) => b.percentage - a.percentage);
 
-        // Role breakdown percentages
-        const roleBreakdown = data.roleBreakdown || [];
-        const totalRoles = roleBreakdown.reduce((sum, role) => sum + (role.count || 0), 0);
-        const rolePercentages = roleBreakdown.map(role => ({
-            role: role.role || 'Unknown',
-            count: role.count || 0,
-            percentage: totalRoles > 0 ? Math.round((role.count / totalRoles) * 100) : 0
+        // Unit breakdown percentages (changed from role to unit)
+        const unitBreakdown = data.unitBreakdown || [];
+        const totalUnits = unitBreakdown.reduce((sum, unit) => sum + (unit.submitted || 0), 0);
+        const unitPercentages = unitBreakdown.map(unit => ({
+            unit: unit.unit || 'Unknown',
+            count: unit.submitted || 0,
+            percentage: totalUnits > 0 ? Math.round((unit.submitted / totalUnits) * 100) : 0
         })).sort((a, b) => b.percentage - a.percentage);
+
+        // Risk assessment and positive indicators (from PredictiveAnalytics)
+        const riskFactors = [];
+        const positiveIndicators = [];
+
+        // Calculate support rate for risk assessment
+        const supportRate = totalUsers > 0 ? (flaggedUsers / totalUsers) * 100 : 0;
+
+        if (supportRate > 20) {
+            riskFactors.push({
+                type: 'high',
+                title: 'High Support Need',
+                message: `${supportRate.toFixed(1)}% of users indicated they need support. Consider proactive outreach.`,
+                icon: AlertTriangle,
+                color: 'text-red-500'
+            });
+        }
+
+        if (moodPercentages.some(m => ['sad', 'anxious', 'overwhelmed'].includes(m.mood.toLowerCase()))) {
+            riskFactors.push({
+                type: 'medium',
+                title: 'Emotional Well-being Concerns',
+                message: 'Negative mood patterns detected. Monitor closely and consider additional support resources.',
+                icon: AlertTriangle,
+                color: 'text-yellow-500'
+            });
+        }
+
+        // Positive indicators
+        if (supportRate < 10) {
+            positiveIndicators.push({
+                title: 'Strong Team Resilience',
+                message: 'Low support requests indicate good overall team well-being.',
+                icon: CheckCircle,
+                color: 'text-green-500'
+            });
+        }
+
+        if (moodPercentages.some(m => ['happy', 'excited', 'calm'].includes(m.mood.toLowerCase()))) {
+            positiveIndicators.push({
+                title: 'Positive Team Dynamics',
+                message: 'Strong presence of positive moods suggests healthy team environment.',
+                icon: CheckCircle,
+                color: 'text-green-500'
+            });
+        }
 
         return {
             participationRate,
@@ -59,13 +109,16 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
             readinessPercentage,
             moodPercentages,
             weatherPercentages,
-            rolePercentages,
+            unitPercentages,
             totalUsers,
             totalCheckins,
             flaggedUsers,
+            riskFactors,
+            positiveIndicators,
             moodLists: data.moodLists || {},
             weatherLists: data.weatherLists || {},
-            roleLists: data.roleLists || {}
+            unitLists: data.unitLists || {},
+            notSubmittedUsers: data.notSubmittedUsers || []
         };
     }, [data]);
 
@@ -89,13 +142,25 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
         });
     };
 
-    const handleRoleClick = (roleData) => {
+    const handleUnitClick = (unitData) => {
         setModalState({
             isOpen: true,
-            title: `${roleData.role} Role Users`,
-            users: analytics.roleLists[roleData.role.toLowerCase()] || [],
+            title: `${unitData.unit} Unit Users`,
+            users: analytics.unitLists[unitData.unit.toLowerCase()] || [],
             totalUsers: analytics.totalCheckins,
-            type: 'role'
+            type: 'unit'
+        });
+    };
+
+    const handleParticipationRateClick = () => {
+        // Show users who haven't submitted yet
+        const notSubmittedUsers = analytics.totalUsers - analytics.totalCheckins;
+        setModalState({
+            isOpen: true,
+            title: `Users Who Haven't Submitted Yet (${notSubmittedUsers})`,
+            users: analytics.notSubmittedUsers || [],
+            totalUsers: analytics.totalUsers,
+            type: 'not-submitted'
         });
     };
 
@@ -123,7 +188,11 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     {/* Participation Rate */}
-                    <div className="p-4 rounded-lg bg-card/40 border border-border/40 backdrop-blur-sm">
+                    <div
+                        className="p-4 rounded-lg bg-card/40 border border-border/40 backdrop-blur-sm cursor-pointer hover:bg-card/60 transition-colors"
+                        onClick={handleParticipationRateClick}
+                        title="Click to see users who haven't submitted yet"
+                    >
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-medium text-foreground">Participation Rate</span>
                             <Users className="w-4 h-4 text-emerald-500" />
@@ -139,6 +208,9 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
                             {analytics.totalCheckins} of {analytics.totalUsers} users
+                        </p>
+                        <p className="text-xs text-blue-600 mt-1 font-medium">
+                            Click to view not submitted users
                         </p>
                     </div>
 
@@ -207,6 +279,69 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
                     </div>
                 </div>
 
+                {/* Risk Factors & Positive Indicators */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    {/* Risk Factors */}
+                    <div>
+                        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4 text-red-500" />
+                            Risk Factors
+                        </h3>
+                        <div className="space-y-2">
+                            {analytics.riskFactors?.length > 0 ? (
+                                analytics.riskFactors.slice(0, 2).map((risk, index) => (
+                                    <div key={index} className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                                        <div className="flex items-start gap-2">
+                                            <AlertTriangle className={`w-4 h-4 mt-0.5 ${risk.color}`} />
+                                            <div>
+                                                <p className="text-sm font-medium text-foreground">{risk.title}</p>
+                                                <p className="text-xs text-muted-foreground mt-1">{risk.message}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle className="w-4 h-4 text-green-500" />
+                                        <p className="text-sm text-green-700">No significant risk factors detected</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Positive Indicators */}
+                    <div>
+                        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4 text-green-500" />
+                            Positive Indicators
+                        </h3>
+                        <div className="space-y-2">
+                            {analytics.positiveIndicators?.length > 0 ? (
+                                analytics.positiveIndicators.slice(0, 2).map((indicator, index) => (
+                                    <div key={index} className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                        <div className="flex items-start gap-2">
+                                            <CheckCircle className={`w-4 h-4 mt-0.5 ${indicator.color}`} />
+                                            <div>
+                                                <p className="text-sm font-medium text-foreground">{indicator.title}</p>
+                                                <p className="text-xs text-muted-foreground mt-1">{indicator.message}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                    <div className="flex items-center gap-2">
+                                        <Clock className="w-4 h-4 text-yellow-500" />
+                                        <p className="text-sm text-yellow-700">Monitoring for positive indicators</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
                 {/* Detailed Breakdowns */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Mood Distribution */}
@@ -223,7 +358,7 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
                                         outerRadius={80}
                                         paddingAngle={2}
                                         dataKey="count"
-                                        onClick={handleMoodClick}
+                                        onClick={(data, index) => handleMoodClick(analytics.moodPercentages.slice(0, 5)[index])}
                                         style={{ cursor: 'pointer' }}
                                     >
                                         {analytics.moodPercentages.slice(0, 5).map((entry, index) => (
@@ -245,7 +380,12 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
                                             className="w-3 h-3 rounded-full"
                                             style={{ backgroundColor: `hsl(${index * 60}, 70%, 50%)` }}
                                         />
-                                        <span className="text-foreground capitalize">{item.mood}</span>
+                                        <span className="text-foreground capitalize">
+                                            {item.mood}
+                                            {item.isAIGenerated && (
+                                                <span className="ml-1 text-xs text-blue-600 font-medium">(AI)</span>
+                                            )}
+                                        </span>
                                     </div>
                                     <span className="text-muted-foreground">
                                         {item.percentage}% ({item.count})
@@ -269,7 +409,7 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
                                         outerRadius={80}
                                         paddingAngle={2}
                                         dataKey="count"
-                                        onClick={handleWeatherClick}
+                                        onClick={(data, index) => handleWeatherClick(analytics.weatherPercentages.slice(0, 5)[index])}
                                         style={{ cursor: 'pointer' }}
                                     >
                                         {analytics.weatherPercentages.slice(0, 5).map((entry, index) => (
@@ -291,7 +431,12 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
                                             className="w-3 h-3 rounded-full"
                                             style={{ backgroundColor: `hsl(${index * 45 + 180}, 70%, 50%)` }}
                                         />
-                                        <span className="text-foreground capitalize">{item.weather}</span>
+                                        <span className="text-foreground capitalize">
+                                            {item.weather}
+                                            {item.isAIGenerated && (
+                                                <span className="ml-1 text-xs text-blue-600 font-medium">(AI)</span>
+                                            )}
+                                        </span>
                                     </div>
                                     <span className="text-muted-foreground">
                                         {item.percentage}% ({item.count})
@@ -301,22 +446,22 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
                         </div>
                     </div>
 
-                    {/* Role Distribution */}
+                    {/* Unit Distribution */}
                     <div>
-                        <h3 className="text-sm font-semibold text-foreground mb-3">Role Distribution</h3>
+                        <h3 className="text-sm font-semibold text-foreground mb-3">Unit Distribution</h3>
                         <div className="space-y-2">
-                            {analytics.rolePercentages.slice(0, 5).map((item, index) => (
+                            {analytics.unitPercentages.slice(0, 5).map((item, index) => (
                                 <div
-                                    key={item.role}
+                                    key={item.unit}
                                     className="flex items-center justify-between cursor-pointer hover:bg-muted/20 p-1 rounded transition-colors"
-                                    onClick={() => handleRoleClick(item)}
+                                    onClick={() => handleUnitClick(item)}
                                 >
                                     <div className="flex items-center gap-2">
                                         <div
                                             className="w-3 h-3 rounded-full"
                                             style={{ backgroundColor: `hsl(${index * 72 + 90}, 70%, 50%)` }}
                                         />
-                                        <span className="text-sm text-foreground capitalize">{item.role}</span>
+                                        <span className="text-sm text-foreground capitalize">{item.unit}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <div className="w-16 bg-muted/30 rounded-full h-1.5 overflow-hidden">

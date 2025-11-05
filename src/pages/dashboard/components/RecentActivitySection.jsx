@@ -70,8 +70,8 @@ const RecentActivitySection = memo(({ activities = [] }) => {
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
                                     <button
-                                        onClick={() => handleUserClick(activity)}
-                                        className="font-medium text-foreground text-sm hover:text-primary transition-colors text-left cursor-pointer"
+                                        onClick={() => navigate(`/emotional-wellness/${activity.userId}`)}
+                                        className="font-medium text-foreground text-sm hover:text-primary hover:underline transition-colors text-left cursor-pointer"
                                     >
                                         {activity.userName}
                                     </button>
@@ -111,8 +111,8 @@ const RecentActivitySection = memo(({ activities = [] }) => {
                                         <div className="flex items-center gap-2 text-xs">
                                             <span className="font-medium text-foreground">Status:</span>
                                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${activity.status === 'handled' ? 'bg-green-100 text-green-800' :
-                                                    activity.status === 'acknowledged' ? 'bg-blue-100 text-blue-800' :
-                                                        'bg-gray-100 text-gray-800'
+                                                activity.status === 'acknowledged' ? 'bg-blue-100 text-blue-800' :
+                                                    'bg-gray-100 text-gray-800'
                                                 }`}>
                                                 {activity.status === 'handled' ? '✅ Handled' :
                                                     activity.status === 'acknowledged' ? '👁️ Acknowledged' : '⏳ Pending'}

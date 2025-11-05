@@ -271,9 +271,9 @@ const ProfilePage = memo(function ProfilePage() {
                 { key: "history", icon: Calendar, title: "Emotional History", to: "/profile/emotional-history" },
                 { key: "insights", icon: Activity, title: "Emotional Insights", to: "/profile/emotional-patterns" }
             );
-        } else if (currentUser && ['directorate', 'admin', 'superadmin'].includes(currentUser.role)) {
+        } else if (currentUser && ['directorate', 'admin', 'superadmin', 'head_unit'].includes(currentUser.role)) {
             baseItems.splice(2, 0,
-                { key: "dashboard", icon: BarChart3, title: "Emotional Dashboard", to: "/emotional-checkin/dashboard" },
+                { key: "dashboard", icon: BarChart3, title: currentUser.role === 'head_unit' ? "Unit Dashboard" : "Emotional Dashboard", to: "/emotional-checkin/dashboard" },
                 { key: "user-mgmt", icon: UserCog, title: "User Management", to: "/user-management" }
             );
         }
@@ -284,11 +284,19 @@ const ProfilePage = memo(function ProfilePage() {
     // Quick actions
     const quickActions = useMemo(() => {
         const isDirectorate = currentUser && ['directorate', 'admin', 'superadmin'].includes(currentUser.role);
+        const isHeadUnit = currentUser && currentUser.role === 'head_unit';
 
         if (isDirectorate) {
             return [
                 { title: "Emotional Dashboard", hint: "Monitor & analyze", icon: BarChart3, to: "/emotional-checkin/dashboard" },
                 { title: "User Management", hint: "Manage users", icon: UserCog, to: "/user-management" },
+            ];
+        }
+
+        if (isHeadUnit) {
+            return [
+                { title: "Unit Dashboard", hint: "Monitor team wellness", icon: BarChart3, to: "/emotional-checkin/dashboard" },
+                { title: "My Stats", hint: `${user.completed} check-ins`, icon: TrendingUp, to: "/profile/personal-stats" },
             ];
         }
 

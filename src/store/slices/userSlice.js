@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3003/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3003/api/v1';
 
 // Create axios instance with auth interceptor
 const api = axios.create({

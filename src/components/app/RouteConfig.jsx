@@ -74,8 +74,11 @@ const publicRoutes = [
     <Route key="emotional-wellness" path="/emotional-wellness" element={<ProtectedRoute><MemoizedPageTransition><EmotionalWellnessPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="emotional-wellness-user" path="/emotional-wellness/:userId" element={<ProtectedRoute><MemoizedPageTransition><EmotionalWellnessPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="personal-stats" path="/profile/personal-stats" element={<ProtectedRoute><MemoizedPageTransition><PersonalStatsPage /></MemoizedPageTransition></ProtectedRoute>} />,
+    <Route key="personal-stats-user" path="/profile/personal-stats/:userId" element={<ProtectedRoute><MemoizedPageTransition><PersonalStatsPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="emotional-history" path="/profile/emotional-history" element={<ProtectedRoute><MemoizedPageTransition><EmotionalHistoryPage /></MemoizedPageTransition></ProtectedRoute>} />,
+    <Route key="emotional-history-user" path="/profile/emotional-history/:userId" element={<ProtectedRoute><MemoizedPageTransition><EmotionalHistoryPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="emotional-patterns" path="/profile/emotional-patterns" element={<ProtectedRoute><MemoizedPageTransition><EmotionalPatternsPage /></MemoizedPageTransition></ProtectedRoute>} />,
+    <Route key="emotional-patterns-user" path="/profile/emotional-patterns/:userId" element={<ProtectedRoute><MemoizedPageTransition><EmotionalPatternsPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="user-management" path="/user-management" element={<AdminProtectedRoute><UserManagementDashboard /></AdminProtectedRoute>} />,
 
 ];

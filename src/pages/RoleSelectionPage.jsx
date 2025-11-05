@@ -188,13 +188,21 @@ const RoleSelection = memo(() => {
                             onClick={() => selectMethod('ai')}
                         />
 
-                        {/* Dashboard Access for Directorate */}
-                        {user && user.role === 'directorate' && (
+                        {/* Dashboard Access for Directorate and Head Unit */}
+                        {user && (user.role === 'directorate' || user.role === 'head_unit') && (
                             <MethodCard
                                 icon={BarChart3}
-                                title="Go to Dashboard"
-                                desc="Access comprehensive emotional wellness dashboard and analytics"
-                                features={[
+                                title={user.role === 'head_unit' ? "Unit Dashboard" : "Go to Dashboard"}
+                                desc={user.role === 'head_unit'
+                                    ? "Monitor your team's emotional wellness and support requests"
+                                    : "Access comprehensive emotional wellness dashboard and analytics"
+                                }
+                                features={user.role === 'head_unit' ? [
+                                    "Monitor unit staff wellness",
+                                    "Handle support requests from your team",
+                                    "Unit-specific emotional analytics",
+                                    "Real-time team support tracking"
+                                ] : [
                                     "Real-time staff wellness monitoring",
                                     "Emotional check-in analytics",
                                     "Support tracking and interventions",

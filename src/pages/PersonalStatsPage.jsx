@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { ArrowLeft, TrendingUp } from "lucide-react";
 import { Helmet } from "react-helmet";
@@ -12,14 +12,30 @@ import socketService from "../services/socketService";
 
 const PersonalStatsPage = () => {
     const navigate = useNavigate();
+    const { userId } = useParams();
     const dispatch = useDispatch();
     const { user: currentUser } = useSelector((state) => state.auth);
     const { checkinHistory } = useSelector((state) => state.checkin);
 
+    // Use userId from URL params if available, otherwise use current user
+    const targetUserId = userId || currentUser?.id;
+
     const userCheckins = useMemo(() => {
         if (!checkinHistory) return [];
-        return checkinHistory.filter(checkin => checkin.userId === currentUser?.id);
-    }, [checkinHistory, currentUser?.id]);
+        // Handle both array and object response formats
+        const data = Array.isArray(checkinHistory) ? checkinHistory : checkinHistory.data?.checkins || checkinHistory.checkins || [];
+        return data.filter(checkin => checkin.userId === targetUserId || checkin.userId?._id === targetUserId);
+    }, [checkinHistory, targetUserId]);
+
+    // Debug logging
+    console.log('PersonalStatsPage Debug:', {
+        currentUser: currentUser?.id,
+        targetUserId,
+        checkinHistoryLength: checkinHistory?.data?.checkins?.length || checkinHistory?.length || 0,
+        userCheckinsLength: userCheckins.length,
+        checkinHistoryKeys: checkinHistory ? Object.keys(checkinHistory) : [],
+        firstCheckin: userCheckins[0]
+    });
 
     const weeklyTrends = useMemo(() => {
         if (userCheckins.length === 0) return null;
@@ -50,18 +66,18 @@ const PersonalStatsPage = () => {
 
     // Load data and set up real-time updates
     useEffect(() => {
-        if (currentUser) {
-            dispatch(getCheckinHistory({ page: 1, limit: 50 }));
+        if (currentUser && targetUserId) {
+            dispatch(getCheckinHistory({ page: 1, limit: 50, userId: targetUserId }));
 
             // Connect to socket for real-time updates
             socketService.connect();
-            socketService.joinPersonal(currentUser.id);
+            socketService.joinPersonal(targetUserId);
 
             // Set up real-time listeners
             const handleNewCheckin = (checkinData) => {
                 console.log('Real-time personal check-in update:', checkinData);
                 // Refresh check-in history
-                dispatch(getCheckinHistory({ page: 1, limit: 50 }));
+                dispatch(getCheckinHistory({ page: 1, limit: 50, userId: targetUserId }));
             };
 
             socketService.onPersonalNewCheckin(handleNewCheckin);
@@ -72,7 +88,7 @@ const PersonalStatsPage = () => {
                 socketService.leavePersonal();
             };
         }
-    }, [dispatch, currentUser]);
+    }, [dispatch, currentUser, targetUserId]);
 
     const container = useMemo(
         () => ({ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { staggerChildren: 0.1 } } }),
@@ -110,7 +126,7 @@ const PersonalStatsPage = () => {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <TrendingUp className="w-5 h-5" />
-                                    Statistics Summary
+                                    My Stats
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
@@ -119,7 +135,7 @@ const PersonalStatsPage = () => {
                                         <div className="text-3xl font-bold text-primary">
                                             {userCheckins.length}
                                         </div>
-                                        <div className="text-sm text-muted-foreground">Total Check-ins</div>
+                                        <div className="text-sm text-muted-foreground">20 check-ins</div>
                                     </div>
                                     <div className="text-center">
                                         <div className="text-3xl font-bold text-green-600">

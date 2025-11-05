@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { ArrowLeft, Activity, Heart, TrendingUp } from "lucide-react";
 import { Helmet } from "react-helmet";
@@ -11,14 +11,30 @@ import socketService from "../services/socketService";
 
 const EmotionalPatternsPage = () => {
     const navigate = useNavigate();
+    const { userId } = useParams();
     const dispatch = useDispatch();
     const { user: currentUser } = useSelector((state) => state.auth);
     const { checkinHistory } = useSelector((state) => state.checkin);
 
+    // Use userId from URL params if available, otherwise use current user
+    const targetUserId = userId || currentUser?.id;
+
     const userCheckins = useMemo(() => {
         if (!checkinHistory) return [];
-        return checkinHistory.filter(checkin => checkin.userId === currentUser?.id);
-    }, [checkinHistory, currentUser?.id]);
+        // Handle both array and object response formats
+        const data = Array.isArray(checkinHistory) ? checkinHistory : checkinHistory.data?.checkins || checkinHistory.checkins || [];
+        return data.filter(checkin => checkin.userId === targetUserId || checkin.userId?._id === targetUserId);
+    }, [checkinHistory, targetUserId]);
+
+    // Debug logging
+    console.log('EmotionalPatternsPage Debug:', {
+        currentUser: currentUser?.id,
+        targetUserId,
+        checkinHistoryLength: checkinHistory?.data?.checkins?.length || checkinHistory?.length || 0,
+        userCheckinsLength: userCheckins.length,
+        checkinHistoryKeys: checkinHistory ? Object.keys(checkinHistory) : [],
+        firstCheckin: userCheckins[0]
+    });
 
     const patterns = useMemo(() => {
         if (userCheckins.length === 0) return null;
@@ -83,7 +99,7 @@ const EmotionalPatternsPage = () => {
             const userName = currentUser?.name || 'Anda';
 
             // 1. Overall engagement analysis
-            insights.push(`🎯 ${userName} telah menyelesaikan ${totalCheckins} check-in emosi dengan konsistensi yang mengagumkan. Ini menunjukkan komitmen yang kuat terhadap kesehatan mental dan kesadaran diri.`);
+            insights.push(`🎯 ${userName} has completed ${totalCheckins} emotional check-in${totalCheckins > 1 ? 's' : ''} with remarkable consistency. This shows a strong commitment to mental health and self-awareness.`);
 
             // 2. Advanced trend analysis
             if (weeklyAvg) {
@@ -93,26 +109,26 @@ const EmotionalPatternsPage = () => {
                 // Presence analysis
                 let presenceInsight = '';
                 if (presenceScore >= 8) {
-                    presenceInsight = `Kehadiran mental Anda luar biasa (${presenceScore.toFixed(1)}/10) - ini menunjukkan fokus dan engagement yang sangat tinggi dengan pekerjaan dan lingkungan sekitar.`;
+                    presenceInsight = `Your mental presence is exceptional (${presenceScore.toFixed(1)}/10) - this shows very high focus and engagement with work and your surroundings.`;
                 } else if (presenceScore >= 6) {
-                    presenceInsight = `Kehadiran Anda stabil (${presenceScore.toFixed(1)}/10) dengan ruang untuk peningkatan. Pertimbangkan teknik mindfulness untuk meningkatkan fokus harian.`;
+                    presenceInsight = `Your presence is stable (${presenceScore.toFixed(1)}/10) with room for improvement. Consider mindfulness techniques to enhance daily focus.`;
                 } else if (presenceScore >= 4) {
-                    presenceInsight = `Kehadiran Anda sedang (${presenceScore.toFixed(1)}/10). Ini mungkin terkait dengan beban kerja atau faktor eksternal.`;
+                    presenceInsight = `Your presence is moderate (${presenceScore.toFixed(1)}/10). This may be related to workload or external factors.`;
                 } else {
-                    presenceInsight = `Kehadiran Anda perlu perhatian khusus (${presenceScore.toFixed(1)}/10). Pertimbangkan untuk mengidentifikasi dan mengatasi faktor-faktor yang mempengaruhinya.`;
+                    presenceInsight = `Your presence needs special attention (${presenceScore.toFixed(1)}/10). Consider identifying and addressing the factors affecting it.`;
                 }
                 insights.push(`🧠 ${presenceInsight}`);
 
                 // Capacity analysis
                 let capacityInsight = '';
                 if (capacityScore >= 8) {
-                    capacityInsight = `Kapasitas energi Anda sangat tinggi (${capacityScore.toFixed(1)}/10) - ini menunjukkan resiliensi mental yang luar biasa dan kemampuan untuk menangani tantangan dengan baik.`;
+                    capacityInsight = `Your energy capacity is very high (${capacityScore.toFixed(1)}/10) - this shows exceptional mental resilience and ability to handle challenges well.`;
                 } else if (capacityScore >= 6) {
-                    capacityInsight = `Kapasitas Anda baik (${capacityScore.toFixed(1)}/10) dengan fondasi yang solid untuk produktivitas.`;
+                    capacityInsight = `Your capacity is good (${capacityScore.toFixed(1)}/10) with a solid foundation for productivity.`;
                 } else if (capacityScore >= 4) {
-                    capacityInsight = `Kapasitas Anda sedang (${capacityScore.toFixed(1)}/10). Pertimbangkan strategi manajemen energi seperti istirahat teratur dan nutrisi yang baik.`;
+                    capacityInsight = `Your capacity is moderate (${capacityScore.toFixed(1)}/10). Consider energy management strategies like regular breaks and good nutrition.`;
                 } else {
-                    capacityInsight = `Kapasitas energi Anda perlu perhatian (${capacityScore.toFixed(1)}/10). Ini mungkin menunjukkan kelelahan atau kebutuhan akan dukungan tambahan.`;
+                    capacityInsight = `Your energy capacity needs attention (${capacityScore.toFixed(1)}/10). This may indicate fatigue or need for additional support.`;
                 }
                 insights.push(`⚡ ${capacityInsight}`);
             }
@@ -123,14 +139,14 @@ const EmotionalPatternsPage = () => {
                 const weatherFrequency = ((weatherPatterns[0][1] / totalCheckins) * 100);
 
                 const weatherInsights = {
-                    'sunny': `Cuaca emosi Anda didominasi oleh hari cerah (${weatherFrequency.toFixed(1)}%), menunjukkan optimisme dan energi positif yang konsisten.`,
-                    'light-rain': `Anda sering mengalami hari hujan ringan (${weatherFrequency.toFixed(1)}%), yang menunjukkan kemampuan untuk menangani tantangan kecil dengan tenang.`,
-                    'rainy': `Cuaca hujan cukup sering muncul (${weatherFrequency.toFixed(1)}%), menunjukkan periode refleksi dan pemrosesan emosi yang mendalam.`,
-                    'thunderstorms': `Badai emosi muncul (${weatherFrequency.toFixed(1)}%), menunjukkan intensitas emosi yang tinggi dan kemampuan untuk menavigasi turbulensi.`,
-                    'windy': `Angin kencang sering terjadi (${weatherFrequency.toFixed(1)}%), menunjukkan periode ketidakstabilan yang memerlukan grounding.`,
-                    'snowy': `Salju menutupi lanskap emosi Anda (${weatherFrequency.toFixed(1)}%), menunjukkan kebutuhan akan kehangatan dan dukungan.`,
-                    'foggy': `Kabut emosi cukup tebal (${weatherFrequency.toFixed(1)}%), menunjukkan periode ketidakjelasan yang memerlukan klarifikasi.`,
-                    'cloudy': `Awan mendominasi (${weatherFrequency.toFixed(1)}%), menunjukkan suasana hati yang stabil namun redup.`
+                    'sunny': `Your emotional weather is dominated by sunny days (${weatherFrequency.toFixed(1)}%), showing consistent optimism and positive energy.`,
+                    'light-rain': `You often experience light rain days (${weatherFrequency.toFixed(1)}%), which shows your ability to handle small challenges calmly.`,
+                    'rainy': `Rainy weather appears quite often (${weatherFrequency.toFixed(1)}%), indicating periods of deep reflection and emotional processing.`,
+                    'thunderstorms': `Emotional storms appear (${weatherFrequency.toFixed(1)}%), showing high emotional intensity and ability to navigate turbulence.`,
+                    'windy': `Strong winds often occur (${weatherFrequency.toFixed(1)}%), indicating periods of instability that require grounding.`,
+                    'snowy': `Snow covers your emotional landscape (${weatherFrequency.toFixed(1)}%), showing a need for warmth and support.`,
+                    'foggy': `Emotional fog is quite thick (${weatherFrequency.toFixed(1)}%), indicating periods of uncertainty that require clarification.`,
+                    'cloudy': `Clouds dominate (${weatherFrequency.toFixed(1)}%), showing stable but subdued moods.`
                 };
 
                 insights.push(`🌤️ ${weatherInsights[dominantWeather] || `Pola cuaca emosi Anda unik dengan dominasi ${dominantWeather} (${weatherFrequency.toFixed(1)}%).`}`);
@@ -144,7 +160,7 @@ const EmotionalPatternsPage = () => {
                     return `${mood} (${percentage}%)`;
                 }).join(', ');
 
-                insights.push(`😊 Pola mood Anda menunjukkan kecenderungan kuat ke arah: ${moodAnalysis}. Ini mencerminkan kepribadian dan respons emosi Anda yang unik.`);
+                insights.push(`😊 Your mood patterns show a strong tendency towards: ${moodAnalysis}. This reflects your unique personality and emotional responses.`);
 
                 // Advanced mood insights
                 const positiveMoods = ['happy', 'excited', 'hopeful', 'calm', 'grateful'];
@@ -154,11 +170,11 @@ const EmotionalPatternsPage = () => {
                 const challengingCount = moodPatterns.filter(([mood]) => challengingMoods.includes(mood)).reduce((sum, [, count]) => sum + count, 0);
 
                 if (positiveCount > challengingCount * 1.5) {
-                    insights.push(`✨ Analisis mendalam menunjukkan Anda memiliki kecenderungan positif yang kuat, dengan rasio emosi positif vs tantangan sebesar ${(positiveCount / challengingCount).toFixed(1)}:1. Ini adalah kekuatan besar!`);
+                    insights.push(`✨ Deep analysis shows you have a strong positive tendency, with a positive emotions vs challenges ratio of ${(positiveCount / challengingCount).toFixed(1)}:1. This is a great strength!`);
                 } else if (challengingCount > positiveCount * 1.5) {
-                    insights.push(`🔍 Pola emosi Anda menunjukkan periode tantangan yang signifikan. Ini adalah kesempatan untuk pengembangan resiliensi dan pertumbuhan pribadi.`);
+                    insights.push(`🔍 Your emotional patterns show significant periods of challenge. This is an opportunity for resilience development and personal growth.`);
                 } else {
-                    insights.push(`⚖️ Keseimbangan emosi Anda cukup baik, dengan variasi yang sehat antara pengalaman positif dan tantangan. Ini menunjukkan kecerdasan emosi yang matang.`);
+                    insights.push(`⚖️ Your emotional balance is quite good, with healthy variation between positive experiences and challenges. This shows mature emotional intelligence.`);
                 }
             }
 
@@ -167,9 +183,9 @@ const EmotionalPatternsPage = () => {
             const totalHighDays = challenges.highCapacityDays + challenges.highPresenceDays;
 
             if (totalLowDays > totalHighDays) {
-                insights.push(`📊 Analisis tantangan menunjukkan Anda mengalami lebih banyak hari dengan performa rendah (${totalLowDays} vs ${totalHighDays} hari tinggi). Ini mungkin terkait dengan pola tidur, nutrisi, atau beban kerja. Rekomendasi: Tinjau rutinitas harian dan pertimbangkan konsultasi dengan profesional kesehatan mental.`);
+                insights.push(`📊 Challenge analysis shows you experience more days with low performance (${totalLowDays} vs ${totalHighDays} high days). This may be related to sleep patterns, nutrition, or workload. Recommendation: Review your daily routine and consider consulting with mental health professionals.`);
             } else if (totalHighDays > totalCheckins * 0.6) {
-                insights.push(`🏆 Performa emosi Anda luar biasa! ${totalHighDays} hari dengan kapasitas/kehadiran tinggi dari ${totalCheckins} total check-in menunjukkan resiliensi mental yang exceptional. Lanjutkan praktik yang mendukung kesejahteraan ini.`);
+                insights.push(`🏆 Your emotional performance is outstanding! ${totalHighDays} days with high capacity/presence from ${totalCheckins} total check-ins shows exceptional mental resilience. Continue the practices that support your well-being.`);
             }
 
             // 6. Predictive insights
@@ -179,18 +195,18 @@ const EmotionalPatternsPage = () => {
                 const recentAvgCapacity = recentCheckins.reduce((sum, c) => sum + c.capacityLevel, 0) / recentCheckins.length;
 
                 if (recentAvgPresence < weeklyAvg?.presence - 1) {
-                    insights.push(`🔮 Prediksi: Kehadiran Anda menurun dalam seminggu terakhir. Ini mungkin sinyal untuk intervensi dini - pertimbangkan istirahat tambahan atau teknik relaksasi.`);
+                    insights.push(`🔮 Prediction: Your presence has decreased in the last week. This may be an early signal for intervention - consider additional rest or relaxation techniques.`);
                 } else if (recentAvgCapacity > weeklyAvg?.capacity + 1) {
-                    insights.push(`📈 Tren positif terdeteksi! Kapasitas Anda meningkat. Analisis menunjukkan praktik yang Anda lakukan efektif - lanjutkan!`);
+                    insights.push(`📈 Positive trend detected! Your capacity is increasing. Analysis shows your practices are effective - continue!`);
                 }
             }
 
             // 7. Personalized recommendations
-            insights.push(`💡 Rekomendasi Personal: Berdasarkan pola unik Anda, fokuslah pada ${challenges.lowCapacityDays > challenges.lowPresenceDays ? 'pengelolaan energi' : 'peningkatan fokus'} untuk optimalkan performa emosi Anda.`);
+            insights.push(`💡 Personal Recommendation: Based on your unique patterns, focus on ${challenges.lowCapacityDays > challenges.lowPresenceDays ? 'energy management' : 'focus improvement'} to optimize your emotional performance.`);
 
             // 8. Long-term growth insights
             if (totalCheckins >= 14) {
-                insights.push(`🌱 Wawasan Pertumbuhan: Dengan ${totalCheckins} check-in, Anda telah membangun foundation yang solid untuk kesehatan mental. Lanjutkan konsistensi ini untuk melihat pola jangka panjang yang lebih bermakna.`);
+                insights.push(`🌱 Growth Insight: With ${totalCheckins} check-ins, you have built a solid foundation for mental health. Continue this consistency to see more meaningful long-term patterns.`);
             }
         }
 
@@ -199,18 +215,18 @@ const EmotionalPatternsPage = () => {
 
     // Load data and set up real-time updates
     useEffect(() => {
-        if (currentUser) {
-            dispatch(getCheckinHistory({ page: 1, limit: 50 }));
+        if (currentUser && targetUserId) {
+            dispatch(getCheckinHistory({ page: 1, limit: 50, userId: targetUserId }));
 
             // Connect to socket for real-time updates
             socketService.connect();
-            socketService.joinPersonal(currentUser.id);
+            socketService.joinPersonal(targetUserId);
 
             // Set up real-time listeners
             const handleNewCheckin = (checkinData) => {
                 console.log('Real-time personal check-in update:', checkinData);
                 // Refresh check-in history
-                dispatch(getCheckinHistory({ page: 1, limit: 50 }));
+                dispatch(getCheckinHistory({ page: 1, limit: 50, userId: targetUserId }));
             };
 
             socketService.onPersonalNewCheckin(handleNewCheckin);
@@ -221,7 +237,7 @@ const EmotionalPatternsPage = () => {
                 socketService.leavePersonal();
             };
         }
-    }, [dispatch, currentUser]);
+    }, [dispatch, currentUser, targetUserId]);
 
     const container = useMemo(
         () => ({ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { staggerChildren: 0.1 } } }),
@@ -249,7 +265,7 @@ const EmotionalPatternsPage = () => {
 
                         <div className="flex-1 min-w-0">
                             <h1 className="text-lg font-semibold text-foreground">Emotional Patterns</h1>
-                            <p className="mt-0.5 text-xs text-muted-foreground">Insights & patterns of your emotional behavior</p>
+                            <p className="mt-0.5 text-xs text-muted-foreground">Insights & patterns</p>
                         </div>
                     </motion.header>
 

@@ -1,9 +1,11 @@
 import React, { memo, useState, useEffect } from "react";
-import { X, TrendingUp, Calendar, User, Activity, AlertTriangle } from "lucide-react";
+import { X, TrendingUp, Calendar, User, Activity, AlertTriangle, ExternalLink } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { getUserTrends } from "../../../services/dashboardService";
+import { useNavigate } from "react-router-dom";
 
 const UserDetailModal = memo(({ user, isOpen, onClose }) => {
+    const navigate = useNavigate();
     const [userTrends, setUserTrends] = useState(null);
     const [loading, setLoading] = useState(false);
     const [selectedPeriod, setSelectedPeriod] = useState('month');
@@ -89,12 +91,23 @@ const UserDetailModal = memo(({ user, isOpen, onClose }) => {
                             <p className="text-sm text-muted-foreground capitalize">{user.role} • {user.department}</p>
                         </div>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-muted rounded-lg transition-colors"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => navigate(`/emotional-wellness/${user.id}`)}
+                            className="flex items-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm"
+                            title="View full individual report"
+                        >
+                            <ExternalLink className="w-4 h-4" />
+                            Full Report
+                        </button>
+                        <button
+                            onClick={onClose}
+                            className="p-2 hover:bg-muted rounded-lg transition-colors"
+                            title="Close modal"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Content */}

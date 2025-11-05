@@ -1,18 +1,9 @@
 import React, { memo, Suspense, lazy } from "react";
 
 // Lazy load components for better performance
-const MoodBreakdown = lazy(() =>
-    import(/* webpackChunkName: "mood-breakdown" */ "../../dashboard/MoodBreakdown")
-);
-const InternalWeather = lazy(() =>
-    import(/* webpackChunkName: "internal-weather" */ "../../dashboard/InternalWeather")
-);
+// Removed MoodBreakdown, InternalWeather, and NotSubmittedList - now accessible via Overview Analytics
 const ThoughtsSection = lazy(() =>
     import(/* webpackChunkName: "thoughts-section" */ "../ThoughtsSection")
-);
-
-const NotSubmittedList = lazy(() =>
-    import(/* webpackChunkName: "not-submitted" */ "../NotSubmittedList")
 );
 const FlaggedUsers = lazy(() =>
     import(/* webpackChunkName: "flagged-users" */ "../FlaggedStudents")
@@ -71,17 +62,24 @@ const ContentFallback = memo(() => (
 
 ContentFallback.displayName = 'ContentFallback';
 
-const ContentSections = memo(({ mockData, realData, loading, selectedPeriod, userId }) => {
+const ContentSections = memo(({ mockData, realData, loading, selectedPeriod, userId, isHeadUnit }) => {
     // Use real data if available, otherwise fall back to mock data
     const data = realData || {};
 
     return (
         <>
+            {/* Overview Analytics - Moved to top position */}
+            <Suspense fallback={<ContentFallback />}>
+                <div className="mb-4 md:mb-6">
+                    <PercentageAnalytics data={data} period={selectedPeriod} />
+                </div>
+            </Suspense>
+
             {/* Critical Information - Prioritized at top */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
                 <Suspense fallback={<ContentFallback />}>
                     {/* Check-in Requests - Prioritized for immediate attention */}
-                    <CheckInRequests requests={data?.checkinRequests || []} />
+                    <CheckInRequests requests={data?.checkinRequests || []} isHeadUnit={isHeadUnit} />
                 </Suspense>
 
                 <Suspense fallback={<ContentFallback />}>
@@ -90,57 +88,12 @@ const ContentSections = memo(({ mockData, realData, loading, selectedPeriod, use
                 </Suspense>
             </div>
 
-            {/* Today's Mood and Internal Weather - Side by Side */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
-                <Suspense fallback={<ContentFallback />}>
-                    <MoodBreakdown
-                        moodLists={data?.moodLists || {}}
-                        moodDistribution={data?.moodDistribution || {}}
-                    />
-                </Suspense>
+            {/* Today's Mood and Internal Weather panels removed - now accessible via Overview Analytics charts */}
 
-                <Suspense fallback={<ContentFallback />}>
-                    <InternalWeather
-                        weatherData={data?.weatherDistribution || {}}
-                        moodLists={data?.moodLists || {}}
-                    />
-                </Suspense>
-            </div>
+            {/* Not Submitted Users panel removed - now accessible via Participation Rate click in Overview Analytics */}
 
-            <Suspense fallback={<ContentFallback />}>
-                {/* Not Submitted Users */}
-                <div className="mb-4 md:mb-6">
-                    <NotSubmittedList notSubmitted={data?.notSubmittedUsers || []} />
-                </div>
-            </Suspense>
-
-            <Suspense fallback={<ContentFallback />}>
-                {/* Recent Activity */}
-                <div className="mb-4 md:mb-6">
-                    <RecentActivitySection activities={data?.recentActivity || []} />
-                </div>
-            </Suspense>
-
-            <Suspense fallback={<ContentFallback />}>
-                {/* Percentage Analytics */}
-                <div className="mb-4 md:mb-6">
-                    <PercentageAnalytics data={data} period={selectedPeriod} />
-                </div>
-            </Suspense>
-
-            <Suspense fallback={<ContentFallback />}>
-                {/* Department Analytics */}
-                <div className="mb-4 md:mb-6">
-                    <DepartmentAnalytics departments={data?.departmentBreakdown || []} />
-                </div>
-            </Suspense>
-
-            <Suspense fallback={<ContentFallback />}>
-                {/* Mood Trend Analysis */}
-                <div className="mb-4 md:mb-6">
-                    <MoodTrendAnalysis data={data} period={selectedPeriod} />
-                </div>
-            </Suspense>
+            {/* Department Analytics removed - now integrated into Overview Analytics Panel #1 */}
+            {/* Mood Trend Analysis temporarily removed as requested */}
 
             {/* <Suspense fallback={<ContentFallback />}>
                 Weather Pattern Analysis
@@ -149,19 +102,9 @@ const ContentSections = memo(({ mockData, realData, loading, selectedPeriod, use
                 </div>
             </Suspense> */}
 
-            <Suspense fallback={<ContentFallback />}>
-                {/* Predictive Analytics */}
-                <div className="mb-4 md:mb-6">
-                    <PredictiveAnalytics data={data} period={selectedPeriod} />
-                </div>
-            </Suspense>
+            {/* Predictive Analytics moved to Overview Analytics Panel #1 */}
 
-            <Suspense fallback={<ContentFallback />}>
-                {/* Comparative Analysis */}
-                <div className="mb-4 md:mb-6">
-                    <ComparativeAnalysis data={data} currentPeriod={selectedPeriod} />
-                </div>
-            </Suspense>
+            {/* Comparative Analysis (Organization Trends) temporarily removed as requested */}
 
             <Suspense fallback={<ContentFallback />}>
                 {/* User Trend Analysis */}
@@ -173,6 +116,13 @@ const ContentSections = memo(({ mockData, realData, loading, selectedPeriod, use
             {/* AI Insights Panel - Trigger-based loading */}
             <Suspense fallback={<ContentFallback />}>
                 <InsightsPanel insights={data?.insights || []} />
+            </Suspense>
+
+            {/* Recent Activity - Moved to bottom */}
+            <Suspense fallback={<ContentFallback />}>
+                <div className="mt-6">
+                    <RecentActivitySection activities={data?.recentActivity || []} />
+                </div>
             </Suspense>
 
             {/* User Check-in History - Only show if userId is provided (individual dashboard) */}

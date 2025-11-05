@@ -34,6 +34,9 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
     const { stats, loading, error } = useSelector((state) => state.dashboard);
 
     const { selectedPeriod, selectedDate } = useSelector((state) => state.dashboard);
+
+    // Check if user is head_unit for special UI elements
+    const isHeadUnit = user?.role === 'head_unit';
     const [isLoaded, setIsLoaded] = useState(false);
     const [filters, setFilters] = useState({});
 
@@ -46,11 +49,12 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
     // Load dashboard data and set up real-time updates
     useEffect(() => {
         // Check if user has appropriate permissions for dashboard access
-        // Allow directorate users, superadmin, or admin roles
+        // Allow directorate users, superadmin, admin, or head_unit roles
         const hasDashboardAccess = user && (
             user.role === 'directorate' ||
             user.role === 'superadmin' ||
-            user.role === 'admin'
+            user.role === 'admin' ||
+            user.role === 'head_unit'
         );
 
         if (hasDashboardAccess) {
@@ -170,6 +174,8 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
                         onPeriodChange={handlePeriodChange}
                         selectedDate={selectedDate}
                         onDateChange={handleDateChange}
+                        isHeadUnit={isHeadUnit}
+                        userUnit={user?.unit || user?.department}
                     />
                 </Suspense>
 
@@ -191,14 +197,14 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
 
 
 
-                Optimized Stats Grid
+                {/* Optimized Stats Grid - Commented out as no longer needed
                 <Suspense fallback={<LoadingFallback />}>
                     <StatsGrid
                         mockData={mockData}
                         realData={stats?.stats}
                         loading={loading}
                     />
-                </Suspense>
+                </Suspense> */}
 
                 {/* Optimized Content Sections */}
                 <Suspense fallback={<LoadingFallback />}>
@@ -208,6 +214,7 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
                         loading={loading}
                         selectedPeriod={selectedPeriod}
                         userId={user?.id}
+                        isHeadUnit={isHeadUnit}
                     />
                 </Suspense>
             </div>
