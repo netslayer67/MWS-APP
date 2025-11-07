@@ -1,4 +1,4 @@
-import { memo } from "react";
+import React, { memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Heart, Brain, Sparkles, ChevronRight, BarChart3 } from "lucide-react";
@@ -203,10 +203,10 @@ const RoleSelection = memo(() => {
                         {user && (user.role === 'directorate' || user.role === 'head_unit') && (
                             <MethodCard
                                 icon={BarChart3}
-                                title={user.role === 'head_unit' ? "Unit Dashboard" : "Go to Dashboard"}
+                                title={user.role === 'head_unit' ? "Unit Dashboard" : "Emotional Checkin Dashboard"}
                                 desc={user.role === 'head_unit'
                                     ? "Monitor your team's emotional wellness and support requests"
-                                    : "Access comprehensive emotional wellness dashboard and analytics"
+                                    : "Access comprehensive emotional wellness data for all employees"
                                 }
                                 features={user.role === 'head_unit' ? [
                                     "Monitor unit staff wellness",
@@ -214,9 +214,11 @@ const RoleSelection = memo(() => {
                                     "Unit-specific emotional analytics",
                                     "Real-time team support tracking"
                                 ] : [
-                                    "Real-time staff wellness monitoring",
-                                    "Emotional check-in analytics",
-                                    "Support tracking and interventions",
+                                    "All employees emotional wellness overview",
+                                    "Comprehensive staff analytics & insights",
+                                    "Organization-wide support tracking",
+                                    "Cross-department mood & weather patterns",
+                                    "Individual employee deep-dive analysis",
                                     "Period-based reporting (daily/weekly/monthly/semesterly)"
                                 ]}
                                 isPremium={false}
