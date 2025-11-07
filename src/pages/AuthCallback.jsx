@@ -22,49 +22,61 @@ const AuthCallback = () => {
                     return;
                 }
 
-                // New: fetch canonical user profile before setting state
+                // Parse user data from query parameters
                 const userFromQuery = JSON.parse(decodeURIComponent(userData));
-                console.log('OAuth login successful:', userFromQuery.email);
+                console.log('🔐 OAuth login successful for:', userFromQuery.email);
+                console.log('📊 Initial user data from backend:', userFromQuery);
 
                 // Persist token for API calls
                 localStorage.setItem('token', token);
                 localStorage.setItem('auth_token', token);
 
-                // Try to fetch canonical user from backend
+                // Try to fetch canonical user from backend to get complete user data including role
                 let canonicalUser = userFromQuery;
                 try {
                     const resp = await getCurrentUser();
-                    canonicalUser = resp?.data?.data?.user || resp?.data?.user || userFromQuery;
+                    console.log('🔍 Backend /auth/me response:', resp);
+
+                    // Handle different response structures
+                    if (resp?.data?.data?.user) {
+                        canonicalUser = resp.data.data.user;
+                    } else if (resp?.data?.user) {
+                        canonicalUser = resp.data.user;
+                    } else if (resp?.data) {
+                        canonicalUser = resp.data;
+                    }
+
+                    console.log('✅ Canonical user from database:', canonicalUser);
                 } catch (e) {
-                    console.warn('Failed to fetch canonical user via /auth/me, using query user');
+                    console.warn('⚠️ Failed to fetch canonical user via /auth/me:', e);
+                    console.log('📋 Using user data from OAuth callback:', userFromQuery);
                 }
+
+                // Ensure the user has the required role field and validate
+                if (!canonicalUser.role) {
+                    console.warn('⚠️ User missing role field, using query data as fallback');
+                    canonicalUser = { ...userFromQuery, ...canonicalUser };
+                }
+
+                // Log role validation for dashboard access
+                console.log('🎯 Role validation for dashboard access:', {
+                    userRole: canonicalUser.role,
+                    isHeadUnit: canonicalUser.role === 'head_unit',
+                    isDirectorate: canonicalUser.role === 'directorate',
+                    hasDashboardAccess: ['head_unit', 'directorate'].includes(canonicalUser.role),
+                    department: canonicalUser.department,
+                    unit: canonicalUser.unit
+                });
 
                 // Persist canonical user and update Redux
                 localStorage.setItem('auth_user', JSON.stringify(canonicalUser));
                 dispatch(loginSuccess({ user: canonicalUser, token }));
 
+                console.log('📱 User state updated in Redux');
+                console.log('🎯 Expected dashboard access:', ['head_unit', 'directorate'].includes(canonicalUser.role) ? 'YES' : 'NO');
+
                 // Redirect to role selection page after OAuth login
                 navigate('/select-role', { replace: true });
-                return;
-
-                const user = JSON.parse(decodeURIComponent(userData));
-
-                console.log('🔐 OAuth login successful:', user.email);
-
-                // Store token
-                localStorage.setItem('token', token);
-                localStorage.setItem('auth_token', token);
-                localStorage.setItem('auth_user', JSON.stringify(user));
-
-                // Update Redux state
-                dispatch(loginSuccess({
-                    user,
-                    token
-                }));
-
-                // Redirect to role selection page after OAuth login
-                console.log('🔄 Redirecting to role selection after OAuth login');
-                navigate('/select-role');
 
             } catch (error) {
                 console.error('Auth callback error:', error);

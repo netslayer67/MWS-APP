@@ -1,1 +1,0 @@
-import{j as t,m as a}from"./index-BmFq6O7m.js";const n={initial:{opacity:0,y:20},in:{opacity:1,y:0},out:{opacity:0,y:-20}},o={type:"tween",ease:"anticipate",duration:.5},s=({children:i})=>t.jsx(a.div,{initial:"initial",animate:"in",exit:"out",variants:n,transition:o,children:i});export{s as A};
