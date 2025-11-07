@@ -37,24 +37,24 @@ export default function PostReviewSheet({ open, onOpenChange, data = {}, onConfi
             <Dialog.DialogContent className="max-w-lg rounded-3xl glass-strong p-0 overflow-hidden">
                 <Dialog.DialogHeader className="p-4 sm:p-5 border-b border-border/50 bg-card/40 backdrop-blur-xl">
                     <Dialog.DialogTitle className="text-base sm:text-lg font-semibold">
-                        Konfirmasi Posting
+                        Confirm Posting
                     </Dialog.DialogTitle>
                     <Dialog.DialogDescription className="text-xs sm:text-sm text-muted-foreground">
-                        Periksa detail singkat sebelum dipasang.
+                        Review short details before publishing.
                     </Dialog.DialogDescription>
                 </Dialog.DialogHeader>
 
                 <div className="p-4 sm:p-5 space-y-3">
-                    <Row label="Judul">
+                    <Row label="Title">
                         <p className="text-sm font-medium text-foreground line-clamp-2">{title || "-"}</p>
                     </Row>
 
-                    <Row label="Deskripsi">
+                    <Row label="Description">
                         <p className="text-xs sm:text-sm text-foreground/90 line-clamp-4">{description || "-"}</p>
                     </Row>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <Row label="Kategori" icon={<Tag className="h-4 w-4 text-primary" />}>
+                        <Row label="Category" icon={<Tag className="h-4 w-4 text-primary" />}>
                             <p className="text-xs sm:text-sm">{category || "-"}</p>
                         </Row>
                         <Row label="Skill">
@@ -66,20 +66,20 @@ export default function PostReviewSheet({ open, onOpenChange, data = {}, onConfi
                         <Row label="Budget">
                             <p className="text-sm font-semibold">{budget || "-"}</p>
                         </Row>
-                        <Row label="Durasi" icon={<Clock3 className="h-4 w-4 text-accent" />}>
+                        <Row label="Duration" icon={<Clock3 className="h-4 w-4 text-accent" />}>
                             <p className="text-xs sm:text-sm">{duration || "-"}</p>
                         </Row>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <Row label="Pembayaran" icon={<PayIcon className="h-4 w-4 text-secondary-foreground" />}>
+                        <Row label="Payment" icon={<PayIcon className="h-4 w-4 text-secondary-foreground" />}>
                             <span
                                 className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${payment === "cash"
                                         ? "bg-accent text-accent-foreground"
                                         : "bg-primary text-primary-foreground"
                                     }`}
                             >
-                                {payment === "cash" ? "Tunai" : "Saldo"}
+                                {payment === "cash" ? "Cash" : "Wallet"}
                             </span>
                         </Row>
                         <Row label="Deadline" icon={<Calendar className="h-4 w-4 text-muted-foreground" />}>
@@ -87,14 +87,14 @@ export default function PostReviewSheet({ open, onOpenChange, data = {}, onConfi
                         </Row>
                     </div>
 
-                    <Row label="Lokasi" icon={<MapPin className="h-4 w-4 text-accent" />}>
+                    <Row label="Location" icon={<MapPin className="h-4 w-4 text-accent" />}>
                         <p className="text-xs sm:text-sm truncate">{location || "-"}</p>
                     </Row>
 
                     {/* Safety note */}
                     <div className="mt-1 rounded-xl border border-border/50 bg-card/40 p-2.5">
                         <p className="text-[11px] text-muted-foreground">
-                            Untuk nilai tinggi, pertimbangkan pembayaran terlindungi (escrow) atau deposit kecil.
+                            For high value, consider escrow or a small deposit.
                         </p>
                     </div>
                 </div>
@@ -111,7 +111,7 @@ export default function PostReviewSheet({ open, onOpenChange, data = {}, onConfi
                             onOpenChange(false);
                         }}
                     >
-                        Pasang
+                        Publish
                     </Button>
                 </div>
             </Dialog.DialogContent>

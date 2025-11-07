@@ -117,6 +117,43 @@ export const generateRecommendations = (analysis, data) => {
         priority: "medium"
     });
 
+    // Top-up to minimum 4 items with a small pool (no duplicates by title)
+    const pool = [
+        {
+            icon: "Target",
+            title: "One-Task Focus",
+            description: "Pick one small task and complete it end-to-end to rebuild momentum.",
+            color: "from-primary/20 to-primary/10",
+            borderColor: "border-primary/20",
+            priority: "low"
+        },
+        {
+            icon: "Heart",
+            title: "Connect Briefly",
+            description: "Send a quick message to someone you trust. A 60-second connection helps regulate emotions.",
+            color: "from-emerald/20 to-emerald/10",
+            borderColor: "border-emerald/20",
+            priority: "medium"
+        },
+        {
+            icon: "Battery",
+            title: "Micro Break",
+            description: "Stand, stretch shoulders/neck, hydrate. Two minutes can meaningfully restore capacity.",
+            color: "from-emerald/20 to-emerald/10",
+            borderColor: "border-emerald/20",
+            priority: "medium"
+        }
+    ];
+
+    const existingTitles = new Set(recommendations.map(r => r.title));
+    for (const item of pool) {
+        if (recommendations.length >= 4) break;
+        if (!existingTitles.has(item.title)) {
+            recommendations.push(item);
+            existingTitles.add(item.title);
+        }
+    }
+
     return recommendations.sort((a, b) => {
         const priorityOrder = { high: 0, medium: 1, low: 2 };
         return priorityOrder[a.priority] - priorityOrder[b.priority];

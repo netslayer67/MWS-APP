@@ -4,8 +4,8 @@ import { CheckCircle } from "lucide-react";
 
 const Slide = ({
     onComplete,
-    label = "Geser untuk Selesai",
-    completedLabel = "Tugas Selesai!",
+    label = "Slide to Complete",
+    completedLabel = "Task Completed!",
     threshold = 0.8, // seberapa jauh harus digeser
     className = "",
 }) => {

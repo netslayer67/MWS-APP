@@ -44,7 +44,12 @@ const SelectedDescription = memo(({ selectedOption }) => (
         <div className="p-3 md:p-4 rounded-lg border border-border bg-card/60 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
             <p className="text-xs md:text-sm text-muted-foreground text-center leading-relaxed">
                 <span className="font-medium text-foreground">{selectedOption.labelFull}:</span>{' '}
-                {selectedOption.desc}
+                {(() => {
+                    const raw = String(selectedOption.desc || '');
+                    // Use English-only part before the bilingual separator
+                    const english = raw.includes(' / ') ? raw.split(' / ')[0] : raw;
+                    return english.replace(/^\s*[?️⭐️🌧️🌫️🌪️🌈🔥☀️⛅]*\s*/, '');
+                })()}
             </p>
         </div>
     )

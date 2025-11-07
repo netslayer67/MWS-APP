@@ -54,10 +54,10 @@ export default function DisputePage() {
             return `Tipe file tidak didukung: ${file.name}`;
         }
         if (file.size > MAX_FILE_BYTES) {
-            return `Ukuran maksimum ${formatBytes(MAX_FILE_BYTES)} — file ${file.name} terlalu besar`;
+            return `Maximum size ${formatBytes(MAX_FILE_BYTES)} — file ${file.name} is too large`;
         }
         if (hasSuspiciousExtension(file.name)) {
-            return `Ekstensi file mencurigakan: ${file.name}`;
+            return `Suspicious file extension: ${file.name}`;
         }
         return null;
     };
@@ -68,7 +68,7 @@ export default function DisputePage() {
         for (const f of arr) {
             const err = validateFile(f);
             if (err) {
-                toast({ title: "File tidak valid", description: err, variant: "destructive" });
+                toast({ title: "Invalid file", description: err, variant: "destructive" });
                 continue;
             }
             const dup = files.find((x) => x.name === f.name && x.size === f.size);
@@ -124,7 +124,7 @@ export default function DisputePage() {
             };
             xhr.onload = () => {
                 if (xhr.status === 200) resolve(xhr.response);
-                else reject(new Error("Upload gagal"));
+                else reject(new Error("Upload failed"));
             };
             xhr.onerror = () => reject(new Error("Network error"));
             xhr.send(fd);
@@ -134,7 +134,7 @@ export default function DisputePage() {
         e.preventDefault();
         const sanitized = sanitizeText(description);
         if (sanitized.length < 10) {
-            toast({ title: "Deskripsi terlalu singkat", description: "Minimal 10 karakter." });
+            toast({ title: "Description too short", description: "Minimum 10 characters." });
             return;
         }
         setSubmitting(true);
@@ -149,15 +149,15 @@ export default function DisputePage() {
                 )
             );
             toast({
-                title: "Laporan terkirim",
-                description: "Tim kami akan meninjau laporan dalam 1×24 jam.",
+                title: "Report submitted",
+                description: "Our team will review your report within 24 hours.",
             });
             setDescription("");
             setFiles([]);
             setTimeout(() => navigate(-1), 1200);
         } catch (err) {
             console.error(err);
-            toast({ title: "Gagal mengirim", description: err.message, variant: "destructive" });
+            toast({ title: "Failed to submit", description: err.message, variant: "destructive" });
             setSubmitting(false);
         }
     };
@@ -165,7 +165,7 @@ export default function DisputePage() {
     return (
         <AnimatedPage>
             <Helmet>
-                <title>Ajukan Sengketa — Kerjain</title>
+                <title>Submit Dispute — MWS IntegraLearn</title>
             </Helmet>
             <div className="relative min-h-dvh w-full px-3 py-4 sm:px-4 sm:py-6">
                 <motion.div
@@ -184,7 +184,7 @@ export default function DisputePage() {
                         </Button>
                     </Link>
                     <h1 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
-                        <span className="text-accent">⚑</span> Laporkan Masalah
+                        <span className="text-accent">⚑</span> Report an Issue
                     </h1>
                 </motion.div>
                 <Card className="rounded-2xl sm:rounded-3xl border border-border/40 bg-card/50 shadow-xl backdrop-blur-xl">
@@ -192,21 +192,21 @@ export default function DisputePage() {
                         <div className="flex items-start gap-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 sm:p-4">
                             <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 text-destructive mt-1" />
                             <div>
-                                <h3 className="font-semibold text-destructive text-sm sm:text-base">Penting</h3>
+                                <h3 className="font-semibold text-destructive text-sm sm:text-base">Important</h3>
                                 <p className="text-xs sm:text-sm text-muted-foreground">
-                                    Jelaskan masalah dengan jelas. Lampirkan bukti bila ada.
+                                    Clearly describe the issue. Attach evidence if available.
                                 </p>
                             </div>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <Label className="text-xs text-muted-foreground">ID Pekerjaan</Label>
+                                <Label className="text-xs text-muted-foreground">Job ID</Label>
                                 <p className="mt-1 rounded-md bg-background/40 px-3 py-1 font-mono text-xs sm:text-sm text-foreground/80">
                                     {jobId}
                                 </p>
                             </div>
                             <div>
-                                <Label className="text-xs text-muted-foreground">Detail Masalah</Label>
+                                <Label className="text-xs text-muted-foreground">Issue Details</Label>
                                 <Textarea
                                     rows={4}
                                     required
@@ -236,10 +236,10 @@ export default function DisputePage() {
                                         htmlFor="file-upload"
                                         className="cursor-pointer flex items-center justify-center rounded-xl bg-card/40 backdrop-blur-xl border border-border/40 shadow px-3 py-1.5 text-xs sm:text-sm font-medium text-foreground transition duration-300 hover:bg-accent/20 hover:text-accent-foreground active:scale-[0.97]"
                                     >
-                                        Pilih File
+                                        Choose File
                                     </label>
                                     <span className="text-xs sm:text-sm text-muted-foreground">
-                                        {files.length > 0 ? `${files.length} file` : "Tidak ada file"}
+                                        {files.length > 0 ? `${files.length} file` : "No file"}
                                     </span>
                                 </div>
                                 {files.length > 0 && (
@@ -296,7 +296,7 @@ export default function DisputePage() {
                                 className="w-full rounded-xl bg-primary font-semibold text-primary-foreground hover:bg-primary/90 transition duration-300"
                                 disabled={!canSubmit}
                             >
-                                {submitting ? "Mengirim..." : "Kirim Laporan"}
+                                {submitting ? "Submitting..." : "Submit Report"}
                                 <Send className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
                             </Button>
                         </form>

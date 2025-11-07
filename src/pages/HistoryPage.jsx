@@ -19,13 +19,13 @@ import { Input } from "@/components/ui/input";
 import AnimatedPage from "@/components/AnimatedPage";
 import EmptyState from "@/components/feedback/EmptyState";
 
-// --- Dummy Data (nanti bisa diganti API) ---
+// --- Dummy Data (replace with API later) ---
 const seedJobs = [
     {
         id: "JOB-2025-0901-01",
         type: "worker",
-        title: "Antar kopi ke kantor Budi",
-        category: "Urusan Harian",
+        title: "Deliver coffee to office",
+        category: "Daily Errands",
         date: "2025-09-01T09:21:00Z",
         amount: 25000,
         status: "completed",
@@ -35,8 +35,8 @@ const seedJobs = [
     {
         id: "JOB-2025-0831-02",
         type: "worker",
-        title: "Perbaiki halaman landing",
-        category: "Jasa Digital",
+        title: "Fix landing page",
+        category: "Digital Services",
         date: "2025-08-31T13:10:00Z",
         amount: 750000,
         status: "completed",
@@ -46,8 +46,8 @@ const seedJobs = [
     {
         id: "JOB-2025-0830-03",
         type: "client",
-        title: "Dekor backdrop mini event",
-        category: "Bantuan Acara",
+        title: "Backdrop mini-event decor",
+        category: "Event Support",
         date: "2025-08-30T10:00:00Z",
         amount: 350000,
         status: "ongoing",
@@ -57,8 +57,8 @@ const seedJobs = [
     {
         id: "JOB-2025-0828-04",
         type: "client",
-        title: "Bersih-bersih gudang kecil",
-        category: "Tenaga Manual",
+        title: "Clean small storage room",
+        category: "Manual Labor",
         date: "2025-08-28T08:45:00Z",
         amount: 150000,
         status: "cancelled",
@@ -68,8 +68,8 @@ const seedJobs = [
     {
         id: "JOB-2025-0827-05",
         type: "worker",
-        title: "Desain poster promosi",
-        category: "Pekerjaan Kreatif",
+        title: "Design promotional poster",
+        category: "Creative Work",
         date: "2025-08-27T14:22:00Z",
         amount: 420000,
         status: "completed",
@@ -80,7 +80,7 @@ const seedJobs = [
 
 // --- Helpers ---
 const fmtIDR = (n) =>
-    new Intl.NumberFormat("id-ID", {
+    new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "IDR",
         maximumFractionDigits: 0,
@@ -97,10 +97,10 @@ const StatusBadge = ({ status }) => {
     };
     const label =
         status === "completed"
-            ? "Selesai"
+            ? "Completed"
             : status === "ongoing"
-                ? "Berjalan"
-                : "Batal";
+                ? "Ongoing"
+                : "Cancelled";
     const Icon =
         status === "completed" ? CheckCircle2 : status === "ongoing" ? Clock3 : XCircle;
 
@@ -125,7 +125,7 @@ const PayBadge = ({ payment }) => {
                 }`}
         >
             <Wallet className="h-3.5 w-3.5" />
-            {isPaid ? "Terbayar" : "Belum"}
+            {isPaid ? "Paid" : "Unpaid"}
         </span>
     );
 };
@@ -163,7 +163,7 @@ const JobRow = React.memo(function JobRow({ job, as = "worker" }) {
 
                     <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
                         {job.category} •{" "}
-                        {new Date(job.date).toLocaleString("id-ID", {
+                        {new Date(job.date).toLocaleString("en-US", {
                             dateStyle: "medium",
                             timeStyle: "short",
                         })}
@@ -190,7 +190,7 @@ const JobRow = React.memo(function JobRow({ job, as = "worker" }) {
                         variant="outline"
                         className="rounded-xl border-accent/40 text-foreground hover:text-accent hover:border-accent hover:bg-accent/10 transition-colors duration-300"
                     >
-                        Detail
+                        Details
                     </Button>
                 </div>
             </div>
@@ -225,8 +225,8 @@ export default function HistoryPage() {
     return (
         <AnimatedPage>
             <Helmet>
-                <title>Riwayat</title>
-                <meta name="description" content="Riwayat pekerjaan & pembayaran." />
+                <title>History</title>
+                <meta name="description" content="Job and payment history." />
             </Helmet>
 
             <div className="relative min-h-dvh w-full px-4 py-6">
@@ -247,7 +247,7 @@ export default function HistoryPage() {
                                 <ArrowLeft className="h-5 w-5" />
                             </Button>
                         </Link>
-                        <h1 className="text-lg font-semibold text-foreground">Riwayat</h1>
+                        <h1 className="text-lg font-semibold text-foreground">History</h1>
                     </div>
 
                     {/* role switch */}
@@ -290,10 +290,10 @@ export default function HistoryPage() {
                     {/* filter */}
                     <div className="inline-flex w-full items-center justify-between gap-2 rounded-2xl border border-border/60 bg-card/50 p-1 backdrop-blur-md">
                         {[
-                            { key: "all", label: "Semua" },
-                            { key: "completed", label: "Selesai" },
-                            { key: "ongoing", label: "Berjalan" },
-                            { key: "cancelled", label: "Batal" },
+                            { key: "all", label: "All" },
+                            { key: "completed", label: "Completed" },
+                            { key: "ongoing", label: "Ongoing" },
+                            { key: "cancelled", label: "Cancelled" },
                         ].map((f) => (
                             <button
                                 key={f.key}
@@ -312,7 +312,7 @@ export default function HistoryPage() {
                             variant="ghost"
                             size="icon"
                             className="rounded-xl hover:bg-accent/15 hover:text-accent transition-colors duration-300"
-                            title="Filter lanjutan (coming soon)"
+                            title="Advanced filter (coming soon)"
                         >
                             <Filter className="h-4 w-4" />
                         </Button>
@@ -332,8 +332,8 @@ export default function HistoryPage() {
                                 >
                                     <EmptyState
                                         icon={<BadgeCheck className="h-6 w-6" />}
-                                        title={role === "worker" ? "Riwayat kerja kosong" : "Riwayat posting kosong"}
-                                        subtitle={filter === "all" ? "Belum ada data." : "Tidak ada hasil."}
+                                        title={role === "worker" ? "No work history yet" : "No posting history yet"}
+                                        subtitle={filter === "all" ? "No data yet." : "No results found."}
                                     />
                                 </motion.div>
                             ) : (
@@ -345,7 +345,7 @@ export default function HistoryPage() {
                     {/* footer note */}
                     <div className="mt-6 rounded-2xl border border-border/60 bg-background/40 p-4 text-center backdrop-blur-xl">
                         <p className="text-xs text-muted-foreground">
-                            Detail pembayaran tersedia di halaman pekerjaan.
+                            Payment details are available on the job page.
                         </p>
                     </div>
                 </motion.div>

@@ -98,8 +98,9 @@ const checkinSlice = createSlice({
             })
             .addCase(submitCheckin.fulfilled, (state, action) => {
                 state.loading = false;
-                state.currentCheckin = action.payload.checkin;
-                state.todayCheckin = action.payload.checkin;
+                const checkin = action.payload?.data?.checkin || action.payload?.checkin || null;
+                state.currentCheckin = checkin;
+                state.todayCheckin = checkin;
                 state.error = null;
             })
             .addCase(submitCheckin.rejected, (state, action) => {
@@ -113,7 +114,7 @@ const checkinSlice = createSlice({
             })
             .addCase(getTodayCheckin.fulfilled, (state, action) => {
                 state.loading = false;
-                state.todayCheckin = action.payload.checkin;
+                state.todayCheckin = action.payload?.data?.checkin || action.payload?.checkin || null;
                 state.error = null;
             })
             .addCase(getTodayCheckin.rejected, (state, action) => {

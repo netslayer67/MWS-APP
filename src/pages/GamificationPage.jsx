@@ -11,26 +11,26 @@ import { Helmet } from "react-helmet";
 const badges = [
     {
         icon: Star,
-        name: "Pekerja Baru",
-        desc: "Selesaikan 1 pekerjaan",
+        name: "New Worker",
+        desc: "Complete 1 job",
         status: "new",
     },
     {
         icon: TrendingUp,
-        name: "Rajin Bekerja",
-        desc: "Selesaikan 10 pekerjaan",
+        name: "Diligent",
+        desc: "Complete 10 jobs",
         status: "earned",
     },
     {
         icon: Award,
-        name: "Ahli",
-        desc: "Selesaikan 50 pekerjaan",
+        name: "Expert",
+        desc: "Complete 50 jobs",
         status: "locked",
     },
     {
         icon: ShieldCheck,
-        name: "Terpercaya",
-        desc: "Rating 4.8+ setelah 20 pekerjaan",
+        name: "Trusted",
+        desc: "Rating 4.8+ after 20 jobs",
         status: "earned",
     },
 ];
@@ -59,10 +59,10 @@ const GamificationPage = () => {
     return (
         <AnimatedPage>
             <Helmet>
-                <title>Level & Lencana — Kerjain</title>
+                <title>Levels & Badges — MWS IntegraLearn</title>
                 <meta
                     name="description"
-                    content="Lihat progres, level, dan lencana yang Anda dapatkan di Kerjain."
+                    content="See your progress, levels, and the badges you’ve earned."
                 />
             </Helmet>
 
@@ -84,7 +84,7 @@ const GamificationPage = () => {
                         </Button>
                     </Link>
                     <h1 className="text-xl font-semibold text-foreground flex items-center gap-2">
-                        <span className="text-accent">★</span> Level & Lencana
+                        <span className="text-accent">★</span> Levels & Badges
                     </h1>
                 </motion.div>
 
@@ -111,7 +111,7 @@ const GamificationPage = () => {
                         </div>
 
                         <p className="text-center text-sm text-muted-foreground">
-                            Selesaikan pekerjaan untuk naik level 🚀
+                            Complete jobs to level up 🚀
                         </p>
                     </CardContent>
                 </Card>
@@ -123,7 +123,7 @@ const GamificationPage = () => {
                     transition={{ duration: 0.35 }}
                 >
                     <h2 className="mb-4 text-lg font-semibold text-foreground">
-                        Lencana Saya
+                        My Badges
                     </h2>
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                         {badges.map((badge, index) => {

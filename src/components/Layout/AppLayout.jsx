@@ -12,17 +12,17 @@ import { motion } from "framer-motion";
 
 /* ================= Role-based nav ================= */
 const navItemsClient = [
-    { path: "/client/dashboard", icon: Home, label: "Beranda" },
-    { path: "/post-job", icon: Briefcase, label: "Posting" },
-    { path: "/client/wallet", icon: Wallet, label: "Dompet" },
-    { path: "/worker/chat", icon: MessageSquare, label: "Obrolan" },
+    { path: "/client/dashboard", icon: Home, label: "Home" },
+    { path: "/post-job", icon: Briefcase, label: "Post" },
+    { path: "/client/wallet", icon: Wallet, label: "Wallet" },
+    { path: "/worker/chat", icon: MessageSquare, label: "Chat" },
 ];
 
 const navItemsWorker = [
-    { path: "/worker/dashboard", icon: Home, label: "Beranda" },
-    { path: "/worker/jobs", icon: ListChecks, label: "Tugas" },
-    { path: "/worker/wallet", icon: Wallet, label: "Dompet" },
-    { path: "/worker/chat", icon: MessageSquare, label: "Obrolan" },
+    { path: "/worker/dashboard", icon: Home, label: "Home" },
+    { path: "/worker/jobs", icon: ListChecks, label: "Tasks" },
+    { path: "/worker/wallet", icon: Wallet, label: "Wallet" },
+    { path: "/worker/chat", icon: MessageSquare, label: "Chat" },
 ];
 
 // Memoized navigation item component
@@ -96,7 +96,7 @@ const AppLayout = memo(() => {
                         <Link
                             to={isWorker ? "/worker/dashboard" : "/client/dashboard"}
                             className="text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent"
-                            aria-label="Ke beranda"
+                            aria-label="Go to home"
                         >
                             Kerjain
                         </Link>
@@ -121,13 +121,13 @@ const AppLayout = memo(() => {
                             <Link
                                 to="/notifications"
                                 className="relative rounded-full p-2 hover-card"
-                                aria-label="Notifikasi"
+                                aria-label="Notifications"
                             >
                                 <Bell className="h-6 w-6 text-muted-foreground hover:text-accent" />
                                 <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-primary" />
                             </Link>
 
-                            <Link to="/profile" aria-label="Profil">
+                            <Link to="/profile" aria-label="Profile">
                                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent font-bold text-primary-foreground hover:opacity-90">
                                     U
                                 </div>

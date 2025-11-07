@@ -96,7 +96,7 @@ const EmotionalPatternsPage = () => {
 
         if (totalCheckins > 0) {
             // Advanced AI Analysis
-            const userName = currentUser?.name || 'Anda';
+            const userName = currentUser?.name || 'You';
 
             // 1. Overall engagement analysis
             insights.push(`🎯 ${userName} has completed ${totalCheckins} emotional check-in${totalCheckins > 1 ? 's' : ''} with remarkable consistency. This shows a strong commitment to mental health and self-awareness.`);

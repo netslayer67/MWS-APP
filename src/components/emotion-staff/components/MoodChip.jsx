@@ -44,8 +44,7 @@ const MoodIcon = memo(({ Icon, isSelected, colorClasses }) => (
 
 const MoodLabel = memo(({ mood, isSelected, colorClasses }) => (
     <span className={`text-xs md:text-sm font-medium leading-tight transition-colors duration-300 ${isSelected ? colorClasses.text : 'text-foreground group-hover:' + colorClasses.text}`}>
-        <span className="hidden md:inline">{mood.label}</span>
-        <span className="md:hidden">{mood.labelId}</span>
+        {mood.label}
     </span>
 ));
 

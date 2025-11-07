@@ -45,7 +45,7 @@ const NegotiationModalCompact = ({
         };
         setOffers((prev) => [...prev, newOffer]);
         setNotification(
-            `Rp${amt.toLocaleString("id-ID")} dikirim oleh ${byRole === "worker" ? "Pekerja" : "Klien"}`
+            `Rp${amt.toLocaleString("id-ID")} sent by ${byRole === "worker" ? "Worker" : "Client"}`
         );
         try {
             onSendOffer?.(amt);
@@ -73,7 +73,7 @@ const NegotiationModalCompact = ({
         setOffers((prev) =>
             prev.map((o) => (o.id === id ? { ...o, status: "accepted" } : o))
         );
-        setNotification("Penawaran diterima ✔️");
+        setNotification("Offer accepted ✔️");
         try {
             if (accepted) {
                 onAccept?.(accepted);
@@ -89,7 +89,7 @@ const NegotiationModalCompact = ({
         setOffers((prev) =>
             prev.map((o) => (o.id === id ? { ...o, status: "rejected" } : o))
         );
-        setNotification("Penawaran ditolak ✖️");
+        setNotification("Offer rejected ✖️");
         try {
             if (rej) onReject?.(rej);
         } catch {
@@ -124,7 +124,7 @@ const NegotiationModalCompact = ({
                         </button>
 
                         <h2 className="text-base sm:text-lg font-semibold mb-3 text-foreground">
-                            Negosiasi
+                            Negotiation
                         </h2>
 
                         {notification && (
@@ -159,7 +159,7 @@ const NegotiationModalCompact = ({
                                                 Rp{(Number(offer.amount) || 0).toLocaleString("id-ID")}
                                             </p>
                                             <p className="text-[11px] text-muted-foreground">
-                                                {offer.by === "worker" ? "Pekerja" : "Klien"}
+                                                {offer.by === "worker" ? "Worker" : "Client"}
                                             </p>
                                         </div>
 
@@ -228,7 +228,7 @@ const NegotiationModalCompact = ({
                                     }}
                                     className="px-3 sm:px-4 py-1.5 rounded-lg bg-accent text-secondary text-xs sm:text-sm hover:bg-accent/90 transition-colors duration-300"
                                 >
-                                    Kirim
+                                    Send
                                 </button>
                             </div>
                         </div>

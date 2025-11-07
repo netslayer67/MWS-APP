@@ -16,7 +16,7 @@ import { AlertTriangle, Image as ImageIcon } from "lucide-react";
  * - onSubmit: (payload: { reason: string; detail: string; file?: File | null }) => void
  */
 export default function ReportUserModal({ open, onOpenChange, onSubmit }) {
-    const [reason, setReason] = useState("Perilaku tidak sopan");
+    const [reason, setReason] = useState("Inappropriate behavior");
     const [detail, setDetail] = useState("");
     const [file, setFile] = useState(null);
 
@@ -28,7 +28,7 @@ export default function ReportUserModal({ open, onOpenChange, onSubmit }) {
             ["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(f.type) &&
             f.size <= 3 * 1024 * 1024;
         if (!ok) {
-            alert("File tidak didukung atau terlalu besar (maks 3MB).");
+            alert("Unsupported file or too large (max 3MB).");
             e.target.value = "";
             return;
         }
@@ -37,14 +37,14 @@ export default function ReportUserModal({ open, onOpenChange, onSubmit }) {
 
     const submit = useCallback(() => {
         if (!reason || !detail.trim()) {
-            alert("Lengkapi alasan dan detail laporan.");
+            alert("Please complete the reason and details.");
             return;
         }
         onSubmit?.({ reason, detail, file });
         onOpenChange(false);
         // reset after submit
         setTimeout(() => {
-            setReason("Perilaku tidak sopan");
+            setReason("Inappropriate behavior");
             setDetail("");
             setFile(null);
         }, 50);
@@ -56,22 +56,22 @@ export default function ReportUserModal({ open, onOpenChange, onSubmit }) {
                 <Dialog.DialogHeader className="p-4 sm:p-5 border-b border-border/50 bg-card/40 backdrop-blur-xl">
                     <Dialog.DialogTitle className="text-base sm:text-lg font-semibold inline-flex items-center gap-2">
                         <AlertTriangle className="h-5 w-5 text-destructive" />
-                        Laporkan Pengguna
+                        Report User
                     </Dialog.DialogTitle>
                     <Dialog.DialogDescription className="text-xs sm:text-sm text-muted-foreground">
-                        Jelaskan masalah secara singkat dan lampirkan bukti bila perlu.
+                        Briefly describe the issue and attach evidence if needed.
                     </Dialog.DialogDescription>
                 </Dialog.DialogHeader>
 
                 <div className="p-4 sm:p-5 space-y-3">
                     <div>
-                        <Label className="text-xs text-muted-foreground">Alasan</Label>
+                        <Label className="text-xs text-muted-foreground">Reason</Label>
                         <div className="mt-1 inline-flex w-full rounded-xl bg-card/40 p-1 ring-1 ring-border backdrop-blur-md">
                             {[
-                                "Perilaku tidak sopan",
-                                "Penipuan",
-                                "Pembayaran bermasalah",
-                                "Konten berbahaya",
+                                "Inappropriate behavior",
+                                "Fraud",
+                                "Payment issue",
+                                "Harmful content",
                             ].map((r) => (
                                 <button
                                     key={r}
@@ -88,19 +88,19 @@ export default function ReportUserModal({ open, onOpenChange, onSubmit }) {
                     </div>
 
                     <div>
-                        <Label className="text-xs text-muted-foreground">Detail</Label>
+                        <Label className="text-xs text-muted-foreground">Details</Label>
                         <Textarea
                             rows={4}
                             sanitize="strong"
                             value={detail}
                             onChange={(e) => setDetail(e.target.value)}
-                            placeholder="Tuliskan detail kejadian..."
+                            placeholder="Write incident details..."
                             className="mt-1"
                         />
                     </div>
 
                     <div>
-                        <Label className="text-xs text-muted-foreground">Lampiran (opsional)</Label>
+                        <Label className="text-xs text-muted-foreground">Attachment (optional)</Label>
                         <div className="mt-1 flex items-center gap-2">
                             <input type="file" accept="image/*,application/pdf" onChange={handleFile} className="hidden" id="report-file" />
                             <label
@@ -108,9 +108,9 @@ export default function ReportUserModal({ open, onOpenChange, onSubmit }) {
                                 className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-border/50 bg-card/40 px-3 py-1.5 text-xs sm:text-sm backdrop-blur-md hover:bg-accent/10 transition-colors duration-300"
                             >
                                 <ImageIcon className="h-4 w-4" />
-                                {file ? "Ganti File" : "Pilih File"}
+                                {file ? "Change File" : "Choose File"}
                             </label>
-                            <span className="text-xs text-muted-foreground truncate max-w-[10rem]">{file?.name || "Tidak ada file"}</span>
+                            <span className="text-xs text-muted-foreground truncate max-w-[10rem]">{file?.name || "No file"}</span>
                         </div>
                     </div>
                 </div>
@@ -118,11 +118,11 @@ export default function ReportUserModal({ open, onOpenChange, onSubmit }) {
                 <div className="px-4 sm:px-5 pb-4 sm:pb-5 pt-2 flex items-center justify-end gap-2 border-t border-border/50 bg-card/40 backdrop-blur-xl">
                     <Dialog.DialogClose asChild>
                         <Button variant="outline" size="sm" className="rounded-xl">
-                            Batal
+                            Cancel
                         </Button>
                     </Dialog.DialogClose>
                     <Button size="sm" className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={submit}>
-                        Kirim Laporan
+                        Submit Report
                     </Button>
                 </div>
             </Dialog.DialogContent>

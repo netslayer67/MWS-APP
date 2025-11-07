@@ -2,6 +2,7 @@ import React, { memo, useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { fetchUsers } from "../../../store/slices/userSlice";
+import { getUnitMembers } from "../../../services/dashboardService";
 import { getCheckinHistory } from "../../../store/slices/checkinSlice";
 import { User, TrendingUp, Calendar, MessageCircle, Heart, Activity, Eye, BarChart3, Brain } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
@@ -14,9 +15,11 @@ const IndividualView = memo(({ selectedUser, onUserSelect, selectedPeriod, loadi
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const { users } = useSelector((state) => state.users);
+    const { user: currentUser } = useSelector((state) => state.auth);
     const { checkinHistory } = useSelector((state) => state.checkin);
 
     const [selectedUserId, setSelectedUserId] = useState(selectedUser?.id || '');
+    const [unitUsers, setUnitUsers] = useState([]);
 
     useEffect(() => {
         // Fetch all users for the dropdown - get all active users with proper pagination
@@ -47,6 +50,16 @@ const IndividualView = memo(({ selectedUser, onUserSelect, selectedPeriod, loadi
 
                     } catch (error) {
                         console.error('Error fetching users page:', currentPage, error);
+                        // Fallback for head_unit: fetch unit members via dashboard service
+                        try {
+                            if (currentUser?.role === 'head_unit') {
+                                const resp = await getUnitMembers();
+                                const list = resp.data?.data?.users || resp.data?.users || [];
+                                setUnitUsers(list);
+                            }
+                        } catch (e) {
+                            console.error('Failed to fetch unit members fallback:', e);
+                        }
                         break;
                     }
                 }
@@ -73,9 +86,11 @@ const IndividualView = memo(({ selectedUser, onUserSelect, selectedPeriod, loadi
         }
     }, [dispatch, selectedUserId]);
 
+    const availableUsers = users.length > 0 ? users : unitUsers;
+
     const handleUserChange = (userId) => {
         setSelectedUserId(userId);
-        const user = users.find(u => u.id === userId);
+        const user = availableUsers.find(u => u.id === userId);
         onUserSelect(user);
     };
 
@@ -129,7 +144,7 @@ const IndividualView = memo(({ selectedUser, onUserSelect, selectedPeriod, loadi
             }));
     }, [userCheckins]);
 
-    const selectedUserData = users.find(u => u.id === selectedUserId);
+    const selectedUserData = availableUsers.find(u => u.id === selectedUserId);
 
     // Debug logging (remove in production)
     // console.log('IndividualView Debug:', {
@@ -156,8 +171,8 @@ const IndividualView = memo(({ selectedUser, onUserSelect, selectedPeriod, loadi
                             <SelectValue placeholder="Choose a user to analyze..." />
                         </SelectTrigger>
                         <SelectContent className="max-h-80 overflow-y-auto bg-card/95 backdrop-blur-sm border-border/50">
-                            {users.length > 0 ? (
-                                users.map((user) => (
+                            {(availableUsers.length > 0) ? (
+                                availableUsers.map((user) => (
                                     <SelectItem
                                         key={user.id || user._id}
                                         value={user.id || user._id}

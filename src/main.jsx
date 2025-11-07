@@ -23,6 +23,8 @@ if (token && user) {
             type: 'auth/setUser',
             payload: { user: userData, token }
         });
+        // Validate token and refresh user profile from backend
+        store.dispatch(fetchCurrentUser());
     } catch (error) {
         console.error('Error parsing stored user data:', error);
         // Clear invalid data

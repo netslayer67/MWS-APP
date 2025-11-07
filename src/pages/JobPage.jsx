@@ -74,9 +74,9 @@ const fmtDate = (iso) =>
    ------------------------- */
 function StatusPill({ status }) {
     const map = {
-        waiting: "Menunggu",
-        in_progress: "Proses",
-        completed: "Selesai",
+        waiting: "Waiting",
+        in_progress: "In Progress",
+        completed: "Completed",
     };
     const classes =
         status === "waiting"
@@ -143,7 +143,7 @@ export default function JobPage() {
     return (
         <AnimatedPage>
             <Helmet>
-                <title>Tugas Saya — Kerjain</title>
+                <title>My Tasks — MWS IntegraLearn</title>
             </Helmet>
 
             <div className="min-h-dvh px-4 py-5">
@@ -157,9 +157,9 @@ export default function JobPage() {
                             <ArrowLeft className="h-4 w-4" />
                         </Link>
                         <div>
-                            <h1 className="text-lg font-semibold">Tugas Saya</h1>
+                            <h1 className="text-lg font-semibold">My Tasks</h1>
                             <p className="text-xs text-muted-foreground">
-                                Daftar pekerjaan aktif
+                                List of active jobs
                             </p>
                         </div>
                     </div>
@@ -172,7 +172,7 @@ export default function JobPage() {
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
                                 sanitize="strong"
-                                placeholder="Cari judul, ID, atau client..."
+                                placeholder="Search title, ID, or client..."
                                 className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-accent/40"
                             />
                         </div>
@@ -183,9 +183,9 @@ export default function JobPage() {
                             className="rounded-full border border-border bg-card/50 px-3 py-2 text-sm backdrop-blur-md transition-colors duration-300 hover:border-accent"
                         >
                             <option value="all">Semua</option>
-                            <option value="waiting">Menunggu</option>
-                            <option value="in_progress">Proses</option>
-                            <option value="completed">Selesai</option>
+                            <option value="waiting">Waiting</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="completed">Completed</option>
                         </select>
                     </div>
 

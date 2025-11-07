@@ -51,7 +51,7 @@ export default function DepositSheet({
                         <button
                             onClick={() => onOpenChange?.(false)}
                             className="absolute right-3 top-3 rounded-full p-1 text-muted-foreground hover:text-foreground transition-colors ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                            aria-label="Tutup"
+                            aria-label="Close"
                         >
                             <X className="h-5 w-5" />
                         </button>
@@ -61,11 +61,11 @@ export default function DepositSheet({
                                 <ShieldCheck className="h-5 w-5" />
                             </div>
                             <div className="min-w-0">
-                                <h3 className="text-base font-semibold text-foreground">Keamanan Pembayaran</h3>
+                                <h3 className="text-base font-semibold text-foreground">Payment Safety</h3>
                                 <p className="mt-1 text-xs text-muted-foreground">
                                     {needs
-                                        ? "Nilai pekerjaan cukup tinggi. Disarankan deposit kecil agar proses lebih aman."
-                                        : "Untuk pembayaran tunai, pertimbangkan deposit kecil agar proses lebih aman."}
+                                        ? "High-value job. A small deposit is recommended for safety."
+                                        : "For cash payments, consider a small deposit for added safety."}
                                 </p>
                                 <p className="mt-2 text-xs text-foreground">
                                     Estimasi:{" "}
@@ -86,20 +86,20 @@ export default function DepositSheet({
                                 className="flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors duration-320"
                             >
                                 <WalletIcon className="h-4 w-4" />
-                                Buka Dompet
+                                Open Wallet
                             </Button>
                             <Button
                                 variant="outline"
                                 onClick={onContinue}
                                 className="flex items-center justify-center gap-2 rounded-xl hover:border-accent hover:text-accent transition-colors duration-320"
                             >
-                                Lanjutkan
+                                Continue
                                 <ArrowRight className="h-4 w-4" />
                             </Button>
                         </div>
 
                         <p className="mt-3 text-[11px] text-muted-foreground">
-                            Tips: Jangan membayar penuh di awal. Simpan bukti pembayaran.
+                            Tip: Avoid full upfront payment. Keep your payment receipts.
                         </p>
                     </motion.div>
                 </motion.div>

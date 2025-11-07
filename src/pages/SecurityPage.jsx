@@ -47,12 +47,12 @@ export default function SecurityPage() {
 
     // Sessions (demo list)
     const [sessions, setSessions] = useState([
-        { id: 1, device: "Chrome • Windows", last: "Baru saja", current: true },
-        { id: 2, device: "Safari • iPhone", last: "Kemarin 19:12", current: false },
+        { id: 1, device: "Chrome • Windows", last: "Just now", current: true },
+        { id: 2, device: "Safari • iPhone", last: "Yesterday 19:12", current: false },
     ]);
     const revoke = useCallback((id) => {
         setSessions((s) => s.filter((x) => x.id !== id || x.current));
-        toast({ title: "Sesi dicabut", description: "Perangkat berhasil dikeluarkan." });
+        toast({ title: "Session revoked", description: "Device logged out successfully." });
     }, [toast]);
 
     // 2FA and privacy (stub toggles)
@@ -69,27 +69,27 @@ export default function SecurityPage() {
 
     const savePwd = () => {
         if (!canChange) {
-            toast({ title: "Cek input", description: "Pastikan password valid dan cocok.", variant: "destructive" });
+            toast({ title: "Check input", description: "Make sure the password is valid and matches.", variant: "destructive" });
             return;
         }
-        toast({ title: "Password diperbarui", description: "Perubahan disimpan (demo)." });
+        toast({ title: "Password updated", description: "Changes saved (demo)." });
         setPwd({ current: "", next: "", confirm: "" });
     };
 
     const onToggle2FA = () => {
         setTwoFA((v) => !v);
-        toast({ title: "Pengaturan diperbarui", description: `2FA ${!twoFA ? "diaktifkan" : "dinonaktifkan"} (demo).` });
+        toast({ title: "Settings updated", description: `2FA ${!twoFA ? "enabled" : "disabled"} (demo).` });
     };
 
     const onToggleVisible = () => {
         setVisible((v) => !v);
-        toast({ title: "Privasi diperbarui", description: `Profil ${!visible ? "terlihat" : "disembunyikan"} (demo).` });
+        toast({ title: "Privacy updated", description: `Profil ${!visible ? "is visible" : "hidden"} (demo).` });
     };
 
     return (
         <AnimatedPage>
             <Helmet>
-                <title>Keamanan & Privasi — Kerjain</title>
+                <title>Security & Privacy — Kerjain</title>
             </Helmet>
 
             <motion.div
@@ -101,7 +101,7 @@ export default function SecurityPage() {
                 {/* Header */}
                 <header className="mb-4 sm:mb-6 flex items-center justify-between">
                     <div className="flex items-center gap-2 sm:gap-3">
-                        <Link to={-1} aria-label="Kembali">
+                        <Link to={-1} aria-label="Back">
                             <Button
                                 variant="ghost"
                                 size="icon"
@@ -111,8 +111,8 @@ export default function SecurityPage() {
                             </Button>
                         </Link>
                         <div>
-                            <h1 className="text-base sm:text-lg font-semibold text-foreground">Keamanan & Privasi</h1>
-                            <p className="text-[11px] sm:text-xs text-muted-foreground">Atur perlindungan akun Anda</p>
+                            <h1 className="text-base sm:text-lg font-semibold text-foreground">Security & Privacy</h1>
+                            <p className="text-[11px] sm:text-xs text-muted-foreground">Manage your account protection</p>
                         </div>
                     </div>
                 </header>
@@ -120,13 +120,13 @@ export default function SecurityPage() {
                 <div className="grid gap-3 sm:gap-4">
                     {/* Password */}
                     <SectionCard
-                        title="Ubah Password"
+                        title="Change Password"
                         icon={LockKeyhole}
-                        desc="Gunakan kombinasi huruf, angka, dan simbol."
+                        desc="Use a combination of letters, numbers, and symbols."
                     >
                         <div className="grid gap-2 sm:grid-cols-2">
                             <div className="sm:col-span-2">
-                                <label className="mb-1 block text-[11px] text-foreground/85">Password Saat Ini</label>
+                                <label className="mb-1 block text-[11px] text-foreground/85">Current Password</label>
                                 <Input
                                     type="password"
                                     value={pwd.current}
@@ -137,24 +137,24 @@ export default function SecurityPage() {
                                 />
                             </div>
                             <div>
-                                <label className="mb-1 block text-[11px] text-foreground/85">Password Baru</label>
+                                <label className="mb-1 block text-[11px] text-foreground/85">New Password</label>
                                 <Input
                                     type="password"
                                     value={pwd.next}
                                     onChange={(e) => onChangePwdField("next", e.target.value)}
                                     sanitize="strong"
-                                    placeholder="Minimal 6 karakter"
+                                    placeholder="At least 6 characters"
                                     className="rounded-xl bg-background/50"
                                 />
                             </div>
                             <div>
-                                <label className="mb-1 block text-[11px] text-foreground/85">Konfirmasi</label>
+                                <label className="mb-1 block text-[11px] text-foreground/85">Confirm</label>
                                 <Input
                                     type="password"
                                     value={pwd.confirm}
                                     onChange={(e) => onChangePwdField("confirm", e.target.value)}
                                     sanitize="strong"
-                                    placeholder="Ulangi password"
+                                    placeholder="Repeat password"
                                     className="rounded-xl bg-background/50"
                                 />
                             </div>
@@ -165,24 +165,22 @@ export default function SecurityPage() {
                                 onClick={savePwd}
                                 disabled={!canChange}
                                 className="rounded-full bg-primary px-4 py-1.5 text-xs text-primary-foreground hover:bg-primary/90 transition-colors duration-320"
-                            >
-                                Simpan
-                            </Button>
+                            > Save </Button>
                         </div>
                     </SectionCard>
 
                     {/* Sessions */}
                     <SectionCard
-                        title="Sesi Perangkat"
+                        title="Device Sessions"
                         icon={Activity}
-                        desc="Kelola perangkat yang login ke akun Anda."
+                        desc="Manage devices logged into your account."
                     >
                         <div className="divide-y divide-border">
                             {sessions.map((s) => (
                                 <div key={s.id} className="flex items-center justify-between py-2">
                                     <div className="min-w-0">
                                         <p className="text-sm font-medium">{s.device}</p>
-                                        <p className="text-[11px] text-muted-foreground">{s.current ? "Perangkat ini" : `Terakhir: ${s.last}`}</p>
+                                        <p className="text-[11px] text-muted-foreground">{s.current ? "This device" : `Last: ${s.last}`}</p>
                                     </div>
                                     {!s.current ? (
                                         <Button
@@ -191,10 +189,10 @@ export default function SecurityPage() {
                                             onClick={() => revoke(s.id)}
                                             className="rounded-full px-3 py-1 text-xs hover:border-destructive hover:text-destructive transition-colors duration-320"
                                         >
-                                            Cabut
+                                            Revoke
                                         </Button>
                                     ) : (
-                                        <span className="text-[11px] text-muted-foreground">Aktif</span>
+                                        <span className="text-[11px] text-muted-foreground">Active</span>
                                     )}
                                 </div>
                             ))}
@@ -203,9 +201,9 @@ export default function SecurityPage() {
 
                     {/* 2FA */}
                     <SectionCard
-                        title="Autentikasi Dua Langkah"
+                        title="Two-Factor Authentication"
                         icon={Smartphone}
-                        desc="Tambahkan lapisan keamanan tambahan (demo)."
+                        desc="Add an extra layer of security (demo)."
                     >
                         <div className="flex items-center justify-between">
                             <p className="text-xs text-muted-foreground">Kode via aplikasi autentikator</p>
@@ -222,13 +220,13 @@ export default function SecurityPage() {
 
                     {/* Privacy */}
                     <SectionCard
-                        title="Visibilitas Profil"
+                        title="Profile Visibility"
                         icon={visible ? Eye : EyeOff}
-                        desc="Atur apakah profil Anda terlihat publik."
+                        desc="Atur apakah profil Anda is visible publik."
                     >
                         <div className="flex items-center justify-between">
                             <p className="text-xs text-muted-foreground">
-                                {visible ? "Profil dapat ditemukan publik." : "Profil tersembunyi dari publik."}
+                                {visible ? "Your profile can be found publicly." : "Your profile is hidden from the public."}
                             </p>
                             <button
                                 role="switch"
@@ -246,7 +244,7 @@ export default function SecurityPage() {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <ShieldCheck className="h-4 w-4" />
-                                <span className="text-sm font-semibold">Keluar dari semua perangkat</span>
+                                <span className="text-sm font-semibold">Sign out from all devices</span>
                             </div>
                             <Button
                                 size="sm"
@@ -257,10 +255,9 @@ export default function SecurityPage() {
                                     setSessions((s) => s.filter((x) => x.current));
                                 }}
                             >
-                                <LogOut className="mr-1 h-4 w-4" /> Keluar
-                            </Button>
+                                <LogOut className="mr-1 h-4 w-4" /> Sign Out </Button>
                         </div>
-                        <p className="mt-1 text-[11px]">Tindakan ini akan mengeluarkan semua sesi selain perangkat ini.</p>
+                        <p className="mt-1 text-[11px]">Tindakan ini akan mengeluarkan semua sesi selain This device.</p>
                     </div>
                 </div>
             </motion.div>

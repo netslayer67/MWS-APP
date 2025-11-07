@@ -33,7 +33,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import ThemeToggle from "@/components/ThemeToggle";
-import { getCheckinHistory } from "../store/slices/checkinSlice";
+import { getCheckinHistory, getTodayCheckin } from "../store/slices/checkinSlice";
 import { logoutUser } from "../store/slices/authSlice";
 
 /* ---------------------- Helpers ---------------------- */
@@ -52,6 +52,60 @@ const getTier = (completed) => {
     if (completed >= 200) return { label: "Gold", icon: Award, color: "text-gold" };
     if (completed >= 100) return { label: "Silver", icon: Star, color: "text-slate-400" };
     return { label: "Bronze", icon: CheckCircle, color: "text-amber-600" };
+};
+
+// Time-aware, varied greeting builders
+const getTimeOfDay = (date = new Date()) => {
+    const h = date.getHours();
+    if (h < 12) return 'morning';
+    if (h < 17) return 'afternoon';
+    if (h < 21) return 'evening';
+    return 'night';
+};
+
+const pickVariant = (key, variants) => {
+    // Deterministic-ish selection per day without flicker
+    const seed = (typeof key === 'string' ? key : JSON.stringify(key)) + new Date().toDateString();
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+    return variants[hash % variants.length];
+};
+
+export const getDynamicGreeting = (user, titledName) => {
+    const tod = getTimeOfDay();
+    const base = {
+        morning: [
+            `Good morning, ${titledName}`,
+            `Morning, ${titledName}`,
+            `A bright start, ${titledName}`
+        ],
+        afternoon: [
+            `Good afternoon, ${titledName}`,
+            `Hope your afternoon’s going well, ${titledName}`,
+            `Great to see you, ${titledName}`
+        ],
+        evening: [
+            `Good evening, ${titledName}`,
+            `Wishing you a calm evening, ${titledName}`,
+            `Nice to have you here, ${titledName}`
+        ],
+        night: [
+            `Good evening, ${titledName}`,
+            `Late session, ${titledName}?` ,
+            `Hello, ${titledName}`
+        ]
+    };
+    return pickVariant(user?.email || titledName, base[tod]);
+};
+
+export const getDynamicSubGreeting = () => {
+    const variants = [
+        'Your wellness overview is ready',
+        'Here are your latest insights',
+        'Wishing you a productive day',
+        'Stay present and take a breath'
+    ];
+    return pickVariant('sub'+new Date().toDateString(), variants);
 };
 
 /* ---------------------- Decorative Elements ---------------------- */
@@ -169,7 +223,7 @@ const ProfilePage = memo(function ProfilePage() {
 
     // Redux state
     const { user: currentUser } = useSelector((state) => state.auth);
-    const { checkinHistory } = useSelector((state) => state.checkin);
+    const { todayCheckin, checkinHistory } = useSelector((state) => state.checkin);
 
     // Local state
     const [isCompact, setIsCompact] = useState(false);
@@ -178,6 +232,7 @@ const ProfilePage = memo(function ProfilePage() {
     // Load data on mount
     useEffect(() => {
         if (currentUser) {
+            dispatch(getTodayCheckin());
             dispatch(getCheckinHistory({ page: 1, limit: 50 }));
         }
     }, [dispatch, currentUser]);
@@ -230,6 +285,21 @@ const ProfilePage = memo(function ProfilePage() {
     }, [currentUser, checkinHistory]);
 
     const tier = useMemo(() => getTier(user.completed), [user.completed]);
+
+    // Derived info for today's check-in
+    const todayCard = useMemo(() => {
+        if (!todayCheckin) return null;
+        const moodCount = Array.isArray(todayCheckin.selectedMoods) ? todayCheckin.selectedMoods.length : 0;
+        const moods = moodCount > 0 ? todayCheckin.selectedMoods.slice(0, 3).join(', ') + (moodCount > 3 ? '…' : '') : null;
+        const weather = todayCheckin.weatherType || null;
+        const presence = typeof todayCheckin.presenceLevel === 'number' ? todayCheckin.presenceLevel : null;
+        const capacity = typeof todayCheckin.capacityLevel === 'number' ? todayCheckin.capacityLevel : null;
+        const id = todayCheckin._id || todayCheckin.id || null;
+        const needsSupport = !!todayCheckin.aiAnalysis?.needsSupport;
+        const hasAI = !!todayCheckin.aiAnalysis;
+        const confidence = typeof todayCheckin.aiAnalysis?.confidence === 'number' ? todayCheckin.aiAnalysis.confidence : null;
+        return { id, moods, weather, presence, capacity, needsSupport, hasAI, confidence, moodCount };
+    }, [todayCheckin]);
 
     // Animation variants
     const container = useMemo(
@@ -349,10 +419,78 @@ const ProfilePage = memo(function ProfilePage() {
                             </button>
 
                             <div className="flex-1 min-w-0">
-                                <h1 className="text-lg font-semibold text-foreground">Profile</h1>
-                                <p className="mt-0.5 text-xs text-muted-foreground">Account overview</p>
+                                <h1 className="text-lg font-semibold text-foreground">{getDynamicGreeting(currentUser, user.name)}</h1>
+                                <p className="mt-0.5 text-xs text-muted-foreground">{getDynamicSubGreeting()}</p>
                             </div>
                         </motion.header>
+
+                        {/* Today's Check-in */}
+                        <motion.section variants={item}>
+                            <GlassCard>
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <h2 className="text-sm font-semibold text-foreground">Today's Check-in</h2>
+                                        {todayCard ? (
+                                            <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                                                {todayCard.presence !== null && (
+                                                    <div>
+                                                        <span className="text-foreground/80">Presence:</span> {todayCard.presence}
+                                                    </div>
+                                                )}
+                                                {todayCard.capacity !== null && (
+                                                    <div>
+                                                        <span className="text-foreground/80">Capacity:</span> {todayCard.capacity}
+                                                    </div>
+                                                )}
+                                                {todayCard.weather && (
+                                                    <div className="col-span-2 truncate">
+                                                        <span className="text-foreground/80">Weather:</span> {todayCard.weather}
+                                                    </div>
+                                                )}
+                                                {todayCard.moods && todayCard.moodCount > 0 && (
+                                                    <div className="col-span-2 truncate">
+                                                        <span className="text-foreground/80">Moods:</span> {todayCard.moods}
+                                                    </div>
+                                                )}
+                                                {todayCard.hasAI && (
+                                                    <div className="col-span-2 mt-1 flex items-center gap-2">
+                                                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ${todayCard.needsSupport ? 'bg-rose-500/10 text-rose-400 ring-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/20'}`}>
+                                                            {todayCard.needsSupport ? 'AI: Needs Support' : 'AI: Stable'}
+                                                        </span>
+                                                        {todayCard.confidence !== null && (
+                                                            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 bg-secondary/10 text-foreground/80 ring-border/30">
+                                                                Confidence: {Math.round(todayCard.confidence)}%
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <p className="mt-1 text-xs text-muted-foreground">No check-in recorded today.</p>
+                                        )}
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                        {todayCard && todayCard.id ? (
+                                            <Link to={`/emotional-checkin/rate/${todayCard.id}`} className="inline-flex items-center gap-2 rounded-md border border-border/50 px-3 py-1.5 text-xs hover:border-primary/40 hover:bg-primary/5 transition-colors">
+                                                View Details <ChevronRight className="h-3.5 w-3.5" />
+                                            </Link>
+                                        ) : null}
+                                        {todayCard ? (
+                                            <Link to="/profile/emotional-history" className="inline-flex items-center gap-2 rounded-md border border-border/50 px-3 py-1.5 text-xs hover:border-primary/40 hover:bg-primary/5 transition-colors">
+                                                View History <ChevronRight className="h-3.5 w-3.5" />
+                                            </Link>
+                                        ) : (
+                                            <Link to={(currentUser?.role === 'staff' || currentUser?.role === 'teacher') ? '/emotional-checkin/staff' : '/emotional-checkin'} className="inline-flex items-center gap-2 rounded-md border border-border/50 px-3 py-1.5 text-xs hover:border-primary/40 hover:bg-primary/5 transition-colors">
+                                                Start Check-in <ChevronRight className="h-3.5 w-3.5" />
+                                            </Link>
+                                        )}
+                                        <Link to="/profile/personal-stats" className="inline-flex items-center gap-2 rounded-md border border-border/50 px-3 py-1.5 text-xs hover:border-primary/40 hover:bg-primary/5 transition-colors">
+                                            Overall Stats <ChevronRight className="h-3.5 w-3.5" />
+                                        </Link>
+                                    </div>
+                                </div>
+                            </GlassCard>
+                        </motion.section>
 
                         {/* Profile Card */}
                         <motion.section variants={item}>

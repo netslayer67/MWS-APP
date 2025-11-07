@@ -48,3 +48,10 @@ export const getUserCheckinHistory = async (userId, limit = 50, offset = 0) => {
     });
     return response;
 };
+
+export const getUnitMembers = async (unit = null) => {
+    const params = {};
+    if (unit) params.unit = unit;
+    const response = await api.get('/dashboard/unit/members', { params });
+    return response;
+};

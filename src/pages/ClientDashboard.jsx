@@ -10,20 +10,20 @@ import EmptyState from "@/components/feedback/EmptyState";
 
 /* ---------------- data ---------------- */
 const quickActions = [
-    { title: "Pasang", icon: Plus, path: "/post-job" },
-    { title: "Riwayat", icon: Clock, path: "/history" },
+    { title: "Post", icon: Plus, path: "/post-job" },
+    { title: "History", icon: Clock, path: "/history" },
     { title: "Chat", icon: MessageSquare, path: "/chat" },
 ];
 
 const activeJobs = [
-    { id: 1, title: "Bersihkan Taman", worker: "Budi S.", status: "Proses", progress: 60 },
-    { id: 2, title: "Desain Logo", worker: "Citra L.", status: "Review", progress: 100 },
+    { id: 1, title: "Garden Cleaning", worker: "Budi S.", status: "In Progress", progress: 60 },
+    { id: 2, title: "Logo Design", worker: "Citra L.", status: "Review", progress: 100 },
 ];
 
 /* ---------------- helpers ---------------- */
 const cn = (...c) => c.filter(Boolean).join(" ");
 const badgeClass = (status) =>
-    status === "Proses"
+    status === "In Progress"
         ? "bg-primary/15 text-primary ring-1 ring-primary/20"
         : status === "Review"
             ? "bg-accent/15 text-accent ring-1 ring-accent/20"
@@ -65,7 +65,7 @@ const QuickActionCard = React.memo(function QuickActionCard({ action }) {
 
 const ActiveJobCard = React.memo(function ActiveJobCard({ job }) {
     return (
-        <Link to={`/job/${job.id}/track`} className="group block" aria-label={`Lihat ${job.title}`}>
+        <Link to={`/job/${job.id}/track`} className="group block" aria-label={`View ${job.title}`}>
             <Card className="rounded-2xl border border-border/40 glass-strong hover-card">
                 <CardContent className="p-3 sm:p-4 space-y-3">
                     <div className="flex items-start justify-between gap-3">
@@ -108,8 +108,8 @@ export default function ClientDashboard() {
 
     const kpis = useMemo(
         () => [
-            { label: "Aktif", value: activeJobs.length, icon: Loader2 },
-            { label: "Selesai", value: 12, icon: CheckCircle2 },
+            { label: "Active", value: activeJobs.length, icon: Loader2 },
+            { label: "Completed", value: 12, icon: CheckCircle2 },
             { label: "Chat", value: 3, icon: MessageSquare },
             { label: "Draft", value: 1, icon: Clock },
         ],
@@ -119,7 +119,7 @@ export default function ClientDashboard() {
     return (
         <AnimatedPage>
             <Helmet>
-                <title>Dashboard Klien — Kerjain</title>
+                <title>Client Dashboard - MWS IntegraLearn</title>
             </Helmet>
 
             <div className="relative min-h-screen w-full px-3 py-5 sm:px-6 sm:py-6 text-foreground">
@@ -131,15 +131,15 @@ export default function ClientDashboard() {
                                 <User className="h-5 w-5" aria-hidden />
                             </div>
                             <div className="min-w-0">
-                                <h1 className="text-base sm:text-xl font-semibold truncate">Halo, Jilliyan 👋</h1>
-                                <p className="text-xs text-muted-foreground truncate">Semoga harimu lancar</p>
+                                <h1 className="text-base sm:text-xl font-semibold truncate">Hello, Jilliyan 👋</h1>
+                                <p className="text-xs text-muted-foreground truncate">Hope your day is going well</p>
                             </div>
                         </div>
 
                         <div className="flex items-center gap-2">
                             <Link to="/post-job">
                                 <Button size="sm" className="hidden sm:inline-flex rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition duration-320">
-                                    <Plus className="mr-2 h-4 w-4" /> Posting
+                                    <Plus className="mr-2 h-4 w-4" /> Post
                                 </Button>
                             </Link>
 
@@ -174,9 +174,9 @@ export default function ClientDashboard() {
                 {/* Quick Actions */}
                 <section className="mt-2">
                     <div className="mb-3 flex items-center justify-between">
-                        <h2 className="text-base font-semibold">Aksi Cepat</h2>
+                        <h2 className="text-base font-semibold">Quick Actions</h2>
                         <Link to="/history" className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
-                            Semua <ChevronRight className="h-3.5 w-3.5" />
+                            All <ChevronRight className="h-3.5 w-3.5" />
                         </Link>
                     </div>
 
@@ -190,8 +190,8 @@ export default function ClientDashboard() {
                 {/* Active Jobs */}
                 <section className="mt-6">
                     <div className="mb-3 flex items-center justify-between">
-                        <h2 className="text-base font-semibold">Job Aktif</h2>
-                        {activeJobs.length > 0 && <p className="text-xs text-muted-foreground">{activeJobs.length} job</p>}
+                        <h2 className="text-base font-semibold">Active Jobs</h2>
+                        {activeJobs.length > 0 && <p className="text-xs text-muted-foreground">{activeJobs.length} jobs</p>}
                     </div>
 
                     {activeJobs.length > 0 ? (
@@ -203,12 +203,12 @@ export default function ClientDashboard() {
                     ) : (
                         <motion.div initial={{ opacity: 0, y: reduce ? 0 : 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.36 }}>
                             <EmptyState
-                                title="Belum ada job aktif."
-                                subtitle="Buat postingan baru untuk mulai mencari pekerja."
+                                title="No active jobs yet."
+                                subtitle="Create a new post to start finding workers."
                                 action={
                                     <Link to="/post-job">
                                         <Button size="sm" className="font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition duration-320">
-                                            <Plus className="mr-2 h-4 w-4" /> Pasang Job
+                                            <Plus className="mr-2 h-4 w-4" /> Post Job
                                         </Button>
                                     </Link>
                                 }

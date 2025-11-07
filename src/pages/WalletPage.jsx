@@ -91,13 +91,13 @@ export default function WalletPage() {
                     <Link
                         to={-1}
                         className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-card/40 backdrop-blur-xl ring-1 ring-border text-muted-foreground hover:text-accent transition-colors duration-300"
-                        aria-label="Kembali"
+                        aria-label="Back"
                     >
                         <ArrowLeft className="h-4 w-4" />
                     </Link>
                     <div className="flex items-center gap-2">
                         <Wallet className="h-4 w-4 text-accent" />
-                        <h1 className="text-base font-semibold">Dompet</h1>
+                        <h1 className="text-base font-semibold">Wallet</h1>
                     </div>
                 </div>
 
@@ -130,9 +130,9 @@ export default function WalletPage() {
                 <div className="mt-5 space-y-3">
                     <div className="inline-flex w-full justify-center rounded-xl bg-card/40 backdrop-blur-xl p-1 ring-1 ring-border transition-colors duration-300">
                         {[
-                            { key: "semua", label: "Semua" },
-                            { key: "masuk", label: "Masuk" },
-                            { key: "keluar", label: "Keluar" },
+                            { key: "semua", label: "All" },
+                            { key: "masuk", label: "In" },
+                            { key: "keluar", label: "Out" },
                         ].map((t) => (
                             <button
                                 key={t.key}
@@ -152,7 +152,7 @@ export default function WalletPage() {
                         <div className="flex items-center justify-between pb-2">
                             <div className="flex items-center gap-2">
                                 <Receipt className="h-4 w-4 text-accent" />
-                                <h2 className="text-sm font-semibold">Riwayat</h2>
+                                <h2 className="text-sm font-semibold">History</h2>
                             </div>
                             <button
                                 onClick={downloadCSV}
@@ -168,8 +168,8 @@ export default function WalletPage() {
                             ) : filtered.length === 0 ? (
                                 <div className="py-4">
                                     <EmptyState
-                                        title="Belum ada transaksi"
-                                        subtitle="Transaksi akan muncul di sini."
+                                        title="No transactions yet"
+                                        subtitle="Your transactions will appear here."
                                     />
                                 </div>
                             ) : (

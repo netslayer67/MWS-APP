@@ -83,7 +83,7 @@ export default function NotificationSettingsPage() {
         setTimeout(() => {
             setSaving(false);
             setSavedTs(Date.now());
-            toast({ title: "Tersimpan", description: "Preferensi notifikasi disimpan.", duration: 2000 });
+            toast({ title: "Saved", description: "Notification preferences saved.", duration: 2000 });
         }, 500);
     }, [toast]);
 
@@ -96,7 +96,7 @@ export default function NotificationSettingsPage() {
     return (
         <AnimatedPage>
             <Helmet>
-                <title>Pengaturan Notifikasi — Kerjain</title>
+                <title>Notification Settings - MWS IntegraLearn</title>
             </Helmet>
 
             <MotionConfig reducedMotion="user">

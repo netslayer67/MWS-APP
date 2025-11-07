@@ -17,27 +17,27 @@ import { Helmet } from "react-helmet";
 
 const faqItems = [
     {
-        q: "Bagaimana cara kerja auto-matching?",
-        a: "Sistem otomatis mencocokkan pekerjaan dengan pekerja terdekat sesuai kualifikasi.",
+        q: "How does auto-matching work?",
+        a: "The system matches jobs with nearby workers based on qualifications.",
     },
     {
-        q: "Bagaimana sistem komisi?",
-        a: "Komisi 11% dipotong dari total bayaran setiap pekerjaan yang selesai.",
+        q: "How do commissions work?",
+        a: "An 11% commission is deducted from each completed job payment.",
     },
     {
-        q: "Apakah pembayaran tunai aman?",
-        a: "Ya, aman. Semua transaksi tercatat. Tekan tombol 'Selesai' setelah pembayaran.",
+        q: "Is cash payment safe?",
+        a: "Yes. All transactions are recorded. Tap 'Complete' after payment.",
     },
     {
-        q: "Bagaimana jika ada masalah?",
-        a: "Gunakan menu 'Laporkan Masalah'. Tim kami akan segera membantu Anda.",
+        q: "What if I have an issue?",
+        a: "Use the 'Report an Issue' menu. Our team will help promptly.",
     },
 ];
 
 export default function HelpCenterPage() {
     const [search, setSearch] = useState("");
 
-    // sanitize input, cegah script/link jahat
+    // sanitize input — prevent scripts/links
     const sanitize = (v) => v.replace(/[<>]/g, "");
     const filteredFaq = faqItems.filter((f) =>
         f.q.toLowerCase().includes(search.toLowerCase())
@@ -46,10 +46,10 @@ export default function HelpCenterPage() {
     return (
         <AnimatedPage>
             <Helmet>
-                <title>Pusat Bantuan — Kerjain</title>
+                <title>Help Center - MWS IntegraLearn</title>
                 <meta
                     name="description"
-                    content="Temukan jawaban atas pertanyaan umum, hubungi support, atau gunakan live chat di pusat bantuan Kerjain."
+                    content="Find answers to common questions, contact support, or use live chat in the help center."
                 />
             </Helmet>
 
@@ -70,7 +70,7 @@ export default function HelpCenterPage() {
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
                     </Link>
-                    <h1 className="text-xl font-semibold text-foreground">Pusat Bantuan</h1>
+                    <h1 className="text-xl font-semibold text-foreground">Help Center</h1>
                 </motion.header>
 
                 {/* Search */}
@@ -82,7 +82,7 @@ export default function HelpCenterPage() {
                 >
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                        placeholder="Cari pertanyaan atau topik..."
+                        placeholder="Search a question or topic..."
                         value={search}
                         onChange={(e) => setSearch(sanitize(e.target.value))}
                         sanitize="strong"
@@ -121,7 +121,7 @@ export default function HelpCenterPage() {
                             </motion.div>
                         ))
                     ) : (
-                        <EmptyState title="Tidak ada hasil" subtitle="Coba kata kunci lain." />
+                        <EmptyState title="No results" subtitle="Try a different keyword." />
                     )}
                 </motion.section>
 
@@ -133,10 +133,10 @@ export default function HelpCenterPage() {
                     className="rounded-3xl border border-border/50 bg-card/60 p-6 text-center shadow-md backdrop-blur-xl space-y-3"
                 >
                     <h3 className="text-lg font-semibold text-foreground">
-                        Butuh bantuan lebih?
+                        Need more help?
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                        Hubungi tim support atau gunakan live chat.
+                        Contact support or use live chat.
                     </p>
 
                     <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2">
