@@ -3,7 +3,8 @@ import {
     submitCheckin as submitCheckinApi,
     getTodayCheckin as getTodayCheckinApi,
     getCheckinResults as getCheckinResultsApi,
-    getCheckinHistory as getCheckinHistoryApi
+    getCheckinHistory as getCheckinHistoryApi,
+    getPersonalDashboard as getPersonalDashboardApi
 } from '../../services/checkinService';
 
 // Async thunks
@@ -58,6 +59,18 @@ export const getCheckinHistory = createAsyncThunk(
     }
 );
 
+export const getPersonalDashboard = createAsyncThunk(
+    'checkin/getPersonalDashboard',
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await getPersonalDashboardApi();
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to load personal dashboard');
+        }
+    }
+);
+
 // Initial state
 const initialState = {
     todayCheckin: null,
@@ -66,6 +79,8 @@ const initialState = {
     currentCheckin: null,
     loading: false,
     error: null,
+    personalDashboard: null,
+    personalLoading: false,
     pagination: {
         page: 1,
         limit: 10,
@@ -157,6 +172,23 @@ const checkinSlice = createSlice({
                 state.loading = false;
                 state.error = action.payload;
                 state.checkinHistory = [];
+            })
+            // Personal dashboard
+            .addCase(getPersonalDashboard.pending, (state) => {
+                state.personalLoading = true;
+                state.error = null;
+            })
+            .addCase(getPersonalDashboard.fulfilled, (state, action) => {
+                state.personalLoading = false;
+                const payload = action.payload?.data || action.payload || null;
+                state.personalDashboard = payload;
+                if (payload?.today?.checkin) {
+                    state.todayCheckin = payload.today.checkin;
+                }
+            })
+            .addCase(getPersonalDashboard.rejected, (state, action) => {
+                state.personalLoading = false;
+                state.error = action.payload;
             });
     },
 });

@@ -1,4 +1,4 @@
-import React, { useState, memo, useMemo, useCallback, Suspense, lazy, useEffect } from "react";
+import React, { useState, memo, useMemo, useCallback, Suspense, lazy, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchDashboardStats, setSelectedPeriod, setSelectedDate, removeFlaggedUser } from "../store/slices/dashboardSlice";
 import socketService from "../services/socketService";
@@ -39,6 +39,7 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
     const isHeadUnit = user?.role === 'head_unit';
     const [isLoaded, setIsLoaded] = useState(false);
     const [filters, setFilters] = useState({});
+    const directorateAutoPeriodApplied = useRef(false);
 
     // Performance optimization: Defer heavy operations
     useEffect(() => {
@@ -58,6 +59,12 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
         );
 
         if (hasDashboardAccess) {
+            if (user?.role === 'directorate' && selectedPeriod === 'today' && !directorateAutoPeriodApplied.current) {
+                directorateAutoPeriodApplied.current = true;
+                dispatch(setSelectedPeriod('all'));
+                return;
+            }
+
             console.log('Fetching dashboard stats for period:', selectedPeriod, 'User:', user);
             dispatch(fetchDashboardStats({ period: selectedPeriod }));
 
@@ -125,7 +132,7 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
     // console.log('Dashboard state:', { stats, loading, error, user });
     // console.log('Selected period:', selectedPeriod);
     // console.log('Stats data:', stats);
-    // console.log('Stats.stats:', stats?.stats);
+    // console.log('Dashboard stats:', stats);
 
     const handleMTSSClick = useCallback(() => {
         // Navigate to MTSS system
@@ -201,7 +208,7 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
                 <Suspense fallback={<LoadingFallback />}>
                     <StatsGrid
                         mockData={mockData}
-                        realData={stats?.stats}
+                        realData={stats}
                         loading={loading}
                     />
                 </Suspense> */}
@@ -210,7 +217,7 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
                 <Suspense fallback={<LoadingFallback />}>
                     <ContentSections
                         mockData={mockData}
-                        realData={stats?.stats}
+                        realData={stats}
                         loading={loading}
                         selectedPeriod={selectedPeriod}
                         userId={user?.id}

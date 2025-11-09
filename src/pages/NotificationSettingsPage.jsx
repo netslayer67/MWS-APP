@@ -215,7 +215,7 @@ export default function NotificationSettingsPage() {
                     {/* Footer actions */}
                     <motion.section variants={item} className="mt-6 flex items-center justify-between">
                         <div className="text-[11px] sm:text-xs text-muted-foreground">
-                            {saving ? "Menyimpan..." : lastSaved ? `Tersimpan • ${lastSaved}` : "Belum ada perubahan"}
+                            {saving ? "Saving..." : lastSaved ? `Saved • ${lastSaved}` : "No changes yet"}
                         </div>
 
                         <div className="flex items-center gap-2">

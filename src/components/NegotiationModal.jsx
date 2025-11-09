@@ -192,7 +192,7 @@ const NegotiationModalCompact = ({
                             })}
                             {offers.length === 0 && (
                                 <p className="text-xs sm:text-sm text-muted-foreground text-center">
-                                    Belum ada penawaran.
+                                    No offers yet.
                                 </p>
                             )}
                         </div>

@@ -47,6 +47,9 @@ const ComparativeAnalysis = lazy(() =>
 const UserHistorySection = lazy(() =>
     import(/* webpackChunkName: "user-history" */ "./UserHistorySection")
 );
+const HeadUnitStaffPanel = lazy(() =>
+    import(/* webpackChunkName: "head-unit-staff" */ "./HeadUnitStaffPanel")
+);
 
 // Optimized loading fallback - minimal animations for performance
 const ContentFallback = memo(() => (
@@ -68,6 +71,16 @@ const ContentSections = memo(({ mockData, realData, loading, selectedPeriod, use
 
     return (
         <>
+            {isHeadUnit && (
+                <Suspense fallback={<ContentFallback />}>
+                    <div className="mb-4 md:mb-6">
+                        <HeadUnitStaffPanel
+                            staff={data?.unitStaffDetails || []}
+                            summary={data?.unitStaffSummary}
+                        />
+                    </div>
+                </Suspense>
+            )}
             {/* Overview Analytics - Moved to top position */}
             <Suspense fallback={<ContentFallback />}>
                 <div className="mb-4 md:mb-6">

@@ -33,13 +33,19 @@ export const getTodayCheckinStatus = async () => {
     return response;
 };
 
+export const getPersonalDashboard = async () => {
+    const response = await api.get('/checkin/personal/dashboard');
+    return response;
+};
+
 // Default export for backward compatibility
 const checkinService = {
     submitCheckin,
     getTodayCheckin,
     getCheckinResults,
     getCheckinHistory,
-    getTodayCheckinStatus
+    getTodayCheckinStatus,
+    getPersonalDashboard
 };
 
 export default checkinService;

@@ -14,6 +14,8 @@ const DashboardHeader = memo(({ selectedPeriod, onPeriodChange, selectedDate, on
         });
     };
 
+    const isDatePickerDisabled = selectedPeriod === 'all';
+
     return (
         <div className="mb-4 md:mb-6">
             <div className="flex items-center justify-between mb-3">
@@ -68,8 +70,16 @@ const DashboardHeader = memo(({ selectedPeriod, onPeriodChange, selectedDate, on
                             type="date"
                             value={selectedDate}
                             onChange={(e) => onDateChange(e.target.value)}
-                            className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-card/50 border border-border/50 rounded-lg hover:border-primary/40 hover:bg-card/80 transition-all duration-300 text-sm text-foreground"
+                            disabled={isDatePickerDisabled}
+                            className={`flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-card/50 border border-border/50 rounded-lg transition-all duration-300 text-sm text-foreground
+                                ${isDatePickerDisabled
+                                    ? 'opacity-60 cursor-not-allowed'
+                                    : 'hover:border-primary/40 hover:bg-card/80'}
+                            `}
                         />
+                        {isDatePickerDisabled && (
+                            <p className="text-[10px] mt-1 text-muted-foreground">Showing entire emotional history</p>
+                        )}
                     </div>
                 </div>
 

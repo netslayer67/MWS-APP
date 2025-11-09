@@ -327,7 +327,7 @@ export default function OffersInboxPage() {
                         <div className="mt-8">
                             <EmptyState
                                 icon={<User className="h-6 w-6" />}
-                                title="Belum ada penawaran"
+                                title="No offers yet"
                                 subtitle="Penawaran akan muncul di sini."
                             />
                         </div>

@@ -7,7 +7,7 @@ export const fetchDashboardStats = createAsyncThunk(
     async ({ period = 'today', date, force = false } = {}, { rejectWithValue }) => {
         try {
             const response = await getDashboardStats(period, date, force);
-            return response.data;
+            return response.data?.data?.stats || response.data?.data || response.data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to fetch dashboard stats');
         }
@@ -91,7 +91,7 @@ const dashboardSlice = createSlice({
             })
             .addCase(fetchDashboardStats.fulfilled, (state, action) => {
                 state.loading = false;
-                state.stats = action.payload.data;
+                state.stats = action.payload;
                 state.lastUpdated = new Date().toISOString();
                 state.error = null;
             })

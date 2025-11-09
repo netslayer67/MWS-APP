@@ -20,7 +20,11 @@ import {
     Activity,
     BarChart3,
     UserCog,
-    Heart
+    Heart,
+    Flame,
+    Gauge,
+    PieChart,
+    Sparkles
 } from "lucide-react";
 import { Helmet } from "react-helmet";
 import { Button } from "@/components/ui/button";
@@ -33,7 +37,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import ThemeToggle from "@/components/ThemeToggle";
-import { getCheckinHistory, getTodayCheckin } from "../store/slices/checkinSlice";
+import { getCheckinHistory, getPersonalDashboard } from "../store/slices/checkinSlice";
 import { logoutUser } from "../store/slices/authSlice";
 
 /* ---------------------- Helpers ---------------------- */
@@ -46,6 +50,30 @@ const sanitizeInput = (value) => {
         .replace(/(script|onerror|onload|data:|vbscript:)/gi, "")
         .trim()
         .slice(0, 300);
+};
+
+const formatMetricValue = (value, fractionDigits = 1) => {
+    if (typeof value !== 'number' || Number.isNaN(value)) return '–';
+    const fixed = value.toFixed(fractionDigits);
+    return fixed.includes('.') ? fixed.replace(/\.0+$/, '') : fixed;
+};
+
+const formatDateLabel = (value, options = { day: 'numeric', month: 'short' }) => {
+    if (!value) return '-';
+    try {
+        return new Intl.DateTimeFormat('id-ID', options).format(new Date(value));
+    } catch {
+        return '-';
+    }
+};
+
+const formatWeekdayLabel = (value) => {
+    if (!value) return '';
+    try {
+        return new Intl.DateTimeFormat('id-ID', { weekday: 'short' }).format(new Date(value));
+    } catch {
+        return '';
+    }
 };
 
 const getTier = (completed) => {
@@ -223,7 +251,12 @@ const ProfilePage = memo(function ProfilePage() {
 
     // Redux state
     const { user: currentUser } = useSelector((state) => state.auth);
-    const { todayCheckin, checkinHistory } = useSelector((state) => state.checkin);
+    const {
+        todayCheckin,
+        checkinHistory,
+        personalDashboard,
+        personalLoading
+    } = useSelector((state) => state.checkin);
 
     // Local state
     const [isCompact, setIsCompact] = useState(false);
@@ -232,7 +265,7 @@ const ProfilePage = memo(function ProfilePage() {
     // Load data on mount
     useEffect(() => {
         if (currentUser) {
-            dispatch(getTodayCheckin());
+            dispatch(getPersonalDashboard());
             dispatch(getCheckinHistory({ page: 1, limit: 50 }));
         }
     }, [dispatch, currentUser]);
@@ -271,35 +304,61 @@ const ProfilePage = memo(function ProfilePage() {
             return title ? `${title} ${displayName}` : displayName;
         };
 
+        const fallbackHistoryLength = Array.isArray(checkinHistory)
+            ? checkinHistory.length
+            : checkinHistory?.data?.checkins?.length
+                || checkinHistory?.checkins?.length
+                || 0;
+
         return {
             name: getUserTitle(currentUser),
             email: sanitizeInput(currentUser.email) || "user@example.com",
             initials: sanitizeInput(currentUser.name || currentUser.username || "U").charAt(0).toUpperCase(),
-            completed: checkinHistory?.length || 0,
+            completed: personalDashboard?.overall?.totalCheckins ?? fallbackHistoryLength,
             rating: 4.8,
             department: sanitizeInput(currentUser.unit || currentUser.department) || "Not specified",
             role: currentUser.role || "staff",
             position: sanitizeInput(currentUser.jobPosition) || "Junior Full Stack Web Developer",
             level: sanitizeInput(currentUser.jobLevel) || "Staff"
         };
-    }, [currentUser, checkinHistory]);
+    }, [currentUser, checkinHistory, personalDashboard]);
 
     const tier = useMemo(() => getTier(user.completed), [user.completed]);
 
     // Derived info for today's check-in
     const todayCard = useMemo(() => {
-        if (!todayCheckin) return null;
-        const moodCount = Array.isArray(todayCheckin.selectedMoods) ? todayCheckin.selectedMoods.length : 0;
-        const moods = moodCount > 0 ? todayCheckin.selectedMoods.slice(0, 3).join(', ') + (moodCount > 3 ? '…' : '') : null;
-        const weather = todayCheckin.weatherType || null;
-        const presence = typeof todayCheckin.presenceLevel === 'number' ? todayCheckin.presenceLevel : null;
-        const capacity = typeof todayCheckin.capacityLevel === 'number' ? todayCheckin.capacityLevel : null;
-        const id = todayCheckin._id || todayCheckin.id || null;
-        const needsSupport = !!todayCheckin.aiAnalysis?.needsSupport;
-        const hasAI = !!todayCheckin.aiAnalysis;
-        const confidence = typeof todayCheckin.aiAnalysis?.confidence === 'number' ? todayCheckin.aiAnalysis.confidence : null;
+        const source = personalDashboard?.today?.checkin || todayCheckin;
+        if (!source) return null;
+        const moodCount = Array.isArray(source.selectedMoods) ? source.selectedMoods.length : 0;
+        const moods = moodCount > 0 ? source.selectedMoods.slice(0, 3).join(', ') + (moodCount > 3 ? '.' : '') : null;
+        const weather = source.weatherType || null;
+        const presence = typeof source.presenceLevel === 'number' ? source.presenceLevel : null;
+        const capacity = typeof source.capacityLevel === 'number' ? source.capacityLevel : null;
+        const id = source._id || source.id || null;
+        const needsSupport = !!source.aiAnalysis?.needsSupport;
+        const hasAI = !!source.aiAnalysis;
+        const confidence = typeof source.aiAnalysis?.confidence === 'number' ? source.aiAnalysis.confidence : null;
         return { id, moods, weather, presence, capacity, needsSupport, hasAI, confidence, moodCount };
-    }, [todayCheckin]);
+    }, [personalDashboard, todayCheckin]);
+
+    const overallCard = useMemo(() => {
+        if (!personalDashboard?.overall) return null;
+        const overall = personalDashboard.overall;
+        return {
+            totalCheckins: overall.totalCheckins ?? 0,
+            avgPresence: typeof overall.averages?.presence === 'number' ? overall.averages.presence : null,
+            avgCapacity: typeof overall.averages?.capacity === 'number' ? overall.averages.capacity : null,
+            streaks: overall.streaks || { current: 0, longest: 0 },
+            moodHighlights: overall.moodHighlights || [],
+            aiHighlights: overall.aiHighlights || { supportNeededDays: 0, stableDays: 0 },
+            periodSummary: overall.periodSummary,
+            firstCheckinDate: overall.firstCheckinDate,
+            lastCheckinDate: overall.lastCheckinDate
+        };
+    }, [personalDashboard]);
+
+    const insights = useMemo(() => personalDashboard?.insights || [], [personalDashboard]);
+    const recentSnapshots = useMemo(() => personalDashboard?.recentCheckins || [], [personalDashboard]);
 
     // Animation variants
     const container = useMemo(
@@ -528,6 +587,186 @@ const ProfilePage = memo(function ProfilePage() {
                                 </div>
                             </GlassCard>
                         </motion.section>
+
+                        {personalLoading && !overallCard && (
+                            <motion.section variants={item} className="mt-4">
+                                <GlassCard>
+                                    <p className="text-xs text-muted-foreground">Memuat ringkasan personal...</p>
+                                </GlassCard>
+                            </motion.section>
+                        )}
+
+                        {overallCard && (
+                            <motion.section variants={item} className="mt-4">
+                                <GlassCard>
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0">
+                                            <h2 className="text-sm font-semibold text-foreground">Overall Snapshot</h2>
+                                            <p className="text-xs text-muted-foreground">
+                                                {overallCard.firstCheckinDate
+                                                    ? `Tracking since ${formatDateLabel(overallCard.firstCheckinDate, { month: 'short', year: 'numeric' })}`
+                                                    : 'Mulai check-in rutin agar AI belajar pola emosimu'}
+                                            </p>
+                                        </div>
+                                        <span className="rounded-full bg-secondary/30 px-3 py-1 text-[11px] font-medium text-foreground/80">
+                                            {overallCard.totalCheckins} check-ins
+                                        </span>
+                                    </div>
+
+                                    <div className="mt-4 grid grid-cols-2 gap-3 text-xs sm:grid-cols-3">
+                                        <div className="rounded-xl border border-border/60 bg-card/40 px-3 py-2">
+                                            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+                                                <IconContainer size="sm" variant="accent">
+                                                    <Gauge className="h-3.5 w-3.5" />
+                                                </IconContainer>
+                                                Presence
+                                            </div>
+                                            <p className="mt-1 text-lg font-semibold text-foreground">
+                                                {formatMetricValue(overallCard.avgPresence)}
+                                                <span className="text-xs text-muted-foreground"> /10</span>
+                                            </p>
+                                        </div>
+                                        <div className="rounded-xl border border-border/60 bg-card/40 px-3 py-2">
+                                            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+                                                <IconContainer size="sm" variant="accent">
+                                                    <Gauge className="h-3.5 w-3.5" />
+                                                </IconContainer>
+                                                Capacity
+                                            </div>
+                                            <p className="mt-1 text-lg font-semibold text-foreground">
+                                                {formatMetricValue(overallCard.avgCapacity)}
+                                                <span className="text-xs text-muted-foreground"> /10</span>
+                                            </p>
+                                        </div>
+                                        <div className="rounded-xl border border-border/60 bg-card/40 px-3 py-2 sm:col-span-1 col-span-2">
+                                            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+                                                <IconContainer size="sm" variant="accent">
+                                                    <Flame className="h-3.5 w-3.5" />
+                                                </IconContainer>
+                                                Streak
+                                            </div>
+                                            <p className="mt-1 text-lg font-semibold text-foreground">
+                                                {overallCard.streaks?.current || 0} days
+                                            </p>
+                                            <p className="text-[11px] text-muted-foreground">Longest {overallCard.streaks?.longest || 0} days</p>
+                                        </div>
+                                    </div>
+
+                                    {overallCard.moodHighlights?.length > 0 && (
+                                        <div className="mt-4">
+                                            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+                                                <IconContainer size="sm" variant="muted">
+                                                    <PieChart className="h-3.5 w-3.5" />
+                                                </IconContainer>
+                                                Top moods
+                                            </div>
+                                            <div className="mt-2 flex flex-wrap gap-2">
+                                                {overallCard.moodHighlights.slice(0, 3).map((mood) => (
+                                                    <span key={mood.mood} className="rounded-full bg-secondary/30 px-3 py-1 text-[11px] font-medium text-foreground/80">
+                                                        {sanitizeInput(mood.mood)} · {mood.percentage}%
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="mt-4 grid gap-3 text-xs sm:grid-cols-2">
+                                        <div className="rounded-xl border border-border/60 bg-card/40 p-3">
+                                            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+                                                <IconContainer size="sm" variant="accent">
+                                                    <Shield className="h-3.5 w-3.5" />
+                                                </IconContainer>
+                                                AI highlights
+                                            </div>
+                                            <p className="mt-2 text-sm text-foreground">
+                                                Support days: <span className="font-semibold">{overallCard.aiHighlights.supportNeededDays}</span>
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">Stable days: {overallCard.aiHighlights.stableDays}</p>
+                                        </div>
+                                        {overallCard.periodSummary?.count > 0 && (
+                                            <div className="rounded-xl border border-border/60 bg-card/40 p-3">
+                                                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+                                                    <IconContainer size="sm" variant="accent">
+                                                        <Calendar className="h-3.5 w-3.5" />
+                                                    </IconContainer>
+                                                    30 day trends
+                                                </div>
+                                                <p className="mt-2 text-sm text-foreground">
+                                                    Avg presence: <span className="font-semibold">{formatMetricValue(overallCard.periodSummary.averagePresence)}</span>
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Positive {overallCard.periodSummary.positiveDays} · Challenging {overallCard.periodSummary.challengingDays}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </GlassCard>
+                            </motion.section>
+                        )}
+
+                        {insights.length > 0 && (
+                            <motion.section variants={item} className="mt-4">
+                                <GlassCard>
+                                    <div className="flex items-center gap-3">
+                                        <IconContainer variant="accent">
+                                            <Sparkles className="h-4 w-4" />
+                                        </IconContainer>
+                                        <div>
+                                            <h2 className="text-sm font-semibold text-foreground">AI Insights</h2>
+                                            <p className="text-xs text-muted-foreground">Rekomendasi singkat untukmu</p>
+                                        </div>
+                                    </div>
+                                    <ul className="mt-4 space-y-2 text-xs">
+                                        {insights.map((insight, index) => (
+                                            <li key={`${index}-${insight}`} className="flex gap-3">
+                                                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary/70" aria-hidden="true" />
+                                                <span className="text-foreground">{sanitizeInput(insight)}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </GlassCard>
+                            </motion.section>
+                        )}
+
+                        {recentSnapshots.length > 0 && (
+                            <motion.section variants={item} className="mt-4">
+                                <GlassCard>
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div>
+                                            <h2 className="text-sm font-semibold text-foreground">Recent Check-ins</h2>
+                                            <p className="text-xs text-muted-foreground">Ringkasan 5 aktivitas terakhir</p>
+                                        </div>
+                                        <Link to="/profile/emotional-history" className="text-xs font-semibold text-primary hover:underline">
+                                            View all
+                                        </Link>
+                                    </div>
+                                    <div className="mt-4 space-y-3">
+                                        {recentSnapshots.map((entry) => (
+                                            <div key={entry.id || entry.date} className="rounded-xl border border-border/60 bg-card/30 px-3 py-3">
+                                                <div className="flex items-center justify-between text-xs">
+                                                    <div>
+                                                        <p className="text-foreground font-medium">{formatWeekdayLabel(entry.date)}</p>
+                                                        <p className="text-muted-foreground">{formatDateLabel(entry.date)}</p>
+                                                    </div>
+                                                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${entry.aiAnalysis?.needsSupport ? 'bg-rose-500/10 text-rose-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                                                        {entry.aiAnalysis?.needsSupport ? 'Needs support' : 'Stable'}
+                                                    </span>
+                                                </div>
+                                                <div className="mt-3 grid grid-cols-2 gap-3 text-[11px] text-muted-foreground">
+                                                    <div><span className="text-foreground/80">Presence</span>: {entry.presenceLevel ?? '–'}</div>
+                                                    <div><span className="text-foreground/80">Capacity</span>: {entry.capacityLevel ?? '–'}</div>
+                                                    {entry.selectedMoods?.length > 0 && (
+                                                        <div className="col-span-2 truncate">
+                                                            <span className="text-foreground/80">Moods</span>: {entry.selectedMoods.slice(0, 3).map((mood) => sanitizeInput(mood)).join(', ')}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </GlassCard>
+                            </motion.section>
+                        )}
 
                         {/* Menu */}
                         <motion.nav variants={item} className={`mt-6 space-y-3 ${isCompact ? 'space-y-2' : ''}`} aria-label="Profile menu">
