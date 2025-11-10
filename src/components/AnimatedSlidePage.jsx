@@ -61,7 +61,7 @@ export default function AnimatedSlidePage({ children, onSwipeBack }) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.4 }}
-                    className="absolute top-3 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-3 py-1 text-xs text-white shadow-md"
+                    className="absolute top-3 left-1/2 -translate-x-1/2 rounded-full border border-border/50 bg-card/90 px-3 py-1 text-xs font-medium text-foreground shadow-glass-sm backdrop-blur"
                 >
                     👉 Swipe kanan untuk kembali
                 </motion.div>

@@ -21,7 +21,7 @@ const UserListModal = memo(({ isOpen, onClose, title, users, totalUsers, type })
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4" style={{ zIndex: 10000 }}>
+        <div className="fixed inset-0 bg-foreground/70 dark:bg-background/85 backdrop-blur-md flex items-center justify-center p-4" style={{ zIndex: 10000 }}>
             <div className="bg-card rounded-2xl shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-hidden transform scale-100 animate-in fade-in-0 zoom-in-95 duration-300 border border-white/10">
                 {/* Header */}
                 <div className="flex items-center justify-between p-8 border-b border-border/50 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent shadow-sm">
@@ -56,7 +56,7 @@ const UserListModal = memo(({ isOpen, onClose, title, users, totalUsers, type })
                             {sortedUsers.map((user, index) => (
                                 <div
                                     key={index}
-                                    className="flex items-center justify-between p-5 bg-white/80 border border-border/60 rounded-2xl hover:bg-white/90 hover:border-primary/40 transition-all duration-300 hover:shadow-xl hover:scale-[1.02] backdrop-blur-sm cursor-pointer"
+                                    className="flex items-center justify-between p-5 bg-card/90 border border-border/60 rounded-2xl hover:bg-card hover:border-primary/40 transition-all duration-300 hover:shadow-xl hover:scale-[1.02] backdrop-blur-sm cursor-pointer"
                                     onClick={() => {
                                         if (type === 'mood' || type === 'weather' || type === 'unit' || type === 'not-submitted') {
                                             // Navigate to individual user report

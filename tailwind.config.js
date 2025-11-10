@@ -1,3 +1,5 @@
+const withOpacity = (variable) => `hsl(var(${variable}) / <alpha-value>)`;
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
     darkMode: ['class'],
@@ -19,34 +21,45 @@ module.exports = {
         extend: {
             // map colors from CSS variables (HSL tokens)
             colors: {
-                background: 'hsl(var(--background))',
-                surface: 'hsl(var(--surface))',
-                card: 'hsl(var(--card))',
-                foreground: 'hsl(var(--foreground))',
+                background: withOpacity('--background'),
+                surface: withOpacity('--surface'),
+                card: {
+                    DEFAULT: withOpacity('--card'),
+                    foreground: withOpacity('--card-foreground'),
+                },
+                foreground: withOpacity('--foreground'),
                 muted: {
-                    DEFAULT: 'hsl(var(--muted))',
-                    foreground: 'hsl(var(--muted-foreground))',
+                    DEFAULT: withOpacity('--muted'),
+                    foreground: withOpacity('--muted-foreground'),
                 },
                 // brand + accents (object form for easier usage in components)
                 primary: {
-                    DEFAULT: 'hsl(var(--primary))',
-                    foreground: 'hsl(var(--primary-foreground))',
+                    DEFAULT: withOpacity('--primary'),
+                    foreground: withOpacity('--primary-foreground'),
+                },
+                secondary: {
+                    DEFAULT: withOpacity('--secondary'),
+                    foreground: withOpacity('--secondary-foreground'),
+                },
+                accent: {
+                    DEFAULT: withOpacity('--accent'),
+                    foreground: withOpacity('--accent-foreground'),
                 },
                 gold: {
-                    DEFAULT: 'hsl(var(--gold))',
-                    foreground: 'hsl(var(--gold-foreground))',
+                    DEFAULT: withOpacity('--gold'),
+                    foreground: withOpacity('--gold-foreground'),
                 },
                 emerald: {
-                    DEFAULT: 'hsl(var(--emerald))',
-                    foreground: 'hsl(var(--emerald-foreground))',
+                    DEFAULT: withOpacity('--emerald'),
+                    foreground: withOpacity('--emerald-foreground'),
                 },
                 // UI tokens
-                border: 'hsl(var(--border))',
-                input: 'hsl(var(--input))',
-                ring: 'hsl(var(--ring))',
+                border: withOpacity('--border'),
+                input: withOpacity('--input'),
+                ring: withOpacity('--ring'),
                 destructive: {
-                    DEFAULT: 'hsl(var(--destructive))',
-                    foreground: 'hsl(var(--destructive-foreground))',
+                    DEFAULT: withOpacity('--destructive'),
+                    foreground: withOpacity('--destructive-foreground'),
                 },
             },
             // radius pulled from CSS var

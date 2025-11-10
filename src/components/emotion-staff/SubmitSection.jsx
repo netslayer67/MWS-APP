@@ -33,12 +33,12 @@ const SubmitButton = memo(({ onSubmit, isSubmitting, isValid }) => (
                 className={`group relative w-full p-4 md:p-5 rounded-lg font-semibold text-base md:text-lg transition-all duration-300 ease-premium overflow-hidden ${isValid && !isSubmitting ? 'bg-gradient-to-r from-primary via-primary to-gold text-primary-foreground shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]' : 'bg-muted text-muted-foreground cursor-not-allowed opacity-60'}`}
             >
                 {isValid && !isSubmitting && (
-                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-primary-foreground/20 to-transparent" />
                 )}
                 <div className="relative flex items-center justify-center gap-3">
                     {isSubmitting ? (
                         <>
-                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            <div className="w-5 h-5 rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground animate-spin" />
                             <span className="hidden md:inline">Submitting Your Check-in...</span>
                             <span className="md:hidden">Submitting...</span>
                         </>
@@ -94,10 +94,10 @@ const TrustIndicators = memo(() => (
 const FooterBranding = memo(() => (
     <div className="pt-4 border-t border-border/50">
         <div className="flex flex-col md:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-gold flex items-center justify-center">
-                    <CheckCircle className="w-3.5 h-3.5 text-white" />
-                </div>
+        <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-gold flex items-center justify-center">
+                <CheckCircle className="w-3.5 h-3.5 text-primary-foreground" />
+            </div>
                 <span className="text-xs font-semibold text-foreground">
                     Millennia World School
                 </span>

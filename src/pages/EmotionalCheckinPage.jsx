@@ -271,7 +271,7 @@ const EmotionalCheckinPage = memo(function EmotionalCheckinPage() {
                                 <Button
                                     onClick={() => navigate('/emotional-checkin/face-scan')}
                                     disabled={checkinStatus && checkinStatus.hasAICheckin}
-                                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="w-full bg-gradient-to-r from-gold via-emerald to-accent text-primary-foreground hover:opacity-90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                                     variant="outline"
                                 >
                                     <Brain className="w-4 h-4 mr-2" />

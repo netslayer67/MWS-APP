@@ -283,7 +283,7 @@ export default function JobPage() {
                             role="dialog"
                         >
                             <div
-                                className="absolute inset-0 bg-black/40"
+                                className="absolute inset-0 bg-foreground/70 dark:bg-background/80"
                                 onClick={() => setSelected(null)}
                             />
                             <motion.div

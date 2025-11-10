@@ -283,7 +283,7 @@ export default function JobTrackingPage({ job = null, role = "client" }) {
                                 drag="x"
                                 dragConstraints={{ left: 0, right: MAX_DRAG_PX }}
                                 dragElastic={0.05}
-                                className="absolute left-0 top-0 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-accent/90 text-white flex items-center justify-center shadow cursor-grab"
+                                className="absolute left-0 top-0 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-accent/90 text-accent-foreground flex items-center justify-center shadow cursor-grab"
                                 onDrag={(e, info) => onDrag(info.point.x)}
                                 onDragEnd={onDragEnd}
                                 whileTap={{ scale: 0.98 }}

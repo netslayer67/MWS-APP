@@ -15,12 +15,12 @@ const buttonVariants = cva(
             variant: {
                 default: 'bg-primary text-primary-foreground hover:bg-primary/90',
                 destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
-                outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
-                secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-                ghost: 'hover:bg-accent hover:text-accent-foreground',
-                link: 'text-primary underline-offset-4 hover:underline',
+                outline: 'border border-border bg-card/80 text-foreground hover:bg-accent/15 hover:text-foreground',
+                secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/90',
+                ghost: 'text-foreground hover:bg-secondary/30',
+                link: 'text-accent underline-offset-4 hover:underline hover:text-accent/80',
                 // Premium gradient primary using tokens
-                gradient: 'bg-gradient-to-r from-primary to-accent text-primary-foreground hover:opacity-95',
+                gradient: 'bg-gradient-to-r from-primary via-gold to-accent text-primary-foreground hover:opacity-95',
                 // Glass button for subtle surfaces
                 glass:
                     'border border-border/40 bg-card/50 backdrop-blur-xl text-foreground ' +

@@ -58,7 +58,7 @@ const PerformanceMonitor = memo(() => {
     if (!isVisible || process.env.NODE_ENV !== 'development') return null;
 
     return (
-        <div className="fixed bottom-4 right-4 z-50 bg-black/80 text-white p-3 rounded-lg font-mono text-xs backdrop-blur-sm border border-white/20">
+        <div className="fixed bottom-4 right-4 z-50 bg-card/95 text-foreground p-3 rounded-lg font-mono text-xs backdrop-blur-sm border border-border/70 shadow-glass-sm">
             <div className="flex items-center gap-2 mb-2">
                 <Activity className="w-4 h-4" />
                 <span className="font-semibold">Performance Monitor</span>

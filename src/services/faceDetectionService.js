@@ -1,6 +1,27 @@
-import * as tf from '@tensorflow/tfjs';
-import { FaceMesh } from '@mediapipe/face_mesh';
-import { Camera } from '@mediapipe/camera_utils';
+let tfModule = null;
+let FaceMeshClass = null;
+let CameraClass = null;
+let visionStackPromise = null;
+
+const loadVisionStack = async () => {
+    if (!visionStackPromise) {
+        visionStackPromise = Promise.all([
+            import('@tensorflow/tfjs'),
+            import('@mediapipe/face_mesh'),
+            import('@mediapipe/camera_utils')
+        ])
+            .then(([tfImport, faceMeshImport, cameraImport]) => {
+                tfModule = tfImport;
+                FaceMeshClass = faceMeshImport.FaceMesh;
+                CameraClass = cameraImport.Camera;
+            })
+            .catch((error) => {
+                visionStackPromise = null;
+                throw error;
+            });
+    }
+    return visionStackPromise;
+};
 
 class FaceDetectionService {
     constructor() {
@@ -17,12 +38,14 @@ class FaceDetectionService {
         if (this.isInitialized) return;
 
         try {
+            await loadVisionStack();
+
             // Initialize TensorFlow.js
-            await tf.ready();
-            await tf.setBackend('webgl');
+            await tfModule.ready();
+            await tfModule.setBackend('webgl');
 
             // Initialize MediaPipe Face Mesh
-            this.faceMesh = new FaceMesh({
+            this.faceMesh = new FaceMeshClass({
                 locateFile: (file) => {
                     return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
                 }
@@ -79,7 +102,7 @@ class FaceDetectionService {
 
         this.onResultsCallback = onResults;
 
-        this.camera = new Camera(videoElement, {
+        this.camera = new CameraClass(videoElement, {
             onFrame: async () => {
                 if (this.faceMesh) {
                     await this.faceMesh.send({ image: videoElement });

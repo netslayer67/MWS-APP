@@ -303,7 +303,7 @@ const IndividualDashboard = memo(() => {
                         <CardContent className="p-6">
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-gold flex items-center justify-center">
-                                    <User className="w-6 h-6 text-white" />
+                                    <User className="w-6 h-6 text-primary-foreground" />
                                 </div>
                                 <div>
                                     <h2 className="text-xl font-semibold">

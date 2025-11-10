@@ -38,7 +38,7 @@ export default function TxDetailSheet({ open, onOpenChange, tx = {} }) {
                     aria-modal="true"
                 >
                     <div
-                        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                        className="absolute inset-0 bg-foreground/70 dark:bg-background/80 backdrop-blur-sm"
                         onClick={() => onOpenChange?.(false)}
                     />
                     <motion.div
