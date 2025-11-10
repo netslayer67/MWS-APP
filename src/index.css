@@ -8,6 +8,7 @@
     --background: 32 16% 97%;
     --surface: 32 14% 96%;
     --card: 32 16% 100%;
+    --card-foreground: 210 8% 16%;
     --foreground: 210 8% 16%;
     --muted: 220 10% 90%;
     --muted-foreground: 220 8% 38%;
@@ -19,6 +20,12 @@
     --gold-foreground: 220 8% 12%;
     --emerald: 143 60% 34%;
     --emerald-foreground: 0 0% 100%;
+    --accent: 18 76% 38%;
+    --accent-foreground: 0 0% 98%;
+    --secondary: 219 18% 32%;
+    --secondary-foreground: 0 0% 98%;
+    --destructive: 358 75% 44%;
+    --destructive-foreground: 0 0% 98%;
     /* UI */
     --border: 220 8% 88%;
     --input: 220 8% 97%;
@@ -47,6 +54,15 @@
     /* glossy specular accent */
     --glass-shadow-elev: 0.06;
     /* shadow intensity for lifted glass */
+    --glass-blur-min: 8px;
+    --glass-blur-base: 22px;
+    --glass-saturation: 1.45;
+    --glass-contrast: 1.02;
+    --glass-tint: 210 55% 98%;
+    --glass-tint-strong: 215 48% 94%;
+    --glass-caustic: 200 68% 88%;
+    --glass-highlight: 0 0% 100%;
+    --glass-shadow-color: 214 32% 18%;
 }
 
 /* Dark mode overrides (toggle html.dark) */
@@ -54,14 +70,30 @@ html.dark {
     --background: 210 12% 7%;
     --surface: 210 12% 9%;
     --card: 210 12% 8%;
+    --card-foreground: 210 12% 96%;
     --foreground: 210 12% 96%;
     --muted: 210 12% 6%;
     --muted-foreground: 210 12% 70%;
+    --accent: 18 88% 62%;
+    --accent-foreground: 215 14% 12%;
+    --secondary: 212 18% 72%;
+    --secondary-foreground: 214 18% 12%;
+    --destructive: 356 85% 64%;
+    --destructive-foreground: 210 18% 12%;
     --glass-strength: 0.08;
     --glass-frost: 0.06;
     --glass-roughness: 0.02;
     --glass-specular: 0.10;
     --glass-rim-strength: 0.06;
+    --glass-blur-min: 6px;
+    --glass-blur-base: 28px;
+    --glass-saturation: 1.65;
+    --glass-contrast: 1.08;
+    --glass-tint: 215 18% 14%;
+    --glass-tint-strong: 215 24% 18%;
+    --glass-caustic: 190 32% 30%;
+    --glass-highlight: 0 0% 100%;
+    --glass-shadow-color: 214 62% 6%;
 }
 
 /* ------------------------- Base page styles ------------------------- */
@@ -86,39 +118,70 @@ body {
 }
 
 /* ------------------------- Liquid glass component (formula implemented here) - use class: .glass - tuning via CSS vars on the element ------------------------- */
-.glass {
+.glass,
+.glass-strong {
     --gs: calc(var(--glass-strength));
     position: relative;
     display: block;
-    background: linear-gradient(180deg, color-mix(in srgb, hsl(var(--card)) calc(95% - var(--gs)*20%), white 0%), color-mix(in srgb, hsl(var(--card)) calc(92% - var(--gs)*25%), white 0%));
     border-radius: var(--radius);
     overflow: hidden;
-    border: 1px solid color-mix(in srgb, hsl(var(--border)) 75%, rgba(255, 255, 255, 0.04));
-    box-shadow: 0 6px 18px rgba(16, 24, 40, calc(var(--glass-shadow-elev) + var(--gs) * 0.02)), 0 1px 0 rgba(255, 255, 255, calc(0.03 + var(--gs) * 0.02));
-    transition: transform var(--transition) var(--easing), box-shadow var(--transition) var(--easing), background var(--transition) var(--easing);
+    isolation: isolate;
+    transform-style: preserve-3d;
+    background:
+        radial-gradient(160% 140% at 0% 0%, color-mix(in srgb, hsl(var(--glass-tint)) 78%, transparent) 0%, transparent 60%),
+        radial-gradient(120% 160% at 100% 20%, color-mix(in srgb, hsl(var(--glass-tint-strong)) 62%, transparent) 0%, transparent 62%),
+        linear-gradient(180deg, color-mix(in srgb, hsl(var(--card)) 96%, rgba(255, 255, 255, 0.08)) 0%, color-mix(in srgb, hsl(var(--card)) 84%, rgba(15, 23, 42, 0.08)) 100%);
+    border: 1px solid color-mix(in srgb, hsl(var(--border)) 60%, rgba(255, 255, 255, 0.32));
+    box-shadow:
+        0 25px 60px color-mix(in srgb, hsl(var(--glass-shadow-color)) 14%, transparent),
+        0 10px 25px rgba(15, 23, 42, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.28);
+    transition: transform var(--transition) var(--easing), box-shadow var(--transition) var(--easing), background var(--transition) var(--easing), border-color var(--transition) var(--easing);
     /* Only use backdrop-filter where supported; limit cost */
-    -webkit-backdrop-filter: blur(calc(8px * var(--gs))) saturate(120%);
-    backdrop-filter: blur(calc(8px * var(--gs))) saturate(120%);
+    -webkit-backdrop-filter: blur(calc(var(--glass-blur-min) + var(--glass-blur-base) * var(--gs))) saturate(var(--glass-saturation)) contrast(var(--glass-contrast));
+    backdrop-filter: blur(calc(var(--glass-blur-min) + var(--glass-blur-base) * var(--gs))) saturate(var(--glass-saturation)) contrast(var(--glass-contrast));
+    will-change: transform, opacity;
+}
+
+.glass-strong {
+    --gs: max(calc(var(--glass-strength) * 1.45), 0.18);
+    border-color: color-mix(in srgb, hsl(var(--border)) 32%, rgba(255, 255, 255, 0.55));
+    box-shadow:
+        0 35px 70px color-mix(in srgb, hsl(var(--glass-shadow-color)) 20%, transparent),
+        0 12px 30px rgba(15, 23, 42, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    background-blend-mode: lighten;
+}
+
+@supports not ((backdrop-filter: blur(1px))) {
+    .glass,
+    .glass-strong {
+        background: color-mix(in srgb, hsl(var(--card)) 85%, rgba(255, 255, 255, 0.1));
+    }
 }
 
 /* CONTENTS of the glass must be above pseudo layers */
-.glass>* {
+.glass>*,
+.glass-strong>* {
     position: relative;
     z-index: 2
 }
 
 /* ------------------------- Sheen (specular sweep) - pseudo element - uses conic/linear gradient + transform for sweep - GPU friendly: transform + opacity animation ------------------------- */
-.glass::before {
+.glass::before,
+.glass-strong::before {
     content: '';
     pointer-events: none;
     position: absolute;
     inset: -40% -40% auto -40%;
-    height: 60%;
-    background: linear-gradient(var(--glass-sheen-angle), rgba(255, 255, 255, calc(var(--glass-sheen-strength) * 0.95)) 0%, rgba(255, 255, 255, calc(var(--glass-sheen-strength) * 0.38)) 16%, rgba(255, 255, 255, 0.02) 45%, rgba(255, 255, 255, 0) 100%);
+    height: 70%;
+    background:
+        conic-gradient(from 210deg at 25% 20%, rgba(255, 255, 255, calc(var(--glass-sheen-strength) * 0.65)) 0%, rgba(255, 255, 255, 0) 55%),
+        linear-gradient(var(--glass-sheen-angle), rgba(255, 255, 255, calc(var(--glass-sheen-strength) * 0.95)) 0%, rgba(255, 255, 255, calc(var(--glass-sheen-strength) * 0.25)) 35%, rgba(255, 255, 255, 0) 100%);
     transform: translate3d(-20%, -10%, 0) rotate(-6deg);
-    mix-blend-mode: screen;
-    filter: blur(calc(10px * var(--gs)));
-    opacity: calc(0.9 * var(--glass-sheen-strength));
+    mix-blend-mode: color-dodge;
+    filter: blur(calc(12px * (0.8 + var(--gs)))) saturate(120%);
+    opacity: calc(0.75 * var(--glass-sheen-strength) + var(--glass-specular));
     transition: opacity var(--transition) var(--easing), transform var(--transition) var(--easing);
     z-index: 0;
 }
@@ -145,26 +208,89 @@ body {
     }
 }
 
+@keyframes glassFlow {
+    0% {
+        background-position: 0% 0%;
+    }
+
+    50% {
+        background-position: 30% 45%;
+    }
+
+    100% {
+        background-position: 60% 80%;
+    }
+}
+
+@keyframes glassCaustic {
+    0% {
+        transform: translate3d(-4%, -2%, 0) scale(0.95);
+        opacity: 0.4;
+    }
+
+    100% {
+        transform: translate3d(8%, 6%, 0) scale(1.05);
+        opacity: 0.75;
+    }
+}
+
+@keyframes glassOrb {
+    0% {
+        transform: translate3d(0%, 0%, 0) scale(0.85);
+    }
+
+    50% {
+        transform: translate3d(6%, -4%, 0) scale(1.05);
+    }
+
+    100% {
+        transform: translate3d(-4%, 6%, 0) scale(0.9);
+    }
+}
+
+@keyframes glassWave {
+    0% {
+        transform: translateX(-45%) skewX(-6deg);
+    }
+
+    100% {
+        transform: translateX(45%) skewX(6deg);
+    }
+}
+
 /* only animate if user doesn't prefer reduced motion */
 @media (prefers-reduced-motion: no-preference) {
-    .glass.sheen-animate::before {
-        animation: glassSheen 6.4s var(--easing) 1.2s both;
+    .glass.sheen-animate::before,
+    .glass-strong.sheen-animate::before,
+    .glass--liquid::before {
+        animation: glassSheen 7.2s var(--easing) infinite alternate;
+    }
+
+    .glass--liquid::after,
+    .glass-strong.glass--liquid::after {
+        animation-duration: 22s;
     }
 }
 
 /* ------------------------- Rim highlight (thin, crisp edge highlight) - uses inset box-shadow + radial gradient for soft corners ------------------------- */
-.glass::after {
+.glass::after,
+.glass-strong::after {
     content: '';
     pointer-events: none;
     position: absolute;
     inset: 0;
     border-radius: inherit;
     z-index: 1;
-    background: radial-gradient(120% 80% at 10% 10%, rgba(255, 255, 255, calc(var(--glass-rim-strength) * 0.9)) 0%, rgba(255, 255, 255, 0) 10%), linear-gradient(180deg, rgba(255, 255, 255, calc(var(--glass-rim-strength) * 0.22)) 0%, rgba(255, 255, 255, 0) 20%, rgba(0, 0, 0, 0) 80%);
-    mix-blend-mode: overlay;
-    opacity: calc(var(--glass-rim-strength) + var(--glass-frost)*0.3);
+    background:
+        radial-gradient(120% 80% at 10% 10%, rgba(255, 255, 255, calc(var(--glass-rim-strength) * 0.9)) 0%, rgba(255, 255, 255, 0) 14%),
+        radial-gradient(140% 120% at 85% 0%, rgba(255, 255, 255, calc(var(--glass-rim-strength) * 0.45)) 0%, rgba(255, 255, 255, 0) 50%),
+        linear-gradient(180deg, rgba(255, 255, 255, calc(var(--glass-rim-strength) * 0.22)) 0%, rgba(0, 0, 0, calc(var(--glass-frost) * 0.25)) 85%, rgba(0, 0, 0, 0) 100%);
+    mix-blend-mode: soft-light;
+    opacity: calc(var(--glass-rim-strength) + var(--glass-frost) * 0.4);
     pointer-events: none;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, calc(0.02 + var(--glass-frost)*0.02)), inset 0 -16px 48px rgba(0, 0, 0, calc(0.03 + var(--glass-frost)*0.05));
+    background-size: 200% 200%;
+    animation: glassFlow 18s ease-in-out infinite alternate;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, calc(0.05 + var(--glass-frost) * 0.02)), inset 0 -18px 48px rgba(0, 0, 0, calc(0.05 + var(--glass-frost) * 0.06));
 }
 
 /* ------------------------- Refractive patch layer: simulates light-bending (local halo) - Use a positioned child element .glass__refract for content that needs refractive distortion - this avoids repeating heavy backdrop filters on the container ------------------------- */
@@ -176,9 +302,11 @@ body {
     height: 36%;
     pointer-events: none;
     z-index: 0;
-    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, calc(var(--glass-refraction) * 0.75)), rgba(255, 255, 255, calc(var(--glass-refraction) * 0.18)) 18%, rgba(255, 255, 255, 0) 42%);
-    filter: blur(calc(8px * var(--gs)));
-    mix-blend-mode: screen;
+    background:
+        radial-gradient(circle at 30% 30%, hsl(var(--glass-caustic) / 0.65) 0%, transparent 55%),
+        radial-gradient(circle at 70% 80%, rgba(255, 255, 255, calc(var(--glass-refraction) * 0.35)) 0%, transparent 60%);
+    filter: blur(calc(8px * var(--gs))) saturate(140%);
+    mix-blend-mode: color-dodge;
     opacity: calc(var(--glass-refraction) + var(--glass-frost)*0.2);
 }
 
@@ -191,9 +319,9 @@ body {
     height: 22%;
     pointer-events: none;
     z-index: 0;
-    background: radial-gradient(circle at 70% 70%, rgba(255, 255, 255, calc(var(--glass-refraction) * 0.55)), rgba(255, 255, 255, 0) 55%);
+    background: radial-gradient(circle at 70% 70%, hsl(var(--glass-caustic) / 0.4) 0%, transparent 55%);
     filter: blur(calc(6px * var(--gs)));
-    mix-blend-mode: screen;
+    mix-blend-mode: color-dodge;
     opacity: calc(var(--glass-refraction) * 0.9);
 }
 
@@ -208,6 +336,75 @@ body {
     opacity: var(--glass-roughness);
     mix-blend-mode: overlay;
     filter: blur(0.3px);
+}
+
+.glass--liquid {
+    position: relative;
+}
+
+.glass--liquid::before {
+    opacity: calc(0.85 * var(--glass-sheen-strength) + 0.2);
+}
+
+.glass--liquid::after {
+    opacity: calc(var(--glass-rim-strength) + 0.35);
+}
+
+.glass__caustic {
+    position: absolute;
+    inset: 12% 10% auto;
+    width: 60%;
+    height: 60%;
+    border-radius: 35% 65% 45% 55%;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 40% 40%, hsl(var(--glass-caustic) / 0.7) 0%, transparent 65%),
+        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.4) 0%, transparent 55%);
+    filter: blur(18px) saturate(140%);
+    opacity: calc(var(--glass-refraction) * 1.35);
+    mix-blend-mode: color-dodge;
+    animation: glassCaustic 16s ease-in-out infinite alternate;
+    z-index: 0;
+}
+
+.glass__bubble,
+.glass__orb {
+    position: absolute;
+    pointer-events: none;
+    border-radius: 999px;
+    mix-blend-mode: color-dodge;
+    filter: blur(2px);
+    opacity: 0.35;
+    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.05) 65%, transparent 100%);
+    animation: glassOrb 14s ease-in-out infinite;
+    z-index: 0;
+}
+
+.glass__bubble {
+    width: clamp(80px, 20vw, 160px);
+    aspect-ratio: 1 / 1;
+    top: var(--glass-bubble-top, 15%);
+    left: var(--glass-bubble-left, 8%);
+}
+
+.glass__orb {
+    width: clamp(60px, 18vw, 120px);
+    aspect-ratio: 1 / 1;
+    bottom: var(--glass-orb-bottom, 12%);
+    right: var(--glass-orb-right, 6%);
+    animation-duration: 18s;
+}
+
+.glass__wave {
+    position: absolute;
+    inset: auto -30% -60% -30%;
+    height: 140%;
+    pointer-events: none;
+    background: linear-gradient(120deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0));
+    mix-blend-mode: soft-light;
+    filter: blur(12px);
+    animation: glassWave 20s ease-in-out infinite alternate;
+    z-index: 0;
 }
 
 /* ------------------------- Inner frosted inset (optional, cheap) - lightweight frosted center create depth without heavy filters ------------------------- */
@@ -233,13 +430,18 @@ body {
 
 /* responsive tweaks (reduce filters on small devices) */
 @media (max-width: 768px) {
-    .glass {
+    .glass,
+    .glass-strong {
         -webkit-backdrop-filter: blur(calc(6px * var(--gs)));
         backdrop-filter: blur(calc(6px * var(--gs)));
     }
 
     .glass__refract,
-    .glass__refract--soft {
+    .glass__refract--soft,
+    .glass__caustic,
+    .glass__bubble,
+    .glass__orb,
+    .glass__wave {
         display: none;
         /* skip refract patch on mobile for perf */
     }
@@ -251,14 +453,22 @@ body {
 
 /* reduce motion - remove sheen animations & heavy transforms */
 @media (prefers-reduced-motion: reduce) {
-    .glass.sheen-animate::before {
+    .glass.sheen-animate::before,
+    .glass-strong.sheen-animate::before,
+    .glass--liquid::before {
         animation: none;
         opacity: 0 !important;
     }
 
     .blob,
     .glass ::before,
-    .glass ::after {
+    .glass ::after,
+    .glass-strong ::before,
+    .glass-strong ::after,
+    .glass__bubble,
+    .glass__orb,
+    .glass__wave,
+    .glass__caustic {
         transition: none !important;
         animation: none !important;
     }

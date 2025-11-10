@@ -7,7 +7,6 @@ import {
     User,
     Shield,
     Bell,
-    HelpCircle,
     LogOut,
     ChevronRight,
     Star,
@@ -20,7 +19,11 @@ import {
     Activity,
     BarChart3,
     UserCog,
-    Heart
+    Heart,
+    Flame,
+    Gauge,
+    PieChart,
+    Sparkles
 } from "lucide-react";
 import { Helmet } from "react-helmet";
 import { Button } from "@/components/ui/button";
@@ -33,8 +36,9 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import ThemeToggle from "@/components/ThemeToggle";
-import { getCheckinHistory } from "../store/slices/checkinSlice";
+import { getCheckinHistory, getPersonalDashboard } from "../store/slices/checkinSlice";
 import { logoutUser } from "../store/slices/authSlice";
+import { useToast } from "@/components/ui/use-toast";
 
 /* ---------------------- Helpers ---------------------- */
 const fmtShort = (v) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(v || 0);
@@ -48,10 +52,150 @@ const sanitizeInput = (value) => {
         .slice(0, 300);
 };
 
+const formatMetricValue = (value, fractionDigits = 1) => {
+    if (typeof value !== 'number' || Number.isNaN(value)) return '–';
+    const fixed = value.toFixed(fractionDigits);
+    return fixed.includes('.') ? fixed.replace(/\.0+$/, '') : fixed;
+};
+
+const formatDateLabel = (value, options = { day: 'numeric', month: 'short' }) => {
+    if (!value) return '-';
+    try {
+        return new Intl.DateTimeFormat('id-ID', options).format(new Date(value));
+    } catch {
+        return '-';
+    }
+};
+
+const formatWeekdayLabel = (value) => {
+    if (!value) return '';
+    try {
+        return new Intl.DateTimeFormat('id-ID', { weekday: 'short' }).format(new Date(value));
+    } catch {
+        return '';
+    }
+};
+
 const getTier = (completed) => {
     if (completed >= 200) return { label: "Gold", icon: Award, color: "text-gold" };
     if (completed >= 100) return { label: "Silver", icon: Star, color: "text-slate-400" };
     return { label: "Bronze", icon: CheckCircle, color: "text-amber-600" };
+};
+
+// Time-aware, varied greeting builders
+const getTimeOfDay = (date = new Date()) => {
+    const h = date.getHours();
+    if (h < 12) return 'morning';
+    if (h < 17) return 'afternoon';
+    if (h < 21) return 'evening';
+    return 'night';
+};
+
+const pickVariant = (key, variants) => {
+    // Deterministic-ish selection per day without flicker
+    const seed = (typeof key === 'string' ? key : JSON.stringify(key)) + new Date().toDateString();
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+    return variants[hash % variants.length];
+};
+
+export const getDynamicGreeting = (user, titledName) => {
+    const tod = getTimeOfDay();
+    const base = {
+        morning: [
+            `Good morning, ${titledName}`,
+            `Morning, ${titledName}`,
+            `A bright start, ${titledName}`
+        ],
+        afternoon: [
+            `Good afternoon, ${titledName}`,
+            `Hope your afternoon’s going well, ${titledName}`,
+            `Great to see you, ${titledName}`
+        ],
+        evening: [
+            `Good evening, ${titledName}`,
+            `Wishing you a calm evening, ${titledName}`,
+            `Nice to have you here, ${titledName}`
+        ],
+        night: [
+            `Good evening, ${titledName}`,
+            `Late session, ${titledName}?` ,
+            `Hello, ${titledName}`
+        ]
+    };
+    return pickVariant(user?.email || titledName, base[tod]);
+};
+
+const CHECKIN_USAGE_KEY = "mws_emotional_checkin_usage";
+const MAX_DAILY_EMOTIONAL_CHECKINS = 2;
+const WINDOW_DURATION_MS = 24 * 60 * 60 * 1000;
+
+const getWindowStartTimestamp = () => {
+    const now = new Date();
+    const windowStart = new Date(now);
+    windowStart.setHours(6, 0, 0, 0);
+    if (now < windowStart) {
+        windowStart.setDate(windowStart.getDate() - 1);
+    }
+    return windowStart.getTime();
+};
+
+const getNextResetTimestamp = (windowStart) => windowStart + WINDOW_DURATION_MS;
+
+const readCheckinUsageSnapshot = () => {
+    const windowStart = getWindowStartTimestamp();
+    const nextReset = getNextResetTimestamp(windowStart);
+
+    if (typeof window === "undefined") {
+        return { windowStart, nextReset, count: 0 };
+    }
+
+    try {
+        const stored = JSON.parse(localStorage.getItem(CHECKIN_USAGE_KEY) || "{}");
+        if (stored?.windowStart === windowStart) {
+            return {
+                windowStart,
+                nextReset,
+                count: Number(stored.count) || 0
+            };
+        }
+    } catch {
+        // ignore parsing errors
+    }
+
+    return { windowStart, nextReset, count: 0 };
+};
+
+const persistCheckinUsageSnapshot = (snapshot) => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(
+        CHECKIN_USAGE_KEY,
+        JSON.stringify({
+            windowStart: snapshot.windowStart,
+            count: snapshot.count
+        })
+    );
+};
+
+const formatResetTimeLabel = (timestamp) => {
+    try {
+        return new Intl.DateTimeFormat("id-ID", {
+            hour: "2-digit",
+            minute: "2-digit"
+        }).format(new Date(timestamp));
+    } catch {
+        return "06:00";
+    }
+};
+
+export const getDynamicSubGreeting = () => {
+    const variants = [
+        'Your wellness overview is ready',
+        'Here are your latest insights',
+        'Wishing you a productive day',
+        'Stay present and take a breath'
+    ];
+    return pickVariant('sub'+new Date().toDateString(), variants);
 };
 
 /* ---------------------- Decorative Elements ---------------------- */
@@ -123,20 +267,47 @@ const IconContainer = memo(({ children, size = "md", variant = "default" }) => {
     );
 });
 
-const MenuItem = memo(function MenuItem({ icon: Icon, title, to, compact = false }) {
-    return (
-        <Link to={to} className="block group">
-            <div className={`flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/40 px-4 py-3 backdrop-blur-xl transition-all duration-300 hover:border-primary/30 hover:bg-primary/5 hover:shadow-glass-sm ${compact ? 'px-3 py-2.5' : ''}`}>
-                <div className="flex items-center gap-3">
-                    <IconContainer size={compact ? "sm" : "md"}>
-                        <Icon className={`text-foreground/80 transition-colors duration-300 group-hover:text-primary ${compact ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
-                    </IconContainer>
+const MenuItem = memo(function MenuItem({ icon: Icon, title, to, compact = false, onClick, disabled = false, description }) {
+    const contentClasses = `flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/40 px-4 py-3 backdrop-blur-xl transition-all duration-300 hover:border-primary/30 hover:bg-primary/5 hover:shadow-glass-sm ${compact ? 'px-3 py-2.5' : ''} ${disabled ? 'opacity-60 hover:border-border/60 hover:bg-card/40 cursor-not-allowed' : ''}`;
+
+    const content = (
+        <div className={contentClasses}>
+            <div className="flex items-center gap-3">
+                <IconContainer size={compact ? "sm" : "md"}>
+                    <Icon className={`text-foreground/80 transition-colors duration-300 group-hover:text-primary ${compact ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
+                </IconContainer>
+                <div className="flex flex-col min-w-0">
                     <div className={`font-medium text-foreground truncate transition-colors duration-300 group-hover:text-primary ${compact ? 'text-sm' : 'text-sm'}`}>
                         {title}
                     </div>
+                    {description && (
+                        <p className="text-xs text-muted-foreground truncate">
+                            {description}
+                        </p>
+                    )}
                 </div>
-                <ChevronRight className={`text-muted-foreground transition-transform duration-300 group-hover:translate-x-0.5 ${compact ? 'h-4 w-4' : 'h-5 w-5'}`} />
             </div>
+            <ChevronRight className={`text-muted-foreground transition-transform duration-300 group-hover:translate-x-0.5 ${compact ? 'h-4 w-4' : 'h-5 w-5'}`} />
+        </div>
+    );
+
+    if (onClick) {
+        return (
+            <button
+                type="button"
+                onClick={disabled ? undefined : onClick}
+                disabled={disabled}
+                aria-disabled={disabled}
+                className={`block w-full text-left group ${disabled ? 'cursor-not-allowed' : ''}`}
+            >
+                {content}
+            </button>
+        );
+    }
+
+    return (
+        <Link to={to} className={`block group ${disabled ? 'pointer-events-none opacity-60' : ''}`}>
+            {content}
         </Link>
     );
 });
@@ -166,18 +337,29 @@ const ProfilePage = memo(function ProfilePage() {
     const navigate = useNavigate();
     const reduce = useReducedMotion();
     const dispatch = useDispatch();
+    const { toast } = useToast();
 
     // Redux state
     const { user: currentUser } = useSelector((state) => state.auth);
-    const { checkinHistory } = useSelector((state) => state.checkin);
+    const {
+        todayCheckin,
+        checkinHistory,
+        personalDashboard,
+        personalLoading
+    } = useSelector((state) => state.checkin);
 
     // Local state
     const [isCompact, setIsCompact] = useState(false);
     const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+    const [checkinUsage, setCheckinUsage] = useState(() => {
+        const snapshot = readCheckinUsageSnapshot();
+        return { ...snapshot, ready: typeof window !== "undefined" };
+    });
 
     // Load data on mount
     useEffect(() => {
         if (currentUser) {
+            dispatch(getPersonalDashboard());
             dispatch(getCheckinHistory({ page: 1, limit: 50 }));
         }
     }, [dispatch, currentUser]);
@@ -191,6 +373,11 @@ const ProfilePage = memo(function ProfilePage() {
         checkMobile();
         window.addEventListener('resize', checkMobile);
         return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        setCheckinUsage({ ...readCheckinUsageSnapshot(), ready: true });
     }, []);
 
     // Processed user data
@@ -216,20 +403,91 @@ const ProfilePage = memo(function ProfilePage() {
             return title ? `${title} ${displayName}` : displayName;
         };
 
+        const fallbackHistoryLength = Array.isArray(checkinHistory)
+            ? checkinHistory.length
+            : checkinHistory?.data?.checkins?.length
+                || checkinHistory?.checkins?.length
+                || 0;
+
         return {
             name: getUserTitle(currentUser),
             email: sanitizeInput(currentUser.email) || "user@example.com",
             initials: sanitizeInput(currentUser.name || currentUser.username || "U").charAt(0).toUpperCase(),
-            completed: checkinHistory?.length || 0,
+            completed: personalDashboard?.overall?.totalCheckins ?? fallbackHistoryLength,
             rating: 4.8,
             department: sanitizeInput(currentUser.unit || currentUser.department) || "Not specified",
             role: currentUser.role || "staff",
             position: sanitizeInput(currentUser.jobPosition) || "Junior Full Stack Web Developer",
             level: sanitizeInput(currentUser.jobLevel) || "Staff"
         };
-    }, [currentUser, checkinHistory]);
+    }, [currentUser, checkinHistory, personalDashboard]);
 
     const tier = useMemo(() => getTier(user.completed), [user.completed]);
+
+    const remainingCheckins = checkinUsage.ready
+        ? Math.max(MAX_DAILY_EMOTIONAL_CHECKINS - checkinUsage.count, 0)
+        : MAX_DAILY_EMOTIONAL_CHECKINS;
+    const checkinLimitReached = checkinUsage.ready && remainingCheckins === 0;
+    const checkinDescription = checkinUsage.ready
+        ? checkinLimitReached
+            ? `Available again at ${formatResetTimeLabel(checkinUsage.nextReset)}`
+            : `${remainingCheckins} check-in chance${remainingCheckins === 1 ? '' : 's'} left today`
+        : "Checking quota...";
+
+    const handleEmotionalCheckin = useCallback(() => {
+        if (typeof window === "undefined") return;
+        const snapshot = readCheckinUsageSnapshot();
+
+        if (snapshot.count >= MAX_DAILY_EMOTIONAL_CHECKINS) {
+            setCheckinUsage({ ...snapshot, ready: true });
+            toast({
+                title: "Daily limit reached",
+                description: `You can try again after ${formatResetTimeLabel(snapshot.nextReset)}.`,
+                variant: "destructive"
+            });
+            return;
+        }
+
+        const updated = { ...snapshot, count: snapshot.count + 1 };
+        persistCheckinUsageSnapshot(updated);
+        setCheckinUsage({ ...updated, ready: true });
+        navigate("/select-role");
+    }, [navigate, toast]);
+
+    // Derived info for today's check-in
+    const todayCard = useMemo(() => {
+        const source = personalDashboard?.today?.checkin || todayCheckin;
+        if (!source) return null;
+        const moodCount = Array.isArray(source.selectedMoods) ? source.selectedMoods.length : 0;
+        const moods = moodCount > 0 ? source.selectedMoods.slice(0, 3).join(', ') + (moodCount > 3 ? '.' : '') : null;
+        const weather = source.weatherType || null;
+        const presence = typeof source.presenceLevel === 'number' ? source.presenceLevel : null;
+        const capacity = typeof source.capacityLevel === 'number' ? source.capacityLevel : null;
+        const id = source._id || source.id || null;
+        const needsSupport = !!source.aiAnalysis?.needsSupport;
+        const hasAI = !!source.aiAnalysis;
+        const confidence = typeof source.aiAnalysis?.confidence === 'number' ? source.aiAnalysis.confidence : null;
+        return { id, moods, weather, presence, capacity, needsSupport, hasAI, confidence, moodCount };
+    }, [personalDashboard, todayCheckin]);
+
+    const overallCard = useMemo(() => {
+        if (!personalDashboard?.overall) return null;
+        const overall = personalDashboard.overall;
+        return {
+            totalCheckins: overall.totalCheckins ?? 0,
+            avgPresence: typeof overall.averages?.presence === 'number' ? overall.averages.presence : null,
+            avgCapacity: typeof overall.averages?.capacity === 'number' ? overall.averages.capacity : null,
+            streaks: overall.streaks || { current: 0, longest: 0 },
+            moodHighlights: overall.moodHighlights || [],
+            aiHighlights: overall.aiHighlights || { supportNeededDays: 0, stableDays: 0 },
+            periodSummary: overall.periodSummary,
+            firstCheckinDate: overall.firstCheckinDate,
+            lastCheckinDate: overall.lastCheckinDate
+        };
+    }, [personalDashboard]);
+
+    const insights = useMemo(() => personalDashboard?.insights || [], [personalDashboard]);
+    const recentSnapshots = useMemo(() => personalDashboard?.recentCheckins || [], [personalDashboard]);
 
     // Animation variants
     const container = useMemo(
@@ -262,7 +520,15 @@ const ProfilePage = memo(function ProfilePage() {
         const baseItems = [
             { key: "edit", icon: User, title: "Edit Profile", to: "/profile/edit" },
             { key: "notif", icon: Bell, title: "Notifications", to: "/notifications" },
-            { key: "help", icon: HelpCircle, title: "Help", to: "/help" },
+            {
+                key: "emotional-checkin",
+                icon: Sparkles,
+                title: "Emotional Check-in",
+                to: "/select-role",
+                onClick: handleEmotionalCheckin,
+                disabled: checkinLimitReached,
+                description: checkinDescription
+            },
         ];
 
         if (currentUser && !['directorate', 'admin', 'superadmin'].includes(currentUser.role)) {
@@ -279,7 +545,7 @@ const ProfilePage = memo(function ProfilePage() {
         }
 
         return baseItems;
-    }, [currentUser]);
+    }, [currentUser, handleEmotionalCheckin, checkinDescription, checkinLimitReached]);
 
     // Quick actions
     const quickActions = useMemo(() => {
@@ -349,10 +615,78 @@ const ProfilePage = memo(function ProfilePage() {
                             </button>
 
                             <div className="flex-1 min-w-0">
-                                <h1 className="text-lg font-semibold text-foreground">Profile</h1>
-                                <p className="mt-0.5 text-xs text-muted-foreground">Account overview</p>
+                                <h1 className="text-lg font-semibold text-foreground">{getDynamicGreeting(currentUser, user.name)}</h1>
+                                <p className="mt-0.5 text-xs text-muted-foreground">{getDynamicSubGreeting()}</p>
                             </div>
                         </motion.header>
+
+                        {/* Today's Check-in */}
+                        <motion.section variants={item}>
+                            <GlassCard>
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <h2 className="text-sm font-semibold text-foreground">Today's Check-in</h2>
+                                        {todayCard ? (
+                                            <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                                                {todayCard.presence !== null && (
+                                                    <div>
+                                                        <span className="text-foreground/80">Presence:</span> {todayCard.presence}
+                                                    </div>
+                                                )}
+                                                {todayCard.capacity !== null && (
+                                                    <div>
+                                                        <span className="text-foreground/80">Capacity:</span> {todayCard.capacity}
+                                                    </div>
+                                                )}
+                                                {todayCard.weather && (
+                                                    <div className="col-span-2 truncate">
+                                                        <span className="text-foreground/80">Weather:</span> {todayCard.weather}
+                                                    </div>
+                                                )}
+                                                {todayCard.moods && todayCard.moodCount > 0 && (
+                                                    <div className="col-span-2 truncate">
+                                                        <span className="text-foreground/80">Moods:</span> {todayCard.moods}
+                                                    </div>
+                                                )}
+                                                {todayCard.hasAI && (
+                                                    <div className="col-span-2 mt-1 flex items-center gap-2">
+                                                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ${todayCard.needsSupport ? 'bg-rose-500/10 text-rose-400 ring-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/20'}`}>
+                                                            {todayCard.needsSupport ? 'AI: Needs Support' : 'AI: Stable'}
+                                                        </span>
+                                                        {todayCard.confidence !== null && (
+                                                            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 bg-secondary/10 text-foreground/80 ring-border/30">
+                                                                Confidence: {Math.round(todayCard.confidence)}%
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <p className="mt-1 text-xs text-muted-foreground">No check-in recorded today.</p>
+                                        )}
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                        {todayCard && todayCard.id ? (
+                                            <Link to={`/emotional-checkin/rate/${todayCard.id}`} className="inline-flex items-center gap-2 rounded-md border border-border/50 px-3 py-1.5 text-xs hover:border-primary/40 hover:bg-primary/5 transition-colors">
+                                                View Details <ChevronRight className="h-3.5 w-3.5" />
+                                            </Link>
+                                        ) : null}
+                                        {todayCard ? (
+                                            <Link to="/profile/emotional-history" className="inline-flex items-center gap-2 rounded-md border border-border/50 px-3 py-1.5 text-xs hover:border-primary/40 hover:bg-primary/5 transition-colors">
+                                                View History <ChevronRight className="h-3.5 w-3.5" />
+                                            </Link>
+                                        ) : (
+                                            <Link to={(currentUser?.role === 'staff' || currentUser?.role === 'teacher') ? '/emotional-checkin/staff' : '/emotional-checkin'} className="inline-flex items-center gap-2 rounded-md border border-border/50 px-3 py-1.5 text-xs hover:border-primary/40 hover:bg-primary/5 transition-colors">
+                                                Start Check-in <ChevronRight className="h-3.5 w-3.5" />
+                                            </Link>
+                                        )}
+                                        <Link to="/profile/personal-stats" className="inline-flex items-center gap-2 rounded-md border border-border/50 px-3 py-1.5 text-xs hover:border-primary/40 hover:bg-primary/5 transition-colors">
+                                            Overall Stats <ChevronRight className="h-3.5 w-3.5" />
+                                        </Link>
+                                    </div>
+                                </div>
+                            </GlassCard>
+                        </motion.section>
 
                         {/* Profile Card */}
                         <motion.section variants={item}>
@@ -391,6 +725,186 @@ const ProfilePage = memo(function ProfilePage() {
                             </GlassCard>
                         </motion.section>
 
+                        {personalLoading && !overallCard && (
+                            <motion.section variants={item} className="mt-4">
+                                <GlassCard>
+                                    <p className="text-xs text-muted-foreground">Memuat ringkasan personal...</p>
+                                </GlassCard>
+                            </motion.section>
+                        )}
+
+                        {overallCard && (
+                            <motion.section variants={item} className="mt-4">
+                                <GlassCard>
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0">
+                                            <h2 className="text-sm font-semibold text-foreground">Overall Snapshot</h2>
+                                            <p className="text-xs text-muted-foreground">
+                                                {overallCard.firstCheckinDate
+                                                    ? `Tracking since ${formatDateLabel(overallCard.firstCheckinDate, { month: 'short', year: 'numeric' })}`
+                                                    : 'Mulai check-in rutin agar AI belajar pola emosimu'}
+                                            </p>
+                                        </div>
+                                        <span className="rounded-full bg-secondary/30 px-3 py-1 text-[11px] font-medium text-foreground/80">
+                                            {overallCard.totalCheckins} check-ins
+                                        </span>
+                                    </div>
+
+                                    <div className="mt-4 grid grid-cols-2 gap-3 text-xs sm:grid-cols-3">
+                                        <div className="rounded-xl border border-border/60 bg-card/40 px-3 py-2">
+                                            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+                                                <IconContainer size="sm" variant="accent">
+                                                    <Gauge className="h-3.5 w-3.5" />
+                                                </IconContainer>
+                                                Presence
+                                            </div>
+                                            <p className="mt-1 text-lg font-semibold text-foreground">
+                                                {formatMetricValue(overallCard.avgPresence)}
+                                                <span className="text-xs text-muted-foreground"> /10</span>
+                                            </p>
+                                        </div>
+                                        <div className="rounded-xl border border-border/60 bg-card/40 px-3 py-2">
+                                            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+                                                <IconContainer size="sm" variant="accent">
+                                                    <Gauge className="h-3.5 w-3.5" />
+                                                </IconContainer>
+                                                Capacity
+                                            </div>
+                                            <p className="mt-1 text-lg font-semibold text-foreground">
+                                                {formatMetricValue(overallCard.avgCapacity)}
+                                                <span className="text-xs text-muted-foreground"> /10</span>
+                                            </p>
+                                        </div>
+                                        <div className="rounded-xl border border-border/60 bg-card/40 px-3 py-2 sm:col-span-1 col-span-2">
+                                            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+                                                <IconContainer size="sm" variant="accent">
+                                                    <Flame className="h-3.5 w-3.5" />
+                                                </IconContainer>
+                                                Streak
+                                            </div>
+                                            <p className="mt-1 text-lg font-semibold text-foreground">
+                                                {overallCard.streaks?.current || 0} days
+                                            </p>
+                                            <p className="text-[11px] text-muted-foreground">Longest {overallCard.streaks?.longest || 0} days</p>
+                                        </div>
+                                    </div>
+
+                                    {overallCard.moodHighlights?.length > 0 && (
+                                        <div className="mt-4">
+                                            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+                                                <IconContainer size="sm" variant="muted">
+                                                    <PieChart className="h-3.5 w-3.5" />
+                                                </IconContainer>
+                                                Top moods
+                                            </div>
+                                            <div className="mt-2 flex flex-wrap gap-2">
+                                                {overallCard.moodHighlights.slice(0, 3).map((mood) => (
+                                                    <span key={mood.mood} className="rounded-full bg-secondary/30 px-3 py-1 text-[11px] font-medium text-foreground/80">
+                                                        {sanitizeInput(mood.mood)} · {mood.percentage}%
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="mt-4 grid gap-3 text-xs sm:grid-cols-2">
+                                        <div className="rounded-xl border border-border/60 bg-card/40 p-3">
+                                            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+                                                <IconContainer size="sm" variant="accent">
+                                                    <Shield className="h-3.5 w-3.5" />
+                                                </IconContainer>
+                                                AI highlights
+                                            </div>
+                                            <p className="mt-2 text-sm text-foreground">
+                                                Support days: <span className="font-semibold">{overallCard.aiHighlights.supportNeededDays}</span>
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">Stable days: {overallCard.aiHighlights.stableDays}</p>
+                                        </div>
+                                        {overallCard.periodSummary?.count > 0 && (
+                                            <div className="rounded-xl border border-border/60 bg-card/40 p-3">
+                                                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+                                                    <IconContainer size="sm" variant="accent">
+                                                        <Calendar className="h-3.5 w-3.5" />
+                                                    </IconContainer>
+                                                    30 day trends
+                                                </div>
+                                                <p className="mt-2 text-sm text-foreground">
+                                                    Avg presence: <span className="font-semibold">{formatMetricValue(overallCard.periodSummary.averagePresence)}</span>
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Positive {overallCard.periodSummary.positiveDays} · Challenging {overallCard.periodSummary.challengingDays}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </GlassCard>
+                            </motion.section>
+                        )}
+
+                        {insights.length > 0 && (
+                            <motion.section variants={item} className="mt-4">
+                                <GlassCard>
+                                    <div className="flex items-center gap-3">
+                                        <IconContainer variant="accent">
+                                            <Sparkles className="h-4 w-4" />
+                                        </IconContainer>
+                                        <div>
+                                            <h2 className="text-sm font-semibold text-foreground">AI Insights</h2>
+                                            <p className="text-xs text-muted-foreground">Rekomendasi singkat untukmu</p>
+                                        </div>
+                                    </div>
+                                    <ul className="mt-4 space-y-2 text-xs">
+                                        {insights.map((insight, index) => (
+                                            <li key={`${index}-${insight}`} className="flex gap-3">
+                                                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary/70" aria-hidden="true" />
+                                                <span className="text-foreground">{sanitizeInput(insight)}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </GlassCard>
+                            </motion.section>
+                        )}
+
+                        {recentSnapshots.length > 0 && (
+                            <motion.section variants={item} className="mt-4">
+                                <GlassCard>
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div>
+                                            <h2 className="text-sm font-semibold text-foreground">Recent Check-ins</h2>
+                                            <p className="text-xs text-muted-foreground">Ringkasan 5 aktivitas terakhir</p>
+                                        </div>
+                                        <Link to="/profile/emotional-history" className="text-xs font-semibold text-primary hover:underline">
+                                            View all
+                                        </Link>
+                                    </div>
+                                    <div className="mt-4 space-y-3">
+                                        {recentSnapshots.map((entry) => (
+                                            <div key={entry.id || entry.date} className="rounded-xl border border-border/60 bg-card/30 px-3 py-3">
+                                                <div className="flex items-center justify-between text-xs">
+                                                    <div>
+                                                        <p className="text-foreground font-medium">{formatWeekdayLabel(entry.date)}</p>
+                                                        <p className="text-muted-foreground">{formatDateLabel(entry.date)}</p>
+                                                    </div>
+                                                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${entry.aiAnalysis?.needsSupport ? 'bg-rose-500/10 text-rose-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                                                        {entry.aiAnalysis?.needsSupport ? 'Needs support' : 'Stable'}
+                                                    </span>
+                                                </div>
+                                                <div className="mt-3 grid grid-cols-2 gap-3 text-[11px] text-muted-foreground">
+                                                    <div><span className="text-foreground/80">Presence</span>: {entry.presenceLevel ?? '–'}</div>
+                                                    <div><span className="text-foreground/80">Capacity</span>: {entry.capacityLevel ?? '–'}</div>
+                                                    {entry.selectedMoods?.length > 0 && (
+                                                        <div className="col-span-2 truncate">
+                                                            <span className="text-foreground/80">Moods</span>: {entry.selectedMoods.slice(0, 3).map((mood) => sanitizeInput(mood)).join(', ')}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </GlassCard>
+                            </motion.section>
+                        )}
+
                         {/* Menu */}
                         <motion.nav variants={item} className={`mt-6 space-y-3 ${isCompact ? 'space-y-2' : ''}`} aria-label="Profile menu">
                             {menuItems.map((item) => (
@@ -400,6 +914,9 @@ const ProfilePage = memo(function ProfilePage() {
                                     title={item.title}
                                     to={item.to}
                                     compact={isCompact}
+                                    onClick={item.onClick}
+                                    disabled={item.disabled}
+                                    description={item.description}
                                 />
                             ))}
                         </motion.nav>

@@ -83,7 +83,7 @@ export default function NotificationSettingsPage() {
         setTimeout(() => {
             setSaving(false);
             setSavedTs(Date.now());
-            toast({ title: "Tersimpan", description: "Preferensi notifikasi disimpan.", duration: 2000 });
+            toast({ title: "Saved", description: "Notification preferences saved.", duration: 2000 });
         }, 500);
     }, [toast]);
 
@@ -96,7 +96,7 @@ export default function NotificationSettingsPage() {
     return (
         <AnimatedPage>
             <Helmet>
-                <title>Pengaturan Notifikasi — Kerjain</title>
+                <title>Notification Settings - MWS IntegraLearn</title>
             </Helmet>
 
             <MotionConfig reducedMotion="user">
@@ -215,7 +215,7 @@ export default function NotificationSettingsPage() {
                     {/* Footer actions */}
                     <motion.section variants={item} className="mt-6 flex items-center justify-between">
                         <div className="text-[11px] sm:text-xs text-muted-foreground">
-                            {saving ? "Menyimpan..." : lastSaved ? `Tersimpan • ${lastSaved}` : "Belum ada perubahan"}
+                            {saving ? "Saving..." : lastSaved ? `Saved • ${lastSaved}` : "No changes yet"}
                         </div>
 
                         <div className="flex items-center gap-2">

@@ -31,7 +31,7 @@ const seedOffers = [
         worker: { name: "Rifqi H", rating: 4.7, initials: "R" },
         message: "Siap ambil dalam 15 menit.",
         amount: 25000,
-        time: "10 m lalu",
+        time: "10m ago",
         status: "pending",
         payment: "cash",
     },
@@ -42,7 +42,7 @@ const seedOffers = [
         worker: { name: "Sinta A", rating: 4.9, initials: "S" },
         message: "Bisa sekarang, lokasi dekat.",
         amount: 18000,
-        time: "25 m lalu",
+        time: "25m ago",
         status: "pending",
         payment: "wallet",
     },
@@ -53,7 +53,7 @@ const seedOffers = [
         worker: { name: "Ucup", rating: 4.5, initials: "U" },
         message: "Perkiraan selesai 2 jam.",
         amount: 65000,
-        time: "1 jam lalu",
+        time: "1h ago",
         status: "accepted",
         payment: "wallet",
     },
@@ -85,16 +85,16 @@ const OfferCard = React.memo(function OfferCard({ offer, onAccept, onReject, onN
                             <div className="mt-1 flex flex-wrap items-center gap-2">
                                 <Pill className="bg-secondary/30 text-foreground/80">
                                     <Wallet className="h-3.5 w-3.5 mr-1" />
-                                    {offer.payment === "cash" ? "Tunai" : "Wallet"}
+                                    {offer.payment === "cash" ? "Cash" : "Wallet"}
                                 </Pill>
                                 {isAccepted ? (
                                     <Pill className="bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20">
                                         <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                                        Dipilih
+                                        Accepted
                                     </Pill>
                                 ) : (
                                     <Pill className="bg-primary/15 text-primary ring-1 ring-primary/25">
-                                        Tawar
+                                        Negotiate
                                     </Pill>
                                 )}
                             </div>
@@ -115,7 +115,7 @@ const OfferCard = React.memo(function OfferCard({ offer, onAccept, onReject, onN
                                     className="rounded-xl px-3 py-1.5 text-xs hover:text-accent hover:border-accent"
                                     onClick={() => onReject(offer.id)}
                                 >
-                                    <XCircle className="h-3.5 w-3.5 mr-1" /> Tolak
+                                    <XCircle className="h-3.5 w-3.5 mr-1" /> Reject
                                 </Button>
                                 <Button
                                     size="sm"
@@ -195,7 +195,7 @@ export default function OffersInboxPage() {
     const onReject = useCallback(
         (id) => {
             setOffers((s) => s.filter((o) => o.id !== id));
-            toast({ title: "Penawaran ditolak", description: "Penawaran dihapus dari daftar." });
+            toast({ title: "Offer rejected", description: "Offer removed from list." });
         },
         [toast]
     );
@@ -228,7 +228,7 @@ export default function OffersInboxPage() {
             )
         );
         setOpenNegotiate(false);
-        toast({ title: "Harga disepakati", description: "Penawaran diterima. Mulai proses." });
+        toast({ title: "Price accepted", description: "Offer accepted. Proceeding." });
 
         const goTrack = () => selected.jobId && setTimeout(() => navigate(`/job/${selected.jobId}/track`), 10);
 
@@ -256,7 +256,7 @@ export default function OffersInboxPage() {
                 {/* Header */}
                 <motion.div variants={fade} initial="hidden" animate="show" className="mb-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <Link to={-1} aria-label="Kembali">
+                        <Link to={-1} aria-label="Back">
                             <Button
                                 variant="ghost"
                                 size="icon"
@@ -305,9 +305,9 @@ export default function OffersInboxPage() {
                 {/* Tabs (mobile) */}
                 <div className="sm:hidden mb-3 inline-flex w-full rounded-xl bg-card/40 p-1 backdrop-blur-xl ring-1 ring-border">
                     {[
-                        { key: "all", label: "Semua" },
-                        { key: "pending", label: "Menunggu" },
-                        { key: "accepted", label: "Dipilih" },
+                        { key: "all", label: "All" },
+                        { key: "pending", label: "Pending" },
+                        { key: "accepted", label: "Accepted" },
                     ].map((t) => (
                         <button
                             key={t.key}
@@ -327,7 +327,7 @@ export default function OffersInboxPage() {
                         <div className="mt-8">
                             <EmptyState
                                 icon={<User className="h-6 w-6" />}
-                                title="Belum ada penawaran"
+                                title="No offers yet"
                                 subtitle="Penawaran akan muncul di sini."
                             />
                         </div>
@@ -368,7 +368,7 @@ export default function OffersInboxPage() {
                                 )
                             );
                             setOpenNegotiate(false);
-                            toast({ title: "Harga disepakati", description: "Penawaran diterima. Mulai proses." });
+                            toast({ title: "Price accepted", description: "Offer accepted. Proceeding." });
 
                             const agreed = offer?.amount || selected.amount;
                             if (selected.payment === "cash" && (agreed || 0) >= 300000) {

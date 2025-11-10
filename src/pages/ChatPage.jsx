@@ -9,13 +9,13 @@ import EmptyState from "@/components/feedback/EmptyState";
 import AnimatedPage from "@/components/AnimatedPage";
 import { Helmet } from "react-helmet";
 
-// Dummy data: daftar chat
+// Dummy data: chat list
 const chatList = [
     {
         id: 1,
         name: "Budi Santoso",
         initials: "B",
-        lastMsg: "Halo, saya sudah di jalan menuju lokasi Anda.",
+        lastMsg: "Hello, I’m on my way to your location.",
         time: "10:30",
         online: true,
     },
@@ -23,16 +23,16 @@ const chatList = [
         id: 2,
         name: "Citra Dewi",
         initials: "C",
-        lastMsg: "Oke, besok kita lanjut ya!",
-        time: "Kemarin",
+        lastMsg: "Okay, let's continue tomorrow!",
+        time: "Yesterday",
         online: false,
     },
     {
         id: 3,
         name: "Andi W.",
         initials: "A",
-        lastMsg: "Terima kasih ya sudah selesai 🙏",
-        time: "Senin",
+        lastMsg: "Thank you for completing it 👍",
+        time: "Monday",
         online: false,
     },
 ];
@@ -51,7 +51,7 @@ export default function ChatPage() {
     return (
         <AnimatedPage>
             <Helmet>
-                <title>Obrolan — Kerjain</title>
+                <title>Chat — MWS IntegraLearn</title>
             </Helmet>
 
             <div className="relative mx-auto flex h-dvh max-w-lg flex-col backdrop-blur-xl backdrop-saturate-150">
@@ -63,7 +63,7 @@ export default function ChatPage() {
                     className="z-10 flex items-center justify-between border-b border-border/50 px-3 py-2 sm:px-4 sm:py-3"
                 >
                     <h1 className="text-base sm:text-lg font-semibold text-foreground">
-                        Obrolan
+                        Chat
                     </h1>
                     <div className="flex items-center gap-2">
                         {/* Compact search (always visible on mobile) */}
@@ -71,7 +71,7 @@ export default function ChatPage() {
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             sanitize="strong"
-                            placeholder="Cari..."
+                            placeholder="Search..."
                             className="w-28 sm:w-40 rounded-full border border-border/50 bg-background/60 px-3 py-1 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-accent/50 transition-all duration-300"
                         />
                         <Button
@@ -126,8 +126,8 @@ export default function ChatPage() {
                     ) : (
                         <div className="px-3 py-6">
                             <EmptyState
-                                title="Belum ada obrolan"
-                                subtitle="Percakapan akan muncul di sini."
+                                title="No conversations yet"
+                                subtitle="Your chats will appear here."
                                 icon={<Search className="h-6 w-6" />}
                             />
                         </div>

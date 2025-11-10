@@ -165,7 +165,7 @@ const JobStatusPage = () => {
                 <div className="mt-8 flex justify-center">
                     <button className="flex items-center gap-2 px-4 py-2 rounded-lg border border-red-500 text-red-500 hover:bg-red-500/10 transition">
                         <XCircle size={18} />
-                        Batalkan Job
+                        Cancel Job
                     </button>
                 </div>
             </motion.div>

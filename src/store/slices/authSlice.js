@@ -37,7 +37,7 @@ export const fetchCurrentUser = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const response = await getCurrentUser();
-            return response.data;
+            return response.data?.data || response.data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to fetch user');
         }
@@ -137,9 +137,13 @@ const authSlice = createSlice({
             })
             .addCase(fetchCurrentUser.fulfilled, (state, action) => {
                 state.loading = false;
-                state.user = action.payload.user;
-                state.isAuthenticated = true;
+                const userData = action.payload?.user || action.payload?.data?.user;
+                state.user = userData || null;
+                state.isAuthenticated = !!userData;
                 state.error = null;
+                if (userData) {
+                    localStorage.setItem('auth_user', JSON.stringify(userData));
+                }
             })
             .addCase(fetchCurrentUser.rejected, (state, action) => {
                 state.loading = false;

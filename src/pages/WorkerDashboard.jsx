@@ -20,9 +20,9 @@ import EmptyState from "@/components/feedback/EmptyState";
 const DUMMY_JOBS = [
     {
         id: 1,
-        title: "Beli Kopi Cepat",
+        title: "Quick Coffee Pickup",
         type: "onsite",
-        description: "Ambil kopi di kedai depan komplek dan antar ke rumah.",
+        description: "Pick up coffee from the nearby shop and deliver home.",
         client: "Budi S.",
         distance: "500 m",
         fee: 15000,
@@ -33,9 +33,9 @@ const DUMMY_JOBS = [
     },
     {
         id: 2,
-        title: "Desain Brosur Produk",
+        title: "Product Brochure Design",
         type: "remote",
-        description: "Desain brosur A4, 2 konsep draft. Final PDF & AI.",
+        description: "Design A4 brochure, 2 draft concepts. Final PDF & AI.",
         client: "Siti R.",
         distance: null,
         fee: 200000,
@@ -98,10 +98,10 @@ export default function WorkerDashboard() {
 
     const stats = useMemo(
         () => [
-            { label: "Tersedia", value: jobs.length, icon: Loader2 },
-            { label: "Saldo", value: fmtCurrency(583500), icon: Wallet },
-            { label: "Selesai", value: 128, icon: CheckCircle2 },
-            { label: "Aktif", value: 3, icon: Clock },
+            { label: "Available", value: jobs.length, icon: Loader2 },
+            { label: "Balance", value: fmtCurrency(583500), icon: Wallet },
+            { label: "Completed", value: 128, icon: CheckCircle2 },
+            { label: "Active", value: 3, icon: Clock },
         ],
         [jobs]
     );
@@ -116,14 +116,14 @@ export default function WorkerDashboard() {
         setIsOnline((prev) => !prev);
         if (!isOnline) {
             setLoadingJobs(true);
-            toast({ title: "Online", description: "Mencari pekerjaan..." });
+            toast({ title: "Online", description: "Searching for jobs..." });
             setTimeout(() => {
                 setJobs(DUMMY_JOBS);
                 setLoadingJobs(false);
                 setTimeout(() => listRef.current?.scrollTo?.({ top: 0, behavior: "smooth" }), 80);
             }, 700);
         } else {
-            toast({ title: "Offline", description: "Berhenti menerima tugas.", variant: "destructive" });
+            toast({ title: "Offline", description: "Stopped receiving tasks.", variant: "destructive" });
             setJobs([]);
         }
     }, [isOnline, toast]);
@@ -132,7 +132,7 @@ export default function WorkerDashboard() {
         (id) => {
             const target = jobs.find((j) => j.id === id);
             setJobs((prev) => prev.filter((j) => j.id !== id));
-            toast({ title: "Job diterima", description: "Mulai kerjakan sekarang." });
+            toast({ title: "Job accepted", description: "Start working now." });
             if (target) {
                 const needsDeposit = target.paymentMethod === "cash" && Number(target.fee || 0) >= 300000;
                 if (needsDeposit) {
@@ -212,8 +212,8 @@ export default function WorkerDashboard() {
             return (
                 <EmptyState
                     icon={<Loader2 className="h-5 w-5" />}
-                    title="Belum ada job terdekat"
-                    subtitle="Aktifkan Online atau perbesar radius."
+                    title="No nearby jobs yet"
+                    subtitle="Go Online or increase your radius."
                     action={
                         <Button
                             size="sm"
@@ -223,7 +223,7 @@ export default function WorkerDashboard() {
                                 toast({ title: "Demo job", description: "Job simulasi ditambahkan." });
                             }}
                         >
-                            Cari Job
+                            Find Jobs
                         </Button>
                     }
                 />
@@ -249,7 +249,7 @@ export default function WorkerDashboard() {
     return (
         <AnimatedPage>
             <Helmet>
-                <title>Dashboard Pekerja — Kerjain</title>
+                <title>Worker Dashboard — MWS IntegraLearn</title>
             </Helmet>
 
             <div className="relative min-h-dvh w-full px-3 sm:px-4 py-4 sm:py-5">
@@ -266,7 +266,7 @@ export default function WorkerDashboard() {
                                 />
                                 <div>
                                     <p className="text-sm sm:text-base font-semibold">
-                                        Halo, <span className="text-accent">Pekerja</span>
+                                        Hello, <span className="text-accent">Worker</span>
                                     </p>
                                     <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
                                         {isOnline ? "Online — siap kerja" : "Offline — tidak aktif"}
@@ -300,7 +300,7 @@ export default function WorkerDashboard() {
                                         className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-full font-medium text-[11px] sm:text-xs transition-colors duration-320 ${isOnline ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-accent text-accent-foreground hover:bg-accent/90"
                                             }`}
                                         aria-pressed={isOnline}
-                                        aria-label={isOnline ? "Matikan status online" : "Aktifkan status online"}
+                                        aria-label={isOnline ? "Turn offline" : "Go online"}
                                     >
                                         <Power className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                         <span>{isOnline ? "Offline" : "Online"}</span>
@@ -323,7 +323,7 @@ export default function WorkerDashboard() {
                             rows={2}
                             value={availabilityNote}
                             onChange={(e) => setAvailabilityNote(sanitizeText(e.target.value, 140))}
-                            placeholder="Contoh: Siap antar Tebet, jam 10–14"
+                            placeholder="Example: Available in Tebet, 10–14"
                             maxLength={140}
                             className="mt-2 w-full resize-none rounded-md border border-border/40 bg-background/40 px-2.5 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-sm placeholder:text-muted-foreground focus:ring-2 focus:ring-accent transition duration-320"
                             aria-label="Catatan ketersediaan"
@@ -341,7 +341,7 @@ export default function WorkerDashboard() {
                 {/* Jobs list */}
                 <motion.div {...cardMotion} className="mx-auto max-w-md mt-4 sm:mt-5" ref={listRef}>
                     <div className="flex items-center justify-between mb-2 sm:mb-3">
-                        <h2 className="text-[12px] sm:text-sm font-semibold">Job Tersedia</h2>
+                        <h2 className="text-[12px] sm:text-sm font-semibold">Available Jobs</h2>
                         {loadingJobs ? (
                             <span className="text-[11px] sm:text-[12px] text-muted-foreground">Memuat…</span>
                         ) : (

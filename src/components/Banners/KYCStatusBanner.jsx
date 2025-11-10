@@ -18,9 +18,9 @@ import { cn } from "@/lib/utils";
 export function KYCStatusBanner({ tier = "L0", message, onVerify, className = "" }) {
     const copy = (() => {
         if (message) return message;
-        if (tier === "L2") return "Akun terverifikasi. Batas transaksi penuh terbuka.";
-        if (tier === "L1") return "Verifikasi sedang: batas transaksi terbatas. Selesaikan untuk membuka semua fitur.";
-        return "Akun belum terverifikasi. Beberapa fitur dan limit pembayaran dibatasi.";
+        if (tier === "L2") return "Account verified. Full transaction limits enabled.";
+        if (tier === "L1") return "Verification in progress: limited transaction limits. Complete to unlock all features.";
+        return "Account not verified. Some features and payment limits are restricted.";
     })();
 
     const tone =
@@ -47,7 +47,7 @@ export function KYCStatusBanner({ tier = "L0", message, onVerify, className = ""
                     <Icon className="h-4 w-4" aria-hidden />
                 </div>
                 <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-foreground">Status Verifikasi: {tier}</p>
+                    <p className="text-sm font-semibold text-foreground">Verification Status: {tier}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">{copy}</p>
                 </div>
                 {tier !== "L2" && (
@@ -56,7 +56,7 @@ export function KYCStatusBanner({ tier = "L0", message, onVerify, className = ""
                         className="rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
                         onClick={onVerify}
                     >
-                        Verifikasi
+                        Verify
                     </Button>
                 )}
             </div>
@@ -98,11 +98,11 @@ export function DepositPromptBanner({
                     <Info className="h-4 w-4" aria-hidden />
                 </div>
                 <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-foreground">Keamanan Pembayaran</p>
+                    <p className="text-sm font-semibold text-foreground">Payment Safety</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
                         {needsDeposit
-                            ? "Nilai pekerjaan tinggi. Disarankan deposit kecil untuk menghindari pembatalan sepihak."
-                            : "Untuk pembayaran tunai, pertimbangkan deposit kecil agar proses lebih aman."}
+                            ? "High-value job. A small deposit is recommended to prevent unilateral cancellation."
+                            : "For cash payments, consider a small deposit for added safety."}
                     </p>
                 </div>
                 <Button

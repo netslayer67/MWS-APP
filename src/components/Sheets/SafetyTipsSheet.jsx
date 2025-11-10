@@ -17,40 +17,40 @@ export default function SafetyTipsSheet({ open, onOpenChange }) {
             <Dialog.DialogContent className="max-w-lg rounded-3xl glass-strong p-0 overflow-hidden">
                 <Dialog.DialogHeader className="p-4 sm:p-5 border-b border-border/50 bg-card/40 backdrop-blur-xl">
                     <Dialog.DialogTitle className="text-base sm:text-lg font-semibold inline-flex items-center gap-2">
-                        <ShieldCheck className="h-5 w-5 text-emerald-400" /> Tips Keamanan
+                        <ShieldCheck className="h-5 w-5 text-emerald-400" /> Safety Tips
                     </Dialog.DialogTitle>
                     <Dialog.DialogDescription className="text-xs sm:text-sm text-muted-foreground">
-                        Ikuti panduan ini untuk pengalaman yang aman dan nyaman.
+                        Follow these guidelines for a safe, smooth experience.
                     </Dialog.DialogDescription>
                 </Dialog.DialogHeader>
 
                 <div className="p-4 sm:p-5 space-y-3">
                     <Tip
                         icon={<MessageSquare className="h-4 w-4 text-accent" />}
-                        title="Gunakan chat di dalam aplikasi"
-                        desc="Simpan percakapan agar mudah ditinjau saat terjadi sengketa."
+                        title="Keep chats in-app"
+                        desc="Keep conversations in-app for easy review if disputes occur."
                     />
                     <Tip
                         icon={<Wallet className="h-4 w-4 text-primary" />}
-                        title="Utamakan pembayaran terlindungi"
-                        desc="Pilih metode online/escrow untuk nilai pekerjaan tinggi."
+                        title="Prefer protected payments"
+                        desc="Choose online/escrow methods for high-value jobs."
                     />
                     <Tip
                         icon={<Phone className="h-4 w-4 text-foreground/80" />}
-                        title="Verifikasi kontak"
-                        desc="Pastikan nomor telepon dan detail lokasi sesuai."
+                        title="Verify contact"
+                        desc="Confirm phone number and location details match."
                     />
                     <Tip
                         icon={<Info className="h-4 w-4 text-amber-400" />}
-                        title="Laporkan masalah"
-                        desc="Jika terjadi kecurigaan, segera gunakan form 'Laporkan' atau ajukan sengketa."
+                        title="Report issues"
+                        desc="If anything seems suspicious, report or open a dispute promptly."
                     />
                 </div>
 
                 <div className="px-4 sm:px-5 pb-4 sm:pb-5 pt-2 flex items-center justify-end gap-2 border-t border-border/50 bg-card/40 backdrop-blur-xl">
                     <Dialog.DialogClose asChild>
                         <button className="rounded-xl bg-primary text-primary-foreground px-3 py-1.5 text-sm font-medium hover:bg-primary/90 transition-colors duration-300">
-                            Mengerti
+                            Got it
                         </button>
                     </Dialog.DialogClose>
                 </div>

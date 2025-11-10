@@ -33,7 +33,7 @@ const WeeklyChart = memo(({ data }) => {
                                     />
                                     {day.flagged > 0 && (
                                         <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-4 h-4 md:w-5 md:h-5 rounded-full bg-primary border-2 border-card flex items-center justify-center shadow-lg">
-                                            <span className="text-xs font-bold text-white">{day.flagged}</span>
+                                            <span className="text-xs font-bold text-primary-foreground">{day.flagged}</span>
                                         </div>
                                     )}
                                 </div>

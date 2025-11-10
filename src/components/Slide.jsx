@@ -4,8 +4,8 @@ import { CheckCircle } from "lucide-react";
 
 const Slide = ({
     onComplete,
-    label = "Geser untuk Selesai",
-    completedLabel = "Tugas Selesai!",
+    label = "Slide to Complete",
+    completedLabel = "Task Completed!",
     threshold = 0.8, // seberapa jauh harus digeser
     className = "",
 }) => {
@@ -24,7 +24,7 @@ const Slide = ({
     return (
         <div
             ref={constraintsRef}
-            className={`relative w-full h-14 rounded-2xl bg-white/20 backdrop-blur-xl border border-white/30 overflow-hidden ${className}`}
+            className={`relative w-full h-14 rounded-2xl border border-border/60 bg-card/70 backdrop-blur-xl overflow-hidden ${className}`}
         >
             {!completed ? (
                 <>
@@ -39,17 +39,17 @@ const Slide = ({
                         dragConstraints={constraintsRef}
                         dragElastic={0.05}
                         onDragEnd={handleDragEnd}
-                        className="absolute top-0 left-0 w-14 h-14 bg-primary rounded-2xl flex items-center justify-center shadow-lg cursor-pointer"
+                        className="absolute top-0 left-0 w-14 h-14 bg-primary rounded-2xl flex items-center justify-center shadow-glass-sm cursor-pointer"
                         whileTap={{ scale: 0.95 }}
                     >
-                        <CheckCircle className="text-white w-6 h-6" />
+                        <CheckCircle className="w-6 h-6 text-primary-foreground" />
                     </motion.div>
-                    <div className="absolute inset-0 flex items-center justify-center text-white font-medium">
+                    <div className="absolute inset-0 flex items-center justify-center text-foreground font-medium">
                         {label}
                     </div>
                 </>
             ) : (
-                <div className="absolute inset-0 flex items-center justify-center text-green-500 font-bold">
+                <div className="absolute inset-0 flex items-center justify-center text-emerald font-bold">
                     {completedLabel}
                 </div>
             )}

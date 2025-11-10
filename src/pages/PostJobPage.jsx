@@ -70,7 +70,7 @@ export default function PostJobPage() {
                 const txt = (e.clipboardData || window.clipboardData).getData("text");
                 if (/https?:\/\//i.test(txt) || /<script/i.test(txt) || /javascript:/i.test(txt) || /\b(data:|vbscript:)/i.test(txt)) {
                     e.preventDefault();
-                    toast({ title: "Isi tidak valid", description: "Tautan/script diblokir." });
+                    toast({ title: "Invalid content", description: "Links/scripts are blocked." });
                 }
             } catch { }
         },
@@ -86,7 +86,7 @@ export default function PostJobPage() {
     const doSubmit = useCallback(
         async () => {
             if (!canSubmit) {
-                toast({ title: "Periksa formulir", description: "Judul dan deskripsi perlu diisi." });
+                toast({ title: "Check the form", description: "Title and description are required." });
                 return;
             }
             setSubmitting(true);
@@ -104,11 +104,11 @@ export default function PostJobPage() {
                     mode,
                 };
                 await new Promise((r) => setTimeout(r, 600)); // fake API
-                toast({ title: "Berhasil", description: "Pekerjaan diposting (demo)." });
+                toast({ title: "Success", description: "Job posted (demo)." });
                 dirtyRef.current = false;
                 navigate(mode === "quick" ? "/" : "/history");
             } catch (err) {
-                toast({ title: "Gagal", description: "Terjadi kesalahan. Coba lagi.", variant: "destructive" });
+                toast({ title: "Failed", description: "Something went wrong. Please try again.", variant: "destructive" });
             } finally {
                 setSubmitting(false);
             }

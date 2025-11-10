@@ -20,7 +20,7 @@ export default function NotFound() {
                     action={
                         <Link to="/">
                             <Button className="rounded-full bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90 transition-colors duration-320">
-                                Kembali ke Beranda
+                                Back to Home
                             </Button>
                         </Link>
                     }

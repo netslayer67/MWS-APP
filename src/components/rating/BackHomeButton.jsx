@@ -22,9 +22,9 @@ const BackHomeButton = memo(() => {
         >
             <Link to={homeRoute} className="w-full sm:w-auto">
                 <Button
-                    className="w-full sm:w-auto px-8 py-3 md:px-12 md:py-4 rounded-2xl bg-gradient-to-r from-maroon via-maroon to-maroon/90 hover:from-maroon/90 hover:via-maroon hover:to-maroon text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden hover:scale-[1.02] active:scale-[0.98]"
+                    className="w-full sm:w-auto px-8 py-3 md:px-12 md:py-4 rounded-2xl bg-gradient-to-r from-primary via-gold to-accent text-primary-foreground font-semibold shadow-glass-lg hover:shadow-elevated transition-all duration-300 group relative overflow-hidden hover:scale-[1.02] active:scale-[0.98]"
                 >
-                    <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-gold/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-gold/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     <span className="relative flex items-center justify-center gap-2">
                         <Home className="w-4 h-4 md:w-5 md:h-5 transition-transform duration-300 group-hover:scale-110 group-hover:-translate-x-0.5" />
                         <span className="text-sm md:text-base">Back Home</span>

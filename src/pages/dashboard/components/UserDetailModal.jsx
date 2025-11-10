@@ -1,4 +1,4 @@
-import React, { memo, useState, useEffect } from "react";
+import React, { memo, useState, useEffect, useMemo } from "react";
 import { X, TrendingUp, Calendar, User, Activity, AlertTriangle, ExternalLink } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { getUserTrends } from "../../../services/dashboardService";
@@ -24,7 +24,7 @@ const UserDetailModal = memo(({ user, isOpen, onClose }) => {
             console.log('Fetching trends for user:', user.id, 'period:', selectedPeriod);
             const response = await getUserTrends(user.id, selectedPeriod);
             console.log('User trends response:', response.data);
-            setUserTrends(response.data);
+            setUserTrends(response.data?.data || response.data);
         } catch (error) {
             console.error('Error fetching user trends:', error);
             setUserTrends(null);
@@ -33,7 +33,26 @@ const UserDetailModal = memo(({ user, isOpen, onClose }) => {
         }
     };
 
+    const derivedSummary = useMemo(() => {
+        if (userTrends?.summary) {
+            return userTrends.summary;
+        }
+        if (user?.periodSummary) {
+            const submissions = user.periodSummary.submissions || 0;
+            const needsSupport = user.periodSummary.needsSupportDays || 0;
+            return {
+                averagePresence: user.periodSummary.avgPresence || 0,
+                averageCapacity: user.periodSummary.avgCapacity || 0,
+                supportNeededCount: needsSupport,
+                emotionalStability: submissions ? Math.max(0, 1 - (needsSupport / submissions)) : null
+            };
+        }
+        return null;
+    }, [userTrends?.summary, user?.periodSummary]);
+
     if (!isOpen || !user) return null;
+
+    const roleDepartmentLabel = [user.role, user.department || user.unit].filter(Boolean).join(' • ');
 
     const CustomTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
@@ -78,7 +97,7 @@ const UserDetailModal = memo(({ user, isOpen, onClose }) => {
     ];
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-foreground/70 dark:bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-card rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-border">
@@ -88,7 +107,7 @@ const UserDetailModal = memo(({ user, isOpen, onClose }) => {
                         </div>
                         <div>
                             <h2 className="text-xl font-semibold text-foreground">{user.name}</h2>
-                            <p className="text-sm text-muted-foreground capitalize">{user.role} • {user.department}</p>
+                            <p className="text-sm text-muted-foreground capitalize">{roleDepartmentLabel || 'Team member'}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -133,7 +152,7 @@ const UserDetailModal = memo(({ user, isOpen, onClose }) => {
                     </div>
 
                     {/* Stats Overview */}
-                    {userTrends && userTrends.summary && (
+                    {derivedSummary && (
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div className="glass glass-card p-4">
                                 <div className="flex items-center gap-2 mb-2">
@@ -141,7 +160,7 @@ const UserDetailModal = memo(({ user, isOpen, onClose }) => {
                                     <span className="text-sm font-medium text-foreground">Avg Presence</span>
                                 </div>
                                 <p className="text-2xl font-bold text-foreground">
-                                    {userTrends.summary.averagePresence?.toFixed(1) || 0}/10
+                                    {Number(derivedSummary.averagePresence || 0).toFixed(1)}/10
                                 </p>
                             </div>
                             <div className="glass glass-card p-4">
@@ -150,7 +169,7 @@ const UserDetailModal = memo(({ user, isOpen, onClose }) => {
                                     <span className="text-sm font-medium text-foreground">Avg Capacity</span>
                                 </div>
                                 <p className="text-2xl font-bold text-foreground">
-                                    {userTrends.summary.averageCapacity?.toFixed(1) || 0}/10
+                                    {Number(derivedSummary.averageCapacity || 0).toFixed(1)}/10
                                 </p>
                             </div>
                             <div className="glass glass-card p-4">
@@ -159,7 +178,7 @@ const UserDetailModal = memo(({ user, isOpen, onClose }) => {
                                     <span className="text-sm font-medium text-foreground">Support Needed</span>
                                 </div>
                                 <p className="text-2xl font-bold text-foreground">
-                                    {userTrends.summary.supportNeededCount || 0} times
+                                    {derivedSummary.supportNeededCount || 0} times
                                 </p>
                             </div>
                             <div className="glass glass-card p-4">
@@ -168,7 +187,7 @@ const UserDetailModal = memo(({ user, isOpen, onClose }) => {
                                     <span className="text-sm font-medium text-foreground">Emotional Stability</span>
                                 </div>
                                 <p className="text-2xl font-bold text-foreground">
-                                    {userTrends.summary.emotionalStability ? (userTrends.summary.emotionalStability * 100).toFixed(0) : 0}%
+                                    {derivedSummary.emotionalStability ? (derivedSummary.emotionalStability * 100).toFixed(0) : 0}%
                                 </p>
                             </div>
                         </div>
@@ -296,8 +315,35 @@ const UserDetailModal = memo(({ user, isOpen, onClose }) => {
                                 </ResponsiveContainer>
                             </div>
                         ) : (
-                            <div className="h-64 flex items-center justify-center">
-                                <div className="text-muted-foreground">No trend data available</div>
+                            <div className="space-y-4">
+                                <div className="h-40 flex items-center justify-center text-sm text-muted-foreground bg-muted/20 rounded-lg">
+                                    No trend data available for this period.
+                                </div>
+                                {user.lastCheckin ? (
+                                    <div className="rounded-lg border border-border/60 p-4 bg-card/40">
+                                        <p className="text-sm font-semibold text-foreground mb-2">Latest check-in</p>
+                                        <p className="text-xs text-muted-foreground mb-1">
+                                            {new Date(user.lastCheckin.date).toLocaleString('en-US', {
+                                                month: 'short',
+                                                day: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            })}
+                                        </p>
+                                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                            <span>Presence: {user.lastCheckin.presenceLevel}/10</span>
+                                            <span>Capacity: {user.lastCheckin.capacityLevel}/10</span>
+                                            {user.lastCheckin.weatherType && <span>{user.lastCheckin.weatherType}</span>}
+                                            {user.lastCheckin.moods?.length > 0 && (
+                                                <span>Moods: {user.lastCheckin.moods.slice(0, 3).join(', ')}</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-muted-foreground text-center">
+                                        This team member has not submitted any check-ins in the selected period.
+                                    </p>
+                                )}
                             </div>
                         )}
                     </div>
@@ -401,3 +447,4 @@ const UserDetailModal = memo(({ user, isOpen, onClose }) => {
 UserDetailModal.displayName = 'UserDetailModal';
 
 export default UserDetailModal;
+

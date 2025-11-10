@@ -1,4 +1,4 @@
-import { memo } from "react";
+import React, { memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Heart, Brain, Sparkles, ChevronRight, BarChart3 } from "lucide-react";
@@ -109,7 +109,18 @@ const MethodCard = memo(({ icon: Icon, title, desc, features, isPremium, onClick
 /* ==================== MAIN COMPONENT ==================== */
 const RoleSelection = memo(() => {
     const navigate = useNavigate();
-    const { user } = useSelector((state) => state.auth);
+    const { user, loading } = useSelector((state) => state.auth);
+
+    // Debug logging
+    React.useEffect(() => {
+        console.log('RoleSelection - User state:', user);
+        console.log('RoleSelection - Loading state:', loading);
+        if (user) {
+            console.log('User role:', user.role);
+            console.log('Is head_unit:', user.role === 'head_unit');
+            console.log('Is directorate:', user.role === 'directorate');
+        }
+    }, [user, loading]);
 
     const selectMethod = (method) => {
         if (method === 'manual') {
@@ -130,7 +141,7 @@ const RoleSelection = memo(() => {
             <div className="relative z-10 min-h-screen flex items-center justify-center p-3 md:p-5">
                 <motion.div
                     initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    animate={{ opacity: loading ? 0.7 : 1, y: 0 }}
                     transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                     className="w-full max-w-2xl"
                 >
@@ -192,10 +203,10 @@ const RoleSelection = memo(() => {
                         {user && (user.role === 'directorate' || user.role === 'head_unit') && (
                             <MethodCard
                                 icon={BarChart3}
-                                title={user.role === 'head_unit' ? "Unit Dashboard" : "Go to Dashboard"}
+                                title={user.role === 'head_unit' ? "Unit Dashboard" : "Emotional Checkin Dashboard"}
                                 desc={user.role === 'head_unit'
                                     ? "Monitor your team's emotional wellness and support requests"
-                                    : "Access comprehensive emotional wellness dashboard and analytics"
+                                    : "Access comprehensive emotional wellness data for all employees"
                                 }
                                 features={user.role === 'head_unit' ? [
                                     "Monitor unit staff wellness",
@@ -203,14 +214,28 @@ const RoleSelection = memo(() => {
                                     "Unit-specific emotional analytics",
                                     "Real-time team support tracking"
                                 ] : [
-                                    "Real-time staff wellness monitoring",
-                                    "Emotional check-in analytics",
-                                    "Support tracking and interventions",
+                                    "All employees emotional wellness overview",
+                                    "Comprehensive staff analytics & insights",
+                                    "Organization-wide support tracking",
+                                    "Cross-department mood & weather patterns",
+                                    "Individual employee deep-dive analysis",
                                     "Period-based reporting (daily/weekly/monthly/semesterly)"
                                 ]}
                                 isPremium={false}
                                 onClick={() => selectMethod('dashboard')}
                             />
+                        )}
+
+                        {/* Fallback for users with role but no dashboard access */}
+                        {user && user.role && !(user.role === 'directorate' || user.role === 'head_unit') && (
+                            <div className="glass rounded-lg md:rounded-xl p-3 md:p-4 text-center">
+                                <p className="text-[10px] md:text-xs text-muted-foreground">
+                                    Role: <span className="font-semibold text-foreground">{user.role}</span>
+                                </p>
+                                <p className="text-[9px] md:text-[10px] text-muted-foreground/70 mt-1">
+                                    Dashboard access is available for Directorate and Head Unit roles.
+                                </p>
+                            </div>
                         )}
 
                         {/* User Management Access for Directorate and Admin */}
@@ -228,6 +253,21 @@ const RoleSelection = memo(() => {
                                 isPremium={false}
                                 onClick={() => navigate('/user-management')}
                             />
+                        )}
+
+                        {/* Loading state */}
+                        {loading && (
+                            <div className="glass rounded-lg md:rounded-xl p-4 text-center">
+                                <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+                                <p className="text-[10px] md:text-xs text-muted-foreground">Loading user data...</p>
+                            </div>
+                        )}
+
+                        {/* No user data */}
+                        {!loading && !user && (
+                            <div className="glass rounded-lg md:rounded-xl p-4 text-center">
+                                <p className="text-[10px] md:text-xs text-muted-foreground">No user data available. Please try logging in again.</p>
+                            </div>
                         )}
                     </div>
 

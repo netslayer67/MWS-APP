@@ -31,7 +31,7 @@ const getColorClasses = (color) => {
 const CheckboxIndicator = memo(({ isSelected, colorClasses }) => (
     <div className={`relative flex-shrink-0 w-4 h-4 md:w-5 md:h-5 rounded border-2 transition-all duration-300 ${isSelected ? `border-current ${colorClasses.text} bg-current` : 'border-border bg-card group-hover:border-current'}`}>
         {isSelected && (
-            <svg className="absolute inset-0 w-full h-full text-white p-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+            <svg className="absolute inset-0 w-full h-full p-0.5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
         )}
@@ -44,8 +44,7 @@ const MoodIcon = memo(({ Icon, isSelected, colorClasses }) => (
 
 const MoodLabel = memo(({ mood, isSelected, colorClasses }) => (
     <span className={`text-xs md:text-sm font-medium leading-tight transition-colors duration-300 ${isSelected ? colorClasses.text : 'text-foreground group-hover:' + colorClasses.text}`}>
-        <span className="hidden md:inline">{mood.label}</span>
-        <span className="md:hidden">{mood.labelId}</span>
+        {mood.label}
     </span>
 ));
 

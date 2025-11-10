@@ -43,29 +43,29 @@ export default function SignupPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!isPhone(phone)) {
-            toast({ title: "Nomor HP tidak valid", description: "Gunakan hanya angka (9–15 digit)." });
+            toast({ title: "Invalid phone number", description: "Use digits only (9–15)." });
             return;
         }
         if (!isValidEmail(email)) {
-            toast({ title: "Email tidak valid", description: "Periksa kembali alamat email." });
+            toast({ title: "Invalid email", description: "Please check your email address." });
             return;
         }
         if (password.length < 8) {
-            toast({ title: "Password terlalu singkat", description: "Gunakan minimal 8 karakter." });
+            toast({ title: "Password too short", description: "Use at least 8 characters." });
             return;
         }
         if (password !== confirm) {
-            toast({ title: "Password tidak cocok", description: "Pastikan password dan konfirmasi sama." });
+            toast({ title: "Passwords do not match", description: "Make sure password and confirm match." });
             return;
         }
 
         setLoading(true);
 
         try {
-            toast({ title: "Akun dibuat", description: "Lanjut ke proses verifikasi." });
+            toast({ title: "Account created", description: "Proceed to verification." });
             setTimeout(() => navigate("/verify"), 500);
         } catch (err) {
-            toast({ title: "Gagal membuat akun", description: "Coba lagi nanti.", variant: "destructive" });
+            toast({ title: "Failed to create account", description: "Please try again later.", variant: "destructive" });
         } finally {
             setLoading(false);
         }
@@ -74,7 +74,7 @@ export default function SignupPage() {
     return (
         <AnimatedPage>
             <Helmet>
-                <title>Daftar — Kerjain</title>
+                <title>Sign up — MWS IntegraLearn</title>
             </Helmet>
 
             <div className="min-h-dvh flex items-center justify-center px-4 py-10">
@@ -85,7 +85,7 @@ export default function SignupPage() {
                             to="/"
                             className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300"
                         >
-                            &larr; Kembali
+                            &larr; Back
                         </Link>
                         <h1 className="flex-1 text-lg font-semibold text-foreground text-center">Buat Akun</h1>
                         <div className="w-6" aria-hidden />
@@ -99,8 +99,8 @@ export default function SignupPage() {
                                 <User className="h-5 w-5" />
                             </div>
                             <div className="min-w-0">
-                                <p className="text-sm font-medium text-foreground">Selamat datang 👋</p>
-                                <p className="text-xs text-muted-foreground">Daftar cepat & aman untuk mulai gunakan Kerjain</p>
+                                <p className="text-sm font-medium text-foreground">Welcome aboard 👋</p>
+                                <p className="text-xs text-muted-foreground">Fast & secure sign-up to get started</p>
                             </div>
                         </div>
 
@@ -185,7 +185,7 @@ export default function SignupPage() {
                                     "Memproses..."
                                 ) : (
                                     <span className="inline-flex items-center gap-2">
-                                        Daftar
+                                        Sign up
                                         <ArrowRight className="h-4 w-4" />
                                     </span>
                                 )}
@@ -196,7 +196,7 @@ export default function SignupPage() {
                         <div className="mt-4 text-center text-xs text-muted-foreground">
                             Sudah punya akun?{" "}
                             <Link to="/login" className="text-accent font-medium hover:underline">
-                                Masuk
+                                Sign in
                             </Link>
                         </div>
                     </div>

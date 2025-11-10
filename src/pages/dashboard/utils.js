@@ -121,5 +121,6 @@ export const periodOptions = [
     { id: "today", label: "Today" },
     { id: "week", label: "Week" },
     { id: "month", label: "Month" },
-    { id: "semester", label: "Semester" }
+    { id: "semester", label: "Semester" },
+    { id: "all", label: "All Data" }
 ];

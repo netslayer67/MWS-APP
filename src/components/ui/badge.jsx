@@ -3,17 +3,16 @@ import { cva } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const badgeVariants = cva(
-    "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+    "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold " +
+    "transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ring-offset-background",
     {
         variants: {
             variant: {
-                default:
-                    "border-transparent bg-purple-500 text-white hover:bg-purple-600",
-                secondary:
-                    "border-transparent bg-white/20 text-white hover:bg-white/30",
-                destructive:
-                    "border-transparent bg-red-500 text-white hover:bg-red-600",
-                outline: "text-white border-white/20",
+                default: "border-primary/30 bg-primary/15 text-primary hover:bg-primary/25",
+                secondary: "border-secondary/30 bg-secondary/15 text-secondary hover:bg-secondary/25",
+                accent: "border-accent/30 bg-accent text-accent-foreground hover:bg-accent/90",
+                destructive: "border-destructive/40 bg-destructive text-destructive-foreground hover:bg-destructive/90",
+                outline: "border-border text-foreground hover:bg-card/50",
             },
         },
         defaultVariants: {
@@ -23,9 +22,7 @@ const badgeVariants = cva(
 );
 
 function Badge({ className, variant, ...props }) {
-    return (
-        <div className={cn(badgeVariants({ variant }), className)} {...props} />
-    );
+    return <span className={cn(badgeVariants({ variant }), className)} {...props} />;
 }
 
 export { Badge, badgeVariants };

@@ -37,20 +37,20 @@ export default function LoginPage() {
 
             // minimal validation
             if (!isValidEmail(email)) {
-                toast({ title: "Alamat email tidak valid", description: "Periksa kembali email Anda." });
+                toast({ title: "Invalid email address", description: "Please check your email." });
                 return;
             }
             if (!password || password.length < 6) {
-                toast({ title: "Password terlalu pendek", description: "Gunakan minimal 6 karakter." });
+                toast({ title: "Password too short", description: "Use at least 6 characters." });
                 return;
             }
 
             // simulate login
             setLoading(true);
-            toast({ title: "Proses masuk", description: "Tunggu sebentar..." });
+            toast({ title: "Logging in", description: "Please wait..." });
             setTimeout(() => {
                 setLoading(false);
-                toast({ title: "Login berhasil", description: "Mengarahkan..." });
+                toast({ title: "Login successful", description: "Redirecting..." });
                 navigate("/select-role");
             }, 900);
         },
@@ -68,7 +68,7 @@ export default function LoginPage() {
     return (
         <AnimatedPage>
             <Helmet>
-                <title>Masuk — Kerjain</title>
+                <title>Sign in — MWS IntegraLearn</title>
             </Helmet>
 
             <div className="flex min-h-screen items-center justify-center px-4 py-10">
@@ -76,8 +76,8 @@ export default function LoginPage() {
                     <div className="rounded-2xl border border-border/40 bg-card/40 backdrop-blur-xl p-6 shadow-xl">
                         {/* header */}
                         <header className="mb-4 text-center">
-                            <h1 className="text-2xl font-semibold text-foreground">Selamat Datang</h1>
-                            <p className="mt-1 text-sm text-muted-foreground">Masuk untuk melanjutkan</p>
+                            <h1 className="text-2xl font-semibold text-foreground">Welcome</h1>
+                            <p className="mt-1 text-sm text-muted-foreground">Sign in to continue</p>
                         </header>
 
                         {/* form */}
@@ -94,7 +94,7 @@ export default function LoginPage() {
                                         type="email"
                                         inputMode="email"
                                         autoComplete="email"
-                                        placeholder="name@contoh.com"
+                                        placeholder="name@example.com"
                                         value={email}
                                         sanitize="strong"
                                         onChange={(e) => setEmail(e.target.value)}
@@ -107,7 +107,7 @@ export default function LoginPage() {
 
                             <div>
                                 <Label htmlFor="password" className="mb-1 text-sm text-foreground/90">
-                                    Kata sandi
+                                    Password
                                 </Label>
                                 <div className="relative">
                                     <KeyIconLeft />
@@ -115,7 +115,7 @@ export default function LoginPage() {
                                         id="password"
                                         name="password"
                                         type={showPwd ? "text" : "password"}
-                                        placeholder="Minimal 6 karakter"
+                                        placeholder="Minimum 6 characters"
                                         value={password}
                                         sanitize="strong"
                                         onChange={(e) => setPassword(e.target.value)}
@@ -129,7 +129,7 @@ export default function LoginPage() {
                                         aria-pressed={showPwd}
                                         onClick={() => setShowPwd((s) => !s)}
                                         className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:text-accent transition-colors duration-320"
-                                        title={showPwd ? "Sembunyikan password" : "Tampilkan password"}
+                                        title={showPwd ? "Hide password" : "Show password"}
                                     >
                                         {showPwd ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
                                     </button>
@@ -142,7 +142,7 @@ export default function LoginPage() {
                                 aria-busy={loading}
                                 disabled={loading}
                             >
-                                {loading ? "Memproses..." : "Masuk"}
+                                {loading ? "Processing..." : "Sign in"}
                                 <ArrowRight className="inline-block ml-2 h-4 w-4" />
                             </Button>
                         </form>
@@ -150,7 +150,7 @@ export default function LoginPage() {
                         {/* divider */}
                         <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
                             <span className="flex-1 h-px bg-border/30" />
-                            <span>atau</span>
+                            <span>or</span>
                             <span className="flex-1 h-px bg-border/30" />
                         </div>
 
@@ -174,9 +174,9 @@ export default function LoginPage() {
 
                         {/* footer */}
                         <p className="mt-5 text-center text-sm text-muted-foreground">
-                            Belum punya akun?{" "}
+                            Don’t have an account?{" "}
                             <Link to="/register" className="font-semibold text-accent hover:underline">
-                                Daftar
+                                Sign up
                             </Link>
                         </p>
                     </div>

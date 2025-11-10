@@ -11,7 +11,9 @@ class SocketService {
             return this.socket;
         }
 
-        const API_BASE = import.meta.env.VITE_API_BASE?.replace('/api/v1', '') || 'https://bemws-production.up.railway.app';
+        const rawBase = import.meta.env.VITE_API_BASE || 'https://bemws-production.up.railway.app/api/v1';
+        // Remove trailing /api or /api/v{n}
+        const API_BASE = rawBase.replace(/\/api(?:\/v\d+)?\/?$/, '');
 
         this.socket = io(API_BASE, {
             transports: ['websocket', 'polling'],

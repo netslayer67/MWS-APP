@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getCheckinHistory } from "../store/slices/checkinSlice";
 import socketService from "../services/socketService";
+import { normalizeId } from "../utils/id";
 
 const EmotionalPatternsPage = () => {
     const navigate = useNavigate();
@@ -17,18 +18,20 @@ const EmotionalPatternsPage = () => {
     const { checkinHistory } = useSelector((state) => state.checkin);
 
     // Use userId from URL params if available, otherwise use current user
-    const targetUserId = userId || currentUser?.id;
+    const targetUserId = useMemo(() => {
+        return normalizeId(userId) || normalizeId(currentUser) || normalizeId(currentUser?.id) || normalizeId(currentUser?._id);
+    }, [userId, currentUser]);
 
     const userCheckins = useMemo(() => {
-        if (!checkinHistory) return [];
+        if (!checkinHistory || !targetUserId) return [];
         // Handle both array and object response formats
         const data = Array.isArray(checkinHistory) ? checkinHistory : checkinHistory.data?.checkins || checkinHistory.checkins || [];
-        return data.filter(checkin => checkin.userId === targetUserId || checkin.userId?._id === targetUserId);
+        return data.filter(checkin => normalizeId(checkin.userId) === targetUserId);
     }, [checkinHistory, targetUserId]);
 
     // Debug logging
     console.log('EmotionalPatternsPage Debug:', {
-        currentUser: currentUser?.id,
+        currentUser: normalizeId(currentUser),
         targetUserId,
         checkinHistoryLength: checkinHistory?.data?.checkins?.length || checkinHistory?.length || 0,
         userCheckinsLength: userCheckins.length,
@@ -96,7 +99,7 @@ const EmotionalPatternsPage = () => {
 
         if (totalCheckins > 0) {
             // Advanced AI Analysis
-            const userName = currentUser?.name || 'Anda';
+            const userName = currentUser?.name || 'You';
 
             // 1. Overall engagement analysis
             insights.push(`🎯 ${userName} has completed ${totalCheckins} emotional check-in${totalCheckins > 1 ? 's' : ''} with remarkable consistency. This shows a strong commitment to mental health and self-awareness.`);
@@ -380,7 +383,7 @@ const EmotionalPatternsPage = () => {
                             <Card className="glass glass-card">
                                 <CardContent className="text-center py-12">
                                     <Heart className="w-16 h-16 mx-auto mb-4 text-foreground/30" />
-                                    <h3 className="text-lg font-medium mb-2 text-foreground">Belum Ada Data Pola</h3>
+                                    <h3 className="text-lg font-medium mb-2 text-foreground">No Pattern Data Yet</h3>
                                     <p className="text-foreground/70 text-sm">
                                         You haven't completed enough emotional check-ins to analyze patterns.
                                         Perform regular check-ins to see insights into your emotional patterns.

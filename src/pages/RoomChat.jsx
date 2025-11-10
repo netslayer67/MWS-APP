@@ -16,9 +16,9 @@ const chatList = [
 ];
 
 const initialMessages = [
-    { id: 1, sender: "other", text: "Halo, saya sudah di jalan menuju lokasi Anda.", time: "10:30" },
-    { id: 2, sender: "me", text: "Oke, ditunggu ya. Kalau sudah dekat kabari.", time: "10:31" },
-    { id: 3, sender: "other", text: "Siap!", time: "10:31" },
+    { id: 1, sender: "other", text: "Hello, I’m on my way to your location.", time: "10:30" },
+    { id: 2, sender: "me", text: "Okay, I’ll wait. Let me know when you’re close.", time: "10:31" },
+    { id: 3, sender: "other", text: "Got it!", time: "10:31" },
 ];
 
 /* ---------------- Utilities ---------------- */
@@ -112,7 +112,7 @@ export default function RoomChat() {
     return (
         <AnimatedSlidePage onSwipeBack={() => navigate("/worker/chat" || "/client/chat")}>
             <Helmet>
-                <title>Chat dengan {selectedChat.name} — Kerjain</title>
+                <title>Chat with {selectedChat.name} - MWS IntegraLearn</title>
             </Helmet>
 
             <div className="relative mx-auto flex h-dvh max-w-lg flex-col">
@@ -126,7 +126,7 @@ export default function RoomChat() {
                         size="icon"
                         className="rounded-full hover:bg-accent/20 hover:text-accent transition-colors duration-300"
                         onClick={() => navigate("/worker/chat" || "/client/chat")}
-                        aria-label="Kembali"
+                        aria-label="Back"
                     >
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
@@ -179,14 +179,14 @@ export default function RoomChat() {
                         size="icon"
                         type="button"
                         className="rounded-full hover:bg-accent/20 hover:text-accent transition-colors duration-300"
-                        aria-label="Lampirkan file"
+                        aria-label="Attach file"
                     >
                         <Paperclip className="h-5 w-5" />
                     </Button>
 
                     <Input
-                        aria-label="Ketik pesan"
-                        placeholder="Tulis pesan..."
+                        aria-label="Type a message"
+                        placeholder="Write a message..."
                         value={text}
                         onChange={(e) => setText(sanitizeMessage(e.target.value, 600))}
                         className="flex-1 rounded-full border border-border/40 bg-card/60 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-accent/40 transition-all duration-300"
@@ -203,7 +203,7 @@ export default function RoomChat() {
                         type="submit"
                         disabled={sending || !text.trim()}
                         className="rounded-full bg-primary hover:bg-primary/90 transition-colors duration-300 shadow-md disabled:opacity-50"
-                        aria-label="Kirim pesan"
+                        aria-label="Send message"
                     >
                         <Send className="h-5 w-5 text-primary-foreground" />
                     </Button>

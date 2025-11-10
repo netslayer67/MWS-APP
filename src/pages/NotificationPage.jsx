@@ -174,7 +174,7 @@ export default function NotificationPage() {
     return (
         <AnimatedPage>
             <Helmet>
-                <title>Notifikasi — Kerjain</title>
+                <title>Notifications — MWS IntegraLearn</title>
             </Helmet>
 
             <MotionConfig reducedMotion="user">
@@ -182,7 +182,7 @@ export default function NotificationPage() {
                     {/* header */}
                     <header className="relative z-10 mb-4 sm:mb-6 flex items-center justify-between">
                         <div className="flex items-center gap-2 sm:gap-3">
-                            <Link to={-1} aria-label="Kembali">
+                            <Link to={-1} aria-label="Back">
                                 <Button
                                     variant="ghost"
                                     size="icon"
@@ -193,7 +193,7 @@ export default function NotificationPage() {
                             </Link>
 
                             <div>
-                                <h1 className="text-base sm:text-lg font-semibold text-foreground">Notifikasi</h1>
+                                <h1 className="text-base sm:text-lg font-semibold text-foreground">Notifications</h1>
                                 <p className="text-[11px] sm:text-xs text-muted-foreground">
                                     Geser kartu untuk aksi cepat
                                 </p>

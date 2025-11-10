@@ -147,16 +147,16 @@ export default function JobTrackingPage({ job = null, role = "client" }) {
                         <button
                             onClick={() => setOpenSafety(true)}
                             className="rounded-lg border px-2.5 py-1 text-xs bg-background/60 hover:bg-accent/10 transition-colors duration-300"
-                            title="Tips Keamanan"
+                            title="Safety Tips"
                         >
                             Tips
                         </button>
                         <button
                             onClick={() => setOpenReport(true)}
                             className="rounded-lg border px-2.5 py-1 text-xs bg-background/60 hover:bg-destructive/10 hover:text-destructive transition-colors duration-300"
-                            title="Laporkan Pengguna"
+                            title="Report User"
                         >
-                            Laporkan
+                            Report
                         </button>
                     </div>
                 </div>
@@ -207,7 +207,7 @@ export default function JobTrackingPage({ job = null, role = "client" }) {
                             onClick={() => setOpenReport(true)}
                             className="rounded-lg border px-2.5 py-1 text-xs sm:text-sm hover:bg-destructive/10 hover:text-destructive transition-colors duration-300"
                         >
-                            Laporkan
+                            Report
                         </button>
                     </div>
                 </div>
@@ -260,13 +260,13 @@ export default function JobTrackingPage({ job = null, role = "client" }) {
                                 className="flex-1 rounded-xl text-xs sm:text-sm"
                                 onClick={() => navigate(`/dispute?jobId=${data.id}`)}
                             >
-                                <AlertTriangle className="w-4 h-4 mr-1.5" /> Laporkan
+                                <AlertTriangle className="w-4 h-4 mr-1.5" /> Report
                             </Button>
                             <Button
                                 className="flex-1 rounded-xl bg-gradient-to-r from-primary to-accent text-xs sm:text-sm"
                                 onClick={() => navigate(`/job/${data.id}/rate`)}
                             >
-                                Selesaikan & Rating
+                                Complete & Rate
                             </Button>
                         </div>
                     </div>
@@ -283,7 +283,7 @@ export default function JobTrackingPage({ job = null, role = "client" }) {
                                 drag="x"
                                 dragConstraints={{ left: 0, right: MAX_DRAG_PX }}
                                 dragElastic={0.05}
-                                className="absolute left-0 top-0 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-accent/90 text-white flex items-center justify-center shadow cursor-grab"
+                                className="absolute left-0 top-0 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-accent/90 text-accent-foreground flex items-center justify-center shadow cursor-grab"
                                 onDrag={(e, info) => onDrag(info.point.x)}
                                 onDragEnd={onDragEnd}
                                 whileTap={{ scale: 0.98 }}

@@ -2,7 +2,7 @@ import React, { memo } from "react";
 import { Calendar, Filter } from "lucide-react";
 import { periodOptions } from "./utils";
 
-const DashboardHeader = memo(({ selectedPeriod, onPeriodChange, selectedDate, onDateChange, isHeadUnit, userUnit }) => {
+const DashboardHeader = memo(({ selectedPeriod, onPeriodChange, selectedDate, onDateChange, isHeadUnit, userUnit, isDirectorate }) => {
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -14,6 +14,8 @@ const DashboardHeader = memo(({ selectedPeriod, onPeriodChange, selectedDate, on
         });
     };
 
+    const isDatePickerDisabled = selectedPeriod === 'all';
+
     return (
         <div className="mb-4 md:mb-6">
             <div className="flex items-center justify-between mb-3">
@@ -23,13 +25,17 @@ const DashboardHeader = memo(({ selectedPeriod, onPeriodChange, selectedDate, on
                     </div>
                     <div>
                         <h1 className="text-xl md:text-2xl font-bold text-foreground tracking-tight">
-                            {isHeadUnit ? `Unit Dashboard - ${userUnit || 'Your Unit'}` : 'Daily Check-in Dashboard'}
+                            {isHeadUnit
+                                ? `Unit Dashboard - ${userUnit || 'Your Unit'}`
+                                : isDirectorate ? 'Organization Wellness Dashboard' : 'Daily Check-in Dashboard'}
                         </h1>
                         <p className="text-xs md:text-sm text-muted-foreground">
-                            {isHeadUnit
-                                ? `Monitor your team's wellness and emotional well-being`
+                        {isHeadUnit
+                            ? `Monitor your team's wellness and emotional well-being`
+                            : isDirectorate
+                                ? 'Review organization-wide emotional data and individual insights'
                                 : 'Monitor staff wellness and emotional well-being'
-                            }
+                        }
                         </p>
                     </div>
                 </div>
@@ -68,8 +74,16 @@ const DashboardHeader = memo(({ selectedPeriod, onPeriodChange, selectedDate, on
                             type="date"
                             value={selectedDate}
                             onChange={(e) => onDateChange(e.target.value)}
-                            className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-card/50 border border-border/50 rounded-lg hover:border-primary/40 hover:bg-card/80 transition-all duration-300 text-sm text-foreground"
+                            disabled={isDatePickerDisabled}
+                            className={`flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-card/50 border border-border/50 rounded-lg transition-all duration-300 text-sm text-foreground
+                                ${isDatePickerDisabled
+                                    ? 'opacity-60 cursor-not-allowed'
+                                    : 'hover:border-primary/40 hover:bg-card/80'}
+                            `}
                         />
+                        {isDatePickerDisabled && (
+                            <p className="text-[10px] mt-1 text-muted-foreground">Showing entire emotional history</p>
+                        )}
                     </div>
                 </div>
 
@@ -77,7 +91,7 @@ const DashboardHeader = memo(({ selectedPeriod, onPeriodChange, selectedDate, on
                 <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-foreground">View:</span>
                     <button className="px-3 py-1.5 md:px-4 md:py-2 bg-primary text-primary-foreground rounded-lg text-xs md:text-sm font-medium">
-                        {isHeadUnit ? 'Unit Summary' : 'Summary'}
+                        {isHeadUnit ? 'Unit Summary' : isDirectorate ? 'Organization Summary' : 'Summary'}
                     </button>
                 </div>
             </div>
