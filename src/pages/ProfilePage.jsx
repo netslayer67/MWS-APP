@@ -7,7 +7,6 @@ import {
     User,
     Shield,
     Bell,
-    HelpCircle,
     LogOut,
     ChevronRight,
     Star,
@@ -39,6 +38,7 @@ import {
 import ThemeToggle from "@/components/ThemeToggle";
 import { getCheckinHistory, getPersonalDashboard } from "../store/slices/checkinSlice";
 import { logoutUser } from "../store/slices/authSlice";
+import { useToast } from "@/components/ui/use-toast";
 
 /* ---------------------- Helpers ---------------------- */
 const fmtShort = (v) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(v || 0);
@@ -126,6 +126,68 @@ export const getDynamicGreeting = (user, titledName) => {
     return pickVariant(user?.email || titledName, base[tod]);
 };
 
+const CHECKIN_USAGE_KEY = "mws_emotional_checkin_usage";
+const MAX_DAILY_EMOTIONAL_CHECKINS = 2;
+const WINDOW_DURATION_MS = 24 * 60 * 60 * 1000;
+
+const getWindowStartTimestamp = () => {
+    const now = new Date();
+    const windowStart = new Date(now);
+    windowStart.setHours(6, 0, 0, 0);
+    if (now < windowStart) {
+        windowStart.setDate(windowStart.getDate() - 1);
+    }
+    return windowStart.getTime();
+};
+
+const getNextResetTimestamp = (windowStart) => windowStart + WINDOW_DURATION_MS;
+
+const readCheckinUsageSnapshot = () => {
+    const windowStart = getWindowStartTimestamp();
+    const nextReset = getNextResetTimestamp(windowStart);
+
+    if (typeof window === "undefined") {
+        return { windowStart, nextReset, count: 0 };
+    }
+
+    try {
+        const stored = JSON.parse(localStorage.getItem(CHECKIN_USAGE_KEY) || "{}");
+        if (stored?.windowStart === windowStart) {
+            return {
+                windowStart,
+                nextReset,
+                count: Number(stored.count) || 0
+            };
+        }
+    } catch {
+        // ignore parsing errors
+    }
+
+    return { windowStart, nextReset, count: 0 };
+};
+
+const persistCheckinUsageSnapshot = (snapshot) => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(
+        CHECKIN_USAGE_KEY,
+        JSON.stringify({
+            windowStart: snapshot.windowStart,
+            count: snapshot.count
+        })
+    );
+};
+
+const formatResetTimeLabel = (timestamp) => {
+    try {
+        return new Intl.DateTimeFormat("id-ID", {
+            hour: "2-digit",
+            minute: "2-digit"
+        }).format(new Date(timestamp));
+    } catch {
+        return "06:00";
+    }
+};
+
 export const getDynamicSubGreeting = () => {
     const variants = [
         'Your wellness overview is ready',
@@ -205,20 +267,47 @@ const IconContainer = memo(({ children, size = "md", variant = "default" }) => {
     );
 });
 
-const MenuItem = memo(function MenuItem({ icon: Icon, title, to, compact = false }) {
-    return (
-        <Link to={to} className="block group">
-            <div className={`flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/40 px-4 py-3 backdrop-blur-xl transition-all duration-300 hover:border-primary/30 hover:bg-primary/5 hover:shadow-glass-sm ${compact ? 'px-3 py-2.5' : ''}`}>
-                <div className="flex items-center gap-3">
-                    <IconContainer size={compact ? "sm" : "md"}>
-                        <Icon className={`text-foreground/80 transition-colors duration-300 group-hover:text-primary ${compact ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
-                    </IconContainer>
+const MenuItem = memo(function MenuItem({ icon: Icon, title, to, compact = false, onClick, disabled = false, description }) {
+    const contentClasses = `flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/40 px-4 py-3 backdrop-blur-xl transition-all duration-300 hover:border-primary/30 hover:bg-primary/5 hover:shadow-glass-sm ${compact ? 'px-3 py-2.5' : ''} ${disabled ? 'opacity-60 hover:border-border/60 hover:bg-card/40 cursor-not-allowed' : ''}`;
+
+    const content = (
+        <div className={contentClasses}>
+            <div className="flex items-center gap-3">
+                <IconContainer size={compact ? "sm" : "md"}>
+                    <Icon className={`text-foreground/80 transition-colors duration-300 group-hover:text-primary ${compact ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
+                </IconContainer>
+                <div className="flex flex-col min-w-0">
                     <div className={`font-medium text-foreground truncate transition-colors duration-300 group-hover:text-primary ${compact ? 'text-sm' : 'text-sm'}`}>
                         {title}
                     </div>
+                    {description && (
+                        <p className="text-xs text-muted-foreground truncate">
+                            {description}
+                        </p>
+                    )}
                 </div>
-                <ChevronRight className={`text-muted-foreground transition-transform duration-300 group-hover:translate-x-0.5 ${compact ? 'h-4 w-4' : 'h-5 w-5'}`} />
             </div>
+            <ChevronRight className={`text-muted-foreground transition-transform duration-300 group-hover:translate-x-0.5 ${compact ? 'h-4 w-4' : 'h-5 w-5'}`} />
+        </div>
+    );
+
+    if (onClick) {
+        return (
+            <button
+                type="button"
+                onClick={disabled ? undefined : onClick}
+                disabled={disabled}
+                aria-disabled={disabled}
+                className={`block w-full text-left group ${disabled ? 'cursor-not-allowed' : ''}`}
+            >
+                {content}
+            </button>
+        );
+    }
+
+    return (
+        <Link to={to} className={`block group ${disabled ? 'pointer-events-none opacity-60' : ''}`}>
+            {content}
         </Link>
     );
 });
@@ -248,6 +337,7 @@ const ProfilePage = memo(function ProfilePage() {
     const navigate = useNavigate();
     const reduce = useReducedMotion();
     const dispatch = useDispatch();
+    const { toast } = useToast();
 
     // Redux state
     const { user: currentUser } = useSelector((state) => state.auth);
@@ -261,6 +351,10 @@ const ProfilePage = memo(function ProfilePage() {
     // Local state
     const [isCompact, setIsCompact] = useState(false);
     const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+    const [checkinUsage, setCheckinUsage] = useState(() => {
+        const snapshot = readCheckinUsageSnapshot();
+        return { ...snapshot, ready: typeof window !== "undefined" };
+    });
 
     // Load data on mount
     useEffect(() => {
@@ -279,6 +373,11 @@ const ProfilePage = memo(function ProfilePage() {
         checkMobile();
         window.addEventListener('resize', checkMobile);
         return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        setCheckinUsage({ ...readCheckinUsageSnapshot(), ready: true });
     }, []);
 
     // Processed user data
@@ -324,6 +423,36 @@ const ProfilePage = memo(function ProfilePage() {
     }, [currentUser, checkinHistory, personalDashboard]);
 
     const tier = useMemo(() => getTier(user.completed), [user.completed]);
+
+    const remainingCheckins = checkinUsage.ready
+        ? Math.max(MAX_DAILY_EMOTIONAL_CHECKINS - checkinUsage.count, 0)
+        : MAX_DAILY_EMOTIONAL_CHECKINS;
+    const checkinLimitReached = checkinUsage.ready && remainingCheckins === 0;
+    const checkinDescription = checkinUsage.ready
+        ? checkinLimitReached
+            ? `Available again at ${formatResetTimeLabel(checkinUsage.nextReset)}`
+            : `${remainingCheckins} check-in chance${remainingCheckins === 1 ? '' : 's'} left today`
+        : "Checking quota...";
+
+    const handleEmotionalCheckin = useCallback(() => {
+        if (typeof window === "undefined") return;
+        const snapshot = readCheckinUsageSnapshot();
+
+        if (snapshot.count >= MAX_DAILY_EMOTIONAL_CHECKINS) {
+            setCheckinUsage({ ...snapshot, ready: true });
+            toast({
+                title: "Daily limit reached",
+                description: `You can try again after ${formatResetTimeLabel(snapshot.nextReset)}.`,
+                variant: "destructive"
+            });
+            return;
+        }
+
+        const updated = { ...snapshot, count: snapshot.count + 1 };
+        persistCheckinUsageSnapshot(updated);
+        setCheckinUsage({ ...updated, ready: true });
+        navigate("/select-role");
+    }, [navigate, toast]);
 
     // Derived info for today's check-in
     const todayCard = useMemo(() => {
@@ -391,7 +520,15 @@ const ProfilePage = memo(function ProfilePage() {
         const baseItems = [
             { key: "edit", icon: User, title: "Edit Profile", to: "/profile/edit" },
             { key: "notif", icon: Bell, title: "Notifications", to: "/notifications" },
-            { key: "help", icon: HelpCircle, title: "Help", to: "/help" },
+            {
+                key: "emotional-checkin",
+                icon: Sparkles,
+                title: "Emotional Check-in",
+                to: "/select-role",
+                onClick: handleEmotionalCheckin,
+                disabled: checkinLimitReached,
+                description: checkinDescription
+            },
         ];
 
         if (currentUser && !['directorate', 'admin', 'superadmin'].includes(currentUser.role)) {
@@ -408,7 +545,7 @@ const ProfilePage = memo(function ProfilePage() {
         }
 
         return baseItems;
-    }, [currentUser]);
+    }, [currentUser, handleEmotionalCheckin, checkinDescription, checkinLimitReached]);
 
     // Quick actions
     const quickActions = useMemo(() => {
@@ -777,6 +914,9 @@ const ProfilePage = memo(function ProfilePage() {
                                     title={item.title}
                                     to={item.to}
                                     compact={isCompact}
+                                    onClick={item.onClick}
+                                    disabled={item.disabled}
+                                    description={item.description}
                                 />
                             ))}
                         </motion.nav>

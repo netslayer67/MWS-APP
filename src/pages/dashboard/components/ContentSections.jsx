@@ -65,18 +65,20 @@ const ContentFallback = memo(() => (
 
 ContentFallback.displayName = 'ContentFallback';
 
-const ContentSections = memo(({ mockData, realData, loading, selectedPeriod, userId, isHeadUnit }) => {
+const ContentSections = memo(({ mockData, realData, loading, selectedPeriod, userId, isHeadUnit, isDirectorate }) => {
     // Use real data if available, otherwise fall back to mock data
     const data = realData || {};
+    const canViewStaffExplorer = (isHeadUnit || isDirectorate) && Array.isArray(data?.unitStaffDetails) && data.unitStaffDetails.length > 0;
 
     return (
         <>
-            {isHeadUnit && (
+            {canViewStaffExplorer && (
                 <Suspense fallback={<ContentFallback />}>
                     <div className="mb-4 md:mb-6">
                         <HeadUnitStaffPanel
                             staff={data?.unitStaffDetails || []}
                             summary={data?.unitStaffSummary}
+                            isDirectorate={isDirectorate && !isHeadUnit}
                         />
                     </div>
                 </Suspense>

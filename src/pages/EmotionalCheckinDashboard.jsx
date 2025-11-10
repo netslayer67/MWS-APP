@@ -37,6 +37,7 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
 
     // Check if user is head_unit for special UI elements
     const isHeadUnit = user?.role === 'head_unit';
+    const isDirectorate = user && ['directorate', 'admin', 'superadmin'].includes(user.role);
     const [isLoaded, setIsLoaded] = useState(false);
     const [filters, setFilters] = useState({});
     const directorateAutoPeriodApplied = useRef(false);
@@ -176,14 +177,15 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
             <div className="relative z-10 container-tight py-4 md:py-6">
                 <Suspense fallback={<LoadingFallback />}>
                     {/* Dashboard Header */}
-                    <DashboardHeader
-                        selectedPeriod={selectedPeriod}
-                        onPeriodChange={handlePeriodChange}
-                        selectedDate={selectedDate}
-                        onDateChange={handleDateChange}
-                        isHeadUnit={isHeadUnit}
-                        userUnit={user?.unit || user?.department}
-                    />
+                        <DashboardHeader
+                            selectedPeriod={selectedPeriod}
+                            onPeriodChange={handlePeriodChange}
+                            selectedDate={selectedDate}
+                            onDateChange={handleDateChange}
+                            isHeadUnit={isHeadUnit}
+                            userUnit={user?.unit || user?.department}
+                            isDirectorate={isDirectorate}
+                        />
                 </Suspense>
 
                 {/* Advanced Filters */}
@@ -222,6 +224,7 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
                         selectedPeriod={selectedPeriod}
                         userId={user?.id}
                         isHeadUnit={isHeadUnit}
+                        isDirectorate={isDirectorate}
                     />
                 </Suspense>
             </div>

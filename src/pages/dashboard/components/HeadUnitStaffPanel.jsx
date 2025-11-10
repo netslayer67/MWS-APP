@@ -24,7 +24,7 @@ const formatScore = (score) => {
     return `${Math.round(score * 10) / 10}/10`;
 };
 
-const HeadUnitStaffPanel = memo(({ staff = [], summary }) => {
+const HeadUnitStaffPanel = memo(({ staff = [], summary, isDirectorate = false }) => {
     const navigate = useNavigate();
     const [search, setSearch] = useState('');
     const [detailUser, setDetailUser] = useState(null);
@@ -96,17 +96,22 @@ const HeadUnitStaffPanel = memo(({ staff = [], summary }) => {
 
     const handleCloseModal = useCallback(() => setIsModalOpen(false), []);
 
+    const panelTitle = isDirectorate ? 'Organization Wellness Explorer' : 'Team Members Overview';
+    const panelSubtitle = isDirectorate
+        ? 'View any staff member’s emotional check-ins and insights.'
+        : 'Monitor your unit members with real-time insights.';
+
     if (!staff.length) {
         return (
             <Card className="glass glass-card">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Users className="w-5 h-5 text-primary" />
-                        Team Members Overview
+                        {panelTitle}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="text-center py-10 text-muted-foreground">
-                    <p>No team members with check-in data yet.</p>
+                    <p>No staff with check-in data yet.</p>
                 </CardContent>
             </Card>
         );
@@ -118,8 +123,9 @@ const HeadUnitStaffPanel = memo(({ staff = [], summary }) => {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Users className="w-5 h-5 text-primary" />
-                        Team Members Overview
+                        {panelTitle}
                     </CardTitle>
+                    <p className="text-xs text-muted-foreground">{panelSubtitle}</p>
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
@@ -154,7 +160,7 @@ const HeadUnitStaffPanel = memo(({ staff = [], summary }) => {
                             <Input
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Search by name, department, or unit..."
+                                placeholder={isDirectorate ? "Search staff by name, role, unit, or department..." : "Search by name, department, or unit..."}
                                 className="pl-9 bg-card/60 border-border/60"
                             />
                             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -164,13 +170,13 @@ const HeadUnitStaffPanel = memo(({ staff = [], summary }) => {
                     <div className="space-y-3 max-h-[28rem] overflow-auto pr-1">
                         {filteredStaff.map(member => (
                             <div
-                                key={member.id}
+                                key={member.id || member._id || member.email}
                                 className="flex flex-col lg:flex-row lg:items-center gap-3 p-3 border border-border/40 rounded-xl bg-card/30 hover:bg-card/60 transition-colors"
                             >
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-semibold text-foreground truncate">{member.name}</p>
                                     <p className="text-xs text-muted-foreground truncate">
-                                        {member.role} • {member.department || member.unit || 'No unit'}
+                                        {member.role} - {member.department || member.unit || 'No unit'}
                                     </p>
                                     <p className="text-[11px] text-muted-foreground mt-1">
                                         Last check-in: {formatRelativeDate(member.lastCheckin?.date)}
@@ -206,7 +212,11 @@ const HeadUnitStaffPanel = memo(({ staff = [], summary }) => {
                                     <Button
                                         variant="secondary"
                                         size="sm"
-                                        onClick={() => navigate(`/emotional-wellness/${member.id}`)}
+                                        onClick={() =>
+                                            navigate(`/emotional-wellness/${member.id || member._id}`, {
+                                                state: { user: member }
+                                            })
+                                        }
                                     >
                                         Full report
                                     </Button>
@@ -224,3 +234,7 @@ const HeadUnitStaffPanel = memo(({ staff = [], summary }) => {
 
 HeadUnitStaffPanel.displayName = 'HeadUnitStaffPanel';
 export default HeadUnitStaffPanel;
+
+
+
+

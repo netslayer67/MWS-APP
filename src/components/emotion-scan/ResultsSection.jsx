@@ -11,14 +11,27 @@ import AIReasoning from "./results/AIReasoning";
 import PersonalizedRecommendation from "./results/PersonalizedRecommendation";
 import SupportSelector from "@/components/emotion-staff/SupportSelector";
 
-const ResultsSection = memo(({ analysis, onReset, onComplete, onSupportChange }) => (
-    <motion.div
-        key="results"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="space-y-4"
-    >
+const ResultsSection = memo(({
+    analysis,
+    onReset,
+    onComplete,
+    onSupportChange,
+    isRescanDisabled = false,
+    remainingRescans = 0,
+    maxRescans = 2
+}) => {
+    const rescanStatus = isRescanDisabled
+        ? "Kuota scan ulang untuk fitur ini sudah habis."
+        : `Sisa kuota scan ulang: ${remainingRescans}/${maxRescans}`;
+
+    return (
+        <motion.div
+            key="results"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="space-y-4"
+        >
         {/* Header */}
         <div className="text-center space-y-3">
             <motion.div
@@ -91,10 +104,11 @@ const ResultsSection = memo(({ analysis, onReset, onComplete, onSupportChange })
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-3 pt-2">
             <motion.button
-                onClick={onReset}
-                className="py-3 rounded-xl border-2 border-border bg-surface text-foreground font-medium hover:bg-surface/80 hover:border-primary/40 transition-all duration-300"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                onClick={isRescanDisabled ? undefined : onReset}
+                disabled={isRescanDisabled}
+                className="py-3 rounded-xl border-2 border-border bg-surface text-foreground font-medium hover:bg-surface/80 hover:border-primary/40 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                whileHover={{ scale: isRescanDisabled ? 1 : 1.02 }}
+                whileTap={{ scale: isRescanDisabled ? 1 : 0.98 }}
                 aria-label="Scan again for new AI emotional analysis"
             >
                 Scan Again
@@ -123,8 +137,14 @@ const ResultsSection = memo(({ analysis, onReset, onComplete, onSupportChange })
                 )}
             </motion.button>
         </div>
+        <p
+            className={`text-xs text-center ${isRescanDisabled ? 'text-destructive' : 'text-muted-foreground'}`}
+            role="status"
+        >
+            {rescanStatus}
+        </p>
     </motion.div>
-));
+)});
 
 ResultsSection.displayName = 'ResultsSection';
 export default ResultsSection;
