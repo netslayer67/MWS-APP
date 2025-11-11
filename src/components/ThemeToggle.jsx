@@ -1,9 +1,11 @@
 // ThemeToggle.jsx
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import usePreferLowMotion from "@/hooks/usePreferLowMotion";
 import { Sun, Moon } from "lucide-react";
 
 export default function ThemeToggle() {
+    const lowMotion = usePreferLowMotion();
     const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
 
     useEffect(() => {
@@ -17,24 +19,24 @@ export default function ThemeToggle() {
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
+            initial={lowMotion ? { opacity: 1 } : { opacity: 0, y: 20 }}
+            animate={lowMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+            transition={{ duration: lowMotion ? 0.12 : 0.4, ease: "easeOut" }}
             className="relative"
         >
             {/* blob background */}
             <motion.div
                 className="absolute -inset-6 rounded-full bg-primary/25 blur-2xl -z-10"
-                animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0.4, 0.6] }}
-                transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
+                animate={lowMotion ? { opacity: 0.35 } : { scale: [1, 1.15, 1], opacity: [0.6, 0.4, 0.6] }}
+                transition={lowMotion ? {} : { repeat: Infinity, duration: 6, ease: "easeInOut" }}
             />
 
             {/* toggle button */}
             <motion.button
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                whileTap={{ scale: 0.9 }}
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 280, damping: 18 }}
+                whileTap={lowMotion ? {} : { scale: 0.9 }}
+                whileHover={lowMotion ? {} : { scale: 1.05 }}
+                transition={lowMotion ? { duration: 0.12 } : { type: "spring", stiffness: 280, damping: 18 }}
                 aria-label="Toggle theme"
                 className="
           relative flex items-center justify-center

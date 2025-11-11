@@ -1,8 +1,9 @@
 import React, { memo } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import usePreferLowMotion from "@/hooks/usePreferLowMotion";
 
 const BackgroundDecor = memo(() => {
-    const prefersReducedMotion = useReducedMotion();
+    const prefersReducedMotion = usePreferLowMotion();
 
     return (
         <div className="absolute inset-0 overflow-hidden">
@@ -20,16 +21,16 @@ const BackgroundDecor = memo(() => {
             <motion.div
                 aria-hidden
                 className="absolute -top-24 -left-20 h-80 w-80 rounded-full bg-[hsl(var(--accent))]/25 blur-3xl z-0"
-                initial={prefersReducedMotion ? false : { opacity: 0, y: -10 }}
-                animate={prefersReducedMotion ? {} : { opacity: 0.7, y: 0 }}
-                transition={{ duration: 0.35, ease: 'easeOut' }}
+                initial={prefersReducedMotion ? false : { opacity: 0, y: -8 }}
+                animate={prefersReducedMotion ? {} : { opacity: 0.55, y: 0 }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.28, ease: 'easeOut' }}
             />
             <motion.div
                 aria-hidden
                 className="absolute bottom-[-4rem] right-[-3rem] h-96 w-96 rounded-full bg-[hsl(var(--ring))]/25 blur-3xl z-0"
-                initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
-                animate={prefersReducedMotion ? {} : { opacity: 0.6, y: 0 }}
-                transition={{ duration: 0.35, delay: 0.06, ease: 'easeOut' }}
+                initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+                animate={prefersReducedMotion ? {} : { opacity: 0.5, y: 0 }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.28, delay: prefersReducedMotion ? 0 : 0.05, ease: 'easeOut' }}
             />
         </div>
     );
