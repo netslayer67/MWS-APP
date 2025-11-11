@@ -2,6 +2,10 @@ const withOpacity = (variable) => `hsl(var(${variable}) / <alpha-value>)`;
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+    // Only generate hover styles on devices that actually support hover
+    future: {
+        hoverOnlyWhenSupported: true,
+    },
     darkMode: ['class'],
     content: [
         './index.html',

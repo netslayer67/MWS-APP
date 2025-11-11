@@ -1,6 +1,7 @@
 // AnimatedSlidePage.jsx
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import usePreferLowMotion from "@/hooks/usePreferLowMotion";
 
 const slideVariants = {
     initial: {
@@ -27,6 +28,7 @@ const slideTransition = {
 };
 
 export default function AnimatedSlidePage({ children, onSwipeBack }) {
+    const lowMotion = usePreferLowMotion();
     const [showHint, setShowHint] = useState(true);
 
     // Auto-hide hint setelah 3 detik
@@ -41,13 +43,13 @@ export default function AnimatedSlidePage({ children, onSwipeBack }) {
             initial="initial"
             animate="in"
             exit="out"
-            variants={slideVariants}
-            transition={slideTransition}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.2}
+            variants={lowMotion ? { initial: { opacity: 0 }, in: { opacity: 1 }, out: { opacity: 0 } } : slideVariants}
+            transition={lowMotion ? { duration: 0.15, ease: 'easeOut' } : slideTransition}
+            drag={lowMotion ? false : "x"}
+            dragConstraints={lowMotion ? undefined : { left: 0, right: 0 }}
+            dragElastic={lowMotion ? 0 : 0.2}
             onDragEnd={(e, info) => {
-                if (info.offset.x > 100) {
+                if (info?.offset?.x > 100) {
                     onSwipeBack?.(); // trigger callback kalau swipe kanan cukup jauh
                 }
             }}
@@ -55,7 +57,7 @@ export default function AnimatedSlidePage({ children, onSwipeBack }) {
             {children}
 
             {/* Hint swipe */}
-            {showHint && (
+            {showHint && !lowMotion && (
                 <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -63,9 +65,10 @@ export default function AnimatedSlidePage({ children, onSwipeBack }) {
                     transition={{ duration: 0.4 }}
                     className="absolute top-3 left-1/2 -translate-x-1/2 rounded-full border border-border/50 bg-card/90 px-3 py-1 text-xs font-medium text-foreground shadow-glass-sm backdrop-blur"
                 >
-                    👉 Swipe kanan untuk kembali
+                    ?? Swipe kanan untuk kembali
                 </motion.div>
             )}
         </motion.div>
     );
 }
+

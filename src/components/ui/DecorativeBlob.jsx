@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { motion } from "framer-motion";
+import usePreferLowMotion from "@/hooks/usePreferLowMotion";
 
 const DecorativeBlob = memo(({ variant = "primary", className = "", size = "lg" }) => {
     const sizeMap = {
@@ -14,14 +15,12 @@ const DecorativeBlob = memo(({ variant = "primary", className = "", size = "lg" 
         emerald: "bg-emerald/15"
     };
 
+    const lowMotion = usePreferLowMotion();
     return (
         <motion.div
             className={`absolute rounded-full blur-3xl ${sizeMap[size]} ${variantMap[variant]} ${className}`}
-            animate={{
-                scale: [1, 1.08, 1],
-                opacity: [0.2, 0.35, 0.2]
-            }}
-            transition={{
+            animate={lowMotion ? { opacity: 0.24 } : { scale: [1, 1.08, 1], opacity: [0.2, 0.35, 0.2] }}
+            transition={lowMotion ? {} : {
                 duration: variant === "primary" ? 10 : variant === "gold" ? 12 : 14,
                 repeat: Infinity,
                 ease: "easeInOut"

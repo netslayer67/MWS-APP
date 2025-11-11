@@ -1,8 +1,9 @@
 import React, { memo } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import usePreferLowMotion from "@/hooks/usePreferLowMotion";
 
 const PageTransition = memo(({ children }) => {
-    const prefersReducedMotion = useReducedMotion();
+    const prefersReducedMotion = usePreferLowMotion();
 
     const variants = React.useMemo(() => ({
         initial: prefersReducedMotion ? {} : { opacity: 0, y: 8 },
@@ -19,7 +20,7 @@ const PageTransition = memo(({ children }) => {
             animate="animate"
             exit="exit"
             variants={variants}
-            transition={{ duration: 0.32, ease: 'easeOut' }}
+            transition={{ duration: prefersReducedMotion ? 0.15 : 0.32, ease: 'easeOut' }}
         >
             {children}
         </motion.main>
