@@ -267,27 +267,61 @@ const IconContainer = memo(({ children, size = "md", variant = "default" }) => {
     );
 });
 
-const MenuItem = memo(function MenuItem({ icon: Icon, title, to, compact = false, onClick, disabled = false, description }) {
-    const contentClasses = `flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/40 px-4 py-3 backdrop-blur-xl transition-all duration-300 hover:border-primary/30 hover:bg-primary/5 hover:shadow-glass-sm ${compact ? 'px-3 py-2.5' : ''} ${disabled ? 'opacity-60 hover:border-border/60 hover:bg-card/40 cursor-not-allowed' : ''}`;
+const MenuItem = memo(function MenuItem({
+    icon: Icon,
+    title,
+    to,
+    compact = false,
+    onClick,
+    disabled = false,
+    description,
+    featured = false,
+    badge,
+}) {
+    const baseClasses = featured
+        ? "flex items-center justify-between gap-3 rounded-2xl border border-transparent bg-gradient-to-r from-[#ff87c5] via-[#f472b6] to-primary px-5 py-4 text-white shadow-[0_20px_45px_rgba(244,114,182,0.35)] transition-all duration-300 hover:shadow-[0_26px_60px_rgba(244,114,182,0.45)] hover:-translate-y-0.5 group-focus-visible:ring-2 group-focus-visible:ring-white/40 group-focus-visible:ring-offset-2"
+        : `flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/40 px-4 py-3 backdrop-blur-xl transition-all duration-300 hover:border-primary/30 hover:bg-primary/5 hover:shadow-glass-sm ${compact ? 'px-3 py-2.5' : ''}`;
+    const contentClasses = `${baseClasses} ${disabled ? 'opacity-60 cursor-not-allowed hover:translate-y-0 hover:shadow-none' : ''}`;
+
+    const iconNode = featured ? (
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 text-white shadow-inner">
+            <Icon className="h-5 w-5" />
+        </div>
+    ) : (
+        <IconContainer size={compact ? "sm" : "md"}>
+            <Icon className={`text-foreground/80 transition-colors duration-300 group-hover:text-primary ${compact ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
+        </IconContainer>
+    );
+
+    const descriptionNode = description ? (
+        <p className={`text-xs truncate ${featured ? 'text-white/85' : 'text-muted-foreground'}`}>
+            {description}
+        </p>
+    ) : null;
+
+    const badgeNode = badge ? (
+        <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${featured ? 'bg-white/20 text-white/95' : 'bg-primary/10 text-primary/80'}`}>
+            {badge}
+        </span>
+    ) : null;
+
+    const chevronClasses = `${featured ? 'text-white/90' : 'text-muted-foreground'} transition-transform duration-300 group-hover:translate-x-0.5 ${compact ? 'h-4 w-4' : 'h-5 w-5'}`;
 
     const content = (
         <div className={contentClasses}>
             <div className="flex items-center gap-3">
-                <IconContainer size={compact ? "sm" : "md"}>
-                    <Icon className={`text-foreground/80 transition-colors duration-300 group-hover:text-primary ${compact ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
-                </IconContainer>
+                {iconNode}
                 <div className="flex flex-col min-w-0">
-                    <div className={`font-medium text-foreground truncate transition-colors duration-300 group-hover:text-primary ${compact ? 'text-sm' : 'text-sm'}`}>
+                    <div className={`font-medium truncate ${featured ? 'text-base text-white' : 'text-sm text-foreground transition-colors duration-300 group-hover:text-primary'}`}>
                         {title}
                     </div>
-                    {description && (
-                        <p className="text-xs text-muted-foreground truncate">
-                            {description}
-                        </p>
-                    )}
+                    {descriptionNode}
                 </div>
             </div>
-            <ChevronRight className={`text-muted-foreground transition-transform duration-300 group-hover:translate-x-0.5 ${compact ? 'h-4 w-4' : 'h-5 w-5'}`} />
+            <div className="flex items-center gap-2">
+                {badgeNode}
+                <ChevronRight className={chevronClasses} />
+            </div>
         </div>
     );
 
@@ -517,9 +551,13 @@ const ProfilePage = memo(function ProfilePage() {
 
     // Menu configuration
     const menuItems = useMemo(() => {
+        const emotionalBadge = checkinUsage.ready
+            ? checkinLimitReached
+                ? "Come back later"
+                : `${remainingCheckins} left today`
+            : "Syncing...";
+
         const baseItems = [
-            { key: "edit", icon: User, title: "Edit Profile", to: "/profile/edit" },
-            { key: "notif", icon: Bell, title: "Notifications", to: "/notifications" },
             {
                 key: "emotional-checkin",
                 icon: Sparkles,
@@ -527,25 +565,29 @@ const ProfilePage = memo(function ProfilePage() {
                 to: "/select-role",
                 onClick: handleEmotionalCheckin,
                 disabled: checkinLimitReached,
-                description: checkinDescription
+                description: checkinDescription,
+                featured: true,
+                badge: emotionalBadge,
             },
+            { key: "edit", icon: User, title: "Edit Profile", to: "/profile/edit" },
+            { key: "notif", icon: Bell, title: "Notifications", to: "/notifications" },
         ];
 
         if (currentUser && !['directorate', 'admin', 'superadmin'].includes(currentUser.role)) {
-            baseItems.splice(2, 0,
+            baseItems.splice(1, 0,
                 { key: "stats", icon: TrendingUp, title: "Personal Stats", to: "/profile/personal-stats" },
                 { key: "history", icon: Calendar, title: "Emotional History", to: "/profile/emotional-history" },
                 { key: "insights", icon: Activity, title: "Emotional Insights", to: "/profile/emotional-patterns" }
             );
         } else if (currentUser && ['directorate', 'admin', 'superadmin', 'head_unit'].includes(currentUser.role)) {
-            baseItems.splice(2, 0,
+            baseItems.splice(1, 0,
                 { key: "dashboard", icon: BarChart3, title: currentUser.role === 'head_unit' ? "Unit Dashboard" : "Emotional Dashboard", to: "/emotional-checkin/dashboard" },
                 { key: "user-mgmt", icon: UserCog, title: "User Management", to: "/user-management" }
             );
         }
 
         return baseItems;
-    }, [currentUser, handleEmotionalCheckin, checkinDescription, checkinLimitReached]);
+    }, [currentUser, handleEmotionalCheckin, checkinDescription, checkinLimitReached, checkinUsage.ready, remainingCheckins]);
 
     // Quick actions
     const quickActions = useMemo(() => {
@@ -724,6 +766,24 @@ const ProfilePage = memo(function ProfilePage() {
                                 </div>
                             </GlassCard>
                         </motion.section>
+
+                        {/* Menu */}
+                        <motion.nav variants={item} className={`mt-6 space-y-3 ${isCompact ? 'space-y-2' : ''}`} aria-label="Profile menu">
+                            {menuItems.map((item) => (
+                                <MenuItem
+                                    key={item.key}
+                                    icon={item.icon}
+                                    title={item.title}
+                                    to={item.to}
+                                    compact={isCompact}
+                                    onClick={item.onClick}
+                                    disabled={item.disabled}
+                                    description={item.description}
+                                    featured={item.featured}
+                                    badge={item.badge}
+                                />
+                            ))}
+                        </motion.nav>
 
                         {personalLoading && !overallCard && (
                             <motion.section variants={item} className="mt-4">
@@ -904,22 +964,6 @@ const ProfilePage = memo(function ProfilePage() {
                                 </GlassCard>
                             </motion.section>
                         )}
-
-                        {/* Menu */}
-                        <motion.nav variants={item} className={`mt-6 space-y-3 ${isCompact ? 'space-y-2' : ''}`} aria-label="Profile menu">
-                            {menuItems.map((item) => (
-                                <MenuItem
-                                    key={item.key}
-                                    icon={item.icon}
-                                    title={item.title}
-                                    to={item.to}
-                                    compact={isCompact}
-                                    onClick={item.onClick}
-                                    disabled={item.disabled}
-                                    description={item.description}
-                                />
-                            ))}
-                        </motion.nav>
 
                         {/* Theme Section */}
                         <motion.section variants={item} className="mt-6">

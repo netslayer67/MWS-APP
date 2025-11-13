@@ -3,18 +3,23 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import usePreferLowMotion from "@/hooks/usePreferLowMotion";
 import { Sun, Moon } from "lucide-react";
+import { applyThemePreference, getStoredTheme, persistTheme } from "@/lib/theme";
 
 export default function ThemeToggle() {
     const lowMotion = usePreferLowMotion();
-    const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+    const [theme, setTheme] = useState(() => (typeof window === "undefined" ? "light" : getStoredTheme()));
 
     useEffect(() => {
-        if (theme === "dark") {
-            document.documentElement.classList.add("dark");
-        } else {
-            document.documentElement.classList.remove("dark");
+        if (typeof window === "undefined") return;
+        const stored = getStoredTheme();
+        if (stored !== theme) {
+            setTheme(stored);
         }
-        localStorage.setItem("theme", theme);
+    }, []);
+
+    useEffect(() => {
+        applyThemePreference(theme);
+        persistTheme(theme);
     }, [theme]);
 
     return (

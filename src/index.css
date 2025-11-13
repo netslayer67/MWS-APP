@@ -63,6 +63,7 @@
     --glass-caustic: 200 68% 88%;
     --glass-highlight: 0 0% 100%;
     --glass-shadow-color: 214 32% 18%;
+    --mtss-hero-bg: radial-gradient(circle at top, hsla(var(--primary), 0.12) 0%, transparent 58%), linear-gradient(180deg, #fff7f4 0%, #fde9e0 42%, #f8f3ef 100%);
 }
 
 /* Dark mode overrides (toggle html.dark) */
@@ -94,6 +95,7 @@ html.dark {
     --glass-caustic: 190 32% 30%;
     --glass-highlight: 0 0% 100%;
     --glass-shadow-color: 214 62% 6%;
+    --mtss-hero-bg: radial-gradient(circle at top, hsla(var(--primary), 0.22) 0%, transparent 60%), linear-gradient(180deg, #4b0b21 0%, #2b0a16 45%, #0b050a 100%);
 }
 
 /* ------------------------- Base page styles ------------------------- */

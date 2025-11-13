@@ -1,5 +1,6 @@
 import React, { useState, memo, useMemo, useCallback, Suspense, lazy, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { fetchDashboardStats, setSelectedPeriod, setSelectedDate, removeFlaggedUser } from "../store/slices/dashboardSlice";
 import socketService from "../services/socketService";
 import { mockData } from "./dashboard/utils";
@@ -30,6 +31,7 @@ const PerformanceMonitor = lazy(() =>
 /* --- Main Dashboard --- */
 const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
     const { user } = useSelector((state) => state.auth);
     const { stats, loading, error } = useSelector((state) => state.dashboard);
 
@@ -136,14 +138,12 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
     // console.log('Dashboard stats:', stats);
 
     const handleMTSSClick = useCallback(() => {
-        // Navigate to MTSS system
-        console.log('Navigate to MTSS');
-    }, []);
+        navigate('/mtss');
+    }, [navigate]);
 
     const handleDailyCheckinClick = useCallback(() => {
-        // Navigate to daily check-in management
-        console.log('Navigate to Daily Check-in');
-    }, []);
+        navigate('/select-role');
+    }, [navigate]);
 
     // Optimized loading fallback component - reduced animations for performance
     const LoadingFallback = memo(() => (
