@@ -8,6 +8,9 @@ import App from '@/App';
 import '@/index.css';
 import 'leaflet/dist/leaflet.css';
 import { Toaster } from '@/components/ui/toaster';
+import { syncInitialTheme } from '@/lib/theme';
+
+syncInitialTheme();
 
 // Initialize auth state from localStorage
 const token = localStorage.getItem('auth_token');

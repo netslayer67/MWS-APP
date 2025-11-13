@@ -16,9 +16,11 @@ const LandingPage = memo(function LandingPage() {
     useEffect(() => {
         if (!isAuthenticated) return;
         const role = user?.role;
-        if (role === 'head_unit' || role === 'directorate') {
-            navigate('/select-role', { replace: true });
-        } else if (role === 'staff' || role === 'teacher') {
+        const shouldSeeSupportHub = ['head_unit', 'directorate', 'teacher', 'staff', 'principal'].includes(role);
+
+        if (shouldSeeSupportHub) {
+            navigate('/support-hub', { replace: true });
+        } else if (role === 'student') {
             navigate('/profile', { replace: true });
         } else {
             navigate('/select-role', { replace: true });

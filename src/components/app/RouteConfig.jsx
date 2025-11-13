@@ -1,6 +1,6 @@
 // RouteConfig.jsx
-import React, { Suspense, lazy, memo } from "react";
-import { Routes, Route } from "react-router-dom";
+import React, { Suspense, lazy, memo, useMemo } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import PageLoader from "@/components/PageLoader";
 import AppLayout from "@/components/Layout/AppLayout";
@@ -22,6 +22,10 @@ const PersonalStatsPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages
 const EmotionalHistoryPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/EmotionalHistoryPage'));
 const EmotionalPatternsPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/EmotionalPatternsPage'));
 const UserManagementDashboard = lazy(() => import(/* webpackPrefetch: true */ '@/pages/UserManagementDashboard'));
+const SupportModeSelectionPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/mtss/SupportModeSelectionPage'));
+const MTSSRoleSelectionPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/mtss/MTSSRoleSelectionPage'));
+const MTSSTeacherDashboard = lazy(() => import(/* webpackPrefetch: true */ '@/pages/mtss/TeacherDashboardPage'));
+const MTSSStudentProfilePage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/mtss/StudentProfilePage'));
 const NotFound = lazy(() => import(/* webpackPrefetch: true */ '@/pages/NotFound'));
 
 // Keep PageTransition memoized for perf if you want
@@ -59,6 +63,38 @@ const AdminProtectedRoute = memo(({ children }) => {
 });
 AdminProtectedRoute.displayName = 'AdminProtectedRoute';
 
+const previewEmails = new Set(["faisal@millennia21.id"]);
+
+const MtssPreviewGate = memo(({ children }) => {
+    const { user, loading } = useSelector((state) => state.auth);
+
+    const storedEmail = useMemo(() => {
+        if (typeof window === "undefined") return null;
+        try {
+            const raw = localStorage.getItem("auth_user");
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            return typeof parsed?.email === "string" ? parsed.email.toLowerCase() : null;
+        } catch {
+            return null;
+        }
+    }, []);
+
+    const email = (user?.email || storedEmail || "").toLowerCase();
+    const isPreviewUser = previewEmails.has(email);
+
+    if (!email && loading) {
+        return <PageLoader />;
+    }
+
+    if (!isPreviewUser) {
+        return <Navigate to="/select-role" replace />;
+    }
+
+    return children;
+});
+MtssPreviewGate.displayName = "MtssPreviewGate";
+
 // ---- Route groups as plain arrays (NOT memoized components) ----
 const publicRoutes = [
     <Route key="landing" path="/" element={<MemoizedPageTransition><LandingPage /></MemoizedPageTransition>} />,
@@ -80,6 +116,10 @@ const publicRoutes = [
     <Route key="emotional-patterns" path="/profile/emotional-patterns" element={<ProtectedRoute><MemoizedPageTransition><EmotionalPatternsPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="emotional-patterns-user" path="/profile/emotional-patterns/:userId" element={<ProtectedRoute><MemoizedPageTransition><EmotionalPatternsPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="user-management" path="/user-management" element={<AdminProtectedRoute><UserManagementDashboard /></AdminProtectedRoute>} />,
+    <Route key="support-hub" path="/support-hub" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><SupportModeSelectionPage /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
+    <Route key="mtss-role" path="/mtss" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSRoleSelectionPage /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
+    <Route key="mtss-teacher" path="/mtss/teacher" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSTeacherDashboard /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
+    <Route key="mtss-student-profile" path="/mtss/student/:slug" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSStudentProfilePage /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
 
 ];
 
