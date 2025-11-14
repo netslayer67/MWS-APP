@@ -3,38 +3,54 @@ import { useNavigate } from "react-router-dom";
 import { Sparkles, Brain, Handshake } from "lucide-react";
 import { motion } from "framer-motion";
 
-const OptionCard = memo(({ title, description, icon: Icon, accent, onClick, delay = 0, badge }) => (
+const OptionCard = memo(({ title, description, icon: Icon, onClick, delay = 0, badge, gradient, accent = "text-slate-900", chipColor = "bg-white/40 text-rose-500", emoji }) => (
     <motion.button
         onClick={onClick}
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay, duration: 0.5, ease: "easeOut" }}
-        className="group relative w-full glass glass-card overflow-hidden px-6 py-8 rounded-3xl text-left hover:-translate-y-1 hover:shadow-glass-lg transition-all duration-300"
-        data-aos="fade-up"
-        data-aos-delay={delay * 100}
+        whileHover={{ y: -8, scale: 1.01 }}
+        whileTap={{ scale: 0.99 }}
+        transition={{ delay, duration: 0.6, ease: "easeOut" }}
+        className="group relative w-full overflow-hidden rounded-[32px] text-left mtss-card-pop mtss-liquid"
+        style={{ background: gradient }}
     >
-        <div className="glass__refract" />
-        <div className="glass__noise" />
+        <div className="absolute inset-0 bg-white/25 dark:bg-black/35 pointer-events-none" />
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+            <div className="absolute -right-16 -bottom-8 w-56 h-56 bg-white/25 blur-[120px]" />
+            <div className="absolute -left-10 -top-10 w-36 h-36 bg-white/25 blur-3xl" />
+        </div>
 
-        <div className="relative z-10 space-y-4">
-            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full shadow-sm ${accent}`}>
-                <Icon className="w-5 h-5" />
-                <span className="text-xs font-semibold uppercase tracking-widest">{badge}</span>
+        <span className="mtss-liquid-hover-blob" />
+        <div className="relative z-10 px-7 py-8 space-y-5 text-foreground dark:text-white">
+            <div className={`mtss-chip ${chipColor}`}>
+                {emoji && <span className="text-lg">{emoji}</span>}
+                <Icon className="w-4 h-4" />
+                <span className="tracking-[0.3em]">{badge}</span>
             </div>
             <div>
-                <h3 className="text-2xl font-bold text-foreground mb-2">{title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+                <h3 className={`text-3xl font-extrabold tracking-tight drop-shadow-[0_2px_6px_rgba(0,0,0,0.25)] ${accent}`}>{title}</h3>
+                <p className="text-base text-foreground/85 dark:text-white/90 leading-snug mt-2 max-w-sm drop-shadow-[0_1px_4px_rgba(0,0,0,0.2)]">{description}</p>
             </div>
-            <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+            <div className="flex items-center gap-2 text-sm font-bold text-rose-600 dark:text-white">
                 Start now
-                <span className="transition-transform duration-300 group-hover:translate-x-1">&rarr;</span>
+                <motion.span
+                    animate={{ x: [0, 6, 0] }}
+                    transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
+                >
+                    →
+                </motion.span>
             </div>
         </div>
 
-        <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-primary/10 blur-3xl rounded-full" />
-            <div className="absolute top-3 left-3 w-16 h-16 border border-white/50 rounded-3xl rotate-6 opacity-60" />
-            <div className="absolute bottom-6 left-8 w-8 h-8 rounded-full bg-white/40 animate-pulse" />
+        <div className="absolute inset-x-7 bottom-4 flex justify-between text-[10px] font-semibold uppercase tracking-[0.3em] text-foreground/60 dark:text-white/80 opacity-80">
+            <span className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-foreground/50 dark:bg-white/80" />
+                Playful UI
+            </span>
+            <span className="flex items-center gap-2">
+                Quick Wins
+                <span className="h-2 w-2 rounded-full bg-foreground/50 dark:bg-white/80" />
+            </span>
         </div>
     </motion.button>
 ));
@@ -45,37 +61,31 @@ const SupportModeSelectionPage = memo(() => {
     const navigate = useNavigate();
 
     return (
-        <div
-            className="min-h-screen relative overflow-hidden text-foreground dark:text-white transition-colors dark:bg-[var(--mtss-hero-bg)]"
-            style={{ background: "linear-gradient(180deg,#fff4f3 0%,#ffe3ef 35%,#f4e6ff 70%,#eff5ff 100%)" }}
-        >
+        <div className="mtss-theme mtss-animated-bg min-h-screen relative overflow-hidden text-foreground dark:text-white transition-colors">
+            <div className="mtss-bg-overlay" />
             <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[60vw] h-[60vw] bg-primary/10 blur-[160px]" />
-                <div className="absolute bottom-10 right-10 w-72 h-72 bg-gold/25 blur-[120px]" />
-                <div className="absolute top-16 left-10 w-32 h-32 bg-emerald/20 blur-[90px]" />
-                <div className="absolute bottom-24 left-1/4 w-48 h-48 bg-[#ff8da5]/18 blur-[110px]" />
+                <div className="absolute -top-20 left-0 w-72 h-72 bg-[#ffaae4]/45 blur-[160px] animate-blob-left" />
+                <div className="absolute top-16 right-4 w-72 h-72 bg-[#8be8ff]/45 blur-[150px] animate-blob-right" />
+                <div className="absolute bottom-16 left-1/3 w-80 h-80 bg-[#c4f1be]/40 blur-[150px]" />
                 <motion.div
-                    className="absolute top-20 right-1/3 w-10 h-10 rounded-full bg-white/40"
-                    animate={{ y: [0, -10, 0] }}
+                    className="absolute top-12 right-1/3 w-10 h-10 rounded-full bg-white/60"
+                    animate={{ y: [0, -14, 0], rotate: [0, 20, 0] }}
                     transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
                 />
             </div>
 
-            <div className="relative z-10 container-tight py-16 lg:py-24">
+            <div className="relative z-20 container-tight py-16 lg:py-24">
                 <div className="max-w-3xl mx-auto text-center space-y-6 mb-14" data-aos="fade-up">
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border/60 bg-white/70 text-primary text-xs uppercase tracking-[0.3em] dark:border-white/10 dark:bg-white/5 dark:text-primary-foreground">
-                        <Sparkles className="w-4 h-4 text-gold" />
-                        MTSS & Emotional Care
+                    <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/75 backdrop-blur text-rose-500 text-xs font-black tracking-[0.4em] dark:bg-white/10">
+                        <Sparkles className="w-4 h-4" />
+                        Playful Support
                     </div>
                     <div>
-                        <h1 className="text-4xl lg:text-5xl font-extrabold text-foreground dark:text-white drop-shadow-md">
-                            Choose a Support Journey for{" "}
-                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#ff7ad9] via-[#f6b37f] to-primary">
-                                Our Kids
-                            </span>
+                        <h1 className="text-4xl lg:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#f97316] via-[#ec4899] to-[#7c3aed] dark:bg-none dark:text-white drop-shadow-lg">
+                            Choose a Support Journey <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#ff58c2] via-[#ffb347] to-[#7dd3fc]">for Our Kids</span>
                         </h1>
-                        <p className="text-base text-foreground/80 dark:text-white/80 leading-relaxed mt-4">
-                            Pick the pathway that matches your role&mdash;daily emotional check-ins or tiered academic boosts&mdash;all inside one playful, lightweight workspace.
+                        <p className="text-base text-slate-700 dark:text-white/80 leading-relaxed mt-3">
+                            Pick a lane, spark a plan. MTSS boosts or emotional check-ins&mdash;everything playful, bold, and fast.
                         </p>
                     </div>
                 </div>
@@ -83,20 +93,26 @@ const SupportModeSelectionPage = memo(() => {
                 <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
                     <OptionCard
                         title="MTSS Journey"
-                        description="Create joyful intervention plans, team up with mentors, and watch every learner's growth story in real time."
+                        description="Sprint into tiered boosts, playful data, and mentor collabs that keep every learner glowing."
                         icon={Brain}
-                        accent="bg-gradient-to-r from-[#ff87c5]/80 via-primary/70 to-[#a855f7]/80 text-white border border-white/30 shadow-sm"
                         badge="For Teachers & Mentors"
+                        emoji="🧠"
+                        chipColor="bg-white/70 text-rose-600"
+                        accent="text-rose-700"
                         onClick={() => navigate("/mtss")}
+                        gradient="linear-gradient(135deg,#ff58c2 0%,#ff7ad9 35%,#ffb347 100%)"
                         delay={0.1}
                     />
                     <OptionCard
                         title="Emotional Check-in"
-                        description="Check in on feelings, send instant encouragement, and loop in counselors or families whenever extra care is needed—open to every user."
+                        description="Lightning-fast mood check, confetti encouragement, and instant nudges to caregivers."
                         icon={Handshake}
-                        accent="bg-gradient-to-r from-[#34d399]/80 via-[#22d3ee]/80 to-[#60a5fa]/80 text-white border border-white/30 shadow-sm"
                         badge="For Students, Staff & Families"
+                        emoji="✨"
+                        chipColor="bg-white/70 text-sky-600"
+                        accent="text-sky-700"
                         onClick={() => navigate("/select-role")}
+                        gradient="linear-gradient(135deg,#7dd3fc 0%,#60a5fa 30%,#a7f3d0 100%)"
                         delay={0.2}
                     />
                 </div>

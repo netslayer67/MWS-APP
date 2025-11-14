@@ -36,17 +36,15 @@ const StudentProfilePage = memo(() => {
     ];
 
     return (
-        <div
-            className="min-h-screen relative overflow-hidden text-foreground dark:text-white"
-            style={{ background: "linear-gradient(180deg,#fff1f5 0%,#f5ecff 45%,#f1f5ff 100%)" }}
-        >
+        <div className="mtss-theme mtss-animated-bg min-h-screen relative overflow-hidden text-foreground dark:text-white">
+            <div className="mtss-bg-overlay" />
             <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute -top-32 -left-20 w-64 h-64 bg-primary/15 blur-[160px]" />
                 <div className="absolute top-10 right-10 w-52 h-52 bg-emerald/20 blur-[120px]" />
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[70vw] h-48 bg-gold/10 blur-[120px]" />
             </div>
 
-            <div className="relative z-10 container-tight py-10 space-y-6">
+            <div className="relative z-20 container-tight py-10 space-y-6">
                 <button
                     onClick={() => (window.history.length > 2 ? navigate(-1) : navigate("/mtss/teacher?tab=students"))}
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 dark:bg-white/10 text-sm font-semibold shadow"
@@ -79,7 +77,7 @@ const StudentProfilePage = memo(() => {
                     <div className="px-6 pb-0">
                         <div className="grid md:grid-cols-3 gap-3">
                             {quickFacts.map(({ label, value, icon: FactIcon, accent }) => (
-                                <div key={label} className="rounded-2xl bg-white/70 dark:bg-white/10 px-4 py-3 shadow-inner space-y-1">
+                                <div key={label} className="rounded-2xl bg-white/90 dark:bg-slate-900/70 px-4 py-3 shadow-inner space-y-1 mtss-card-surface">
                                     <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
                                         <FactIcon className={`w-4 h-4 ${accent}`} />
                                         {label}
@@ -92,7 +90,7 @@ const StudentProfilePage = memo(() => {
 
                     <div className="p-6 space-y-6">
                         <div className="grid md:grid-cols-3 gap-4">
-                            <div className="p-4 rounded-2xl bg-gradient-to-br from-[#fff5f7] to-[#f5f3ff] border border-white/60 shadow-inner">
+                            <div className="p-4 rounded-2xl bg-white/95 dark:bg-slate-900/70 border border-white/40 dark:border-white/10 shadow-inner mtss-card-surface">
                                 <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground">Student Information</p>
                                 <ul className="mt-3 text-sm space-y-2 text-foreground">
                                     <li>Grade: <strong>{student.grade}</strong></li>
@@ -101,7 +99,7 @@ const StudentProfilePage = memo(() => {
                                     <li className="flex items-center gap-2">Current Tier: <TierPill tier={student.tier} /></li>
                                 </ul>
                             </div>
-                            <div className="p-4 rounded-2xl bg-gradient-to-br from-[#ecfeff] to-[#f5f3ff] border border-white/60 shadow-inner">
+                            <div className="p-4 rounded-2xl bg-white/95 dark:bg-slate-900/70 border border-white/40 dark:border-white/10 shadow-inner mtss-card-surface">
                                 <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground">Intervention Details</p>
                                 <div className="mt-3 text-sm space-y-1 text-foreground">
                                     <p><strong>Type:</strong> {profile.type}</p>
@@ -110,7 +108,7 @@ const StudentProfilePage = memo(() => {
                                     <p><strong>Duration:</strong> {profile.duration}</p>
                                 </div>
                             </div>
-                            <div className="p-4 rounded-2xl bg-gradient-to-br from-[#fef9c3] to-[#ffe4e6] border border-white/60 shadow-inner">
+                            <div className="p-4 rounded-2xl bg-white/95 dark:bg-slate-900/70 border border-white/40 dark:border-white/10 shadow-inner mtss-card-surface">
                                 <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground">Progress Summary</p>
                                 <div className="mt-3 text-sm space-y-2">
                                     <p>Baseline: <strong>{profile.baseline} {measurementUnit}</strong></p>
@@ -133,14 +131,14 @@ const StudentProfilePage = memo(() => {
                             </ResponsiveContainer>
                         </div>
 
-                        <div className="rounded-2xl border border-white/50 p-4 bg-white/80 shadow-inner">
+                        <div className="rounded-2xl border border-white/40 dark:border-white/10 p-4 bg-white/95 dark:bg-slate-900/70 shadow-inner mtss-card-surface">
                             <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground mb-3">Progress History</p>
                             <div className="space-y-3">
                                 {history.map((item, idx) => (
                                     <motion.div
                                         key={idx}
                                         whileHover={{ scale: 1.01 }}
-                                        className="rounded-2xl border border-white/60 p-3 flex flex-wrap items-center gap-3 bg-gradient-to-br from-[#fdf2f8] to-[#eef2ff]"
+                                        className="rounded-2xl border border-white/40 dark:border-white/10 p-3 flex flex-wrap items-center gap-3 bg-white/95 dark:bg-slate-900/70 mtss-card-surface"
                                     >
                                         <div className="text-sm font-semibold w-28">{item.date}</div>
                                         <div className="text-sm flex items-center gap-2">

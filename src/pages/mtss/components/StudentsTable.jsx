@@ -19,15 +19,15 @@ const StudentsTable = memo(({ students, TierPill, ProgressBadge, dense = false, 
                 {students.map((student, index) => (
                     <motion.tr
                         key={student.name}
-                        className="border-b border-border/40 last:border-none"
+                        className="border-b border-border/40 last:border-none transition-colors"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.04 }}
-                        whileHover={{ backgroundColor: "rgba(255,255,255,0.04)" }}
+                        whileHover={{ backgroundColor: "rgba(255, 88, 194, 0.08)" }}
                     >
-                        <td className="py-4 font-semibold text-foreground">{student.name}</td>
-                        <td className="py-4 text-muted-foreground">{student.grade}</td>
-                        <td className="py-4 text-foreground">{student.type}</td>
+                        <td className="py-4 font-semibold text-foreground dark:text-white">{student.name}</td>
+                        <td className="py-4 text-muted-foreground dark:text-white/70">{student.grade}</td>
+                        <td className="py-4 text-foreground dark:text-white">{student.type}</td>
                         <td className="py-4">
                             <TierPill tier={student.tier} />
                         </td>
