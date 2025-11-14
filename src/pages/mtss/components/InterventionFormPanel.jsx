@@ -11,13 +11,13 @@ const methods = ["Observation", "Assessment", "Conference"];
 
 const InterventionFormPanel = memo(({ formState, onChange, onSubmit, baseFieldClass, textareaClass }) => (
     <motion.section
-        className="glass glass-card p-6 space-y-6"
+        className="mtss-theme glass glass-card mtss-card-surface p-6 space-y-6 border border-primary/15"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
     >
         <header>
-            <p className="uppercase text-xs tracking-[0.4em] text-muted-foreground">Create Plan</p>
-            <h2 className="text-2xl font-bold text-foreground dark:text-white">Intervention Plan Builder</h2>
+            <p className="uppercase text-xs tracking-[0.4em] text-muted-foreground">Plan Builder</p>
+            <h2 className="text-2xl font-bold text-foreground dark:text-white">Set up a playful boost</h2>
         </header>
 
         <form className="space-y-5" onSubmit={onSubmit}>
@@ -163,7 +163,7 @@ const InterventionFormPanel = memo(({ formState, onChange, onSubmit, baseFieldCl
             <div className="flex flex-wrap gap-3 pt-3">
                 <motion.button
                     type="submit"
-                    className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-primary text-white font-semibold shadow-glass-md hover:shadow-glass-lg transition-all"
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#ff58c2] to-[#ffb347] text-white font-semibold shadow-[0_15px_40px_rgba(255,88,194,0.25)]"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.97 }}
                 >
@@ -180,4 +180,3 @@ const InterventionFormPanel = memo(({ formState, onChange, onSubmit, baseFieldCl
 
 InterventionFormPanel.displayName = "InterventionFormPanel";
 export default InterventionFormPanel;
-
