@@ -21,7 +21,7 @@ const roles = [
         description: "Map campus-wide momentum, assign mentors, and peek at vibrant analytics.",
         gradient: "from-[#fbd786] via-[#f7797d] to-[#c779d0]",
         accent: "text-foreground dark:text-white",
-        badge: "Coming Soon",
+        badge: "Preview Access",
     },
     {
         key: "family",
@@ -84,6 +84,10 @@ const MTSSRoleSelectionPage = memo(() => {
             navigate("/mtss/teacher");
             return;
         }
+        if (key === "admin") {
+            navigate("/mtss/admin");
+            return;
+        }
 
         toast({
             title: "Coming soon",
@@ -143,6 +147,5 @@ const MTSSRoleSelectionPage = memo(() => {
 
 MTSSRoleSelectionPage.displayName = "MTSSRoleSelectionPage";
 export default MTSSRoleSelectionPage;
-
 
 
