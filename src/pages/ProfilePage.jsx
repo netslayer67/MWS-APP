@@ -39,6 +39,12 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { getCheckinHistory, getPersonalDashboard } from "../store/slices/checkinSlice";
 import { logoutUser } from "../store/slices/authSlice";
 import { useToast } from "@/components/ui/use-toast";
+import {
+    hasEmotionalDashboardAccess,
+    getEmotionalDashboardRole,
+    hasDelegatedDashboardAccess,
+    getDelegatedDashboardDetails
+} from "@/utils/accessControl";
 
 /* ---------------------- Helpers ---------------------- */
 const fmtShort = (v) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(v || 0);
@@ -375,6 +381,10 @@ const ProfilePage = memo(function ProfilePage() {
 
     // Redux state
     const { user: currentUser } = useSelector((state) => state.auth);
+    const canAccessDashboard = currentUser && hasEmotionalDashboardAccess(currentUser);
+    const dashboardRole = useMemo(() => getEmotionalDashboardRole(currentUser), [currentUser]);
+    const delegatedDashboardAccess = hasDelegatedDashboardAccess(currentUser);
+    const delegatedDashboardDetails = getDelegatedDashboardDetails(currentUser);
     const {
         todayCheckin,
         checkinHistory,
@@ -573,38 +583,69 @@ const ProfilePage = memo(function ProfilePage() {
             { key: "notif", icon: Bell, title: "Notifications", to: "/notifications" },
         ];
 
-        if (currentUser && !['directorate', 'admin', 'superadmin'].includes(currentUser.role)) {
+        const shouldShowPersonalMenu = currentUser && !['directorate', 'admin', 'superadmin'].includes(currentUser.role);
+        const isAdminMenu = currentUser && ['directorate', 'admin', 'superadmin', 'head_unit'].includes(currentUser.role);
+        const dashboardMenuItem = {
+            key: "dashboard",
+            icon: BarChart3,
+            title: dashboardRole === 'head_unit' ? "Unit Dashboard" : "Emotional Dashboard",
+            to: "/emotional-checkin/dashboard",
+            badge: delegatedDashboardAccess ? "Delegated" : undefined
+        };
+
+        if (isAdminMenu) {
             baseItems.splice(1, 0,
-                { key: "stats", icon: TrendingUp, title: "Personal Stats", to: "/profile/personal-stats" },
-                { key: "history", icon: Calendar, title: "Emotional History", to: "/profile/emotional-history" },
-                { key: "insights", icon: Activity, title: "Emotional Insights", to: "/profile/emotional-patterns" }
-            );
-        } else if (currentUser && ['directorate', 'admin', 'superadmin', 'head_unit'].includes(currentUser.role)) {
-            baseItems.splice(1, 0,
-                { key: "dashboard", icon: BarChart3, title: currentUser.role === 'head_unit' ? "Unit Dashboard" : "Emotional Dashboard", to: "/emotional-checkin/dashboard" },
+                dashboardMenuItem,
                 { key: "user-mgmt", icon: UserCog, title: "User Management", to: "/user-management" }
             );
+        } else {
+            if (canAccessDashboard) {
+                baseItems.splice(1, 0, dashboardMenuItem);
+            }
+
+            if (shouldShowPersonalMenu) {
+                const insertIndex = canAccessDashboard ? 2 : 1;
+                baseItems.splice(insertIndex, 0,
+                    { key: "stats", icon: TrendingUp, title: "Personal Stats", to: "/profile/personal-stats" },
+                    { key: "history", icon: Calendar, title: "Emotional History", to: "/profile/emotional-history" },
+                    { key: "insights", icon: Activity, title: "Emotional Insights", to: "/profile/emotional-patterns" }
+                );
+            }
         }
 
         return baseItems;
-    }, [currentUser, handleEmotionalCheckin, checkinDescription, checkinLimitReached, checkinUsage.ready, remainingCheckins]);
+    }, [currentUser, handleEmotionalCheckin, checkinDescription, checkinLimitReached, checkinUsage.ready, remainingCheckins, canAccessDashboard, dashboardRole, delegatedDashboardAccess]);
 
     // Quick actions
     const quickActions = useMemo(() => {
-        const isDirectorate = currentUser && ['directorate', 'admin', 'superadmin'].includes(currentUser.role);
-        const isHeadUnit = currentUser && currentUser.role === 'head_unit';
+        const isAdminRole = currentUser && ['directorate', 'admin', 'superadmin'].includes(currentUser.role);
+        const isHeadUnitRole = currentUser && currentUser.role === 'head_unit';
+        const dashboardLabel = dashboardRole === 'head_unit' ? "Unit Dashboard" : "Emotional Dashboard";
+        const dashboardHint = delegatedDashboardAccess && delegatedDashboardDetails
+            ? `Mirrors ${delegatedDashboardDetails.delegatedFromName || delegatedDashboardDetails.delegatedFromEmail}`
+            : dashboardRole === 'head_unit'
+                ? "Monitor team wellness"
+                : "Monitor & analyze";
 
-        if (isDirectorate) {
+        if (isAdminRole) {
             return [
-                { title: "Emotional Dashboard", hint: "Monitor & analyze", icon: BarChart3, to: "/emotional-checkin/dashboard" },
+                { title: dashboardLabel, hint: dashboardHint, icon: BarChart3, to: "/emotional-checkin/dashboard" },
                 { title: "User Management", hint: "Manage users", icon: UserCog, to: "/user-management" },
             ];
         }
 
-        if (isHeadUnit) {
+        if (isHeadUnitRole) {
             return [
                 { title: "Unit Dashboard", hint: "Monitor team wellness", icon: BarChart3, to: "/emotional-checkin/dashboard" },
                 { title: "My Stats", hint: `${user.completed} check-ins`, icon: TrendingUp, to: "/profile/personal-stats" },
+            ];
+        }
+
+        if (canAccessDashboard) {
+            return [
+                { title: dashboardLabel, hint: dashboardHint, icon: BarChart3, to: "/emotional-checkin/dashboard" },
+                { title: "My Stats", hint: `${user.completed} check-ins`, icon: TrendingUp, to: "/profile/personal-stats" },
+                { title: "Emotional History", hint: "Reflection & thoughts", icon: Calendar, to: "/profile/emotional-history" },
             ];
         }
 
@@ -613,7 +654,7 @@ const ProfilePage = memo(function ProfilePage() {
             { title: "Emotional History", hint: "Reflection & thoughts", icon: Calendar, to: "/profile/emotional-history" },
             { title: "Emotional Patterns", hint: "Insights & patterns", icon: Activity, to: "/profile/emotional-patterns" },
         ];
-    }, [user.completed, currentUser]);
+    }, [user.completed, currentUser, dashboardRole, delegatedDashboardAccess, delegatedDashboardDetails, canAccessDashboard]);
 
     // Logout handler
     const handleLogout = async () => {

@@ -71,6 +71,26 @@
     --mtss-pop-lime: #a7f3d0;
     --mtss-card-shadow: 0 25px 60px rgba(255, 88, 194, 0.18);
     --mtss-card-shadow-dark: 0 28px 70px rgba(12, 12, 16, 0.25);
+    --mtss-text-ink: #211734;
+    --mtss-text-ink-soft: #4f3b65;
+    --mtss-heading-gradient-primary: linear-gradient(120deg, #0ea5e9, #8b5cf6, #ec4899);
+    --mtss-heading-gradient-secondary: linear-gradient(120deg, #f97316, #facc15, #22d3ee);
+    --mtss-chip-gradient: linear-gradient(120deg, #f43f5e, #f97316, #facc15);
+    --mtss-chip-gradient-secondary: linear-gradient(120deg, #22d3ee, #3b82f6, #a855f7);
+    --mtss-role-card-teacher: linear-gradient(135deg, #fff0fb, #e0c3fc, #c4c2ff);
+    --mtss-role-card-admin: linear-gradient(135deg, #fff5e0, #ffd7c2, #f8cdd3);
+    --mtss-role-card-family: linear-gradient(135deg, #e0fff4, #d1f6ff, #ffe0f2);
+    --mtss-role-title-teacher: linear-gradient(120deg, #f97316, #ec4899, #a855f7);
+    --mtss-role-title-admin: linear-gradient(120deg, #fb7185, #f97316, #facc15);
+    --mtss-role-title-family: linear-gradient(120deg, #34d399, #38bdf8, #a855f7);
+    --mtss-role-pill-teacher: linear-gradient(120deg, #ffe2f1, #ffc6d9, #fda4af);
+    --mtss-role-pill-admin: linear-gradient(120deg, #fde68a, #fcd34d, #fb923c);
+    --mtss-role-pill-family: linear-gradient(120deg, #bae6fd, #a5b4fc, #c4b5fd);
+    --mtss-team-spark-gradient: linear-gradient(120deg, #a855f7, #ec4899, #f97316);
+    --mtss-team-clarity-gradient: linear-gradient(120deg, #22d3ee, #3b82f6, #a855f7);
+    --mtss-role-ink-teacher: #2b133d;
+    --mtss-role-ink-admin: #341310;
+    --mtss-role-ink-family: #0c2b28;
 }
 
 /* Dark mode overrides (toggle html.dark) */
@@ -105,6 +125,26 @@ html.dark {
     --mtss-hero-bg: radial-gradient(circle at top, hsla(var(--primary), 0.22) 0%, transparent 60%), linear-gradient(180deg, #4b0b21 0%, #2b0a16 45%, #0b050a 100%);
     --mtss-card-shadow: 0 25px 60px rgba(255, 140, 214, 0.18);
     --mtss-card-shadow-dark: 0 32px 70px rgba(0, 0, 0, 0.45);
+    --mtss-text-ink: #fdfbff;
+    --mtss-text-ink-soft: #deddff;
+    --mtss-heading-gradient-primary: linear-gradient(120deg, #7dd3fc, #c084fc, #f9a8d4);
+    --mtss-heading-gradient-secondary: linear-gradient(120deg, #fdba74, #fde68a, #a7f3d0);
+    --mtss-chip-gradient: linear-gradient(120deg, #fecdd3, #fda4af, #f472b6);
+    --mtss-chip-gradient-secondary: linear-gradient(120deg, #a5f3fc, #7dd3fc, #c4b5fd);
+    --mtss-role-card-teacher: linear-gradient(135deg, #3b1f4f, #241232, #120817);
+    --mtss-role-card-admin: linear-gradient(135deg, #402014, #2a120c, #140805);
+    --mtss-role-card-family: linear-gradient(135deg, #0c2f2a, #061c29, #0b0821);
+    --mtss-role-title-teacher: linear-gradient(120deg, #f9a8d4, #d8b4fe, #c4b5fd);
+    --mtss-role-title-admin: linear-gradient(120deg, #fdba74, #fcd34d, #f472b6);
+    --mtss-role-title-family: linear-gradient(120deg, #6ee7b7, #7dd3fc, #c4b5fd);
+    --mtss-role-pill-teacher: linear-gradient(120deg, rgba(255, 255, 255, 0.24), rgba(253, 164, 175, 0.32));
+    --mtss-role-pill-admin: linear-gradient(120deg, rgba(254, 243, 199, 0.25), rgba(251, 191, 36, 0.32));
+    --mtss-role-pill-family: linear-gradient(120deg, rgba(186, 230, 253, 0.28), rgba(165, 180, 252, 0.32));
+    --mtss-team-spark-gradient: linear-gradient(120deg, #f472b6, #fb7185, #facc15);
+    --mtss-team-clarity-gradient: linear-gradient(120deg, #5eead4, #7dd3fc, #c4b5fd);
+    --mtss-role-ink-teacher: #fff5ff;
+    --mtss-role-ink-admin: #fff4e8;
+    --mtss-role-ink-family: #e6fff7;
 }
 
 /* ------------------------- Base page styles ------------------------- */
@@ -284,6 +324,21 @@ body {
 
 .mtss-card-pop-dark:hover {
     box-shadow: 0 34px 80px rgba(5, 6, 17, 0.55);
+}
+
+.mtss-ink {
+    color: var(--mtss-text-ink);
+}
+
+.mtss-ink-soft {
+    color: var(--mtss-text-ink-soft);
+}
+
+.mtss-gradient-text {
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
 }
 
 .mtss-gradient-border {

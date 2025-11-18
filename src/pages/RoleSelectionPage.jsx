@@ -3,6 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Heart, Brain, Sparkles, ChevronRight, BarChart3 } from "lucide-react";
 import { useSelector } from "react-redux";
+import {
+    hasEmotionalDashboardAccess,
+    getEmotionalDashboardRole,
+    hasDelegatedDashboardAccess,
+    getDelegatedDashboardDetails
+} from "@/utils/accessControl";
 
 /* ==================== DECORATIVE ELEMENTS ==================== */
 const Blob = memo(({ className, delay = 0 }) => (
@@ -110,6 +116,42 @@ const MethodCard = memo(({ icon: Icon, title, desc, features, isPremium, onClick
 const RoleSelection = memo(() => {
     const navigate = useNavigate();
     const { user, loading } = useSelector((state) => state.auth);
+    const canAccessDashboard = user && hasEmotionalDashboardAccess(user);
+    const effectiveDashboardRole = getEmotionalDashboardRole(user);
+    const delegatedDashboardAccess = hasDelegatedDashboardAccess(user);
+    const delegatedDashboardDetails = getDelegatedDashboardDetails(user);
+
+    const headUnitFeatures = [
+        "Monitor unit staff wellness",
+        "Handle support requests from your team",
+        "Unit-specific emotional analytics",
+        "Real-time team support tracking"
+    ];
+
+    const directorateFeatures = [
+        "All employees emotional wellness overview",
+        "Comprehensive staff analytics & insights",
+        "Organization-wide support tracking",
+        "Cross-department mood & weather patterns",
+        "Individual employee deep-dive analysis",
+        "Period-based reporting (daily/weekly/monthly/semesterly)"
+    ];
+
+    if (delegatedDashboardAccess && delegatedDashboardDetails) {
+        directorateFeatures.unshift(
+            `Mirrors ${delegatedDashboardDetails.delegatedFromName || delegatedDashboardDetails.delegatedFromEmail || 'directorate'} dashboard access`
+        );
+    }
+
+    const dashboardDescription = effectiveDashboardRole === 'head_unit'
+        ? "Monitor your team's emotional wellness and support requests"
+        : delegatedDashboardAccess && delegatedDashboardDetails
+            ? `Access the organization-wide dashboard entrusted to ${delegatedDashboardDetails.delegatedFromName || delegatedDashboardDetails.delegatedFromEmail}`
+            : "Access comprehensive emotional wellness data for all employees";
+
+    const dashboardFeatures = effectiveDashboardRole === 'head_unit'
+        ? headUnitFeatures
+        : directorateFeatures;
 
     // Debug logging
     React.useEffect(() => {
@@ -200,40 +242,25 @@ const RoleSelection = memo(() => {
                         />
 
                         {/* Dashboard Access for Directorate and Head Unit */}
-                        {user && (user.role === 'directorate' || user.role === 'head_unit') && (
+                        {canAccessDashboard && (
                             <MethodCard
                                 icon={BarChart3}
-                                title={user.role === 'head_unit' ? "Unit Dashboard" : "Emotional Checkin Dashboard"}
-                                desc={user.role === 'head_unit'
-                                    ? "Monitor your team's emotional wellness and support requests"
-                                    : "Access comprehensive emotional wellness data for all employees"
-                                }
-                                features={user.role === 'head_unit' ? [
-                                    "Monitor unit staff wellness",
-                                    "Handle support requests from your team",
-                                    "Unit-specific emotional analytics",
-                                    "Real-time team support tracking"
-                                ] : [
-                                    "All employees emotional wellness overview",
-                                    "Comprehensive staff analytics & insights",
-                                    "Organization-wide support tracking",
-                                    "Cross-department mood & weather patterns",
-                                    "Individual employee deep-dive analysis",
-                                    "Period-based reporting (daily/weekly/monthly/semesterly)"
-                                ]}
+                                title={effectiveDashboardRole === 'head_unit' ? "Unit Dashboard" : "Emotional Checkin Dashboard"}
+                                desc={dashboardDescription}
+                                features={dashboardFeatures}
                                 isPremium={false}
                                 onClick={() => selectMethod('dashboard')}
                             />
                         )}
 
                         {/* Fallback for users with role but no dashboard access */}
-                        {user && user.role && !(user.role === 'directorate' || user.role === 'head_unit') && (
+                        {user && user.role && !canAccessDashboard && (
                             <div className="glass rounded-lg md:rounded-xl p-3 md:p-4 text-center">
                                 <p className="text-[10px] md:text-xs text-muted-foreground">
                                     Role: <span className="font-semibold text-foreground">{user.role}</span>
                                 </p>
                                 <p className="text-[9px] md:text-[10px] text-muted-foreground/70 mt-1">
-                                    Dashboard access is available for Directorate and Head Unit roles.
+                                    Dashboard access is available for Directorate, Head Unit, or approved delegated accounts.
                                 </p>
                             </div>
                         )}

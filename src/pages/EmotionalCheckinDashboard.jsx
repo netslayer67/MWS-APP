@@ -1,11 +1,18 @@
 import React, { useState, memo, useMemo, useCallback, Suspense, lazy, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { ShieldCheck } from "lucide-react";
 import { fetchDashboardStats, setSelectedPeriod, setSelectedDate, removeFlaggedUser } from "../store/slices/dashboardSlice";
 import socketService from "../services/socketService";
 import { mockData } from "./dashboard/utils";
 import AdvancedFilters from "./dashboard/components/AdvancedFilters";
 import RealTimeNotifications from "./dashboard/components/RealTimeNotifications";
+import {
+    getEmotionalDashboardRole,
+    hasEmotionalDashboardAccess,
+    hasDelegatedDashboardAccess,
+    getDelegatedDashboardDetails
+} from "@/utils/accessControl";
 
 // Optimized imports - split into logical components
 const PrimaryNavButtons = lazy(() =>
@@ -37,9 +44,14 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
 
     const { selectedPeriod, selectedDate } = useSelector((state) => state.dashboard);
 
+    const dashboardRole = useMemo(() => getEmotionalDashboardRole(user), [user]);
+    const canViewDashboard = useMemo(() => hasEmotionalDashboardAccess(user), [user]);
+    const delegatedDashboardDetails = useMemo(() => getDelegatedDashboardDetails(user), [user]);
+    const delegatedDashboardAccess = hasDelegatedDashboardAccess(user);
+
     // Check if user is head_unit for special UI elements
-    const isHeadUnit = user?.role === 'head_unit';
-    const isDirectorate = user && ['directorate', 'admin', 'superadmin'].includes(user.role);
+    const isHeadUnit = dashboardRole === 'head_unit';
+    const isDirectorate = ['directorate', 'admin', 'superadmin'].includes(dashboardRole || '');
     const [isLoaded, setIsLoaded] = useState(false);
     const [filters, setFilters] = useState({});
     const directorateAutoPeriodApplied = useRef(false);
@@ -52,17 +64,10 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
 
     // Load dashboard data and set up real-time updates
     useEffect(() => {
-        // Check if user has appropriate permissions for dashboard access
-        // Allow directorate users, superadmin, admin, or head_unit roles
-        const hasDashboardAccess = user && (
-            user.role === 'directorate' ||
-            user.role === 'superadmin' ||
-            user.role === 'admin' ||
-            user.role === 'head_unit'
-        );
+        if (!user) return;
 
-        if (hasDashboardAccess) {
-            if (user?.role === 'directorate' && selectedPeriod === 'today' && !directorateAutoPeriodApplied.current) {
+        if (canViewDashboard) {
+            if (isDirectorate && selectedPeriod === 'today' && !directorateAutoPeriodApplied.current) {
                 directorateAutoPeriodApplied.current = true;
                 dispatch(setSelectedPeriod('all'));
                 return;
@@ -71,27 +76,22 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
             console.log('Fetching dashboard stats for period:', selectedPeriod, 'User:', user);
             dispatch(fetchDashboardStats({ period: selectedPeriod }));
 
-            // Connect to Socket.io for real-time updates
             socketService.connect();
             socketService.joinDashboard(user.id);
 
-            // Set up real-time listeners
             const handleDashboardUpdate = (data) => {
                 console.log('Real-time dashboard update:', data);
-                dispatch(fetchDashboardStats({ period: selectedPeriod })); // Refresh data
+                dispatch(fetchDashboardStats({ period: selectedPeriod }));
             };
 
             const handleNewCheckin = (checkinData) => {
                 console.log('New check-in received:', checkinData);
-                // Force refresh by clearing cache and refetching
                 dispatch(fetchDashboardStats({ period: selectedPeriod, force: true }));
-                // Also show a brief notification
                 console.log('Dashboard updated with new check-in data');
             };
 
             const handleUserFlagged = (userData) => {
                 console.log('User flagged for support:', userData);
-                // Could dispatch a specific action for flagged users
             };
 
             const handleSupportRequestHandled = (data) => {
@@ -104,7 +104,6 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
             socketService.onUserFlagged(handleUserFlagged);
             socketService.onSupportRequestHandled(handleSupportRequestHandled);
 
-            // Cleanup on unmount
             return () => {
                 socketService.offDashboardUpdate(handleDashboardUpdate);
                 socketService.offNewCheckin(handleNewCheckin);
@@ -112,10 +111,11 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
                 socketService.offSupportRequestHandled(handleSupportRequestHandled);
                 socketService.leaveDashboard();
             };
-        } else {
-            console.log('User not authorized for dashboard:', { user });
         }
-    }, [dispatch, user, selectedPeriod]);
+
+        console.log('User not authorized for dashboard:', { user });
+        navigate('/select-role', { replace: true });
+    }, [canViewDashboard, dispatch, isDirectorate, navigate, selectedPeriod, user]);
 
     const handlePeriodChange = useCallback((period) => {
         dispatch(setSelectedPeriod(period));
@@ -175,6 +175,22 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
             </Suspense>
 
             <div className="relative z-10 container-tight py-4 md:py-6">
+                {delegatedDashboardAccess && delegatedDashboardDetails && (
+                    <div className="glass glass-card p-4 mb-4 flex items-start gap-3 border border-amber-200/70 bg-amber-50/70 dark:bg-amber-500/10">
+                        <ShieldCheck className="w-5 h-5 text-amber-600 dark:text-amber-300 mt-0.5" />
+                        <div className="text-sm text-muted-foreground">
+                            <p className="font-semibold text-foreground">Delegated dashboard access</p>
+                            <p>
+                                You're viewing the Emotional Check-in Dashboard with the same visibility as{" "}
+                                <span className="font-medium text-foreground">
+                                    {delegatedDashboardDetails.delegatedFromName || delegatedDashboardDetails.delegatedFromEmail || 'the assigned directorate lead'}
+                                </span>
+                                . All actions remain logged under your account.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
                 <Suspense fallback={<LoadingFallback />}>
                     {/* Dashboard Header */}
                         <DashboardHeader
