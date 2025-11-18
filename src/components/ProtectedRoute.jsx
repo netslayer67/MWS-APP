@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { hasEmotionalDashboardAccess } from '@/utils/accessControl';
 
 const ProtectedRoute = ({ children, allowedRoles = [], allowedDepartments = [], requireDirectorateAcademic = false }) => {
     const { user, isAuthenticated, loading } = useSelector((state) => state.auth);
@@ -21,15 +22,7 @@ const ProtectedRoute = ({ children, allowedRoles = [], allowedDepartments = [], 
 
     // Special check for dashboard access (directorate + academic department + head_unit)
     if (requireDirectorateAcademic) {
-        const hasDashboardAccess = user && (
-            user.role === 'directorate' ||
-            user.role === 'superadmin' ||
-            user.role === 'admin' ||
-            user.role === 'head_unit' ||
-            (user.role === 'directorate' && user.department === 'Academic')
-        );
-
-        if (!hasDashboardAccess) {
+        if (!hasEmotionalDashboardAccess(user)) {
             return <Navigate to="/select-role" replace />;
         }
     }

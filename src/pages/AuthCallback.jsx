@@ -4,6 +4,7 @@ import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../store/slices/authSlice';
 import PageLoader from '../components/PageLoader';
 import { getCurrentUser } from '@/services/authService';
+import { hasEmotionalDashboardAccess, getEmotionalDashboardRole } from '@/utils/accessControl';
 
 const AuthCallback = () => {
     const navigate = useNavigate();
@@ -59,11 +60,13 @@ const AuthCallback = () => {
                 }
 
                 // Log role validation for dashboard access
+                const canonicalDashboardRole = getEmotionalDashboardRole(canonicalUser);
+                const canViewDashboard = hasEmotionalDashboardAccess(canonicalUser);
                 console.log('🎯 Role validation for dashboard access:', {
                     userRole: canonicalUser.role,
-                    isHeadUnit: canonicalUser.role === 'head_unit',
-                    isDirectorate: canonicalUser.role === 'directorate',
-                    hasDashboardAccess: ['head_unit', 'directorate'].includes(canonicalUser.role),
+                    dashboardRole: canonicalDashboardRole,
+                    delegatedFrom: canonicalUser.dashboardAccess?.delegatedFromName || canonicalUser.dashboardAccess?.delegatedFromEmail || null,
+                    hasDashboardAccess: canViewDashboard,
                     department: canonicalUser.department,
                     unit: canonicalUser.unit
                 });
@@ -73,7 +76,7 @@ const AuthCallback = () => {
                 dispatch(loginSuccess({ user: canonicalUser, token }));
 
                 console.log('📱 User state updated in Redux');
-                console.log('🎯 Expected dashboard access:', ['head_unit', 'directorate'].includes(canonicalUser.role) ? 'YES' : 'NO');
+                console.log('🎯 Expected dashboard access:', canViewDashboard ? 'YES' : 'NO');
 
                 // Redirect to role selection page after OAuth login
                 navigate('/select-role', { replace: true });
