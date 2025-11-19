@@ -3,6 +3,21 @@ import { Users, UserCheck, CheckCircle2, MessageCircle, ChevronDown } from "luci
 import { useDispatch, useSelector } from "react-redux";
 import { fetchSupportContacts } from "../../store/slices/supportSlice";
 
+const getHonorific = (gender) => {
+    if (!gender) return '';
+    const normalized = String(gender).toLowerCase();
+    if (normalized === 'f' || normalized === 'female') return 'Ms.';
+    if (normalized === 'm' || normalized === 'male') return 'Mr.';
+    return '';
+};
+
+const buildDisplayName = (contact) => {
+    if (contact?.displayName) return contact.displayName;
+    const honorific = getHonorific(contact?.gender);
+    const base = contact?.username || contact?.name || '';
+    return `${honorific ? `${honorific} ` : ''}${base}`.trim();
+};
+
 const Header = memo(() => (
     <div className="flex items-center gap-3">
         <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald/10 border border-emerald/20 flex items-center justify-center">
@@ -31,14 +46,10 @@ const CustomSelect = memo(({ internalSelection, onInternalChange, hasSelection, 
                 {loading ? 'Loading...' : supportContacts.length === 0 ? 'No contacts available' : 'Choose a team member...'}
             </option>
             {supportContacts.map((contact) => (
-                <option key={contact.id} value={contact.name}>
-                    {contact.isClassTeacher
-                        ? `${contact.name} — Class Teacher`
-                        : `${contact.name} — ${contact.displayRole || contact.role}`
-                    }
+                <option key={contact.id} value={contact.value}>
+                    {contact.displayValue}
                 </option>
             ))}
-            <option value="No Need">No Need</option>
         </select>
         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
             <ChevronDown className={`w-4 h-4 transition-colors ${hasSelection ? 'text-emerald' : 'text-foreground/50'}`} />
@@ -58,11 +69,11 @@ const SelectedPersonCard = memo(({ selectedPerson }) => (
                 <div className="flex items-center gap-2">
                     <UserCheck className="w-3.5 h-3.5 text-emerald flex-shrink-0" />
                     <p className="text-sm font-medium text-emerald truncate">
-                        {selectedPerson.name}
+                        {selectedPerson.displayValue || selectedPerson.displayName || selectedPerson.name}
                     </p>
                 </div>
                 <p className="text-xs text-foreground/70">
-                    We'll arrange for {selectedPerson.name} to connect with you today.
+                    We'll arrange for {selectedPerson.displayValue || selectedPerson.displayName || selectedPerson.name} to connect with you today.
                 </p>
             </div>
         </div>
@@ -131,32 +142,58 @@ const SupportSelector = memo(({ supportContact, onSupportChange }) => {
     }, [dispatch, contacts.length, isAuthenticated, loading]);
 
     // Sync internal state with prop
-    useEffect(() => {
-        setInternalSelection(supportContact || "");
-    }, [supportContact]);
-
-    // Use API data if available, otherwise show loading or empty state
     const supportContacts = useMemo(() => {
         console.log('SupportSelector contacts:', contacts);
-        if (contacts.length > 0) {
-            return contacts;
+        if (contacts.length === 0) {
+            return [];
         }
-        // Return empty array if no data yet (loading state)
-        return [];
+
+        return contacts.map(contact => {
+            const displayValue = buildDisplayName(contact);
+            return {
+                ...contact,
+                displayValue,
+                value: displayValue,
+                avatar: contact.avatar || displayValue.charAt(0).toUpperCase()
+            };
+        });
     }, [contacts]);
 
-    const selectedPerson = useMemo(
-        () => supportContacts.find(c => c.name === internalSelection) || {
+    useEffect(() => {
+        if (!supportContact) {
+            setInternalSelection("");
+            return;
+        }
+        const match = supportContacts.find(
+            (c) => c.name === supportContact || c.value === supportContact
+        );
+        setInternalSelection(match ? match.value : supportContact);
+    }, [supportContact, supportContacts]);
+
+    // Use API data if available, otherwise show loading or empty state
+    // (already memoized above)
+
+    const selectedPerson = useMemo(() => {
+        const found = supportContacts.find(c =>
+            c.value === internalSelection || c.name === internalSelection
+        );
+        if (found) {
+            return found;
+        }
+
+        const fallbackDisplay = internalSelection;
+        return {
             name: internalSelection,
+            displayValue: fallbackDisplay,
+            value: fallbackDisplay,
             role: 'Support Contact',
             department: 'N/A',
             jobLevel: 'N/A',
             unit: 'N/A',
             jobPosition: 'N/A',
             avatar: internalSelection ? internalSelection.charAt(0).toUpperCase() : '?'
-        },
-        [internalSelection, supportContacts]
-    );
+        };
+    }, [internalSelection, supportContacts]);
 
     const isNoNeed = internalSelection === "No Need";
     const hasSelection = !!internalSelection;
@@ -172,7 +209,9 @@ const SupportSelector = memo(({ supportContact, onSupportChange }) => {
         <div className="bg-card/30 border border-border/40 rounded-lg p-4 space-y-4">
             <Header />
             <CustomSelect internalSelection={internalSelection} onInternalChange={handleInternalChange} hasSelection={hasSelection} supportContacts={supportContacts} loading={loading} />
-            {selectedPerson && selectedPerson.id !== "no-need" && <SelectedPersonCard selectedPerson={selectedPerson} />}
+            {hasSelection && !isNoNeed && selectedPerson && selectedPerson.id !== "no-need" && (
+                <SelectedPersonCard selectedPerson={selectedPerson} />
+            )}
             {isNoNeed && <NoNeedCard />}
             {!hasSelection && <EmptyStateHelper />}
             <TeamAvailabilityBadge />
