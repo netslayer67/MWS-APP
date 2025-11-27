@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useState } from "react";
+import React, { memo, useMemo, useState, useCallback, useDeferredValue } from "react";
 import { motion } from "framer-motion";
 import { Search, Filter } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -15,30 +15,41 @@ const StudentsPanel = memo(({ students, TierPill, ProgressBadge }) => {
     const [query, setQuery] = useState("");
     const [modalState, setModalState] = useState({ type: null, student: null });
 
-    const filteredStudents = useMemo(() => students.filter((student) => {
-        const matchesTier = activeTier === "All" || student.tier === activeTier;
-        const matchesQuery = student.name.toLowerCase().includes(query.toLowerCase()) || student.type.toLowerCase().includes(query.toLowerCase());
-        return matchesTier && matchesQuery;
-    }), [students, activeTier, query]);
+    const deferredQuery = useDeferredValue(query.trim().toLowerCase());
 
-    const handleView = (student) => {
-        navigate(`/mtss/student/${student.slug}`);
-    };
-
-    const handleOpen = (type, student) => setModalState({ type, student });
-    const handleClose = () => setModalState({ type: null, student: null });
-
-    const handleQuickSubmit = (student, formState) => {
-        toast({
-            title: "Progress update saved",
-            description: `${student.name}'s update was recorded!`,
+    const filteredStudents = useMemo(() => {
+        return students.filter((student) => {
+            const matchesTier = activeTier === "All" || student.tier === activeTier;
+            if (!deferredQuery) return matchesTier;
+            const searchPool = `${student.name} ${student.type}`.toLowerCase();
+            return matchesTier && searchPool.includes(deferredQuery);
         });
-        handleClose();
-    };
+    }, [students, activeTier, deferredQuery]);
+
+    const handleView = useCallback(
+        (student) => {
+            navigate(`/mtss/student/${student.slug}`);
+        },
+        [navigate],
+    );
+
+    const handleOpen = useCallback((type, student) => setModalState({ type, student }), []);
+    const handleClose = useCallback(() => setModalState({ type: null, student: null }), []);
+
+    const handleQuickSubmit = useCallback(
+        (student, formState) => {
+            toast({
+                title: "Progress update saved",
+                description: `${student.name}'s update was recorded!`,
+            });
+            handleClose();
+        },
+        [toast, handleClose],
+    );
 
     return (
         <div className="space-y-6 mtss-theme">
-            <motion.div className="glass glass-card mtss-card-surface p-5 flex flex-col gap-4 border border-primary/10" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+            <motion.div className="glass glass-card mtss-card-surface mtss-rainbow-shell p-5 flex flex-col gap-4 border border-primary/10" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
                 <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
                     <Filter className="w-4 h-4" />
                     Quick filters
@@ -48,7 +59,7 @@ const StudentsPanel = memo(({ students, TierPill, ProgressBadge }) => {
                         <button
                             key={tier}
                             onClick={() => setActiveTier(tier)}
-                            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${activeTier === tier ? "bg-gradient-to-r from-[#ff58c2] to-[#ffb347] text-white shadow-[0_10px_25px_rgba(255,88,194,0.25)]" : "border border-border text-muted-foreground hover:text-foreground"}`}
+                            className={`mtss-filter-chip ${activeTier === tier ? "mtss-filter-chip--active" : ""}`}
                         >
                             {tier}
                         </button>
@@ -61,13 +72,13 @@ const StudentsPanel = memo(({ students, TierPill, ProgressBadge }) => {
                         placeholder="Search kids or boost type..."
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        className="w-full pl-11 pr-4 py-2.5 rounded-full bg-white/70 dark:bg-white/10 border border-primary/20 focus:ring-2 focus:ring-primary/40 focus:outline-none placeholder:text-muted-foreground/70"
+                        className="w-full pl-11 pr-4 py-2.5 rounded-full bg-white/70 dark:bg-white/10 border border-primary/20 focus:ring-2 focus:ring-primary/40 focus:outline-none placeholder:text-muted-foreground/70 dark:placeholder:text-white/40"
                     />
                 </div>
             </motion.div>
 
             <motion.section
-                className="glass glass-card mtss-card-surface p-6 space-y-4"
+                className="glass glass-card mtss-card-surface mtss-rainbow-shell p-6 space-y-4"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}

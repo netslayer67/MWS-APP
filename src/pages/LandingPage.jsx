@@ -15,16 +15,15 @@ const LandingPage = memo(function LandingPage() {
     // If authenticated, route by role: staff/teacher -> profile, head_unit/directorate -> select-role
     useEffect(() => {
         if (!isAuthenticated) return;
-        const role = user?.role;
-        const shouldSeeSupportHub = ['head_unit', 'directorate', 'teacher', 'staff', 'principal'].includes(role);
+        const role = (user?.role || '').toLowerCase();
+        const shouldSeeProfile = role === 'student';
 
-        if (shouldSeeSupportHub) {
-            navigate('/support-hub', { replace: true });
-        } else if (role === 'student') {
+        if (shouldSeeProfile) {
             navigate('/profile', { replace: true });
-        } else {
-            navigate('/select-role', { replace: true });
+            return;
         }
+
+        navigate('/support-hub', { replace: true });
     }, [isAuthenticated, user, navigate]);
 
     return (

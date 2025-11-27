@@ -1,7 +1,7 @@
 import React, { memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Heart, Brain, Sparkles, ChevronRight, BarChart3 } from "lucide-react";
+import { Heart, Brain, Sparkles, ChevronRight, BarChart3, ArrowLeft } from "lucide-react";
 import { useSelector } from "react-redux";
 import {
     hasEmotionalDashboardAccess,
@@ -176,6 +176,16 @@ const RoleSelection = memo(() => {
 
     return (
         <div className="relative min-h-screen text-foreground overflow-hidden">
+            <div className="absolute top-6 left-6 z-30">
+                <button
+                    onClick={() => navigate('/support-hub')}
+                    className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-primary bg-white/80 border border-white/60 shadow-[0_10px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl relative z-40"
+                    type="button"
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                    Support Hub
+                </button>
+            </div>
             <Blob className="top-0 left-0 w-80 h-80 md:w-96 md:h-96 bg-primary/8" delay={0} />
             <Blob className="bottom-0 right-0 w-72 h-72 md:w-80 md:h-80 bg-primary/6" delay={0.8} />
             <Grid />

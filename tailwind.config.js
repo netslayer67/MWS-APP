@@ -118,6 +118,8 @@ module.exports = {
             },
             transitionDuration: {
                 DEFAULT: '320ms',
+                320: '320ms',
+                350: '350ms',
             },
         },
     },

@@ -104,6 +104,55 @@ class SocketService {
         }
     }
 
+    // MTSS channels
+    joinMtssAdmin() {
+        if (this.socket && this.isConnected) {
+            this.socket.emit('join-mtss-admin');
+        }
+    }
+
+    leaveMtssAdmin() {
+        if (this.socket && this.isConnected) {
+            this.socket.emit('leave-mtss-admin');
+        }
+    }
+
+    joinMtssMentor(mentorId) {
+        if (this.socket && this.isConnected && mentorId) {
+            this.socket.emit('join-mtss-mentor', mentorId);
+        }
+    }
+
+    leaveMtssMentor(mentorId) {
+        if (this.socket && this.isConnected && mentorId) {
+            this.socket.emit('leave-mtss-mentor', mentorId);
+        }
+    }
+
+    onMtssStudentsChanged(callback) {
+        if (this.socket) {
+            this.socket.on('mtss:students:changed', callback);
+        }
+    }
+
+    offMtssStudentsChanged(callback) {
+        if (this.socket) {
+            this.socket.off('mtss:students:changed', callback);
+        }
+    }
+
+    onMtssAssignment(callback) {
+        if (this.socket) {
+            this.socket.on('mtss:assignment', callback);
+        }
+    }
+
+    offMtssAssignment(callback) {
+        if (this.socket) {
+            this.socket.off('mtss:assignment', callback);
+        }
+    }
+
     // Remove listeners
     offDashboardUpdate(callback) {
         if (this.socket) {

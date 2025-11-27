@@ -114,7 +114,7 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
         }
 
         console.log('User not authorized for dashboard:', { user });
-        navigate('/select-role', { replace: true });
+        navigate('/support-hub', { replace: true });
     }, [canViewDashboard, dispatch, isDirectorate, navigate, selectedPeriod, user]);
 
     const handlePeriodChange = useCallback((period) => {
@@ -142,7 +142,7 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
     }, [navigate]);
 
     const handleDailyCheckinClick = useCallback(() => {
-        navigate('/select-role');
+        navigate('/support-hub');
     }, [navigate]);
 
     // Optimized loading fallback component - reduced animations for performance

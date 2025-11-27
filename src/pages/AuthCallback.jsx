@@ -78,8 +78,7 @@ const AuthCallback = () => {
                 console.log('📱 User state updated in Redux');
                 console.log('🎯 Expected dashboard access:', canViewDashboard ? 'YES' : 'NO');
 
-                // Redirect to role selection page after OAuth login
-                navigate('/select-role', { replace: true });
+                navigate('/support-hub', { replace: true });
 
             } catch (error) {
                 console.error('Auth callback error:', error);

@@ -49,9 +49,8 @@ const HeroSection = memo(() => {
                 setShowLoginForm(false);
                 setEmail("");
                 setPassword("");
-                // Redirect to role selection page
                 setTimeout(() => {
-                    navigate('/select-role');
+                    navigate('/support-hub');
                 }, 1000);
             } else {
                 toast({

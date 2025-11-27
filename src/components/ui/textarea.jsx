@@ -79,7 +79,7 @@ const Textarea = React.forwardRef(
                     "px-3 py-2 text-sm placeholder:text-muted-foreground",
                     // focus and transition
                     "ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                    "transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-[var(--motion-320)] ease-[var(--ease-soft)]",
+                    "transition-[color,background-color,border-color,box-shadow,transform,opacity] mtss-duration-soft mtss-ease-soft",
                     // disabled
                     "disabled:cursor-not-allowed disabled:opacity-50",
                     className

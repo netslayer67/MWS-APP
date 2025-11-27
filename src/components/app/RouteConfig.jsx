@@ -66,6 +66,7 @@ const AdminProtectedRoute = memo(({ children }) => {
 AdminProtectedRoute.displayName = 'AdminProtectedRoute';
 
 const previewEmails = new Set(["faisal@millennia21.id"]);
+const mtssRoleAccess = new Set(['teacher', 'se_teacher', 'directorate', 'head_unit', 'admin', 'superadmin']);
 
 const MtssPreviewGate = memo(({ children }) => {
     const { user, loading } = useSelector((state) => state.auth);
@@ -83,14 +84,16 @@ const MtssPreviewGate = memo(({ children }) => {
     }, []);
 
     const email = (user?.email || storedEmail || "").toLowerCase();
+    const normalizedRole = (user?.role || '').toLowerCase();
     const isPreviewUser = previewEmails.has(email);
+    const hasRoleAccess = mtssRoleAccess.has(normalizedRole);
 
     if (!email && loading) {
         return <PageLoader />;
     }
 
-    if (!isPreviewUser) {
-        return <Navigate to="/select-role" replace />;
+    if (!isPreviewUser && !hasRoleAccess) {
+        return children;
     }
 
     return children;

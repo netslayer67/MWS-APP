@@ -4,13 +4,13 @@ import { ClipboardCheck } from "lucide-react";
 
 const ProgressFormPanel = memo(({ formState, onChange, onSubmit, baseFieldClass, textareaClass, students }) => (
     <motion.section
-        className="mtss-theme glass glass-card mtss-card-surface p-6 space-y-6 border border-primary/15"
+        className="mtss-theme glass glass-card mtss-card-surface mtss-rainbow-shell p-6 space-y-6 border border-primary/15"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
     >
         <header>
             <p className="uppercase text-xs tracking-[0.4em] text-muted-foreground">Progress Ping</p>
-            <h2 className="text-2xl font-bold text-foreground dark:text-white">Log today's glow</h2>
+            <h2 className="text-2xl font-bold mtss-gradient-text mtss-heading-rainbow">Log today's glow</h2>
         </header>
         <form className="space-y-5" onSubmit={onSubmit}>
             <div className="grid md:grid-cols-2 gap-4">
@@ -75,7 +75,7 @@ const ProgressFormPanel = memo(({ formState, onChange, onSubmit, baseFieldClass,
             <div className="flex flex-wrap gap-3 pt-3">
                 <motion.button
                     type="submit"
-                    className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#34d399] to-[#60a5fa] text-white font-semibold shadow-[0_15px_40px_rgba(96,165,250,0.25)]"
+                    className="mtss-rainbow-chip mtss-rainbow-chip--emerald inline-flex items-center gap-2 px-5 py-3 text-sm font-semibold"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.97 }}
                 >

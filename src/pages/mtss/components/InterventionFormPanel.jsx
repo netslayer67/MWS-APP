@@ -11,13 +11,13 @@ const methods = ["Observation", "Assessment", "Conference"];
 
 const InterventionFormPanel = memo(({ formState, onChange, onSubmit, baseFieldClass, textareaClass }) => (
     <motion.section
-        className="mtss-theme glass glass-card mtss-card-surface p-6 space-y-6 border border-primary/15"
+        className="mtss-theme glass glass-card mtss-card-surface mtss-rainbow-shell p-6 space-y-6 border border-primary/15"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
     >
         <header>
             <p className="uppercase text-xs tracking-[0.4em] text-muted-foreground">Plan Builder</p>
-            <h2 className="text-2xl font-bold text-foreground dark:text-white">Set up a playful boost</h2>
+            <h2 className="text-2xl font-bold mtss-gradient-text mtss-heading-rainbow">Set up a playful boost</h2>
         </header>
 
         <form className="space-y-5" onSubmit={onSubmit}>
