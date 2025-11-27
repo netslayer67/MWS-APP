@@ -23,16 +23,16 @@ const ProtectedRoute = ({ children, allowedRoles = [], allowedDepartments = [], 
     // Special check for dashboard access (directorate + academic department + head_unit)
     if (requireDirectorateAcademic) {
         if (!hasEmotionalDashboardAccess(user)) {
-            return <Navigate to="/select-role" replace />;
+            return <Navigate to="/support-hub" replace />;
         }
     }
 
     if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
-        return <Navigate to="/select-role" replace />;
+        return <Navigate to="/support-hub" replace />;
     }
 
     if (allowedDepartments.length > 0 && !allowedDepartments.includes(user?.department)) {
-        return <Navigate to="/select-role" replace />;
+        return <Navigate to="/support-hub" replace />;
     }
 
     return children;

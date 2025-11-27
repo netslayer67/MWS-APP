@@ -79,7 +79,7 @@ const NotificationItem = React.memo(function NotificationItem({ n, onMarkRead, o
                 <Card
                     role="article"
                     aria-live={read ? "polite" : "assertive"}
-                    className={`rounded-2xl border border-border/40 bg-card/60 backdrop-blur-xl transition-all duration-350 ease-[cubic-bezier(.2,.9,.2,1)]
+                    className={`rounded-2xl border border-border/40 bg-card/60 backdrop-blur-xl transition-all duration-350 ease-premium
             ${read ? "opacity-90 hover:opacity-95" : "ring-1 ring-primary/20 shadow-sm hover:shadow-md"}
           `}
                 >

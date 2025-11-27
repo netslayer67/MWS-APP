@@ -495,7 +495,7 @@ const ProfilePage = memo(function ProfilePage() {
         const updated = { ...snapshot, count: snapshot.count + 1 };
         persistCheckinUsageSnapshot(updated);
         setCheckinUsage({ ...updated, ready: true });
-        navigate("/select-role");
+        navigate("/support-hub");
     }, [navigate, toast]);
 
     // Derived info for today's check-in
@@ -572,7 +572,7 @@ const ProfilePage = memo(function ProfilePage() {
                 key: "emotional-checkin",
                 icon: Sparkles,
                 title: "Emotional Check-in",
-                to: "/select-role",
+                to: "/support-hub",
                 onClick: handleEmotionalCheckin,
                 disabled: checkinLimitReached,
                 description: checkinDescription,

@@ -51,7 +51,7 @@ export default function LoginPage() {
             setTimeout(() => {
                 setLoading(false);
                 toast({ title: "Login successful", description: "Redirecting..." });
-                navigate("/select-role");
+                navigate("/support-hub");
             }, 900);
         },
         [email, password, toast, navigate]

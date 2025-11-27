@@ -1,5 +1,6 @@
-import React, { memo } from "react";
+import React, { memo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { Brain, Handshake } from "lucide-react";
 import { motion } from "framer-motion";
 import Logo from "../../components/ui/Millennia.webp";
@@ -66,6 +67,17 @@ OptionCard.displayName = "OptionCard";
 
 const SupportModeSelectionPage = memo(() => {
     const navigate = useNavigate();
+    const { user } = useSelector((state) => state.auth);
+
+    const handleMtssClick = useCallback(() => {
+        const normalizedRole = (user?.role || '').toLowerCase();
+        const teacherRoles = ['teacher', 'se_teacher'];
+        if (teacherRoles.includes(normalizedRole)) {
+            navigate('/mtss/teacher');
+            return;
+        }
+        navigate('/mtss');
+    }, [navigate, user?.role]);
 
     return (
         <div className="mtss-theme mtss-animated-bg min-h-screen relative overflow-hidden text-foreground dark:text-white transition-colors">
@@ -111,7 +123,7 @@ const SupportModeSelectionPage = memo(() => {
                         chipColor="bg-white/40 text-rose-600 border border-white/60 backdrop-blur-xl dark:bg-white/10 dark:text-rose-200 dark:border-white/15"
                         accent="text-white drop-shadow-[0_12px_35px_rgba(225,29,72,0.45)]"
                         ctaTextClass="text-rose-600"
-                        onClick={() => navigate("/mtss")}
+                        onClick={handleMtssClick}
                         gradient="linear-gradient(135deg,#ff4ec6 0%,#ff7ad9 35%,#ffb347 100%)"
                         delay={0.1}
                         radius="4rem"

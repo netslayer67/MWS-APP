@@ -37,7 +37,10 @@ const SelectedOverlay = memo(({ token, weather }) => (
 ));
 
 const HoverShimmer = memo(({ token }) => (
-    <div className={`absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-[300ms] pointer-events-none bg-gradient-to-br ${token.gradientFrom} to-transparent`} aria-hidden />
+    <div
+        className={`absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none bg-gradient-to-br ${token.gradientFrom} to-transparent`}
+        aria-hidden
+    />
 ));
 
 const WeatherCard = memo(function WeatherCard({ weather, isSelected, onClick, index = 0 }) {
@@ -45,20 +48,20 @@ const WeatherCard = memo(function WeatherCard({ weather, isSelected, onClick, in
     const token = COLOR_TOKENS[weather.color] || COLOR_TOKENS.primary;
 
     const wrapperClasses = useMemo(() => {
-        const base = "group relative rounded-lg border transition-all duration-[300ms] ease-premium focus:outline-none focus-visible:ring-4 focus-visible:ring-opacity-20";
+        const base = "group relative rounded-lg border transition-all duration-300 ease-premium focus:outline-none focus-visible:ring-4 focus-visible:ring-opacity-20";
         const sizePadding = "p-3 md:p-4";
         const selected = isSelected ? `${token.selected} transform scale-[1.02]` : `border-border bg-card/40`;
         return `${base} ${sizePadding} ${selected}`;
     }, [isSelected, token]);
 
     const iconClasses = useMemo(() => {
-        const base = "w-7 h-7 md:w-9 md:h-9 transition-transform duration-[300ms] ease-premium";
+        const base = "w-7 h-7 md:w-9 md:h-9 transition-transform duration-300 ease-premium";
         const scale = isSelected ? "scale-110" : "group-hover:scale-105";
         const colorClass = isSelected ? token.text : `text-muted-foreground ${token.iconHover}`;
         return `${base} ${scale} ${colorClass}`;
     }, [isSelected, token]);
 
-    const labelClasses = useMemo(() => "text-xs md:text-sm font-medium leading-tight transition-colors duration-[300ms]", []);
+    const labelClasses = useMemo(() => "text-xs md:text-sm font-medium leading-tight transition-colors duration-300", []);
 
     const iconStyle = useMemo(() => {
         const raw = ICON_COLOR_MAP[weather.icon];
@@ -78,7 +81,7 @@ const WeatherCard = memo(function WeatherCard({ weather, isSelected, onClick, in
             className={wrapperClasses}
             style={transitionDelayStyle}
         >
-            <div className="glass__refract opacity-0 group-hover:opacity-100 transition-opacity duration-[300ms] pointer-events-none" />
+            <div className="glass__refract opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
             <div className="glass__noise pointer-events-none" />
             <div className="relative z-10 flex flex-col items-center gap-2">
                 <WeatherIcon Icon={Icon} iconClasses={iconClasses} iconStyle={iconStyle} />
