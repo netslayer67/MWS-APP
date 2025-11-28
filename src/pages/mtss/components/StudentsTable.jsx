@@ -1,6 +1,13 @@
 import React, { memo } from "react";
 import { motion } from "framer-motion";
 
+const ROW_THEMES = [
+    { bg: "from-[#ecfeff]/90 via-[#fef3c7]/80 to-white/80 dark:from-white/5 dark:via-white/5 dark:to-white/0", accent: "bg-[#22d3ee]/70", aos: "fade-up" },
+    { bg: "from-[#f5f3ff]/90 via-[#ede9fe]/85 to-white/80 dark:from-white/10 dark:via-white/5 dark:to-white/5", accent: "bg-[#a855f7]/60", aos: "fade-up-right" },
+    { bg: "from-[#fff7ed]/90 via-[#fef3c7]/85 to-white/80 dark:from-white/5 dark:via-white/5 dark:to-white/0", accent: "bg-[#fb923c]/60", aos: "fade-up-left" },
+    { bg: "from-[#ecfccb]/90 via-[#d9f99d]/80 to-white/80 dark:from-white/5 dark:via-white/5 dark:to-white/0", accent: "bg-[#4ade80]/70", aos: "zoom-in-up" },
+];
+
 const StudentsTable = memo(
     ({
         students,
@@ -16,27 +23,59 @@ const StudentsTable = memo(
     }) => {
         const activeSelectedIds = selectedIds || [];
         return (
-        <div className="space-y-4">
-            <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-sm">
-                    <thead className="mtss-table-head">
-                        <tr className={`${dense ? "text-[11px]" : ""} mtss-table-head-row`}>
-                            {selectable && <th className="py-3 font-medium text-left w-12">Select</th>}
-                            <th className="py-3 font-medium text-left">Student</th>
-                            <th className="py-3 font-medium text-left">Grade</th>
-                            <th className="py-3 font-medium text-left">Intervention</th>
-                            <th className="py-3 font-medium text-left">Tier</th>
-                            <th className="py-3 font-medium text-left">Progress</th>
-                            <th className="py-3 font-medium text-left">Next Update</th>
-                        {showActions && <th className="py-3 font-medium text-center">Action</th>}
-                    </tr>
-                </thead>
-                <tbody>
+            <div className="space-y-5">
+                <div
+                    className="hidden md:block overflow-x-auto rounded-[28px] border border-white/30 dark:border-white/10 bg-gradient-to-br from-white/90 via-white/70 to-white/60 dark:from-white/5 dark:via-white/5 dark:to-white/0 shadow-[0_25px_70px_rgba(15,23,42,0.18)]"
+                    data-aos="fade-up"
+                    data-aos-delay="220"
+                >
+                    <table className="w-full text-sm">
+                        <thead className="mtss-table-head">
+                            <tr className={`${dense ? "text-[11px]" : ""} mtss-table-head-row`}>
+                                <th className="py-3 w-2" />
+                                {selectable && <th className="py-3 font-semibold text-left w-12 text-slate-500 tracking-[0.2em] uppercase">Select</th>}
+                                <th className="py-3 font-semibold text-left tracking-[0.2em] uppercase text-xs text-slate-500">Student</th>
+                                <th className="py-3 font-semibold text-left tracking-[0.2em] uppercase text-xs text-slate-500">Grade</th>
+                                <th className="py-3 font-semibold text-left tracking-[0.2em] uppercase text-xs text-slate-500">Intervention</th>
+                                <th className="py-3 font-semibold text-left tracking-[0.2em] uppercase text-xs text-slate-500">Tier</th>
+                                <th className="py-3 font-semibold text-left tracking-[0.2em] uppercase text-xs text-slate-500">Progress</th>
+                                <th className="py-3 font-semibold text-left tracking-[0.2em] uppercase text-xs text-slate-500">Next Update</th>
+                                {showActions && <th className="py-3 font-semibold text-center tracking-[0.2em] uppercase text-xs text-slate-500">Action</th>}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {students.map((student, index) => {
+                                const key = student.id || student._id || student.name;
+                                const selected = activeSelectedIds.includes(student.id || student._id);
+                                const theme = ROW_THEMES[index % ROW_THEMES.length];
+                                return (
+                                    <DesktopRow
+                                        key={key}
+                                        index={index}
+                                        student={student}
+                                        TierPill={TierPill}
+                                        ProgressBadge={ProgressBadge}
+                                        showActions={showActions}
+                                        onView={onView}
+                                        onUpdate={onUpdate}
+                                        selectable={selectable}
+                                        selected={selected}
+                                        onSelect={onSelect}
+                                        theme={theme}
+                                    />
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div className="md:hidden space-y-3">
                     {students.map((student, index) => {
                         const key = student.id || student._id || student.name;
                         const selected = activeSelectedIds.includes(student.id || student._id);
+                        const theme = ROW_THEMES[index % ROW_THEMES.length];
                         return (
-                            <DesktopRow
+                            <MobileCard
                                 key={key}
                                 index={index}
                                 student={student}
@@ -48,45 +87,29 @@ const StudentsTable = memo(
                                 selectable={selectable}
                                 selected={selected}
                                 onSelect={onSelect}
+                                theme={theme}
                             />
                         );
                     })}
-                </tbody>
-            </table>
-        </div>
+                </div>
+            </div>
+        );
+    },
+);
 
-        <div className="md:hidden space-y-3">
-            {students.map((student, index) => {
-                const key = student.id || student._id || student.name;
-                const selected = activeSelectedIds.includes(student.id || student._id);
-                return (
-                    <MobileCard
-                        key={key}
-                        index={index}
-                        student={student}
-                        TierPill={TierPill}
-                        ProgressBadge={ProgressBadge}
-                        showActions={showActions}
-                        onView={onView}
-                        onUpdate={onUpdate}
-                        selectable={selectable}
-                        selected={selected}
-                        onSelect={onSelect}
-                    />
-                );
-            })}
-        </div>
-        </div>
-    );
-});
-
-const DesktopRow = memo(({ student, TierPill, ProgressBadge, showActions, onView, onUpdate, index, selectable, selected, onSelect }) => (
+const DesktopRow = memo(({ student, TierPill, ProgressBadge, showActions, onView, onUpdate, index, selectable, selected, onSelect, theme }) => (
     <motion.tr
-        className="mtss-table-row border-b border-border/40 last:border-none"
+        className={`mtss-table-row border-b border-transparent last:border-none bg-gradient-to-r ${theme?.bg} relative`}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.04 }}
+        data-aos={theme?.aos || "fade-up"}
+        data-aos-delay={180 + index * 25}
+        data-aos-duration={650 + (index % 3) * 120}
     >
+        <td className="w-1">
+            <span className={`block w-1 h-full ${theme?.accent || "bg-primary/40"} rounded-full`} />
+        </td>
         {selectable && (
             <td className="py-4">
                 <input
@@ -130,12 +153,14 @@ const DesktopRow = memo(({ student, TierPill, ProgressBadge, showActions, onView
 
 DesktopRow.displayName = "StudentsTableDesktopRow";
 
-const MobileCard = memo(({ student, TierPill, ProgressBadge, showActions, onView, onUpdate, index, selectable, selected, onSelect }) => (
+const MobileCard = memo(({ student, TierPill, ProgressBadge, showActions, onView, onUpdate, index, selectable, selected, onSelect, theme }) => (
     <motion.div
-        className="glass glass-card mtss-rainbow-shell rounded-2xl p-4 flex flex-col gap-3 shadow-[0_12px_35px_rgba(15,23,42,0.12)]"
+        className={`glass glass-card rounded-2xl p-4 flex flex-col gap-3 shadow-[0_12px_35px_rgba(15,23,42,0.12)] bg-gradient-to-br ${theme?.bg}`}
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.05 }}
+        data-aos={theme?.aos || "fade-up"}
+        data-aos-delay={120 + index * 30}
     >
         <div className="flex items-start justify-between gap-3">
             <div>
