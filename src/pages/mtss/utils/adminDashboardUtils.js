@@ -191,9 +191,13 @@ export const buildMentorSpotlights = (assignments = []) => {
 export const buildMentorRoster = (assignments = []) => {
     const map = new Map();
     assignments.forEach((assignment) => {
-        const mentorKey = assignment.mentorId?._id || assignment.mentorId?.name || "unassigned";
+        const mentorId = assignment.mentorId?._id?.toString?.() || null;
+        const mentorEmail = assignment.mentorId?.email || null;
+        const mentorKey = mentorId || mentorEmail || assignment.mentorId?.name || "unassigned";
         if (!map.has(mentorKey)) {
             map.set(mentorKey, {
+                id: mentorId,
+                email: mentorEmail,
                 name: assignment.mentorId?.name || "Unassigned",
                 role: assignment.mentorId?.jobPosition || assignment.mentorId?.role || "Mentor",
                 students: 0,
@@ -211,6 +215,8 @@ export const buildMentorRoster = (assignments = []) => {
 
     return Array.from(map.values())
         .map((entry) => ({
+            _id: entry.id,
+            email: entry.email,
             name: entry.name,
             role: entry.role,
             activeStudents: entry.students,

@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { useToast } from "@/components/ui/use-toast";
 import { createMentorAssignment } from "@/services/mtssService";
 
+const KEYWORDS = ["teacher", "homeroom", "subject", "special"];
 const tierOptions = [
     { label: "Tier 2 - Targeted", value: "tier2" },
     { label: "Tier 3 - Intensive", value: "tier3" },
@@ -10,8 +11,23 @@ const tierOptions = [
 
 const AdminAssignmentModal = ({ open, onClose, students = [], mentors = [], onAssigned }) => {
     const { toast } = useToast();
+
+    const teacherMentors = useMemo(() => {
+        const isTeacherProfile = (mentor) => {
+            const jobPosition = (mentor?.jobPosition || "").toLowerCase();
+            const role = (mentor?.role || "").toLowerCase();
+            const classRole = Array.isArray(mentor?.classes)
+                ? mentor.classes.some((cls) => (cls.role || "").toLowerCase().includes("teacher"))
+                : false;
+            return KEYWORDS.some((keyword) => jobPosition.includes(keyword)) || classRole || role.includes("teacher");
+        };
+        return mentors.filter(isTeacherProfile);
+    }, [mentors]);
+
+    const availableMentors = teacherMentors.length > 0 ? teacherMentors : mentors;
+
     const [tier, setTier] = useState("tier2");
-    const [mentorId, setMentorId] = useState(() => mentors?.[0]?._id || "");
+    const [mentorId, setMentorId] = useState(() => availableMentors?.[0]?._id || "");
     const [focusInput, setFocusInput] = useState("");
     const [notes, setNotes] = useState("");
     const [submitting, setSubmitting] = useState(false);
@@ -20,10 +36,15 @@ const AdminAssignmentModal = ({ open, onClose, students = [], mentors = [], onAs
     const disableSubmit = studentIds.length < 2 || !mentorId || submitting;
 
     useEffect(() => {
-        if (!mentorId && mentors?.length) {
-            setMentorId(mentors[0]._id);
+        if (!availableMentors?.length) {
+            setMentorId("");
+            return;
         }
-    }, [mentors, mentorId]);
+        const exists = availableMentors.some((mentor) => mentor._id === mentorId);
+        if (!exists) {
+            setMentorId(availableMentors[0]._id);
+        }
+    }, [availableMentors, mentorId]);
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -99,12 +120,17 @@ const AdminAssignmentModal = ({ open, onClose, students = [], mentors = [], onAs
                                 value={mentorId}
                                 onChange={(event) => setMentorId(event.target.value)}
                                 className="w-full rounded-2xl border border-border/60 bg-white/80 dark:bg-white/10 px-4 py-3"
+                                disabled={!availableMentors.length}
                             >
-                                {mentors.map((mentor) => (
-                                    <option key={mentor._id} value={mentor._id}>
-                                        {mentor.name} · {mentor.jobPosition || mentor.role}
-                                    </option>
-                                ))}
+                                {availableMentors.length === 0 ? (
+                                    <option value="">No teaching mentors available</option>
+                                ) : (
+                                    availableMentors.map((mentor) => (
+                                        <option key={mentor._id} value={mentor._id}>
+                                            {mentor.name} · {mentor.jobPosition || mentor.role || "Teacher"}
+                                        </option>
+                                    ))
+                                )}
                             </select>
                         </label>
                     </div>
