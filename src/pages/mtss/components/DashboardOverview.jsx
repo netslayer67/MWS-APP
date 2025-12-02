@@ -1,6 +1,6 @@
-import React, { memo, useMemo, useState, useEffect } from "react";
+import React, { memo, useMemo, useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Activity, Clock8 } from "lucide-react";
+import { Activity, Clock8, ChevronLeft, ChevronRight, Sparkles, Clock4 } from "lucide-react";
 import { ResponsiveContainer, LineChart, Line, XAxis, Tooltip, CartesianGrid } from "recharts";
 import StudentsTable from "./StudentsTable";
 import TeacherStatCards from "../teacher/TeacherStatCards";
@@ -8,18 +8,36 @@ import TeacherStatCards from "../teacher/TeacherStatCards";
 const BATCH = 10;
 
 const DashboardOverview = memo(({ statCards, students, progressData, TierPill, ProgressBadge }) => {
-    const { spotlightStudent, spotlightProfile, progressUnit, spotlightStatus, weekLabel, chartSeries } = useMemo(() => {
-        const student = students?.[0] ?? null;
+    const [spotlightIndex, setSpotlightIndex] = useState(0);
+
+    useEffect(() => {
+        setSpotlightIndex(0);
+    }, [students.length]);
+
+    const setNext = useCallback(() => {
+        setSpotlightIndex((prev) => (students.length ? (prev + 1) % students.length : 0));
+    }, [students.length]);
+
+    const setPrev = useCallback(() => {
+        setSpotlightIndex((prev) => {
+            if (!students.length) return 0;
+            return (prev - 1 + students.length) % students.length;
+        });
+    }, [students.length]);
+
+    const { spotlightStudent, spotlightProfile, progressUnit, spotlightStatus, weekLabel, chartSeries, history } = useMemo(() => {
+        const student = students?.[spotlightIndex] ?? students?.[0] ?? null;
         const profile = student?.profile || {};
         const unit = profile.progressUnit || (student?.type === "Behavior" ? "pts" : student?.type === "Attendance" ? "%" : "wpm");
         const status = profile.target ? Math.round((profile.current / profile.target) * 100) : 0;
         const totalWeeks = parseInt(profile.duration, 10);
-        const series = progressData?.length ? progressData : [{ label: "Start", date: "Start", reading: 0, goal: 100 }];
+        const series = profile.chart?.length ? profile.chart : progressData?.length ? progressData : [{ label: "Start", date: "Start", reading: 0, goal: 100 }];
         const currentWeek = series.length;
         const label =
             totalWeeks && currentWeek
                 ? `Week ${Math.min(currentWeek, totalWeeks)} of ${totalWeeks}`
-                : profile.duration;
+                : profile.duration || "Weekly check-in";
+        const historyList = profile.history || [];
         return {
             spotlightStudent: student,
             spotlightProfile: profile,
@@ -27,8 +45,9 @@ const DashboardOverview = memo(({ statCards, students, progressData, TierPill, P
             spotlightStatus: status,
             weekLabel: label,
             chartSeries: series,
+            history: historyList,
         };
-    }, [students, progressData]);
+    }, [students, progressData, spotlightIndex]);
 
     const [visibleCount, setVisibleCount] = useState(BATCH);
 
@@ -86,11 +105,44 @@ const DashboardOverview = memo(({ statCards, students, progressData, TierPill, P
                         <h2 className="text-2xl font-bold text-foreground dark:text-white">
                             {spotlightStudent?.name || "Featured Student"}
                         </h2>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            Quickly scan assignment context, trends, and recent notes for this student.
+                        </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
-                        <div className="mtss-rainbow-chip mtss-rainbow-chip--soft text-xs font-semibold uppercase tracking-[0.3em]">
-                            <Clock8 className="w-4 h-4" />
-                            {weekLabel || "Weekly check-in"}
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/75 dark:bg-white/10 border border-white/50 text-xs font-semibold text-foreground dark:text-white shadow-sm">
+                            <Sparkles className="w-4 h-4 text-primary" />
+                            {students.length} in roster
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/80 dark:bg-white/10 border border-white/60 dark:border-white/20 shadow-sm hover:-translate-y-0.5 transition"
+                                onClick={setPrev}
+                                aria-label="Previous student"
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                            </button>
+                            <select
+                                className="px-4 py-2 rounded-full bg-white/80 dark:bg-white/10 border border-white/60 dark:border-white/20 text-sm font-semibold text-foreground dark:text-white shadow-sm"
+                                value={spotlightStudent?.id || ""}
+                                onChange={(e) => {
+                                    const idx = students.findIndex((s) => (s.id || s._id) === e.target.value);
+                                    setSpotlightIndex(idx >= 0 ? idx : 0);
+                                }}
+                            >
+                                {students.map((student) => (
+                                    <option key={student.id || student._id} value={student.id || student._id}>
+                                        {student.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <button
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/80 dark:bg-white/10 border border-white/60 dark:border-white/20 shadow-sm hover:-translate-y-0.5 transition"
+                                onClick={setNext}
+                                aria-label="Next student"
+                            >
+                                <ChevronRight className="w-4 h-4" />
+                            </button>
                         </div>
                         <div className="mtss-rainbow-chip mtss-rainbow-chip--emerald text-xs font-semibold uppercase tracking-[0.3em]">
                             <Activity className="w-4 h-4" />
@@ -99,36 +151,75 @@ const DashboardOverview = memo(({ statCards, students, progressData, TierPill, P
                     </div>
                 </header>
 
-                <div className="grid md:grid-cols-3 gap-4">
-                    <div className="mtss-rainbow-shell rounded-2xl border border-white/40 dark:border-white/10 p-4">
-                        <p className="text-xs text-muted-foreground uppercase tracking-[0.4em]">Student Info</p>
-                        <ul className="mt-3 space-y-2 text-sm text-foreground dark:text-white">
-                            <li><strong>Grade:</strong> {spotlightStudent?.grade ?? "-"}</li>
-                            <li><strong>Teacher:</strong> {spotlightProfile.teacher ?? "-"}</li>
-                            <li><strong>Mentor:</strong> {spotlightProfile.mentor ?? "-"}</li>
-                            <li className="flex items-center gap-2">
-                                <strong>Current Tier:</strong>
-                                {spotlightStudent?.tier ? <TierPill tier={spotlightStudent.tier} /> : "-"}
-                            </li>
-                        </ul>
+                <div className="grid md:grid-cols-4 gap-4" data-aos="fade-up" data-aos-delay="80">
+                    <div className="rounded-2xl border border-white/35 dark:border-white/10 bg-white/10 dark:bg-white/5 backdrop-blur p-4 space-y-3 shadow-inner">
+                        <div className="flex items-center justify-between">
+                            <div className="text-[11px] uppercase tracking-[0.35em] text-muted-foreground">Student</div>
+                            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/70 dark:bg-white/10 border border-white/30 text-[11px] font-semibold text-foreground dark:text-white">
+                                <Clock8 className="w-3.5 h-3.5" />
+                                {weekLabel}
+                            </span>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                            <div className="flex items-center justify-between text-muted-foreground">
+                                <span>Grade</span>
+                                <span className="font-semibold text-foreground dark:text-white">{spotlightStudent?.grade ?? "-"}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-muted-foreground">
+                                <span>Teacher</span>
+                                <span className="font-semibold text-foreground dark:text-white">{spotlightProfile.teacher ?? "-"}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-muted-foreground">
+                                <span>Mentor</span>
+                                <span className="font-semibold text-foreground dark:text-white">{spotlightProfile.mentor ?? "-"}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-muted-foreground">
+                                <span>Tier</span>
+                                {spotlightStudent?.tier ? <TierPill tier={spotlightStudent.tier} /> : <span className="font-semibold text-foreground dark:text-white">-</span>}
+                            </div>
+                        </div>
                     </div>
-                    <div className="mtss-rainbow-shell rounded-2xl border border-white/40 dark:border-white/10 p-4">
+
+                    <div className="mtss-rainbow-shell rounded-2xl border border-white/40 dark:border-white/10 p-4 space-y-3">
                         <p className="text-xs text-muted-foreground uppercase tracking-[0.4em]">Intervention</p>
-                        <ul className="mt-3 space-y-2 text-sm text-foreground dark:text-white">
+                        <ul className="space-y-2 text-sm text-foreground dark:text-white">
                             <li><strong>Type:</strong> {spotlightProfile.type ?? "-"}</li>
                             <li><strong>Strategy:</strong> {spotlightProfile.strategy ?? "-"}</li>
                             <li><strong>Started:</strong> {spotlightProfile.started ?? "-"}</li>
                             <li><strong>Duration:</strong> {spotlightProfile.duration ?? "-"}</li>
                         </ul>
                     </div>
-                    <div className="mtss-rainbow-shell rounded-2xl border border-white/40 dark:border-white/10 p-4">
+
+                    <div className="mtss-rainbow-shell rounded-2xl border border-white/40 dark:border-white/10 p-4 space-y-3">
                         <p className="text-xs text-muted-foreground uppercase tracking-[0.4em]">Progress</p>
-                        <ul className="mt-3 space-y-2 text-sm text-foreground dark:text-white">
-                            <li><strong>Baseline:</strong> {spotlightProfile.baseline ?? "-"} {progressUnit}</li>
-                            <li><strong>Current:</strong> {spotlightProfile.current ?? "-"} {progressUnit}</li>
-                            <li><strong>Target:</strong> {spotlightProfile.target ?? "-"} {progressUnit}</li>
-                            <li><strong>Status:</strong> {spotlightStatus}% to target</li>
-                        </ul>
+                        <div className="grid grid-cols-2 gap-2 text-sm text-foreground dark:text-white">
+                            <div><strong>Baseline:</strong> {spotlightProfile.baseline ?? "-"} {progressUnit}</div>
+                            <div><strong>Current:</strong> {spotlightProfile.current ?? "-"} {progressUnit}</div>
+                            <div><strong>Target:</strong> {spotlightProfile.target ?? "-"} {progressUnit}</div>
+                            <div className="col-span-2"><strong>Status:</strong> {spotlightStatus}% to target</div>
+                        </div>
+                    </div>
+
+                    <div className="mtss-rainbow-shell rounded-2xl border border-white/40 dark:border-white/10 p-4 space-y-3">
+                        <p className="text-xs text-muted-foreground uppercase tracking-[0.4em]">Recent Notes</p>
+                        <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
+                            {history?.length ? (
+                                history.map((entry, idx) => (
+                                    <div key={`${entry.date || idx}-${idx}`} className="rounded-xl bg-white/70 dark:bg-white/5 border border-white/20 px-3 py-2 text-xs text-foreground dark:text-white">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span className="font-semibold">{entry.date || "Recent"}</span>
+                                            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                                                <Clock4 className="w-3 h-3" />
+                                                {entry.score || entry.value || ""}
+                                            </span>
+                                        </div>
+                                        <p className="mt-1 text-[12px] text-muted-foreground">{entry.notes || entry.summary || entry.description || "Check-in recorded"}</p>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-xs text-muted-foreground">No recent notes.</p>
+                            )}
+                        </div>
                     </div>
                 </div>
 

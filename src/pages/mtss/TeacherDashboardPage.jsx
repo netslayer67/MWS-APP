@@ -1,5 +1,4 @@
 import React, { memo, Suspense, lazy, useCallback, useMemo } from "react";
-import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { TierPill, ProgressBadge } from "./components/StatusPills";
 import { fieldClasses, tabs } from "./data/teacherDashboardContent";
@@ -182,19 +181,19 @@ const TeacherDashboardPage = memo(() => {
             </div>
 
             <div className="relative z-20 container-tight px-4 sm:px-6 py-8 lg:py-14 space-y-8 lg:space-y-10">
-                <motion.section
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
+                <section
                     className="mtss-gradient-border overflow-hidden rounded-3xl border border-white/40 dark:border-white/10 shadow-[0_25px_60px_rgba(148,163,184,0.25)]"
                     data-aos="fade-up"
                     data-aos-duration="700"
                 >
                     <TeacherHeroSection heroBadge={heroBadge} tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
-                </motion.section>
+                </section>
 
                 {(dataLoading || dataError) && (
-                    <div className="rounded-2xl border border-border/50 bg-white/60 dark:bg-white/5 px-4 py-3 flex items-center justify-between gap-4 text-sm text-muted-foreground">
+                    <div
+                        className="rounded-2xl border border-border/50 bg-white/60 dark:bg-white/5 px-4 py-3 flex items-center justify-between gap-4 text-sm text-muted-foreground"
+                        data-aos="fade-up"
+                    >
                         <div className="flex items-center gap-2">
                             {dataLoading && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
                             <span>{dataError ? dataError : "Syncing live MTSS data..."}</span>

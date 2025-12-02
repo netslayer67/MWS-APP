@@ -69,11 +69,20 @@ const StudentProfilePage = memo(() => {
     const history = profile?.history || [];
     const measurementUnit = profile?.progressUnit || (student.type === "Behavior" ? "pts" : student.type === "Attendance" ? "%" : "wpm");
     const statusPercent = profile?.target ? Math.round((profile.current / profile.target) * 100) : 0;
+    const teacherRoster =
+        Array.isArray(student.teachers) && student.teachers.length
+            ? student.teachers
+            : Array.isArray(profile?.teacherRoster) && profile.teacherRoster.length
+                ? profile.teacherRoster
+                : [];
+    const mentorDisplay = teacherRoster.length
+        ? teacherRoster.join(", ")
+        : profile?.mentor || student.profile?.teacher || "TBD";
     const quickFacts = [
         { label: "Focus", value: profile?.type || "-", icon: Target, accent: "text-primary" },
         { label: "Started", value: profile?.started || "-", icon: CalendarDays, accent: "text-rose-500 dark:text-rose-300" },
         { label: "Duration", value: profile?.duration || "-", icon: Timer, accent: "text-emerald-500" },
-        { label: "Mentor", value: profile?.mentor || student.profile?.teacher || "TBD", icon: BookOpen, accent: "text-sky-500" },
+        { label: "Mentor", value: mentorDisplay, icon: BookOpen, accent: "text-sky-500" },
     ];
     const focusChips = [
         { label: "Tier", value: student.tier || "Tier 2", gradient: "from-[#14b8a6] via-[#3b82f6] to-[#a855f7]" },
@@ -176,7 +185,7 @@ const StudentProfilePage = memo(() => {
                                     </div>
                                     <div className="min-w-[140px]">
                                         <p className="text-[11px] uppercase tracking-[0.4em] text-muted-foreground">Mentor</p>
-                                        <p className="font-semibold text-foreground dark:text-white">{profile?.mentor || student.profile?.teacher || "Unassigned"}</p>
+                                        <p className="font-semibold text-foreground dark:text-white">{mentorDisplay || "Unassigned"}</p>
                                     </div>
                                 </div>
                             </div>

@@ -1,8 +1,9 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Shield, Users, GraduationCap, Building2, Handshake, Sparkles } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useSelector } from "react-redux";
 
 const roles = [
     {
@@ -96,6 +97,16 @@ RoleCard.displayName = "RoleCard";
 const MTSSRoleSelectionPage = memo(() => {
     const navigate = useNavigate();
     const { toast } = useToast();
+    const { user: currentUser } = useSelector((state) => state.auth);
+    const isAdminPrincipal = useMemo(
+        () => ["admin", "superadmin", "head_unit", "directorate"].includes(currentUser?.role),
+        [currentUser?.role],
+    );
+
+    const visibleRoles = useMemo(() => {
+        if (!isAdminPrincipal) return roles;
+        return roles.filter((role) => role.key !== "family");
+    }, [isAdminPrincipal]);
 
     const handleSelect = (key) => {
         if (key === "teacher") {
@@ -125,14 +136,14 @@ const MTSSRoleSelectionPage = memo(() => {
                 <div className="absolute bottom-[-20%] left-1/3 w-[50vmin] h-[50vmin] bg-emerald/20 blur-[200px]" />
             </div>
 
-            <div className="relative z-20 container-tight py-12 md:py-16">
-                <div className="text-center max-w-3xl mx-auto mb-12 space-y-4" data-aos="fade-down">
-                    <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full shadow-lg" style={{ background: "var(--mtss-chip-gradient)" }}>
+            <div className="relative z-20 container-tight py-10 md:py-14">
+                <div className="text-center max-w-5xl mx-auto mb-10 md:mb-12 space-y-4 px-4" data-aos="fade-down">
+                    <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full shadow-lg mx-auto" style={{ background: "var(--mtss-chip-gradient)" }}>
                         <Shield className="w-4 h-4 text-white drop-shadow" />
                         <span className="text-xs font-black tracking-[0.5em] text-white uppercase">Roles Playground</span>
                     </div>
                     <div className="space-y-2">
-                        <h1 className="text-4xl md:text-5xl font-black mb-2 drop-shadow-lg tracking-tight">
+                        <h1 className="text-3xl md:text-5xl font-black mb-1 drop-shadow-lg tracking-tight leading-tight">
                             <span className="mtss-gradient-text" style={{ backgroundImage: "var(--mtss-heading-gradient-primary)" }}>
                                 Multi-Tiered System
                             </span>{" "}
@@ -140,24 +151,37 @@ const MTSSRoleSelectionPage = memo(() => {
                                 of Support
                             </span>
                         </h1>
-                        <p className="text-base md:text-lg leading-relaxed">
+                        <p className="text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
                             <span className="mtss-gradient-text" style={{ backgroundImage: "var(--mtss-heading-gradient-secondary)" }}>
                                 Pick your lane
                             </span>{" "}
                             <span className="mtss-ink-soft">and jump right into bright dashboards built for joyful interventions.</span>
                         </p>
                     </div>
+                    {isAdminPrincipal && (
+                        <div className="flex justify-center pt-2">
+                            <button
+                                onClick={() => navigate("/profile")}
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/85 dark:bg-white/10 border border-white/60 dark:border-white/20 shadow-md text-sm font-semibold text-slate-700 dark:text-white hover:-translate-y-0.5 transition"
+                                data-aos="zoom-in"
+                                data-aos-delay="80"
+                            >
+                                Go to Profile
+                                <Sparkles className="w-4 h-4 text-primary" />
+                            </button>
+                        </div>
+                    )}
                 </div>
 
-                <div className="grid gap-6 md:gap-8 md:grid-cols-3 max-w-6xl mx-auto">
-                    {roles.map((role, index) => (
+                <div className="grid gap-5 sm:gap-6 md:gap-7 grid-cols-1 md:grid-cols-2 max-w-5xl mx-auto px-4">
+                    {visibleRoles.map((role, index) => (
                         <RoleCard key={role.key} role={role} onClick={handleSelect} delay={index * 120} />
                     ))}
                 </div>
 
-                <div className="mt-12 flex flex-col md:flex-row items-center justify-between gap-4 glass glass-card mtss-card-surface p-6 text-foreground dark:text-white/90" data-aos="fade-up">
-                    <div className="flex items-center gap-3">
-                        <Users className="w-6 h-6 text-gold animate-pulse drop-shadow" />
+                <div className="mt-10 md:mt-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 glass glass-card mtss-card-surface p-6 text-foreground dark:text-white/90 mx-4" data-aos="fade-up">
+                    <div className="flex items-start gap-3">
+                        <Users className="w-6 h-6 text-gold animate-pulse drop-shadow mt-0.5" />
                         <div>
                             <p className="text-sm uppercase tracking-[0.4em] mtss-gradient-text" style={{ backgroundImage: "var(--mtss-team-spark-gradient)" }}>
                                 Team Spark
@@ -167,8 +191,8 @@ const MTSSRoleSelectionPage = memo(() => {
                             </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <Sparkles className="w-6 h-6 text-emerald animate-bounce drop-shadow" />
+                    <div className="flex items-start gap-3">
+                        <Sparkles className="w-6 h-6 text-emerald animate-bounce drop-shadow mt-0.5" />
                         <div>
                             <p className="text-sm uppercase tracking-[0.4em] mtss-gradient-text" style={{ backgroundImage: "var(--mtss-team-clarity-gradient)" }}>
                                 Clarity

@@ -13,8 +13,12 @@ const AdminHeroSection = ({ heroCard, tabs, activeTab, onTabChange }) => {
                 </div>
             </div>
             <div data-aos="fade-up" data-aos-delay="100">
-                <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white">{heroCard.heading}</h1>
-                <p className="text-base md:text-lg text-slate-600 dark:text-white/80 mt-2">{heroCard.subheading}</p>
+                <h1
+                    className="text-4xl md:text-5xl font-black tracking-tight bg-gradient-to-r from-[#ef4444] via-[#f472b6] to-[#2563eb] dark:from-[#fbbf24] dark:via-[#22d3ee] dark:to-[#a78bfa] bg-clip-text text-transparent drop-shadow-[0_8px_20px_rgba(15,23,42,0.35)]"
+                    style={{ WebkitTextStroke: "0.6px rgba(15,23,42,0.35)" }}
+                >
+                    {heroCard.heading}
+                </h1>
             </div>
             <div className="flex flex-wrap gap-3 pt-2" data-aos="zoom-in" data-aos-delay="150">
                 {tabs.map((tab) => {

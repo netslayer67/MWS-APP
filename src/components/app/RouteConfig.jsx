@@ -17,6 +17,7 @@ const RatingPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/Rating
 const EmotionalCheckinPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/EmotionalCheckinPage'));
 const EmotionalCheckinStaffPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/EmotionalCheckinStaffPage'));
 const EmotionalCheckinDashboard = lazy(() => import(/* webpackPrefetch: true */ '@/pages/EmotionalCheckinDashboard'));
+const NotSubmittedUsersPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/dashboard/NotSubmittedUsersPage'));
 const EmotionalWellnessPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/dashboard/IndividualDashboard'));
 const PersonalStatsPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/PersonalStatsPage'));
 const EmotionalHistoryPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/EmotionalHistoryPage'));
@@ -113,6 +114,7 @@ const publicRoutes = [
     <Route key="rate" path="/emotional-checkin/rate" element={<ProtectedRoute><MemoizedPageTransition><RatingPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="rate-with-id" path="/emotional-checkin/rate/:checkinId" element={<ProtectedRoute><MemoizedPageTransition><RatingPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="emotional-checkin-dashboard" path="/emotional-checkin/dashboard" element={<ProtectedRoute requireDirectorateAcademic={true}><MemoizedPageTransition><EmotionalCheckinDashboard /></MemoizedPageTransition></ProtectedRoute>} />,
+    <Route key="emotional-checkin-not-submitted" path="/emotional-checkin/not-submitted" element={<ProtectedRoute requireDirectorateAcademic={true}><MemoizedPageTransition><NotSubmittedUsersPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="emotional-wellness" path="/emotional-wellness" element={<ProtectedRoute><MemoizedPageTransition><EmotionalWellnessPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="emotional-wellness-user" path="/emotional-wellness/:userId" element={<ProtectedRoute><MemoizedPageTransition><EmotionalWellnessPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="personal-stats" path="/profile/personal-stats" element={<ProtectedRoute><MemoizedPageTransition><PersonalStatsPage /></MemoizedPageTransition></ProtectedRoute>} />,
