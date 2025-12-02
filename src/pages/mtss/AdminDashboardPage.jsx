@@ -87,8 +87,6 @@ const AdminDashboardPage = memo(() => {
                     <AdminMentorsPanel
                         mentorRoster={mentorRoster}
                         mentorDirectory={mentors}
-                        students={students}
-                        onRefresh={refresh}
                     />
                 );
             case "analytics":

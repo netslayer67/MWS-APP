@@ -1,16 +1,14 @@
 import React, { memo } from "react";
-import { motion } from "framer-motion";
 
 const TeacherStatCards = ({ statCards }) => (
     <section className="grid md:grid-cols-3 gap-6">
         {statCards.map((card, index) => (
-            <motion.div
+            <div
                 key={card.label}
-                className="mtss-glass-stat"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                whileHover={{ y: -6, scale: 1.01 }}
-                transition={{ delay: index * 0.05 }}
+                className="mtss-glass-stat transition transform hover:-translate-y-1 hover:scale-[1.01]"
+                data-aos="fade-up"
+                data-aos-delay={50 + index * 40}
+                data-aos-duration="500"
             >
                 <div className="mtss-glass-stat__layer mtss-glass-stat__layer--blur" />
                 <div className="mtss-glass-stat__layer mtss-glass-stat__layer--glow" />
@@ -26,7 +24,7 @@ const TeacherStatCards = ({ statCards }) => (
                         <card.icon className="w-5 h-5" />
                     </span>
                 </div>
-            </motion.div>
+            </div>
         ))}
     </section>
 );

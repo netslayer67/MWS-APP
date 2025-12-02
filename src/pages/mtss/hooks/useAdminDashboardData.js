@@ -6,6 +6,7 @@ import {
     fetchMtssStudents,
     fetchMtssMentors,
 } from "@/services/mtssService";
+import { deriveTeacherSegments, normalizeGradeLabel } from "../utils/teacherDashboardUtils";
 import {
     buildAdminStatCards,
     buildSystemSnapshot,
@@ -30,19 +31,50 @@ const useAdminDashboardData = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const mergeStudents = useCallback((incoming = []) => {
-        if (!incoming.length) return;
-        setStudents((prev) => {
-            const map = new Map(prev.map((student) => [student.id || student._id, student]));
-            incoming.forEach((student) => {
-                const key = student.id || student._id;
-                if (!key) return;
-                const existing = map.get(key) || {};
-                map.set(key, { ...existing, ...student });
+    const segments = useMemo(() => deriveTeacherSegments(user), [user]);
+
+    const withinSegments = useCallback(
+        (student = {}) => {
+            if (!segments.allowedGrades.length) return true;
+            const gradeLabel = normalizeGradeLabel(
+                student.grade || student.currentGrade || student.className || student.unit || student.classes?.[0]?.grade,
+            );
+            return segments.allowedGrades.includes(gradeLabel);
+        },
+        [segments],
+    );
+
+    const transformStudent = useCallback(
+        (student = {}) => {
+            const gradeLabel = normalizeGradeLabel(
+                student.grade || student.currentGrade || student.className || student.unit || student.classes?.[0]?.grade,
+            );
+            return {
+                ...student,
+                grade: gradeLabel || student.grade,
+                className: student.className || student.currentGrade || student.unit || student.classes?.[0]?.grade,
+            };
+        },
+        [],
+    );
+
+    const mergeStudents = useCallback(
+        (incoming = []) => {
+            if (!incoming.length) return;
+            setStudents((prev) => {
+                const map = new Map(prev.map((student) => [student.id || student._id, student]));
+                incoming.forEach((student) => {
+                    if (!withinSegments(student)) return;
+                    const key = student.id || student._id;
+                    if (!key) return;
+                    const existing = map.get(key) || {};
+                    map.set(key, { ...existing, ...transformStudent(student) });
+                });
+                return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
             });
-            return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-        });
-    }, []);
+        },
+        [transformStudent, withinSegments],
+    );
 
     const mergeAssignment = useCallback((action, assignment) => {
         if (!assignment?._id) return;
@@ -73,7 +105,9 @@ const useAdminDashboardData = () => {
                 fetchMtssMentors(),
             ]);
 
-            setStudents(studentResponse.students || []);
+            const roster = studentResponse.students || [];
+            const scopedRoster = segments.allowedGrades.length ? roster.filter(withinSegments) : roster;
+            setStudents(scopedRoster.map(transformStudent));
             setSummary(studentResponse.summary || null);
             setAssignments(assignmentResponse.assignments || []);
             setMentors(mentorResponse.mentors || []);
@@ -82,7 +116,7 @@ const useAdminDashboardData = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [segments.allowedGrades.length, transformStudent, withinSegments]);
 
     useEffect(() => {
         loadDashboard();

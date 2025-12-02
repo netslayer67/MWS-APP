@@ -12,7 +12,7 @@ export const heroCard = {
     badgeLabel: "Admin / Principal",
     badgeCaption: "Oversee joyful MTSS momentum",
     heading: "Multi-Tiered System Dashboard",
-    subheading: "Assign mentors, scan analytics, and celebrate every intervention glow in one playful glass workspace.",
+    subheading: "",
 };
 
 export const overviewIcons = {

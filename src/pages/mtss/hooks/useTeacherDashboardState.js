@@ -9,6 +9,8 @@ export const useTeacherDashboardState = (tabs) => {
     const [activeTab, setActiveTab] = useState("dashboard");
     const [interventionForm, setInterventionForm] = useState(() => createDefaultInterventionForm());
     const [progressForm, setProgressForm] = useState(() => createDefaultProgressForm());
+    const [submittingPlan, setSubmittingPlan] = useState(false);
+    const [submittingProgress, setSubmittingProgress] = useState(false);
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -27,14 +29,33 @@ export const useTeacherDashboardState = (tabs) => {
     }, []);
 
     const handleSavePlan = useCallback(
-        (event) => {
+        async (event, form) => {
             event.preventDefault();
-            toast({
-                title: "Intervention saved",
-                description: "Student plan locked in-keep tracking their joyful progress.",
-            });
+            if (submittingPlan) return;
+
+            const requiredKeys = ["studentId", "type", "tier", "startDate", "monitorFrequency", "monitorMethod"];
+            const missing = requiredKeys.filter((key) => !(form?.[key] || interventionForm[key]));
+            if (missing.length) {
+                toast({
+                    title: "Complete the required fields",
+                    description: "Student, type, tier, start date, frequency, and method are required.",
+                    variant: "destructive",
+                });
+                return;
+            }
+
+            try {
+                setSubmittingPlan(true);
+                await new Promise((resolve) => setTimeout(resolve, 600));
+                toast({
+                    title: "Intervention saved",
+                    description: "Student plan locked in—keep tracking their joyful progress.",
+                });
+            } finally {
+                setSubmittingPlan(false);
+            }
         },
-        [toast],
+        [interventionForm, submittingPlan, toast],
     );
 
     const handleSubmitProgress = useCallback(
@@ -48,6 +69,14 @@ export const useTeacherDashboardState = (tabs) => {
         [toast],
     );
 
+    const resetInterventionForm = useCallback(() => {
+        setInterventionForm(createDefaultInterventionForm());
+    }, []);
+
+    const resetProgressForm = useCallback(() => {
+        setProgressForm(createDefaultProgressForm());
+    }, []);
+
     return {
         activeTab,
         setActiveTab,
@@ -57,5 +86,11 @@ export const useTeacherDashboardState = (tabs) => {
         handleProgressChange,
         handleSavePlan,
         handleSubmitProgress,
+        resetInterventionForm,
+        resetProgressForm,
+        submittingPlan,
+        setSubmittingPlan,
+        submittingProgress,
+        setSubmittingProgress,
     };
 };

@@ -1,9 +1,11 @@
-import React, { memo, useMemo } from "react";
+import React, { memo, useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Activity, Clock8 } from "lucide-react";
 import { ResponsiveContainer, LineChart, Line, XAxis, Tooltip, CartesianGrid } from "recharts";
 import StudentsTable from "./StudentsTable";
 import TeacherStatCards from "../teacher/TeacherStatCards";
+
+const BATCH = 10;
 
 const DashboardOverview = memo(({ statCards, students, progressData, TierPill, ProgressBadge }) => {
     const { spotlightStudent, spotlightProfile, progressUnit, spotlightStatus, weekLabel, chartSeries } = useMemo(() => {
@@ -28,6 +30,17 @@ const DashboardOverview = memo(({ statCards, students, progressData, TierPill, P
         };
     }, [students, progressData]);
 
+    const [visibleCount, setVisibleCount] = useState(BATCH);
+
+    useEffect(() => {
+        setVisibleCount(BATCH);
+    }, [students.length]);
+
+    const visibleStudents = useMemo(
+        () => (students || []).slice(0, Math.min(visibleCount, students.length)),
+        [students, visibleCount],
+    );
+
     return (
         <div className="space-y-8 mtss-theme">
             <TeacherStatCards statCards={statCards} />
@@ -46,7 +59,24 @@ const DashboardOverview = memo(({ statCards, students, progressData, TierPill, P
                         Quick Add
                     </motion.button>
                 </header>
-                <StudentsTable students={students} TierPill={TierPill} ProgressBadge={ProgressBadge} dense />
+                <div data-aos="fade-up" data-aos-delay="120">
+                    <StudentsTable students={visibleStudents} TierPill={TierPill} ProgressBadge={ProgressBadge} dense />
+                </div>
+                <div className="flex flex-col items-center gap-2 text-xs text-muted-foreground" data-aos="fade-up" data-aos-delay="180">
+                    {visibleStudents.length < students.length ? (
+                        <button
+                            type="button"
+                            onClick={() => setVisibleCount((prev) => Math.min(students.length, prev + BATCH))}
+                            className="px-4 py-2 rounded-full bg-white/80 dark:bg-white/10 border border-primary/30 text-sm font-semibold text-primary shadow-sm hover:-translate-y-0.5 transition"
+                        >
+                            Load 10 more kids ({visibleStudents.length}/{students.length})
+                        </button>
+                    ) : (
+                        <span className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-200 border border-emerald-200/70 dark:border-emerald-500/30">
+                            All kids loaded
+                        </span>
+                    )}
+                </div>
             </section>
 
             <section className="mtss-liquid mtss-card-surface mtss-rainbow-shell p-6 space-y-6 border border-primary/10">
@@ -102,7 +132,7 @@ const DashboardOverview = memo(({ statCards, students, progressData, TierPill, P
                     </div>
                 </div>
 
-                <div className="mtss-rainbow-shell rounded-3xl p-4 border border-white/40 dark:border-white/10">
+                <div className="mtss-rainbow-shell rounded-3xl p-4 border border-white/40 dark:border-white/10" data-aos="fade-up" data-aos-delay="140">
                     <ResponsiveContainer width="100%" height={260}>
                         <LineChart data={chartSeries}>
                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.3)" />
@@ -116,8 +146,8 @@ const DashboardOverview = memo(({ statCards, students, progressData, TierPill, P
                                     color: "#f8fafc",
                                 }}
                             />
-                            <Line type="monotone" dataKey="reading" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ r: 5 }} />
-                            <Line type="monotone" dataKey="goal" stroke="hsl(var(--gold))" strokeDasharray="4 4" strokeWidth={2} />
+                            <Line type="monotone" dataKey="reading" stroke="hsl(var(--primary))" strokeWidth={2.4} dot={false} />
+                            <Line type="monotone" dataKey="goal" stroke="hsl(var(--gold))" strokeDasharray="4 4" strokeWidth={1.8} dot={false} />
                         </LineChart>
                     </ResponsiveContainer>
                 </div>

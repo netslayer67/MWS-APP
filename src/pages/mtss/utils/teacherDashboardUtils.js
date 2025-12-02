@@ -15,6 +15,30 @@ export const STATUS_LABELS = {
 
 export const STATUS_PRIORITY = { active: 4, paused: 3, completed: 2, closed: 1 };
 
+const UNIT_GRADE_MAP = {
+    "Junior High": ["Grade 7", "Grade 8", "Grade 9"],
+    "Elementary": ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6"],
+    "Kindergarten": ["Kindergarten Pre-K", "Kindergarten K1", "Kindergarten K2"],
+    Pelangi: ["Kindergarten Pre-K", "Kindergarten K1", "Kindergarten K2"],
+};
+
+export const normalizeGradeLabel = (value) => {
+    if (!value) return "";
+    return value.toString().split("-")[0].trim();
+};
+
+export const deriveTeacherSegments = (user = {}) => {
+    const classGrades = Array.isArray(user?.classes) ? user.classes : [];
+    const fromClasses = classGrades.map((cls) => normalizeGradeLabel(cls.grade)).filter(Boolean);
+    const unitGrades = UNIT_GRADE_MAP[user?.unit] || [];
+    const candidates = fromClasses.length ? fromClasses : unitGrades;
+    const allowedGrades = Array.from(new Set(candidates.map(normalizeGradeLabel).filter(Boolean)));
+    return {
+        allowedGrades,
+        label: allowedGrades.length ? allowedGrades.join(", ") : user?.unit || "All Grades",
+    };
+};
+
 export const formatDate = (value, options = { month: "short", day: "numeric" }) => {
     if (!value) return "—";
     try {
@@ -155,10 +179,13 @@ export const mapAssignmentsToStudents = (assignments = [], teacherName = "MTSS M
         (assignment.studentIds || []).forEach((student) => {
             const id = student?._id?.toString?.() || student?.id || student;
             if (!id) return;
-            const grade = student?.classes?.[0]?.grade || student?.unit || student?.class || "-";
+            const grade = normalizeGradeLabel(
+                student?.currentGrade || student?.classes?.[0]?.grade || student?.unit || student?.class || "-",
+            );
             const progressUnit = inferProgressUnit(assignment, student);
             const record = {
                 id,
+                assignmentId: assignment._id?.toString?.() || null,
                 slug: student?.slug || slugify(student?.name),
                 name: student?.name || "Student",
                 grade,
@@ -200,6 +227,47 @@ export const mapAssignmentsToStudents = (assignments = [], teacherName = "MTSS M
         spotlightChart,
         focusLabel,
     };
+};
+
+export const mergeRosterWithAssignments = (
+    rosterStudents = [],
+    assignmentStudents = [],
+    segments = { allowedGrades: [] },
+) => {
+    const assignmentMap = new Map(
+        assignmentStudents.map((student) => [student.id?.toString?.() || student.slug || student.name, student]),
+    );
+    const allowedGrades = segments.allowedGrades || [];
+    const matchesGrade = (grade) => !allowedGrades.length || allowedGrades.includes(normalizeGradeLabel(grade));
+
+    const merged = rosterStudents
+        .map((student) => {
+            const id = student.id?.toString?.() || student._id?.toString?.() || student.slug || student.name;
+            const gradeLabel = normalizeGradeLabel(student.grade || student.currentGrade || student.className || "-");
+            if (!matchesGrade(gradeLabel)) {
+                return null;
+            }
+            const assignment = assignmentMap.get(id);
+            return {
+                id,
+                slug: student.slug || slugify(student.name),
+                name: student.name,
+                grade: gradeLabel,
+                className: student.className,
+                type: assignment?.type || student.type || "Universal Supports",
+                tier: assignment?.tier || student.tier || "Tier 1",
+                progress: assignment?.progress || student.progress || "Not Assigned",
+                nextUpdate: assignment?.nextUpdate || student.nextUpdate || "Not scheduled",
+                assignmentId: assignment?.assignmentId || null,
+                profile: assignment?.profile || student.profile,
+            };
+        })
+        .filter(Boolean);
+
+    if (!merged.length && assignmentStudents.length) {
+        return assignmentStudents;
+    }
+    return merged;
 };
 
 export const getStoredUser = () => {

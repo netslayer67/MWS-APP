@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
-import AdminMentorAssignModal from "./AdminMentorAssignModal";
+import { useNavigate } from "react-router-dom";
 
 const KEYWORDS = ["teacher", "homeroom", "subject", "special"];
 const CARD_THEMES = [
@@ -33,10 +33,11 @@ const CARD_THEMES = [
 const AOS_VARIANTS = ["fade-up", "zoom-in", "flip-left", "fade-up-right", "zoom-out-up", "fade-up-left"];
 
 const CARD_BATCH_SIZE = 9;
+const makeMentorKey = (mentor = {}) =>
+    (mentor._id || mentor.id || mentor.email || mentor.name || "").toString().toLowerCase();
 
-const AdminMentorsPanel = ({ mentorRoster = [], mentorDirectory = [], students = [], onRefresh }) => {
-    const makeKey = (mentor) => (mentor?._id || mentor?.id || mentor?.email || mentor?.name || "").toString().toLowerCase();
-
+const AdminMentorsPanel = ({ mentorRoster = [], mentorDirectory = [] }) => {
+    const navigate = useNavigate();
     const isTeacherProfile = (mentor) => {
         const jobPosition = (mentor.jobPosition || "").toLowerCase();
         const role = (mentor.role || "").toLowerCase();
@@ -50,7 +51,7 @@ const AdminMentorsPanel = ({ mentorRoster = [], mentorDirectory = [], students =
 
     const statsMap = new Map(
         mentorRoster.map((mentor) => [
-            makeKey(mentor),
+            makeMentorKey(mentor),
             {
                 activeStudents: mentor.activeStudents || mentor.students || 0,
                 successRate: mentor.successRate || "0%",
@@ -61,7 +62,7 @@ const AdminMentorsPanel = ({ mentorRoster = [], mentorDirectory = [], students =
     const rosterMap = new Map();
 
     teacherMentors.forEach((mentor) => {
-        const key = makeKey(mentor);
+        const key = makeMentorKey(mentor);
         const stats = statsMap.get(key) || { activeStudents: 0, successRate: "0%" };
         rosterMap.set(key, {
             _id: mentor._id || mentor.id || null,
@@ -72,7 +73,7 @@ const AdminMentorsPanel = ({ mentorRoster = [], mentorDirectory = [], students =
         });
     });
     mentorRoster.forEach((mentor) => {
-        const key = makeKey(mentor);
+        const key = makeMentorKey(mentor);
         const existing = rosterMap.get(key);
         rosterMap.set(key, {
             _id: mentor._id || mentor.id || rosterMap.get(key)?._id || null,
@@ -111,24 +112,32 @@ const AdminMentorsPanel = ({ mentorRoster = [], mentorDirectory = [], students =
 
     const visibleMentors = useMemo(() => roster.slice(0, Math.min(visibleCount, roster.length)), [roster, visibleCount]);
 
-    const [activeMentorId, setActiveMentorId] = useState(null);
-    const activeMentor = useMemo(
-        () => mentorDirectory.find((mentor) => mentor._id === activeMentorId),
-        [mentorDirectory, activeMentorId],
+    const deriveMentorProfile = useCallback(
+        (mentorItem) => {
+            const rosterKey = makeMentorKey(mentorItem);
+            const directoryMatch = mentorDirectory.find((mentor) => makeMentorKey(mentor) === rosterKey);
+            if (!directoryMatch) return mentorItem;
+            return {
+                ...mentorItem,
+                ...directoryMatch,
+                _id: directoryMatch._id || mentorItem._id || mentorItem.id || null,
+            };
+        },
+        [mentorDirectory],
     );
 
     const triggerAssign = useCallback(
         (mentorItem) => {
-            if (mentorItem._id) {
-                setActiveMentorId(mentorItem._id);
+            const mergedMentor = deriveMentorProfile(mentorItem);
+            if (!mergedMentor?._id) {
+                console.warn("Mentor missing identifier, unable to assign", mentorItem);
                 return;
             }
-            const match = mentorDirectory.find((mentor) => mentor.name === mentorItem.name);
-            if (match?._id) {
-                setActiveMentorId(match._id);
-            }
+            navigate(`/mtss/admin/assign/${mergedMentor._id}`, {
+                state: { mentor: mergedMentor },
+            });
         },
-        [mentorDirectory],
+        [deriveMentorProfile, navigate],
     );
 
     return (
@@ -144,9 +153,6 @@ const AdminMentorsPanel = ({ mentorRoster = [], mentorDirectory = [], students =
                             <h3 className="text-3xl font-black text-foreground dark:text-white bg-gradient-to-r from-[#14b8a6] via-[#3b82f6] to-[#a855f7] text-transparent bg-clip-text">
                                 Manage Mentors
                             </h3>
-                            <p className="text-sm text-slate-600 dark:text-white/70 max-w-2xl">
-                                Assign caseloads, check success rates, and celebrate wins without losing the playful flow. Liquid-glass cards keep the data airy and joyful.
-                            </p>
                             <div className="rounded-2xl bg-gradient-to-r from-[#fee2e2]/80 via-[#fef9c3]/80 to-[#cffafe]/80 dark:from-white/10 dark:via-white/5 dark:to-white/5 px-4 py-2 text-xs font-semibold text-rose-500 flex items-center gap-2 shadow-sm">
                                 <Sparkles className="w-4 h-4" />
                                 Tap “Assign students” to pair mentors with multiple kids instantly.
@@ -165,6 +171,13 @@ const AdminMentorsPanel = ({ mentorRoster = [], mentorDirectory = [], students =
                         const successValue = Number(String(mentor.successRate ?? "0").replace(/[^\d.]/g, "")) || 0;
                         const successTone =
                             successValue >= 85 ? "text-emerald-400" : successValue >= 60 ? "text-amber-400" : "text-rose-400";
+                        const classTags = Array.isArray(mentor.classes)
+                            ? mentor.classes.slice(0, 3).map((cls) => {
+                                  const grade = cls.grade || mentor.unit || "MTSS";
+                                  const focus = cls.className || cls.subject;
+                                  return focus ? `${grade} • ${focus}` : grade;
+                              })
+                            : [];
 
                         return (
                             <motion.div
@@ -181,7 +194,7 @@ const AdminMentorsPanel = ({ mentorRoster = [], mentorDirectory = [], students =
                                 <div className="absolute inset-0 pointer-events-none opacity-15 group-hover:opacity-30 transition bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.35),_transparent_60%)]" />
 
                                 <div className="relative space-y-5">
-                                    <div className="flex items-center justify-between gap-3">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
                                         <div className="flex items-center gap-3">
                                             <div className="w-11 h-11 rounded-2xl bg-white/85 text-slate-900 font-black flex items-center justify-center shadow-inner shadow-white/40">
                                                 {mentor.name
@@ -195,12 +208,26 @@ const AdminMentorsPanel = ({ mentorRoster = [], mentorDirectory = [], students =
                                                 <p className="text-xs font-medium text-slate-600 dark:text-white/70">{mentor.role}</p>
                                             </div>
                                         </div>
-                                        <div className="text-[0.6rem] font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-white/60">
-                                            <span className={`px-3 py-1 rounded-full shadow-inner shadow-white/20 bg-gradient-to-r ${theme.tag}`}>
-                                                Trusted
-                                            </span>
+                                        <div className="text-right text-[0.55rem] uppercase tracking-[0.3em] text-slate-500 dark:text-white/60">
+                                            <p>{mentor.unit || "Unit"}</p>
+                                            <p className="text-sm font-black tracking-normal text-slate-900 dark:text-white">
+                                                {mentor.role || "Teacher"}
+                                            </p>
                                         </div>
                                     </div>
+
+                                    {classTags.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5 text-[0.65rem] font-semibold text-slate-600 dark:text-white/70">
+                                            {classTags.map((tag) => (
+                                                <span
+                                                    key={`${mentor.name}-${tag}`}
+                                                    className="px-3 py-1 rounded-full border border-white/60 dark:border-white/20 bg-white/85 dark:bg-white/5"
+                                                >
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
 
                                     <div className="grid grid-cols-2 gap-3 text-xs font-semibold text-slate-600 dark:text-white/70">
                                         <div className="rounded-2xl border border-white/40 dark:border-white/10 px-3 py-3 bg-white/80 dark:bg-white/5 backdrop-blur text-center">
@@ -261,19 +288,6 @@ const AdminMentorsPanel = ({ mentorRoster = [], mentorDirectory = [], students =
                         </span>
                     )}
                 </div>
-
-                {activeMentor && (
-                    <AdminMentorAssignModal
-                        open={Boolean(activeMentor)}
-                        mentor={activeMentor}
-                        students={students}
-                        onClose={() => setActiveMentorId(null)}
-                        onAssigned={() => {
-                            setActiveMentorId(null);
-                            onRefresh?.();
-                        }}
-                    />
-                )}
             </div>
         </div>
     );

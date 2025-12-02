@@ -20,24 +20,32 @@ fieldClasses.textarea = `${fieldClasses.base} min-h-[80px]`;
 fieldClasses.notes = `${fieldClasses.base} min-h-[120px]`;
 
 export const createDefaultInterventionForm = () => ({
+    studentId: "",
     studentName: "",
     grade: "",
     type: "",
+    strategyId: "",
     tier: "Tier 2",
     goal: "",
-    strategy: "",
+    notes: "",
     startDate: "",
     duration: "",
     monitorFrequency: "",
     monitorMethod: "",
-    baseline: "",
-    target: "",
+    baselineValue: "",
+    baselineUnit: "score",
+    targetValue: "",
+    targetUnit: "score",
 });
 
 export const createDefaultProgressForm = () => ({
+    studentId: "",
+    assignmentId: "",
     studentName: "",
     date: "",
     performed: "yes",
-    score: "",
+    scoreValue: "",
+    scoreUnit: "score",
+     badge: "🎉 Progress Party",
     notes: "",
 });
