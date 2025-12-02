@@ -22,16 +22,115 @@ const UNIT_GRADE_MAP = {
     Pelangi: ["Kindergarten Pre-K", "Kindergarten K1", "Kindergarten K2"],
 };
 
+// Fallback mapping for teachers/principals whose jobPosition/classes do not list grade explicitly.
+// Keys are lowercased username or name tokens.
+const FALLBACK_GRADE_MAP = {
+    // Junior High homerooms / specialists
+    abu: ["Grade 7"],
+    yosa: ["Grade 7"],
+    nadia: ["Grade 7"],
+    novan: ["Grade 7"],
+    "rifqi": ["Grade 8"],
+    "rizki nurul hayati": ["Grade 8"],
+    anggie: ["Grade 8"],
+    dhaffa: ["Grade 9"],
+    tyas: ["Grade 9"],
+    vicki: ["Grade 9"],
+    zolla: ["Grade 9"],
+    hasan: ["Grade 7", "Grade 8", "Grade 9"],
+    hadi: ["Grade 7", "Grade 8", "Grade 9"],
+    himawan: ["Grade 7", "Grade 8", "Grade 9"],
+    "aria wisnuwardana": ["Grade 7", "Grade 8", "Grade 9"],
+
+    // Elementary homerooms & SE teachers
+    gundah: ["Grade 1"],
+    "krisalyssa esna rehulina tarigan": ["Grade 1"],
+    almia: ["Grade 1"],
+    romasta: ["Grade 1"],
+    "zavier cloudya mashareen": ["Grade 1"],
+    novia: ["Grade 1"],
+
+    alin: ["Grade 2"],
+    bela: ["Grade 2"],
+    maria: ["Grade 2"],
+    tria: ["Grade 2"],
+    laras: ["Grade 2"],
+    dini: ["Grade 2"],
+    restia: ["Grade 2"],
+    reza: ["Grade 2"],
+
+    berliana: ["Grade 3"],
+    raisa: ["Grade 3"],
+    cecil: ["Grade 3"],
+    putri: ["Grade 3"],
+    galen: ["Grade 3"],
+    salsabila: ["Grade 3"],
+    dien: ["Grade 3"],
+    ika: ["Grade 3"],
+
+    eva: ["Grade 4"],
+    nathasya: ["Grade 4"],
+    rike: ["Grade 4"],
+    prisy: ["Grade 4"],
+    risma: ["Grade 4"],
+    galuh: ["Grade 4"],
+    annisa: ["Grade 4"],
+    iis: ["Grade 4"],
+
+    tri: ["Grade 5"],
+    robby: ["Grade 5"],
+    nazmi: ["Grade 5"],
+    fadholi: ["Grade 5"],
+
+    devi: ["Grade 6"],
+    pipiet: ["Grade 6"],
+
+    // Kindergarten homerooms / SE
+    afi: ["Kindergarten Pre-K", "Kindergarten K1", "Kindergarten K2"],
+    ayunda: ["Kindergarten Pre-K", "Kindergarten K1", "Kindergarten K2"],
+    diya: ["Kindergarten Pre-K", "Kindergarten K1", "Kindergarten K2"],
+    nanda: ["Kindergarten Pre-K", "Kindergarten K1", "Kindergarten K2"],
+    widya: ["Kindergarten Pre-K", "Kindergarten K1", "Kindergarten K2"],
+    yohana: ["Kindergarten Pre-K", "Kindergarten K1", "Kindergarten K2"],
+    ferlyna: ["Kindergarten Pre-K", "Kindergarten K1", "Kindergarten K2"],
+    vinka: ["Kindergarten Pre-K", "Kindergarten K1", "Kindergarten K2"],
+
+    // Principals by unit (fallback)
+    kholi: ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6"],
+    latifah: ["Kindergarten Pre-K", "Kindergarten K1", "Kindergarten K2"],
+};
+
 export const normalizeGradeLabel = (value) => {
     if (!value) return "";
     return value.toString().split("-")[0].trim();
 };
 
+const parseJobPositionGrades = (jobPosition = "") => {
+    if (!jobPosition) return [];
+    const matches = [];
+    const gradeMatches = jobPosition.match(/grade\s*\d+/gi);
+    if (gradeMatches) {
+        gradeMatches.forEach((g) => matches.push(g.trim().replace(/\s+/g, " ").replace(/grade/i, "Grade").trim()));
+    }
+    if (/kindy|kindergarten/i.test(jobPosition)) {
+        const kindyMatch = jobPosition.match(/kindy\s*[a-z0-9'\-\s]+/i);
+        if (kindyMatch) {
+            matches.push(kindyMatch[0].trim());
+        } else {
+            matches.push("Kindergarten Pre-K", "Kindergarten K1", "Kindergarten K2");
+        }
+    }
+    return matches;
+};
+
 export const deriveTeacherSegments = (user = {}) => {
     const classGrades = Array.isArray(user?.classes) ? user.classes : [];
     const fromClasses = classGrades.map((cls) => normalizeGradeLabel(cls.grade)).filter(Boolean);
+    const fromJob = parseJobPositionGrades(user?.jobPosition).map(normalizeGradeLabel).filter(Boolean);
     const unitGrades = UNIT_GRADE_MAP[user?.unit] || [];
-    const candidates = fromClasses.length ? fromClasses : unitGrades;
+    const key = (user?.username || user?.name || "").toLowerCase();
+    const fallbackGrades = FALLBACK_GRADE_MAP[key] || [];
+    const candidates = fromClasses.length ? fromClasses : fromJob.length ? fromJob : fallbackGrades.length ? fallbackGrades : unitGrades;
     const allowedGrades = Array.from(new Set(candidates.map(normalizeGradeLabel).filter(Boolean)));
     return {
         allowedGrades,

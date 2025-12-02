@@ -24,8 +24,13 @@ const StudentSelectionView = ({ students, onSelect, onBack }) => (
             </motion.div>
 
             <div className="grid gap-6 md:grid-cols-2">
-                {students.map((student) => (
-                    <motion.button
+                {students.map((student) => {
+                    const mentorDisplay =
+                        Array.isArray(student.teachers) && student.teachers.length
+                            ? student.teachers.join(", ")
+                            : student.mentor;
+                    return (
+                        <motion.button
                         key={student.id}
                         whileHover={{ scale: 1.02, y: -6 }}
                         whileTap={{ scale: 0.98 }}
@@ -40,7 +45,7 @@ const StudentSelectionView = ({ students, onSelect, onBack }) => (
                             <p className="text-lg font-semibold">{student.grade}</p>
                             <div className="rounded-3xl bg-white/20 px-4 py-2 text-sm font-semibold">
                                 <p>Focus: {student.focus}</p>
-                                <p>Mentor: {student.mentor}</p>
+                                <p>Mentor: {mentorDisplay}</p>
                             </div>
                             <span className="inline-flex items-center gap-2 text-sm uppercase font-black tracking-[0.5em]">
                                 Enter Portal
@@ -49,8 +54,9 @@ const StudentSelectionView = ({ students, onSelect, onBack }) => (
                                 </motion.span>
                             </span>
                         </div>
-                    </motion.button>
-                ))}
+                        </motion.button>
+                    );
+                })}
             </div>
 
             <div className="flex justify-center">

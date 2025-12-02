@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { ShieldCheck } from "lucide-react";
 import { fetchDashboardStats, setSelectedPeriod, setSelectedDate, removeFlaggedUser } from "../store/slices/dashboardSlice";
 import socketService from "../services/socketService";
-import { mockData } from "./dashboard/utils";
 import AdvancedFilters from "./dashboard/components/AdvancedFilters";
 import RealTimeNotifications from "./dashboard/components/RealTimeNotifications";
 import {
@@ -22,9 +21,6 @@ const DashboardHeader = lazy(() =>
     import(/* webpackChunkName: "dashboard-header" */ "./dashboard/DashboardHeader")
 );
 // New optimized component imports
-const StatsGrid = lazy(() =>
-    import(/* webpackChunkName: "stats-grid" */ "./dashboard/components/StatsGrid")
-);
 const ContentSections = lazy(() =>
     import(/* webpackChunkName: "content-sections" */ "./dashboard/components/ContentSections")
 );
@@ -222,27 +218,21 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
 
 
 
-                {/* Optimized Stats Grid - Commented out as no longer needed
-                <Suspense fallback={<LoadingFallback />}>
-                    <StatsGrid
-                        mockData={mockData}
-                        realData={stats}
-                        loading={loading}
-                    />
-                </Suspense> */}
-
                 {/* Optimized Content Sections */}
-                <Suspense fallback={<LoadingFallback />}>
-                    <ContentSections
-                        mockData={mockData}
-                        realData={stats}
-                        loading={loading}
-                        selectedPeriod={selectedPeriod}
-                        userId={user?.id}
-                        isHeadUnit={isHeadUnit}
-                        isDirectorate={isDirectorate}
-                    />
-                </Suspense>
+                {!stats ? (
+                    <LoadingFallback />
+                ) : (
+                    <Suspense fallback={<LoadingFallback />}>
+                        <ContentSections
+                            realData={stats}
+                            loading={loading}
+                            selectedPeriod={selectedPeriod}
+                            userId={user?.id}
+                            isHeadUnit={isHeadUnit}
+                            isDirectorate={isDirectorate}
+                        />
+                    </Suspense>
+                )}
             </div>
 
             {/* Real-time Notifications */}

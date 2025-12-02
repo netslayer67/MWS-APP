@@ -1,10 +1,13 @@
 import React, { memo, useMemo, useState } from "react";
-import { TrendingUp, Users, Target, AlertCircle, Download, AlertTriangle, CheckCircle, Clock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { TrendingUp, Users, Target, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import ExportButton from "./ExportButton";
 import UserListModal from "./UserListModal";
+import { computeWorkdayCount, formatNumber } from "../utils/analyticsHelpers";
 
 const PercentageAnalytics = memo(({ data = {}, period }) => {
+    const navigate = useNavigate();
     const [modalState, setModalState] = useState({
         isOpen: false,
         title: '',
@@ -19,12 +22,38 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
         const totalUsers = data.totalUsers || 0;
         const totalCheckins = data.totalCheckins || 0;
         const submissionRate = data.submissionRate || 0;
-        const flaggedUsers = data.flaggedUsers?.length || 0;
+        const timeline = Array.isArray(data.periodTimeline) ? data.periodTimeline : [];
+        const periodLengthDays = data.periodLengthDays || timeline.length || 0;
+        const workdayCount = computeWorkdayCount(timeline, periodLengthDays, period);
+        const safeWorkdayCount = Math.max(workdayCount, 1);
+        const expectedSubmissions = totalUsers * safeWorkdayCount;
+        const participationRate = expectedSubmissions > 0
+            ? Math.min(100, Math.round((totalCheckins / expectedSubmissions) * 100))
+            : 0;
+
+        const flaggedRecords = Array.isArray(data.flaggedUsers) ? data.flaggedUsers : [];
+        const uniqueFlaggedMap = new Map();
+        flaggedRecords.forEach((record) => {
+            const candidate =
+                record?.userId?._id ||
+                record?.userId ||
+                record?.email ||
+                record?.name ||
+                record?.id ||
+                null;
+            if (!candidate) return;
+            const key = candidate.toString();
+            if (!uniqueFlaggedMap.has(key)) {
+                uniqueFlaggedMap.set(key, record);
+            }
+        });
+        const uniqueFlaggedList = uniqueFlaggedMap.size > 0 ? Array.from(uniqueFlaggedMap.values()) : flaggedRecords;
+        const flaggedUsersCount = uniqueFlaggedList.length;
 
         // Calculate percentages for different metrics
-        const flaggedPercentage = totalUsers > 0 ? Math.round((flaggedUsers / totalUsers) * 100) : 0;
-        const readinessPercentage = 100 - flaggedPercentage;
-        const participationRate = submissionRate;
+        const flaggedPercentage = totalUsers > 0 ? Math.min(100, Math.round((flaggedUsersCount / totalUsers) * 100)) : 0;
+        const readinessPercentage = Math.max(0, 100 - flaggedPercentage);
+        const readyUsersCount = Math.max(0, totalUsers - flaggedUsersCount);
 
         // Mood distribution percentages (including AI-detected moods)
         const moodDistribution = data.moodDistribution || {};
@@ -62,13 +91,13 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
         const positiveIndicators = [];
 
         // Calculate support rate for risk assessment
-        const supportRate = totalUsers > 0 ? (flaggedUsers / totalUsers) * 100 : 0;
+        const supportRate = flaggedPercentage;
 
         if (supportRate > 20) {
             riskFactors.push({
                 type: 'high',
                 title: 'High Support Need',
-                message: `${supportRate.toFixed(1)}% of users indicated they need support. Consider proactive outreach.`,
+                message: `${supportRate.toFixed(1)}% (${flaggedUsersCount} people) indicated they need support. Consider proactive outreach.`,
                 icon: AlertTriangle,
                 color: 'text-red-500'
             });
@@ -103,8 +132,12 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
             });
         }
 
+        const notSubmittedUsers = Array.isArray(data.notSubmittedUsers) ? data.notSubmittedUsers : [];
+        const estimatedNonSubmitters = notSubmittedUsers.length || Math.max(0, totalUsers - Math.round(totalCheckins / safeWorkdayCount));
+
         return {
             participationRate,
+            rawSubmissionRate: submissionRate,
             flaggedPercentage,
             readinessPercentage,
             moodPercentages,
@@ -112,15 +145,20 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
             unitPercentages,
             totalUsers,
             totalCheckins,
-            flaggedUsers,
+            flaggedUsersCount,
+            flaggedUserRecords: flaggedRecords,
             riskFactors,
             positiveIndicators,
             moodLists: data.moodLists || {},
             weatherLists: data.weatherLists || {},
             unitLists: data.unitLists || {},
-            notSubmittedUsers: data.notSubmittedUsers || []
+            notSubmittedUsers,
+            notSubmittedCount: estimatedNonSubmitters,
+            workdayCount: safeWorkdayCount,
+            expectedSubmissions,
+            readinessUserCount: readyUsersCount
         };
-    }, [data]);
+    }, [data, period]);
 
     const handleMoodClick = (moodData) => {
         setModalState({
@@ -153,14 +191,20 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
     };
 
     const handleParticipationRateClick = () => {
-        // Show users who haven't submitted yet
-        const notSubmittedUsers = analytics.totalUsers - analytics.totalCheckins;
-        setModalState({
-            isOpen: true,
-            title: `Users Who Haven't Submitted Yet (${notSubmittedUsers})`,
-            users: analytics.notSubmittedUsers || [],
-            totalUsers: analytics.totalUsers,
-            type: 'not-submitted'
+        if (!analytics) return;
+        navigate("/emotional-checkin/not-submitted", {
+            state: {
+                snapshot: {
+                    totalUsers: analytics.totalUsers,
+                    totalCheckins: analytics.totalCheckins,
+                    notSubmittedUsers: analytics.notSubmittedUsers,
+                    notSubmittedCount: analytics.notSubmittedCount,
+                    expectedSubmissions: analytics.expectedSubmissions,
+                    workdayCount: analytics.workdayCount,
+                    participationRate: analytics.participationRate,
+                    period
+                }
+            }
         });
     };
 
@@ -207,7 +251,10 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
                             />
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            {analytics.totalCheckins} of {analytics.totalUsers} users
+                            {formatNumber(analytics.totalCheckins)} submissions {" \u00B7 "} expected {formatNumber(analytics.expectedSubmissions)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            Normalized across {analytics.workdayCount === 1 ? 'today' : `${analytics.workdayCount} workdays`}
                         </p>
                         <p className="text-xs text-blue-600 mt-1 font-medium">
                             Click to view not submitted users
@@ -230,7 +277,7 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
                             />
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            {analytics.totalUsers - analytics.flaggedUsers} of {analytics.totalUsers} users ready
+                            {analytics.readinessUserCount} of {analytics.totalUsers} users ready
                         </p>
                     </div>
 

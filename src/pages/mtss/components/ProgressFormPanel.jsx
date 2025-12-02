@@ -116,17 +116,21 @@ const ProgressFormPanel = memo(
                             <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
                                 Celebration Emoji
                             </label>
-                            <select
-                                className={baseFieldClass}
-                                value={formState.badge || "?? Progress Party"}
-                                onChange={(e) => onChange("badge", e.target.value)}
-                            >
-                                <option value="?? Progress Party">?? Progress Party</option>
-                                <option value="? Stellar Boost">? Stellar Boost</option>
-                                <option value="?? Focus Mode">?? Focus Mode</option>
-                            </select>
-                        </div>
+                        <select
+                            className={baseFieldClass}
+                            value={formState.badge || "🎉 Progress Party"}
+                            onChange={(e) => onChange("badge", e.target.value)}
+                        >
+                            <option value="🎉 Progress Party">🎉 Progress Party</option>
+                            <option value="🌟 Stellar Boost">🌟 Stellar Boost</option>
+                            <option value="🎯 Focus Mode">🎯 Focus Mode</option>
+                            <option value="👏 Great Effort">👏 Great Effort</option>
+                            <option value="🏅 Milestone Hit">🏅 Milestone Hit</option>
+                            <option value="📈 Growth Spurt">📈 Growth Spurt</option>
+                            <option value="🌱 Keep Going">🌱 Keep Going</option>
+                        </select>
                     </div>
+                </div>
                     <div className="flex flex-col gap-2">
                         <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
                             Notes & Observations

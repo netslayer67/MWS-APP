@@ -1,5 +1,6 @@
 import React, { memo, Suspense, lazy, useMemo } from "react";
 import { motion } from "framer-motion";
+import { useSelector } from "react-redux";
 import { adminTabs, heroCard, overviewIcons } from "./data/adminDashboardContent";
 import useAdminDashboardData from "./hooks/useAdminDashboardData";
 import { useAdminDashboardState } from "./hooks/useAdminDashboardState";
@@ -15,6 +16,10 @@ const PanelFallback = () => (
 );
 
 const AdminDashboardPage = memo(() => {
+    const { user } = useSelector((state) => state.auth);
+    const SALUTATION_MAP = { male: "Mr.", female: "Ms." };
+    const getSalutation = (gender) => SALUTATION_MAP[gender?.toLowerCase?.()] || "";
+
     const {
         students,
         statCards,
@@ -49,6 +54,26 @@ const AdminDashboardPage = memo(() => {
         toggleSelection,
         resetSelection,
     } = useAdminDashboardState(students);
+
+    const adminHeroCard = useMemo(() => {
+        const displayName = user?.username || user?.name || "MTSS Admin";
+        const title = getSalutation(user?.gender);
+        const nameWithTitle = title ? `${title} ${displayName}` : displayName;
+        const headings = [
+            `Cheers ${nameWithTitle}, let's guide today's MTSS glow.`,
+            `${nameWithTitle}, keep the joyful momentum alive today.`,
+            `${nameWithTitle}, another day to uplift every grade.`,
+        ];
+        const today = new Date();
+        const heading = headings[(today.getDate() + today.getMonth()) % headings.length];
+        const roleLabel = user?.jobPosition || user?.unit || heroCard.badgeCaption || "Principal dashboard";
+        return {
+            ...heroCard,
+            badgeCaption: roleLabel,
+            heading,
+            subheading: "Oversee joyful MTSS momentum with live caseloads, mentors, and progress signals.",
+        };
+    }, [user]);
 
     const activePanel = useMemo(() => {
         switch (activeTab) {
@@ -140,7 +165,7 @@ const AdminDashboardPage = memo(() => {
 
             <div className="relative z-20 container-tight py-12 lg:py-16 text-foreground dark:text-white space-y-10">
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} data-aos="fade-up">
-                    <AdminHeroSection heroCard={heroCard} tabs={adminTabs} activeTab={activeTab} onTabChange={setActiveTab} />
+                    <AdminHeroSection heroCard={adminHeroCard} tabs={adminTabs} activeTab={activeTab} onTabChange={setActiveTab} />
                 </motion.div>
 
                 {(loading || error) && (

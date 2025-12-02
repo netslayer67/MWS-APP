@@ -32,12 +32,21 @@ export const useAdminDashboardState = (students = []) => {
             const matchesTier = filters.tier === "all" || student.tier === filters.tier;
             const matchesType = filters.type === "all" || student.type === filters.type;
             const mentorLabel = student.mentor || student.profile?.mentor;
-            const matchesMentor = filters.mentor === "all" || mentorLabel === filters.mentor;
+            const teacherRoster =
+                Array.isArray(student.teachers) && student.teachers.length
+                    ? student.teachers
+                    : Array.isArray(student.profile?.teacherRoster) && student.profile.teacherRoster.length
+                        ? student.profile.teacherRoster
+                        : mentorLabel
+                            ? [mentorLabel]
+                            : [];
+            const matchesMentor = filters.mentor === "all" || teacherRoster.includes(filters.mentor);
             const matchesQuery =
                 !query ||
                 student.name?.toLowerCase().includes(query) ||
                 student.type?.toLowerCase().includes(query) ||
-                mentorLabel?.toLowerCase().includes(query);
+                mentorLabel?.toLowerCase().includes(query) ||
+                teacherRoster.some((teacher) => teacher.toLowerCase().includes(query));
 
             return matchesGrade && matchesTier && matchesType && matchesMentor && matchesQuery;
         });
@@ -49,8 +58,20 @@ export const useAdminDashboardState = (students = []) => {
     const mentorOptions = useMemo(() => {
         const values = new Set();
         students.forEach((student) => {
+            const roster =
+                Array.isArray(student.teachers) && student.teachers.length
+                    ? student.teachers
+                    : Array.isArray(student.profile?.teacherRoster) && student.profile.teacherRoster.length
+                        ? student.profile.teacherRoster
+                        : [];
+            if (roster.length) {
+                roster.forEach((teacher) => values.add(teacher));
+                return;
+            }
             const mentor = student.mentor || student.profile?.mentor;
-            if (mentor) values.add(mentor);
+            if (mentor) {
+                values.add(mentor);
+            }
         });
         return ["all", ...Array.from(values)];
     }, [students]);

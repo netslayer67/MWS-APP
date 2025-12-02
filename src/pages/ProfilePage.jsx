@@ -378,9 +378,13 @@ const ProfilePage = memo(function ProfilePage() {
     const reduce = useReducedMotion();
     const dispatch = useDispatch();
     const { toast } = useToast();
+    const { user: currentUser } = useSelector((state) => state.auth);
+    const isAdminPrincipal = useMemo(
+        () => currentUser && ['admin', 'superadmin', 'head_unit', 'directorate'].includes(currentUser.role),
+        [currentUser],
+    );
 
     // Redux state
-    const { user: currentUser } = useSelector((state) => state.auth);
     const canAccessDashboard = currentUser && hasEmotionalDashboardAccess(currentUser);
     const dashboardRole = useMemo(() => getEmotionalDashboardRole(currentUser), [currentUser]);
     const delegatedDashboardAccess = hasDelegatedDashboardAccess(currentUser);
@@ -692,16 +696,25 @@ const ProfilePage = memo(function ProfilePage() {
                             <button
                                 onClick={() => navigate(-1)}
                                 aria-label="Go back"
-                                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-card/40 backdrop-blur-xl transition-all duration-300 hover:border-primary/30 hover:bg-primary/5 hover:shadow-glass-sm"
-                            >
-                                <ArrowLeft className="h-5 w-5 text-foreground/80" />
-                            </button>
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-card/40 backdrop-blur-xl transition-all duration-300 hover:border-primary/30 hover:bg-primary/5 hover:shadow-glass-sm"
+                    >
+                        <ArrowLeft className="h-5 w-5 text-foreground/80" />
+                    </button>
 
-                            <div className="flex-1 min-w-0">
-                                <h1 className="text-lg font-semibold text-foreground">{getDynamicGreeting(currentUser, user.name)}</h1>
-                                <p className="mt-0.5 text-xs text-muted-foreground">{getDynamicSubGreeting()}</p>
-                            </div>
-                        </motion.header>
+                    <div className="flex-1 min-w-0">
+                        <h1 className="text-lg font-semibold text-foreground">{getDynamicGreeting(currentUser, user.name)}</h1>
+                        <p className="mt-0.5 text-xs text-muted-foreground">{getDynamicSubGreeting()}</p>
+                    </div>
+
+                    {isAdminPrincipal && (
+                        <button
+                            onClick={() => navigate("/mtss")}
+                            className="inline-flex items-center gap-2 rounded-full border border-border/50 bg-card/60 px-4 py-2 text-xs font-semibold text-foreground hover:border-primary/40 hover:bg-primary/5 transition"
+                        >
+                            Back to MTSS
+                        </button>
+                    )}
+                </motion.header>
 
                         {/* Today's Check-in */}
                         <motion.section variants={item}>

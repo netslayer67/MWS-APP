@@ -10,8 +10,8 @@ export const adminTabs = [
 export const heroCard = {
     badgeIcon: Building2,
     badgeLabel: "Admin / Principal",
-    badgeCaption: "Oversee joyful MTSS momentum",
-    heading: "Multi-Tiered System Dashboard",
+    badgeCaption: "",
+    heading: "",
     subheading: "",
 };
 

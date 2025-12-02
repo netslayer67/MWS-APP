@@ -1,55 +1,21 @@
 import React, { memo, Suspense, lazy } from "react";
 
-// Lazy load components for better performance
-// Removed MoodBreakdown, InternalWeather, and NotSubmittedList - now accessible via Overview Analytics
-const ThoughtsSection = lazy(() =>
-    import(/* webpackChunkName: "thoughts-section" */ "../ThoughtsSection")
-);
-const FlaggedUsers = lazy(() =>
-    import(/* webpackChunkName: "flagged-users" */ "../FlaggedStudents")
-);
-const CheckInRequests = lazy(() =>
-    import(/* webpackChunkName: "check-requests" */ "../CheckInRequests")
-);
-const InsightsPanel = lazy(() =>
-    import(/* webpackChunkName: "insights-panel" */ "./InsightsPanel")
-);
-const RoleBreakdownChart = lazy(() =>
-    import(/* webpackChunkName: "role-breakdown" */ "./RoleBreakdownChart")
-);
-const ExportButton = lazy(() =>
-    import(/* webpackChunkName: "export-button" */ "./ExportButton")
-);
-const RecentActivitySection = lazy(() =>
-    import(/* webpackChunkName: "recent-activity" */ "./RecentActivitySection")
-);
-const DepartmentAnalytics = lazy(() =>
-    import(/* webpackChunkName: "department-analytics" */ "./DepartmentAnalytics")
-);
-const PercentageAnalytics = lazy(() =>
-    import(/* webpackChunkName: "percentage-analytics" */ "./PercentageAnalytics")
-);
-const UserTrendChart = lazy(() =>
-    import(/* webpackChunkName: "user-trend-chart" */ "./UserTrendChart")
-);
-const MoodTrendAnalysis = lazy(() =>
-    import(/* webpackChunkName: "mood-trend-analysis" */ "./MoodTrendAnalysis")
-);
-const WeatherPatternAnalysis = lazy(() =>
-    import(/* webpackChunkName: "weather-pattern-analysis" */ "./WeatherPatternAnalysis")
-);
-const PredictiveAnalytics = lazy(() =>
-    import(/* webpackChunkName: "predictive-analytics" */ "./PredictiveAnalytics")
-);
-const ComparativeAnalysis = lazy(() =>
-    import(/* webpackChunkName: "comparative-analysis" */ "./ComparativeAnalysis")
-);
-const UserHistorySection = lazy(() =>
-    import(/* webpackChunkName: "user-history" */ "./UserHistorySection")
-);
-const HeadUnitStaffPanel = lazy(() =>
-    import(/* webpackChunkName: "head-unit-staff" */ "./HeadUnitStaffPanel")
-);
+const ThoughtsSection = lazy(() => import("../ThoughtsSection"));
+const FlaggedUsers = lazy(() => import("../FlaggedStudents"));
+const CheckInRequests = lazy(() => import("../CheckInRequests"));
+const InsightsPanel = lazy(() => import("./InsightsPanel"));
+const RoleBreakdownChart = lazy(() => import("./RoleBreakdownChart"));
+const ExportButton = lazy(() => import("./ExportButton"));
+const RecentActivitySection = lazy(() => import("./RecentActivitySection"));
+const DepartmentAnalytics = lazy(() => import("./DepartmentAnalytics"));
+const PercentageAnalytics = lazy(() => import("./PercentageAnalytics"));
+const UserTrendChart = lazy(() => import("./UserTrendChart"));
+const MoodTrendAnalysis = lazy(() => import("./MoodTrendAnalysis"));
+const WeatherPatternAnalysis = lazy(() => import("./WeatherPatternAnalysis"));
+const PredictiveAnalytics = lazy(() => import("./PredictiveAnalytics"));
+const ComparativeAnalysis = lazy(() => import("./ComparativeAnalysis"));
+const UserHistorySection = lazy(() => import("./UserHistorySection"));
+const HeadUnitStaffPanel = lazy(() => import("./HeadUnitStaffPanel"));
 
 // Optimized loading fallback - minimal animations for performance
 const ContentFallback = memo(() => (
@@ -65,13 +31,19 @@ const ContentFallback = memo(() => (
 
 ContentFallback.displayName = 'ContentFallback';
 
-const ContentSections = memo(({ mockData, realData, loading, selectedPeriod, userId, isHeadUnit, isDirectorate }) => {
-    // Use real data if available, otherwise fall back to mock data
+const ContentSections = memo(({ realData, loading, selectedPeriod, userId, isHeadUnit, isDirectorate }) => {
     const data = realData || {};
     const canViewStaffExplorer = (isHeadUnit || isDirectorate) && Array.isArray(data?.unitStaffDetails) && data.unitStaffDetails.length > 0;
 
     return (
         <>
+            {/* Overview Analytics - Moved to top position */}
+            <Suspense fallback={<ContentFallback />}>
+                <div className="mb-4 md:mb-6">
+                    <PercentageAnalytics data={data} period={selectedPeriod} />
+                </div>
+            </Suspense>
+
             {canViewStaffExplorer && (
                 <Suspense fallback={<ContentFallback />}>
                     <div className="mb-4 md:mb-6">
@@ -83,12 +55,6 @@ const ContentSections = memo(({ mockData, realData, loading, selectedPeriod, use
                     </div>
                 </Suspense>
             )}
-            {/* Overview Analytics - Moved to top position */}
-            <Suspense fallback={<ContentFallback />}>
-                <div className="mb-4 md:mb-6">
-                    <PercentageAnalytics data={data} period={selectedPeriod} />
-                </div>
-            </Suspense>
 
             {/* Critical Information - Prioritized at top */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">

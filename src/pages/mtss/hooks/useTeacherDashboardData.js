@@ -58,28 +58,23 @@ const useTeacherDashboardData = () => {
         setError(null);
         try {
             const studentParams = segments.allowedGrades.length
-                ? { grade: segments.allowedGrades.join(","), limit: 150 }
-                : { limit: 150 };
+                ? { grade: segments.allowedGrades.join(","), limit: 100 }
+                : { limit: 100 };
 
             const [assignmentPayload, rosterPayload] = await Promise.all([
-                fetchMentorAssignments({ limit: 200 }, signal ? { signal } : {}),
+                fetchMentorAssignments({ limit: 150 }, signal ? { signal } : {}),
                 fetchMtssStudents(studentParams, signal ? { signal } : {}),
             ]);
 
             const assignments = assignmentPayload.assignments || assignmentPayload || [];
             const cards = buildStatCards(assignments);
-            const assignmentSummary = mapAssignmentsToStudents(assignments, baseHero.teacher);
+            const primaryName = storedUser?.username || storedUser?.name || baseHero.teacher;
+            const primaryGender = storedUser?.gender;
+            const assignmentSummary = mapAssignmentsToStudents(assignments, primaryName);
             const rosterStudents = rosterPayload?.students || [];
             const mergedStudents = mergeRosterWithAssignments(rosterStudents, assignmentSummary.students, segments);
-            const inferredMentor = assignments?.[0]?.mentorId || assignments?.[0];
-            const inferredName =
-                inferredMentor?.username ||
-                storedUser?.username ||
-                inferredMentor?.name ||
-                baseHero.teacher;
-            const inferredGender = storedUser?.gender || inferredMentor?.gender;
-            const salutation = getSalutation(inferredGender);
-            const teacherWithTitle = salutation ? `${salutation} ${inferredName}` : inferredName;
+            const salutation = getSalutation(primaryGender);
+            const teacherWithTitle = salutation ? `${salutation} ${primaryName}` : primaryName;
 
             setStatCards(cards);
             const finalStudents = mergedStudents.length ? mergedStudents : assignmentSummary.students;
