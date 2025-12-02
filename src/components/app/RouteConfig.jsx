@@ -26,6 +26,7 @@ const SupportModeSelectionPage = lazy(() => import(/* webpackPrefetch: true */ '
 const MTSSRoleSelectionPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/mtss/MTSSRoleSelectionPage'));
 const MTSSTeacherDashboard = lazy(() => import(/* webpackPrefetch: true */ '@/pages/mtss/TeacherDashboardPage'));
 const MTSSAdminDashboard = lazy(() => import(/* webpackPrefetch: true */ '@/pages/mtss/AdminDashboardPage'));
+const MTSSAdminAssignPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/mtss/admin/AdminMentorAssignPage'));
 const MTSSStudentPortalPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/mtss/StudentPortalPage'));
 const MTSSStudentProfilePage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/mtss/StudentProfilePage'));
 const NotFound = lazy(() => import(/* webpackPrefetch: true */ '@/pages/NotFound'));
@@ -125,6 +126,19 @@ const publicRoutes = [
     <Route key="mtss-role" path="/mtss" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSRoleSelectionPage /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
     <Route key="mtss-teacher" path="/mtss/teacher" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSTeacherDashboard /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
     <Route key="mtss-admin" path="/mtss/admin" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSAdminDashboard /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
+    <Route
+        key="mtss-admin-assign"
+        path="/mtss/admin/assign/:mentorId"
+        element={
+            <ProtectedRoute>
+                <MtssPreviewGate>
+                    <MemoizedPageTransition>
+                        <MTSSAdminAssignPage />
+                    </MemoizedPageTransition>
+                </MtssPreviewGate>
+            </ProtectedRoute>
+        }
+    />,
     <Route key="mtss-student-portal" path="/mtss/student-portal" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSStudentPortalPage /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
     <Route key="mtss-student-profile" path="/mtss/student/:slug" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSStudentProfilePage /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
 

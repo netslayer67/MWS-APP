@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { fetchMentorAssignments } from "@/services/mtssService";
-import { buildStatCards, getStoredUser, mapAssignmentsToStudents } from "../utils/teacherDashboardUtils";
+import { fetchMentorAssignments, fetchMtssStudents } from "@/services/mtssService";
+import {
+    buildStatCards,
+    deriveTeacherSegments,
+    getStoredUser,
+    mapAssignmentsToStudents,
+    mergeRosterWithAssignments,
+} from "../utils/teacherDashboardUtils";
 
 const SALUTATION_MAP = {
     male: "Mr.",
@@ -31,6 +37,7 @@ const normalizeHeroBadge = (user) => {
         school: user?.jobPosition || user?.unit || "Millennia21 Schools",
         tierFocus: "Personalized supports",
         greeting: buildGreeting(nameWithTitle),
+        gradeLabel: user?.unit || "All Grades",
     };
 };
 
@@ -38,6 +45,7 @@ const useTeacherDashboardData = () => {
     const storedUser = useMemo(() => getStoredUser(), []);
     const baseHero = useMemo(() => normalizeHeroBadge(storedUser), [storedUser]);
 
+    const segments = useMemo(() => deriveTeacherSegments(storedUser), [storedUser]);
     const [statCards, setStatCards] = useState(() => buildStatCards());
     const [students, setStudents] = useState([]);
     const [progressData, setProgressData] = useState([]);
@@ -49,20 +57,45 @@ const useTeacherDashboardData = () => {
         setLoading(true);
         setError(null);
         try {
-            const { assignments = [] } = await fetchMentorAssignments({}, signal ? { signal } : {});
+            const studentParams = segments.allowedGrades.length
+                ? { grade: segments.allowedGrades.join(","), limit: 150 }
+                : { limit: 150 };
+
+            const [assignmentPayload, rosterPayload] = await Promise.all([
+                fetchMentorAssignments({ limit: 200 }, signal ? { signal } : {}),
+                fetchMtssStudents(studentParams, signal ? { signal } : {}),
+            ]);
+
+            const assignments = assignmentPayload.assignments || assignmentPayload || [];
             const cards = buildStatCards(assignments);
-            const { students: mappedStudents, spotlightChart, focusLabel } = mapAssignmentsToStudents(
-                assignments,
-                baseHero.teacher,
-            );
+            const assignmentSummary = mapAssignmentsToStudents(assignments, baseHero.teacher);
+            const rosterStudents = rosterPayload?.students || [];
+            const mergedStudents = mergeRosterWithAssignments(rosterStudents, assignmentSummary.students, segments);
+            const inferredMentor = assignments?.[0]?.mentorId || assignments?.[0];
+            const inferredName =
+                inferredMentor?.username ||
+                storedUser?.username ||
+                inferredMentor?.name ||
+                baseHero.teacher;
+            const inferredGender = storedUser?.gender || inferredMentor?.gender;
+            const salutation = getSalutation(inferredGender);
+            const teacherWithTitle = salutation ? `${salutation} ${inferredName}` : inferredName;
 
             setStatCards(cards);
-            setStudents(mappedStudents);
-            setProgressData(spotlightChart);
+            const finalStudents = mergedStudents.length ? mergedStudents : assignmentSummary.students;
+            setStudents(finalStudents);
+            setProgressData(
+                assignmentSummary.spotlightChart.length
+                    ? assignmentSummary.spotlightChart
+                    : [{ label: "Start", date: "Start", reading: 0, goal: 100, value: 0 }],
+            );
             setHeroBadge((prev) => ({
                 ...prev,
                 ...baseHero,
-                tierFocus: focusLabel || prev.tierFocus || "Tiered Supports",
+                teacher: teacherWithTitle || baseHero.teacher,
+                greeting: buildGreeting(teacherWithTitle || baseHero.teacher),
+                tierFocus: assignmentSummary.focusLabel || prev.tierFocus || "Tiered Supports",
+                gradeLabel: segments.label,
             }));
         } catch (err) {
             if (err?.name !== "CanceledError" && err?.name !== "AbortError") {
@@ -71,7 +104,7 @@ const useTeacherDashboardData = () => {
         } finally {
             setLoading(false);
         }
-    }, [baseHero]);
+    }, [baseHero, segments]);
 
     useEffect(() => {
         const controller = new AbortController();

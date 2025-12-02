@@ -2,51 +2,64 @@ import React, { memo } from "react";
 import { ArrowRight, Sparkles } from "lucide-react";
 
 const TeacherHeroSection = ({ heroBadge, tabs, activeTab, onTabChange }) => (
-    <div className="glass glass-strong overflow-hidden mtss-liquid relative">
-        <div className="absolute inset-0 mtss-hero-gradient opacity-95 dark:opacity-80 pointer-events-none" />
-        <div className="absolute inset-0 mtss-hero-aurora pointer-events-none" />
-        <div className="absolute inset-0 mtss-hero-pulse pointer-events-none" />
-        <div className="absolute inset-0 mtss-hero-orbit pointer-events-none" />
-        <div className="absolute inset-0 mtss-hero-shine pointer-events-none" />
-        <div className="glass__noise" />
-
-        <div className="relative mtss-hero-panel p-5 sm:p-8 text-foreground dark:text-white">
-            <div className="flex flex-col gap-6">
-                <div className="space-y-3">
-                    <p className="mtss-hero-badge mb-1 flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-sky-300 drop-shadow" />
+    <div className="relative overflow-hidden rounded-[44px] border border-white/20 dark:border-white/5 bg-gradient-to-br from-[#dbeafe] via-[#fdf2f8] to-[#fef3c7] dark:from-[#111827] dark:via-[#1f2937] dark:to-[#312e81] shadow-[0_45px_120px_rgba(15,23,42,0.35)]">
+        <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute -top-10 -left-6 w-64 h-64 bg-gradient-to-br from-[#f472b6]/40 via-transparent to-transparent blur-3xl" />
+            <div className="absolute bottom-0 right-0 w-80 h-80 bg-gradient-to-br from-[#22d3ee]/30 via-transparent to-transparent blur-[120px]" />
+        </div>
+        <div className="relative px-6 py-8 sm:px-10 text-slate-900 dark:text-white">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+                <div className="space-y-4">
+                    <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.35em] text-slate-600 dark:text-slate-300">
+                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/70 dark:bg-white/10 text-rose-500">
+                            <Sparkles className="w-3.5 h-3.5" />
+                        </span>
                         MTSS Studio
                     </p>
-                    <div className="flex flex-wrap gap-2 text-[11px] font-semibold">
-                        <span className="mtss-rainbow-chip px-3 py-1 tracking-[0.35em] uppercase">{heroBadge.school}</span>
-                        <span className="mtss-rainbow-chip mtss-rainbow-chip--soft px-3 py-1">
-                            Focus: {heroBadge.tierFocus}
-                        </span>
+                    <div className="inline-flex px-3 py-1 rounded-full bg-white/80 dark:bg-white/10 border border-white/60 dark:border-white/20 tracking-[0.3em] uppercase text-[11px] font-semibold text-slate-600 dark:text-slate-200">
+                        {heroBadge.school}
                     </div>
-                    <h1 className="text-2xl sm:text-4xl font-black leading-tight">
-                        <span className="mtss-gradient-text mtss-heading-rainbow">
-                            {heroBadge.greeting || `Hey ${heroBadge.teacher}, let's light up today's boosts.`}
-                        </span>
+                    <h1 className="text-3xl sm:text-4xl font-black leading-tight bg-gradient-to-r from-[#0f172a] via-[#334155] to-[#1d4ed8] dark:from-white dark:via-[#c7d2fe] dark:to-[#f472b6] text-transparent bg-clip-text">
+                        {heroBadge.greeting || `Hey ${heroBadge.teacher}, let's light up today's boosts.`}
                     </h1>
-                    <p className="mtss-ink-soft dark:text-white/80 mt-2 leading-relaxed text-sm sm:text-base">
-                        Quick wins, bright notes, and speedy nudges- all in one playful dashboard.
-                    </p>
+                </div>
+                <div className="flex flex-wrap gap-3 px-4 py-3 rounded-3xl bg-white/70 dark:bg-white/5 border border-white/50 dark:border-white/10 shadow-inner max-w-sm">
+                    <div>
+                        <p className="text-[0.65rem] uppercase tracking-[0.3em] text-slate-500 dark:text-slate-300">Teacher</p>
+                        <p className="text-base font-semibold">{heroBadge.teacher}</p>
+                    </div>
+                    <div>
+                        <p className="text-[0.65rem] uppercase tracking-[0.3em] text-slate-500 dark:text-slate-300">Today</p>
+                        <p className="text-base font-semibold">{heroBadge.dateLabel || "Ready to roll"}</p>
+                    </div>
                 </div>
             </div>
 
-            <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 items-stretch">
+            <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {tabs.map((tab) => {
                     const Icon = tab.icon;
                     const active = activeTab === tab.key;
+                    const baseClasses =
+                        "flex items-center justify-between gap-2 rounded-3xl px-4 py-3 text-sm font-semibold transition shadow-[0_12px_35px_rgba(15,23,42,0.15)] border";
+                    const activeClasses =
+                        "bg-gradient-to-r from-[#22d3ee] via-[#3b82f6] to-[#a855f7] text-white border-transparent";
+                    const inactiveClasses =
+                        "bg-white/75 dark:bg-white/10 text-slate-600 dark:text-slate-200 border-white/70 dark:border-white/15 hover:bg-white hover:dark:bg-white/15";
                     return (
                         <button
                             key={tab.key}
                             onClick={() => onTabChange(tab.key)}
-                            className={`mtss-tab ${active ? "mtss-tab--active" : "mtss-tab--inactive"}`}
+                            className={`${baseClasses} ${active ? activeClasses : inactiveClasses}`}
                             aria-pressed={active}
                         >
                             <span className="flex items-center gap-2">
-                                <span className={`mtss-tab__icon ${active ? "mtss-tab__icon--active" : ""}`}>
+                                <span
+                                    className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${
+                                        active
+                                            ? "bg-white/30 text-white"
+                                            : "bg-white/80 dark:bg-white/10 text-slate-500 dark:text-slate-200"
+                                    }`}
+                                >
                                     <Icon className="w-4 h-4" />
                                 </span>
                                 {tab.label}

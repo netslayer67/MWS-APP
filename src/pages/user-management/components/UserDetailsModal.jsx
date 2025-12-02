@@ -279,20 +279,23 @@ const UserDetailsModal = memo(({ user, onClose }) => {
                             <div className="space-y-4">
                                 <h3 className="text-lg font-semibold">Teaching Assignments</h3>
                                 <div className="space-y-2">
-                                    {user.classes.map((classInfo, index) => (
-                                        <div key={index} className="p-3 bg-muted/30 rounded-lg">
-                                            <div className="flex justify-between items-start">
-                                                <div>
-                                                    <p className="font-medium">
-                                                        {classInfo.grade} - {classInfo.subject}
-                                                    </p>
-                                                    <p className="text-sm text-muted-foreground">
-                                                        Role: {classInfo.role}
-                                                    </p>
+                                    {user.classes.map((classInfo, index) => {
+                                        const labels = [classInfo.grade, classInfo.className || classInfo.subject]
+                                            .filter(Boolean)
+                                            .join(" • ");
+                                        return (
+                                            <div key={index} className="p-3 bg-muted/30 rounded-lg">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <p className="font-medium">{labels}</p>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            Role: {classInfo.role || "Teacher"}
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )}

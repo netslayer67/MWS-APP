@@ -1,5 +1,4 @@
 import React, { memo } from "react";
-import { motion } from "framer-motion";
 
 const ROW_THEMES = [
     { bg: "from-[#ecfeff]/90 via-[#fef3c7]/80 to-white/80 dark:from-white/5 dark:via-white/5 dark:to-white/0", accent: "bg-[#22d3ee]/70", aos: "fade-up" },
@@ -7,6 +6,7 @@ const ROW_THEMES = [
     { bg: "from-[#fff7ed]/90 via-[#fef3c7]/85 to-white/80 dark:from-white/5 dark:via-white/5 dark:to-white/0", accent: "bg-[#fb923c]/60", aos: "fade-up-left" },
     { bg: "from-[#ecfccb]/90 via-[#d9f99d]/80 to-white/80 dark:from-white/5 dark:via-white/5 dark:to-white/0", accent: "bg-[#4ade80]/70", aos: "zoom-in-up" },
 ];
+const MAX_RENDER = 50;
 
 const StudentsTable = memo(
     ({
@@ -22,6 +22,8 @@ const StudentsTable = memo(
         onSelect,
     }) => {
         const activeSelectedIds = selectedIds || [];
+        const limitedStudents = students.slice(0, Math.min(MAX_RENDER, students.length));
+
         return (
             <div className="space-y-5">
                 <div
@@ -44,7 +46,7 @@ const StudentsTable = memo(
                             </tr>
                         </thead>
                         <tbody>
-                            {students.map((student, index) => {
+                            {limitedStudents.map((student, index) => {
                                 const key = student.id || student._id || student.name;
                                 const selected = activeSelectedIds.includes(student.id || student._id);
                                 const theme = ROW_THEMES[index % ROW_THEMES.length];
@@ -70,7 +72,7 @@ const StudentsTable = memo(
                 </div>
 
                 <div className="md:hidden space-y-3">
-                    {students.map((student, index) => {
+                    {limitedStudents.map((student, index) => {
                         const key = student.id || student._id || student.name;
                         const selected = activeSelectedIds.includes(student.id || student._id);
                         const theme = ROW_THEMES[index % ROW_THEMES.length];
@@ -97,15 +99,12 @@ const StudentsTable = memo(
     },
 );
 
-const DesktopRow = memo(({ student, TierPill, ProgressBadge, showActions, onView, onUpdate, index, selectable, selected, onSelect, theme }) => (
-    <motion.tr
+const DesktopRow = memo(({ student, TierPill, ProgressBadge, showActions, onView, onUpdate, selectable, selected, onSelect, theme }) => (
+    <tr
         className={`mtss-table-row border-b border-transparent last:border-none bg-gradient-to-r ${theme?.bg} relative`}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.04 }}
         data-aos={theme?.aos || "fade-up"}
-        data-aos-delay={180 + index * 25}
-        data-aos-duration={650 + (index % 3) * 120}
+        data-aos-delay="180"
+        data-aos-duration="450"
     >
         <td className="w-1">
             <span className={`block w-1 h-full ${theme?.accent || "bg-primary/40"} rounded-full`} />
@@ -148,19 +147,17 @@ const DesktopRow = memo(({ student, TierPill, ProgressBadge, showActions, onView
                 </div>
             </td>
         )}
-    </motion.tr>
+    </tr>
 ));
 
 DesktopRow.displayName = "StudentsTableDesktopRow";
 
-const MobileCard = memo(({ student, TierPill, ProgressBadge, showActions, onView, onUpdate, index, selectable, selected, onSelect, theme }) => (
-    <motion.div
+const MobileCard = memo(({ student, TierPill, ProgressBadge, showActions, onView, onUpdate, selectable, selected, onSelect, theme }) => (
+    <div
         className={`glass glass-card rounded-2xl p-4 flex flex-col gap-3 shadow-[0_12px_35px_rgba(15,23,42,0.12)] bg-gradient-to-br ${theme?.bg}`}
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.05 }}
         data-aos={theme?.aos || "fade-up"}
-        data-aos-delay={120 + index * 30}
+        data-aos-delay="120"
+        data-aos-duration="450"
     >
         <div className="flex items-start justify-between gap-3">
             <div>
@@ -201,7 +198,7 @@ const MobileCard = memo(({ student, TierPill, ProgressBadge, showActions, onView
                 </button>
             </div>
         )}
-    </motion.div>
+    </div>
 ));
 
 MobileCard.displayName = "StudentsTableMobileCard";
