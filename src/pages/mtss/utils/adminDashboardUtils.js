@@ -1,5 +1,7 @@
 import { ArrowDownRight, ArrowUpRight, Minus, Building2, UserCheck, Star } from "lucide-react";
 
+const TIER_PRIORITY = { "Tier 1": 1, "Tier 2": 2, "Tier 3": 3 };
+
 const formatDateLabel = (value) => {
     if (!value) return "-";
     try {
@@ -54,6 +56,39 @@ export const buildSystemSnapshot = (summary, students = []) => {
         interventions: summary?.interventions?.length ? summary.interventions.slice(0, 5) : [
             { label: "Universal Supports", count: fallbackTotal },
         ],
+    };
+};
+
+export const buildSummaryFromStudents = (students = []) => {
+    const tierCounts = {};
+    const interventionCounts = {};
+
+    students.forEach((student) => {
+        const tier = student.tier || student.profile?.tier || "Tier 1";
+        tierCounts[tier] = (tierCounts[tier] || 0) + 1;
+
+        const type = student.type || student.profile?.type;
+        if (type) {
+            interventionCounts[type] = (interventionCounts[type] || 0) + 1;
+        }
+    });
+
+    const tierBreakdown = Object.entries(tierCounts)
+        .map(([label, count]) => ({
+            label,
+            count,
+            description: `${count} students`,
+        }))
+        .sort((a, b) => (TIER_PRIORITY[a.label] || 99) - (TIER_PRIORITY[b.label] || 99));
+
+    const interventions = Object.entries(interventionCounts)
+        .map(([label, count]) => ({ label, count }))
+        .sort((a, b) => b.count - a.count);
+
+    return {
+        total: students.length,
+        tierBreakdown,
+        interventions,
     };
 };
 

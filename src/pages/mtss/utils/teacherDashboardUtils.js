@@ -22,6 +22,12 @@ const UNIT_GRADE_MAP = {
     Pelangi: ["Kindergarten Pre-K", "Kindergarten K1", "Kindergarten K2"],
 };
 
+const GRADE_VARIANTS = {
+    "Grade 7": ["Grade 7", "Grade 7 - Helix"],
+    "Grade 8": ["Grade 8", "Grade 8 - Cartwheel"],
+    "Grade 9": ["Grade 9", "Grade 9 - Messier 87"],
+};
+
 // Fallback mapping for teachers/principals whose jobPosition/classes do not list grade explicitly.
 // Keys are lowercased username or name tokens.
 const FALLBACK_GRADE_MAP = {
@@ -102,7 +108,52 @@ const FALLBACK_GRADE_MAP = {
 
 export const normalizeGradeLabel = (value) => {
     if (!value) return "";
-    return value.toString().split("-")[0].trim();
+    const raw = value.toString().trim();
+    const lower = raw.toLowerCase();
+
+    const gradeMatch = raw.match(/grade\s*\d+/i);
+    if (gradeMatch) {
+        return gradeMatch[0].replace(/grade/i, "Grade").replace(/\s+/g, " ").trim();
+    }
+    if (lower.includes("kindergarten") || lower.includes("kindy")) {
+        if (/(pre[-\s]?k|prekind)/i.test(raw)) {
+            return "Kindergarten Pre-K";
+        }
+        if (/\bk\s*1\b/i.test(raw)) {
+            return "Kindergarten K1";
+        }
+        if (/\bk\s*2\b/i.test(raw)) {
+            return "Kindergarten K2";
+        }
+        return "Kindergarten";
+    }
+    return raw.split("-")[0].trim();
+};
+
+const resolveFallbackGrades = (user = {}) => {
+    const candidates = [];
+    if (user.username) {
+        candidates.push(user.username.toLowerCase());
+    }
+    if (user.name) {
+        candidates.push(user.name.toLowerCase());
+        const firstToken = user.name.split(/[\s,]+/)[0];
+        if (firstToken) {
+            candidates.push(firstToken.toLowerCase());
+        }
+    }
+    if (user.email) {
+        const localPart = user.email.split("@")[0];
+        if (localPart) {
+            candidates.push(localPart.toLowerCase());
+        }
+    }
+    for (const candidate of candidates) {
+        if (FALLBACK_GRADE_MAP[candidate]) {
+            return FALLBACK_GRADE_MAP[candidate];
+        }
+    }
+    return [];
 };
 
 const parseJobPositionGrades = (jobPosition = "") => {
@@ -129,13 +180,71 @@ export const deriveTeacherSegments = (user = {}) => {
     const fromJob = parseJobPositionGrades(user?.jobPosition).map(normalizeGradeLabel).filter(Boolean);
     const unitGrades = UNIT_GRADE_MAP[user?.unit] || [];
     const key = (user?.username || user?.name || "").toLowerCase();
-    const fallbackGrades = FALLBACK_GRADE_MAP[key] || [];
-    const candidates = fromClasses.length ? fromClasses : fromJob.length ? fromJob : fallbackGrades.length ? fallbackGrades : unitGrades;
-    const allowedGrades = Array.from(new Set(candidates.map(normalizeGradeLabel).filter(Boolean)));
+    const fallbackGradesExplicit = FALLBACK_GRADE_MAP[key] || [];
+    const fallbackGrades = fallbackGradesExplicit.length ? fallbackGradesExplicit : resolveFallbackGrades(user);
+    let source = "all";
+    let candidates = [];
+
+    if (fromClasses.length) {
+        source = "classes";
+        candidates = fromClasses;
+    } else if (fromJob.length) {
+        source = "job";
+        candidates = fromJob;
+    } else if (fallbackGrades.length) {
+        source = "fallback";
+        candidates = fallbackGrades;
+    } else if (unitGrades.length) {
+        source = "unit";
+        candidates = unitGrades;
+    } else {
+        candidates = [];
+    }
+
+    let allowedGrades = Array.from(new Set(candidates.map(normalizeGradeLabel).filter(Boolean)));
+    const hasSpecificGrade = allowedGrades.some((grade) =>
+        /^grade\s*\d+/i.test(grade) || grade.toLowerCase().startsWith("kindergarten") || grade.toLowerCase().startsWith("kindy"),
+    );
+
+    if (!hasSpecificGrade && unitGrades.length) {
+        allowedGrades = unitGrades.slice();
+    }
+
+    const lowerUnit = (user?.unit || "").toLowerCase();
+    if (
+        (lowerUnit === "kindergarten" || lowerUnit === "pelangi") &&
+        !allowedGrades.some((grade) => grade.toLowerCase() === "kindergarten")
+    ) {
+        allowedGrades.push("Kindergarten");
+    }
+
     return {
         allowedGrades,
+        source,
+        shouldFilterServer: !!allowedGrades.length && (source === "classes" || source === "job"),
+        unit: user?.unit || "",
         label: allowedGrades.length ? allowedGrades.join(", ") : user?.unit || "All Grades",
     };
+};
+
+export const buildGradeQueryValues = (segments = {}) => {
+    const values = new Set();
+    const addVariants = (grade) => {
+        if (!grade) return;
+        values.add(grade);
+        const variants = GRADE_VARIANTS[grade];
+        if (variants?.length) {
+            variants.forEach((variant) => values.add(variant));
+        }
+    };
+
+    (segments.allowedGrades || []).forEach(addVariants);
+
+    if (!values.size && segments.unit === "Junior High") {
+        ["Grade 7", "Grade 8", "Grade 9"].forEach(addVariants);
+    }
+
+    return Array.from(values);
 };
 
 export const formatDate = (value, options = { month: "short", day: "numeric" }) => {

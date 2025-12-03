@@ -8,6 +8,7 @@ import UtilityDock from '@/components/app/UtilityDock';
 import AppHelmet from '@/components/app/AppHelmet';
 import SkipLink from '@/components/app/SkipLink';
 import RouteConfig from '@/components/app/RouteConfig';
+import GlobalLoadingOverlay from '@/components/app/GlobalLoadingOverlay';
 
 
 const App = memo(() => {
@@ -42,6 +43,7 @@ const App = memo(() => {
                 </AnimatePresence>
 
                 <UtilityDock />
+                <GlobalLoadingOverlay />
             </div>
         </>
     );

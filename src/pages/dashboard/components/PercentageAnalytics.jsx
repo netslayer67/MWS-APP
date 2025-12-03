@@ -48,12 +48,14 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
             }
         });
         const uniqueFlaggedList = uniqueFlaggedMap.size > 0 ? Array.from(uniqueFlaggedMap.values()) : flaggedRecords;
-        const flaggedUsersCount = uniqueFlaggedList.length;
+        const rawFlaggedCount = uniqueFlaggedList.length;
+        const flaggedUsersCount = totalUsers > 0 ? Math.min(totalUsers, rawFlaggedCount) : rawFlaggedCount;
 
         // Calculate percentages for different metrics
-        const flaggedPercentage = totalUsers > 0 ? Math.min(100, Math.round((flaggedUsersCount / totalUsers) * 100)) : 0;
-        const readinessPercentage = Math.max(0, 100 - flaggedPercentage);
-        const readyUsersCount = Math.max(0, totalUsers - flaggedUsersCount);
+        const rawFlaggedPercentage = totalUsers > 0 ? (flaggedUsersCount / totalUsers) * 100 : 0;
+        const flaggedPercentage = Math.round(Math.min(100, Math.max(0, rawFlaggedPercentage)));
+        const readinessPercentage = Math.round(Math.max(0, 100 - flaggedPercentage));
+        const readyUsersCount = Math.max(0, Math.min(totalUsers, totalUsers - flaggedUsersCount));
 
         // Mood distribution percentages (including AI-detected moods)
         const moodDistribution = data.moodDistribution || {};
@@ -91,7 +93,7 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
         const positiveIndicators = [];
 
         // Calculate support rate for risk assessment
-        const supportRate = flaggedPercentage;
+        const supportRate = Math.min(100, Math.max(0, rawFlaggedPercentage));
 
         if (supportRate > 20) {
             riskFactors.push({
@@ -133,7 +135,8 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
         }
 
         const notSubmittedUsers = Array.isArray(data.notSubmittedUsers) ? data.notSubmittedUsers : [];
-        const estimatedNonSubmitters = notSubmittedUsers.length || Math.max(0, totalUsers - Math.round(totalCheckins / safeWorkdayCount));
+        const estimatedNonSubmittersRaw = notSubmittedUsers.length || Math.max(0, totalUsers - Math.round(totalCheckins / safeWorkdayCount));
+        const estimatedNonSubmitters = Math.min(totalUsers, Math.max(0, estimatedNonSubmittersRaw));
 
         return {
             participationRate,

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchMentorAssignments, fetchMtssStudents } from "@/services/mtssService";
 import {
     buildStatCards,
+    buildGradeQueryValues,
     deriveTeacherSegments,
     getStoredUser,
     mapAssignmentsToStudents,
@@ -57,9 +58,13 @@ const useTeacherDashboardData = () => {
         setLoading(true);
         setError(null);
         try {
-            const studentParams = segments.allowedGrades.length
-                ? { grade: segments.allowedGrades.join(","), limit: 100 }
-                : { limit: 100 };
+            const gradeQueryValues = buildGradeQueryValues(segments);
+            const shouldSendGradeParam =
+                gradeQueryValues.length && (segments.shouldFilterServer || segments.unit !== "Junior High");
+
+            const studentParams = shouldSendGradeParam
+                ? { grade: gradeQueryValues.join(","), limit: segments.unit === "Junior High" ? 500 : 200 }
+                : { limit: segments.unit === "Junior High" ? 500 : 200 };
 
             const [assignmentPayload, rosterPayload] = await Promise.all([
                 fetchMentorAssignments({ limit: 150 }, signal ? { signal } : {}),

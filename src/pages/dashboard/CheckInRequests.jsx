@@ -1,52 +1,68 @@
-import React, { memo, useState } from "react";
+import React, { memo, useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { MessageCircle, User, CheckCircle, Check, X } from "lucide-react";
+import { MessageCircle, User } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { removeFlaggedUser } from "../../store/slices/dashboardSlice";
 import { toast } from "../../components/ui/use-toast";
 
-const CheckInRequests = memo(({ requests, isHeadUnit }) => {
+const STATUS_BADGES = {
+    requested: "bg-amber-100 text-amber-900 dark:bg-amber-900/20 dark:text-amber-200 border border-amber-200/70",
+    acknowledged: "bg-sky-100 text-sky-900 dark:bg-sky-900/20 dark:text-sky-200 border border-sky-200/70",
+    handled: "bg-emerald-100 text-emerald-900 dark:bg-emerald-900/20 dark:text-emerald-200 border border-emerald-200/70",
+};
+
+const PAGE_SIZE = 10;
+
+const CheckInRequests = memo(({ requests = [], isHeadUnit }) => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const [processingRequests, setProcessingRequests] = useState(new Set());
+    const [currentPage, setCurrentPage] = useState(1);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [requests]);
+
+    const totalPages = Math.max(1, Math.ceil(requests.length / PAGE_SIZE));
+    useEffect(() => {
+        if (currentPage > totalPages) setCurrentPage(totalPages);
+    }, [currentPage, totalPages]);
+
+    const visibleRequests = useMemo(() => {
+        const start = (currentPage - 1) * PAGE_SIZE;
+        return requests.slice(start, start + PAGE_SIZE);
+    }, [requests, currentPage]);
+
+    const goToPage = useCallback((page) => {
+        setCurrentPage(Math.min(Math.max(1, page), totalPages));
+    }, [totalPages]);
+
+    const showPagination = requests.length > PAGE_SIZE;
 
     const handleConfirmAction = async (requestId, action) => {
         if (processingRequests.has(requestId)) return;
-
-        setProcessingRequests(prev => new Set(prev).add(requestId));
-
+        setProcessingRequests((prev) => new Set(prev).add(requestId));
         try {
-            // Here you would call the API to confirm the action
-            // For now, we'll simulate the action and update the UI
-            console.log(`Confirming ${action} for request ${requestId}`);
-
-            // Simulate API call delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            // Update the request status locally (in a real app, this would come from the API response)
-            // For now, we'll just show a success message
+            await new Promise((resolve) => setTimeout(resolve, 1000));
             toast({
                 title: "Action Confirmed",
-                description: `Check-in request has been ${action === 'handled' ? 'handled' : 'acknowledged'}.`,
+                description: `Check-in request has been ${action === "handled" ? "handled" : "acknowledged"}.`,
             });
-
-            // Remove from flagged users if handled
-            if (action === 'handled') {
+            if (action === "handled") {
                 dispatch(removeFlaggedUser(requestId));
             }
-
         } catch (error) {
-            console.error('Error confirming action:', error);
+            console.error("Error confirming action:", error);
             toast({
                 title: "Error",
                 description: "Failed to confirm action. Please try again.",
                 variant: "destructive",
             });
         } finally {
-            setProcessingRequests(prev => {
-                const newSet = new Set(prev);
-                newSet.delete(requestId);
-                return newSet;
+            setProcessingRequests((prev) => {
+                const next = new Set(prev);
+                next.delete(requestId);
+                return next;
             });
         }
     };
@@ -54,107 +70,146 @@ const CheckInRequests = memo(({ requests, isHeadUnit }) => {
     if (!requests || requests.length === 0) return null;
 
     return (
-        <div className="glass glass-card hover-lift transition-all duration-300">
+        <div
+            className="glass glass-card transition-colors duration-200 border border-border/60"
+            data-aos="fade-up"
+            data-aos-delay="50"
+        >
             <div className="glass__refract" />
             <div className="glass__noise" />
 
-            <div className="relative z-10 p-4 md:p-6">
-                <div className="flex items-center gap-2 mb-2">
-                    <MessageCircle className="w-4 h-4 text-primary" />
-                    <h2 className="text-base md:text-lg font-semibold text-foreground">
-                        Check-in Requests
-                    </h2>
+            <div className="relative z-10 p-4 md:p-6 space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+                            <MessageCircle className="w-4 h-4" aria-hidden="true" />
+                        </div>
+                        <div>
+                            <p className="text-[11px] uppercase tracking-[0.35em] text-muted-foreground">
+                                Check-in Requests
+                            </p>
+                            <h2 className="text-base md:text-lg font-semibold text-foreground">Mentor follow-ups</h2>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span className="px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+                            {requests.length} {requests.length === 1 ? "request" : "requests"}
+                        </span>
+                    </div>
                 </div>
-                <p className="text-xs md:text-sm text-muted-foreground mb-4">
+
+                <p className="text-xs md:text-sm text-muted-foreground">
                     {isHeadUnit
-                        ? 'Unit members who selected you as their support contact'
-                        : 'Teacher/Staff/Student (automatically created when someone requested to be checked-in with you)'
-                    }
+                        ? "Unit members who selected you as their support contact."
+                        : "Teacher/Staff/Student automatically created when someone requested to be checked-in with you."}
                 </p>
 
                 <div className="space-y-3">
-                    {requests.map((request, index) => (
-                        <div
-                            key={index}
-                            className="glass glass-card transition-all duration-300 hover:scale-[1.02] cursor-pointer"
-                        >
-                            <div className="glass__refract" />
-                            <div className="glass__noise" />
+                    {visibleRequests.map((request, index) => {
+                        const status =
+                            request.status === "handled" || request.status === "acknowledged"
+                                ? request.status
+                                : "requested";
+                        const badgeClass = STATUS_BADGES[status] || STATUS_BADGES.requested;
 
-                            <div className="relative z-10 p-3 md:p-4">
-                                <div className="flex items-start gap-3">
-                                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
-                                        <User className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                                    </div>
-
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center justify-between mb-1">
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-semibold text-foreground text-sm md:text-base">
-                                                    {request.contact}
-                                                </span>
-                                                <span className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${request.status === 'handled' || request.status === 'acknowledged'
-                                                    ? 'text-green-700 bg-green-100'
-                                                    : 'text-orange-700 bg-orange-100'
-                                                    }`}>
-                                                    {request.status === 'handled' || request.status === 'acknowledged' ? (
-                                                        <>
-                                                            <CheckCircle className="w-3 h-3" />
-                                                            completed
-                                                        </>
-                                                    ) : (
-                                                        'requested'
-                                                    )}
-                                                </span>
+                        return (
+                            <div
+                                key={index}
+                                className="rounded-2xl border border-border/70 bg-white/70 dark:bg-slate-900/40 shadow-sm text-sm transition-colors duration-200"
+                                data-aos="fade-up"
+                                data-aos-delay={90 + index * 30}
+                            >
+                                <div className="flex flex-col gap-3 p-3.5 sm:p-4">
+                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/20 flex items-center justify-center text-primary">
+                                                <User className="w-4 h-4" aria-hidden="true" />
                                             </div>
-                                            {request.status !== 'handled' && request.status !== 'acknowledged' && (
-                                                <div className="flex gap-1">
+                                            <div className="flex flex-col">
+                                                <span className="font-semibold text-foreground">{request.contact}</span>
+                                                <button
+                                                    onClick={() => navigate(`/emotional-wellness/${request.userId}`)}
+                                                    className="text-xs text-muted-foreground text-left hover:text-primary/80"
+                                                >
+                                                    by {request.requestedBy}
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 justify-start sm:justify-end">
+                                            <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${badgeClass}`}>
+                                                {status}
+                                            </span>
+                                            {request.status !== "handled" && (
+                                                <div className="flex gap-1.5">
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            handleConfirmAction(request.id, 'acknowledged');
+                                                            handleConfirmAction(request.id, "acknowledged");
                                                         }}
                                                         disabled={processingRequests.has(request.id)}
-                                                        className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                                                        className="px-2.5 py-1 text-[11px] rounded-full border border-sky-200 text-sky-700 bg-sky-50 dark:bg-sky-900/10 hover:bg-sky-100 transition disabled:opacity-50"
                                                     >
-                                                        <Check className="w-3 h-3" />
                                                         Acknowledge
                                                     </button>
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            handleConfirmAction(request.id, 'handled');
+                                                            handleConfirmAction(request.id, "handled");
                                                         }}
                                                         disabled={processingRequests.has(request.id)}
-                                                        className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                                                        className="px-2.5 py-1 text-[11px] rounded-full border border-emerald-200 text-emerald-700 bg-emerald-50 dark:bg-emerald-900/10 hover:bg-emerald-100 transition disabled:opacity-50"
                                                     >
-                                                        <CheckCircle className="w-3 h-3" />
                                                         Handled
                                                     </button>
                                                 </div>
                                             )}
                                         </div>
-                                        <button
-                                            onClick={() => navigate(`/emotional-wellness/${request.userId}`)}
-                                            className="text-sm text-muted-foreground hover:text-primary hover:underline transition-colors text-left"
-                                        >
-                                            by {request.requestedBy}
-                                        </button>
-                                        {request.weatherType && (
-                                            <p className="text-xs text-muted-foreground mt-1">
-                                                Weather: {request.weatherType} • Presence: {request.presenceLevel}/10 • Capacity: {request.capacityLevel}/10
-                                            </p>
-                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-muted-foreground">
+                                        <div className="rounded-lg bg-muted/10 px-3 py-1.5">
+                                            <span className="font-medium text-foreground">Weather:</span> {request.weatherType || "-"}
+                                        </div>
+                                        <div className="rounded-lg bg-muted/10 px-3 py-1.5">
+                                            <span className="font-medium text-foreground">Presence:</span> {request.presenceLevel}/10
+                                        </div>
+                                        <div className="rounded-lg bg-muted/10 px-3 py-1.5">
+                                            <span className="font-medium text-foreground">Capacity:</span> {request.capacityLevel}/10
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
+
+                {showPagination && (
+                    <div className="pt-1 flex items-center justify-between text-xs text-muted-foreground">
+                        <button
+                            type="button"
+                            onClick={() => goToPage(currentPage - 1)}
+                            disabled={currentPage === 1}
+                            className="px-3 py-1.5 rounded-full border border-border hover:border-primary hover:text-primary disabled:opacity-50 transition"
+                        >
+                            Previous
+                        </button>
+                        <span>
+                            Page {currentPage} of {totalPages}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => goToPage(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                            className="px-3 py-1.5 rounded-full border border-border hover:border-primary hover:text-primary disabled:opacity-50 transition"
+                        >
+                            Next
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
 });
 
-CheckInRequests.displayName = 'CheckInRequests';
+CheckInRequests.displayName = "CheckInRequests";
 export default CheckInRequests;
