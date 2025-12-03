@@ -11,6 +11,15 @@ const INTERVENTION_TYPES = [
     { label: "Universal Supports", value: "universal" },
 ];
 
+const STRATEGY_TYPE_ALIASES = {
+    english: ["english", "ela", "literacy", "reading", "ela/reading", "ela & reading", "sight words"],
+    math: ["math", "mathematics", "numeracy", "stem"],
+    behavior: ["behavior", "behaviour", "conduct", "regulation", "sel"],
+    sel: ["sel", "social emotional", "social-emotional", "behavior", "wellness"],
+    attendance: ["attendance", "present", "absent", "absences", "engagement"],
+    universal: ["universal", "schoolwide", "all", "tier 1"],
+};
+
 const TIERS = ["Tier 1", "Tier 2", "Tier 3"];
 const DURATIONS = ["4 weeks", "6 weeks", "8 weeks"];
 const FREQUENCIES = ["Daily", "Weekly", "Bi-weekly"];
@@ -51,10 +60,23 @@ const InterventionFormPanel = memo(({ formState, onChange, onSubmit, baseFieldCl
     const filteredStrategies = useMemo(() => {
         if (!formState.type) return strategies;
         const typeKey = formState.type.toLowerCase();
-        return strategies.filter((strategy) =>
-            strategy.bestFor?.some((area) => area?.toLowerCase().includes(typeKey)) ||
-            strategy.tags?.some?.((tag) => tag?.toLowerCase().includes(typeKey)),
-        );
+        const aliasList = STRATEGY_TYPE_ALIASES[typeKey] || [typeKey];
+        const aliasSet = new Set(aliasList.map((token) => token.toLowerCase()));
+        const matchesAlias = (value = "") => {
+            const normalized = value.toString().toLowerCase();
+            if (!normalized) return false;
+            return Array.from(aliasSet).some((alias) => normalized === alias || normalized.includes(alias));
+        };
+
+        return strategies.filter((strategy) => {
+            const bestForMatches = Array.isArray(strategy.bestFor)
+                ? strategy.bestFor.some((area) => matchesAlias(area))
+                : false;
+            const tagMatches = Array.isArray(strategy.tags)
+                ? strategy.tags.some((tag) => matchesAlias(tag))
+                : false;
+            return bestForMatches || tagMatches;
+        });
     }, [formState.type, strategies]);
 
     const selectedStudent = useMemo(

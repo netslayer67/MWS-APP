@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { startGlobalLoading, stopGlobalLoading } from '@/lib/loadingManager';
 
 // Default to versioned API to match backend routing
 const API_BASE_URL = import.meta.env.VITE_API_BASE || 'https://bemws-production.up.railway.app/api/v1';
@@ -14,6 +15,7 @@ const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
     (config) => {
+        startGlobalLoading();
         const token = localStorage.getItem('auth_token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
@@ -21,19 +23,22 @@ api.interceptors.request.use(
         return config;
     },
     (error) => {
+        stopGlobalLoading();
         return Promise.reject(error);
     }
 );
 
 // Response interceptor to handle token expiration
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        stopGlobalLoading();
+        return response;
+    },
     (error) => {
+        stopGlobalLoading();
         if (error.response?.status === 401) {
-            // Token expired or invalid - clear auth state
             localStorage.removeItem('auth_token');
             localStorage.removeItem('auth_user');
-            // Don't redirect immediately, let Redux handle the state update
         }
         return Promise.reject(error);
     }

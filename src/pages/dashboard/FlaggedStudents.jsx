@@ -1,6 +1,9 @@
-import React, { memo } from "react";
-import { AlertTriangle, Users, UserCheck, Brain, TrendingDown, AlertCircle } from "lucide-react";
+import React, { memo, useEffect, useMemo, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { AlertTriangle, Users, Brain } from "lucide-react";
 import MoodIcon from "./MoodIcon";
+
+const PAGE_SIZE = 10;
 
 const FlaggedUsers = memo(({
     users = [],
@@ -10,167 +13,193 @@ const FlaggedUsers = memo(({
     showMood = true,
     showMetrics = true
 }) => {
-    // Transform API flagged users to component format with enhanced AI analysis
-    const transformedUsers = users?.map(user => {
-        // Generate AI analysis reason based on user data and history
-        let aiReason = '';
-        const presence = user.presenceLevel || 0;
-        const capacity = user.capacityLevel || 0;
-        const aiAnalysis = user.aiAnalysis || {};
+    const navigate = useNavigate();
+    const [currentPage, setCurrentPage] = useState(1);
 
-        // Primary reasons for flagging
-        const reasons = [];
+    useEffect(() => setCurrentPage(1), [users]);
 
-        if (presence < 4) reasons.push('Low presence level');
-        if (capacity < 4) reasons.push('Low capacity level');
-        if (aiAnalysis.needsSupport) reasons.push('AI detected support need');
-        if (aiAnalysis.emotionalInstability) reasons.push('Emotional instability detected');
-        if (aiAnalysis.trendDecline) reasons.push('Declining emotional trend');
+    const transformedUsers = useMemo(() => {
+        return (
+            users?.map((user) => {
+                const presence = user.presenceLevel || 0;
+                const capacity = user.capacityLevel || 0;
+                const aiAnalysis = user.aiAnalysis || {};
+                const reasons = [];
+                if (presence < 4) reasons.push("Low presence level");
+                if (capacity < 4) reasons.push("Low capacity level");
+                if (aiAnalysis.needsSupport) reasons.push("AI detected support need");
+                if (aiAnalysis.emotionalInstability) reasons.push("Emotional instability detected");
+                if (aiAnalysis.trendDecline) reasons.push("Declining trend");
+                if (aiAnalysis.historicalPatterns?.consistentLowPresence) reasons.push("Consistently low presence");
+                if (aiAnalysis.historicalPatterns?.increasingSupportNeeds) reasons.push("Increasing support requests");
 
-        // Historical analysis (if available)
-        if (aiAnalysis.historicalPatterns) {
-            if (aiAnalysis.historicalPatterns.consistentLowPresence) reasons.push('Consistently low presence in recent check-ins');
-            if (aiAnalysis.historicalPatterns.increasingSupportNeeds) reasons.push('Increasing support requests over time');
-            if (aiAnalysis.historicalPatterns.moodVolatility) reasons.push('High mood volatility detected');
-        }
+                return {
+                    id: user.id || user._id,
+                    name: user.name,
+                    mood: user.mood || "neutral",
+                    grade: user.classes?.[0]?.grade || user.grade || "-",
+                    role: user.role,
+                    department: user.department,
+                    lastCheckin:
+                        user.lastCheckin ||
+                        (user.submittedAt ? new Date(user.submittedAt).toLocaleDateString() : "—"),
+                    presenceLevel: presence,
+                    capacityLevel: capacity,
+                    weatherType: user.weatherType,
+                    selectedMoods: user.selectedMoods || [],
+                    aiReason: reasons.join(", "),
+                    raw: user,
+                };
+            }) || []
+        );
+    }, [users]);
 
-        aiReason = reasons.length > 0 ? reasons.join(', ') : 'AI analysis indicates potential support need';
+    const totalPages = Math.max(1, Math.ceil(transformedUsers.length / PAGE_SIZE));
+    useEffect(() => {
+        if (currentPage > totalPages) setCurrentPage(totalPages);
+    }, [currentPage, totalPages]);
 
-        return {
-            id: user.id || user._id,
-            name: user.name,
-            mood: user.mood || 'sad', // Default mood for flagged users
-            lastCheckin: user.lastCheckin || new Date(user.submittedAt).toLocaleDateString(),
-            notes: user.notes || (showMetrics ? `Presence: ${user.presenceLevel}/10, Capacity: ${user.capacityLevel}/10` : ''),
-            role: user.role,
-            department: user.department,
-            email: user.email,
-            aiReason: aiReason,
-            aiAnalysis: aiAnalysis,
-            weatherType: user.weatherType,
-            selectedMoods: user.selectedMoods || []
-        };
-    }) || [];
+    const visibleUsers = useMemo(() => {
+        const start = (currentPage - 1) * PAGE_SIZE;
+        return transformedUsers.slice(start, start + PAGE_SIZE);
+    }, [transformedUsers, currentPage]);
 
+    const goToPage = useCallback(
+        (page) => setCurrentPage(Math.min(Math.max(1, page), totalPages)),
+        [totalPages]
+    );
+
+    const showPagination = transformedUsers.length > PAGE_SIZE;
     if (!transformedUsers.length) return null;
 
     return (
-        <div className="glass glass-card transition-all duration-300">
+        <div
+            className="glass glass-card transition-colors duration-200 border border-border/60"
+            data-aos="fade-up"
+            data-aos-delay="90"
+        >
             <div className="glass__refract" />
             <div className="glass__refract--soft" />
             <div className="glass__noise" />
 
-            <div className="relative z-10 p-4 md:p-6">
-                <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                        <Icon className="w-4 h-4 text-primary" />
-                        <h2 className="text-base md:text-lg font-semibold text-foreground">
-                            {title}
-                        </h2>
+            <div className="relative z-10 p-4 md:p-6 space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-900/30 border border-rose-200/80 text-rose-600 dark:text-rose-200 flex items-center justify-center">
+                            <Icon className="w-4 h-4" aria-hidden="true" />
+                        </div>
+                        <div>
+                            <p className="text-[11px] uppercase tracking-[0.35em] text-muted-foreground">{title}</p>
+                            <h2 className="text-base md:text-lg font-semibold text-foreground">
+                                {userType === "students" ? "Students" : "People"} needing support
+                            </h2>
+                        </div>
                     </div>
-                    <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center">
-                        <span className="text-xs md:text-sm font-bold text-primary">{transformedUsers.length}</span>
-                    </div>
+                    <span className="text-xs px-2 py-1 rounded-full bg-rose-100 dark:bg-rose-900/20 text-rose-700 dark:text-rose-200 border border-rose-200/70 w-fit">
+                        {transformedUsers.length}
+                    </span>
                 </div>
-                <p className="text-xs md:text-sm text-muted-foreground mb-4">
+
+                <p className="text-xs md:text-sm text-muted-foreground">
                     Teacher/Staff/Student that might need you to check-in with them
                 </p>
 
-                <div className="space-y-2 md:space-y-3">
-                    {transformedUsers.map((user, index) => (
+                <div className="space-y-3">
+                    {visibleUsers.map((user, index) => (
                         <div
                             key={user.id || user.name}
-                            className="p-3 md:p-4 rounded-lg bg-card/40 border border-border/40 backdrop-blur-sm transition-all duration-300 hover:border-primary/40 hover:bg-card/60 cursor-pointer"
-                            style={{ transitionDelay: `${index * 50}ms` }}
+                            className="rounded-2xl border border-border/70 bg-white/70 dark:bg-slate-900/40 shadow-sm text-sm flex flex-col gap-3 p-3.5 sm:p-4"
+                            data-aos="fade-up"
+                            data-aos-delay={110 + index * 35}
                         >
-                            <div className="flex items-start gap-3">
-                                {showMood && (
-                                    <MoodIcon mood={user.mood} size="w-4 h-4 md:w-5 md:h-5 flex-shrink-0 mt-0.5" />
-                                )}
-
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between gap-2 mb-1">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    {showMood && (
+                                        <MoodIcon
+                                            mood={user.mood}
+                                            size="w-6 h-6 flex-shrink-0"
+                                        />
+                                    )}
+                                    <div className="flex-1 min-w-0">
                                         <button
-                                            onClick={() => navigate(`/emotional-wellness/${user.userId}`)}
-                                            className="font-semibold text-foreground text-sm md:text-base truncate hover:text-primary hover:underline transition-colors text-left"
+                                            className="font-semibold text-foreground text-left truncate hover:text-primary/80"
+                                            onClick={() => navigate(`/emotional-wellness/${user.raw?.userId || user.id}`)}
                                         >
                                             {user.name}
                                         </button>
-                                        <span className="text-xs text-muted-foreground flex-shrink-0 px-2 py-1 rounded-full bg-muted/50">
-                                            {user.lastCheckin}
-                                        </span>
-                                    </div>
-                                    {user.role && (
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="text-xs text-muted-foreground capitalize">
-                                                {user.role}
-                                            </span>
-                                            {user.department && (
-                                                <>
-                                                    <span className="text-xs text-muted-foreground">•</span>
-                                                    <span className="text-xs text-muted-foreground">
-                                                        {user.department}
-                                                    </span>
-                                                </>
-                                            )}
-                                        </div>
-                                    )}
-                                    {user.notes && (
-                                        <p className="text-xs md:text-sm text-muted-foreground leading-relaxed line-clamp-2">
-                                            {user.notes}
+                                        <p className="text-xs text-muted-foreground truncate">
+                                            {user.role} • {user.department || user.grade || "—"}
                                         </p>
-                                    )}
-
-                                    {/* Compact AI Analysis and Metrics */}
-                                    <div className="mt-2 space-y-1">
-                                        {/* AI Analysis Reason */}
-                                        {user.aiReason && (
-                                            <div className="flex items-start gap-2 text-xs">
-                                                <Brain className="w-3 h-3 text-blue-600 mt-0.5 flex-shrink-0" />
-                                                <span className="text-blue-700 leading-tight">{user.aiReason}</span>
-                                            </div>
-                                        )}
-
-                                        {/* Compact metrics display */}
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                            <span>P:{user.presenceLevel}/10</span>
-                                            <span>•</span>
-                                            <span>C:{user.capacityLevel}/10</span>
-                                            {user.weatherType && (
-                                                <>
-                                                    <span>•</span>
-                                                    <span className="text-purple-600">{user.weatherType}</span>
-                                                </>
-                                            )}
-                                            {user.selectedMoods?.length > 0 && (
-                                                <>
-                                                    <span>•</span>
-                                                    <span className="text-emerald-600">{user.selectedMoods.slice(0, 2).join(', ')}{user.selectedMoods.length > 2 ? '...' : ''}</span>
-                                                </>
-                                            )}
-                                        </div>
                                     </div>
+                                </div>
+                                <span className="text-xs px-2 py-1 rounded-full bg-muted/20 text-muted-foreground">
+                                    {user.lastCheckin}
+                                </span>
+                            </div>
 
-                                    {user.supportContact && (
-                                        <div className="mt-2 p-2 bg-primary/5 border border-primary/20 rounded text-xs">
-                                            <span className="font-medium text-primary">Requested contact: </span>
-                                            <span className="text-foreground">{user.supportContact.name}</span>
-                                            <span className="text-muted-foreground"> ({user.supportContact.role})</span>
-                                        </div>
-                                    )}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-muted-foreground">
+                                <div className="rounded-lg bg-rose-50 dark:bg-rose-900/10 px-3 py-1.5">
+                                    <span className="font-medium text-foreground">Presence:</span> {user.presenceLevel}/10
+                                </div>
+                                <div className="rounded-lg bg-sky-50 dark:bg-sky-900/10 px-3 py-1.5">
+                                    <span className="font-medium text-foreground">Capacity:</span> {user.capacityLevel}/10
+                                </div>
+                                <div className="rounded-lg bg-emerald-50 dark:bg-emerald-900/10 px-3 py-1.5">
+                                    <span className="font-medium text-foreground">Weather:</span> {user.weatherType || "-"}
                                 </div>
                             </div>
+
+                            {user.aiReason && (
+                                <div className="flex items-start gap-2 text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/10 border border-blue-200/70 rounded-xl px-3 py-2">
+                                    <Brain className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                                    <span>{user.aiReason}</span>
+                                </div>
+                            )}
+
+                            {showMetrics && user.selectedMoods?.length > 0 && (
+                                <div className="flex flex-wrap gap-1 text-[11px] text-muted-foreground">
+                                    {user.selectedMoods.slice(0, 4).map((moodTag) => (
+                                        <span
+                                            key={moodTag}
+                                            className="px-2 py-0.5 rounded-full bg-muted/20 text-muted-foreground"
+                                        >
+                                            {moodTag}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>
+
+                {showPagination && (
+                    <div className="pt-1 flex items-center justify-between text-xs text-muted-foreground">
+                        <button
+                            type="button"
+                            onClick={() => goToPage(currentPage - 1)}
+                            disabled={currentPage === 1}
+                            className="px-3 py-1.5 rounded-full border border-border hover:border-primary hover:text-primary disabled:opacity-50 transition"
+                        >
+                            Previous
+                        </button>
+                        <span>Page {currentPage} of {totalPages}</span>
+                        <button
+                            type="button"
+                            onClick={() => goToPage(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                            className="px-3 py-1.5 rounded-full border border-border hover:border-primary hover:text-primary disabled:opacity-50 transition"
+                        >
+                            Next
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
 });
 
-FlaggedUsers.displayName = 'FlaggedUsers';
+FlaggedUsers.displayName = "FlaggedUsers";
 
-// Backward compatibility
 const FlaggedStudents = memo((props) => (
     <FlaggedUsers
         {...props}
@@ -179,8 +208,7 @@ const FlaggedStudents = memo((props) => (
         icon={Users}
     />
 ));
-
-FlaggedStudents.displayName = 'FlaggedStudents';
+FlaggedStudents.displayName = "FlaggedStudents";
 
 export default FlaggedUsers;
 export { FlaggedStudents };

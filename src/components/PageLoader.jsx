@@ -43,7 +43,7 @@ const PageLoader = memo(() => {
             text-foreground tracking-wide
           "
                 >
-                    Memuat...
+                    Loading...
                 </motion.p>
 
                 {/* Glowing accent ring */}

@@ -3,6 +3,13 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { TrendingUp, User } from "lucide-react";
 import UserListModal from "./UserListModal";
 
+const normalizeDateKey = (value) => {
+    if (!value) return null;
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return parsed.toISOString().split("T")[0];
+};
+
 const UserTrendChart = memo(({ userData = [], selectedUser = null, period = 'week' }) => {
     const [modalState, setModalState] = useState({
         isOpen: false,
@@ -19,20 +26,21 @@ const UserTrendChart = memo(({ userData = [], selectedUser = null, period = 'wee
         const dateGroups = {};
 
         userData.forEach(checkin => {
-            const date = new Date(checkin.date).toLocaleDateString();
-            if (!dateGroups[date]) {
-                dateGroups[date] = {
-                    date,
+            const dateKey = normalizeDateKey(checkin.date || checkin.submittedAt);
+            if (!dateKey) return;
+            if (!dateGroups[dateKey]) {
+                dateGroups[dateKey] = {
+                    date: dateKey,
                     presence: [],
                     capacity: [],
                     count: 0,
                     users: []
                 };
             }
-            dateGroups[date].presence.push(checkin.presenceLevel);
-            dateGroups[date].capacity.push(checkin.capacityLevel);
-            dateGroups[date].count++;
-            dateGroups[date].users.push(checkin);
+            dateGroups[dateKey].presence.push(checkin.presenceLevel);
+            dateGroups[dateKey].capacity.push(checkin.capacityLevel);
+            dateGroups[dateKey].count++;
+            dateGroups[dateKey].users.push(checkin);
         });
 
         return Object.values(dateGroups).map(group => ({
@@ -126,7 +134,11 @@ const UserTrendChart = memo(({ userData = [], selectedUser = null, period = 'wee
                                 dataKey="date"
                                 className="text-xs"
                                 tick={{ fill: 'currentColor' }}
-                                tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                tickFormatter={(value) => {
+                                    const parsed = new Date(value);
+                                    if (Number.isNaN(parsed.getTime())) return value;
+                                    return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                }}
                             />
                             <YAxis
                                 domain={[0, 10]}

@@ -36,9 +36,9 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { user } = useSelector((state) => state.auth);
-    const { stats, loading, error } = useSelector((state) => state.dashboard);
+    const { stats, loading, error, selectedPeriod, selectedDate } = useSelector((state) => state.dashboard);
 
-    const { selectedPeriod, selectedDate } = useSelector((state) => state.dashboard);
+    const [pendingDate, setPendingDate] = useState(selectedDate);
 
     const dashboardRole = useMemo(() => getEmotionalDashboardRole(user), [user]);
     const canViewDashboard = useMemo(() => hasEmotionalDashboardAccess(user), [user]);
@@ -58,6 +58,10 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
         return () => clearTimeout(timer);
     }, []);
 
+    useEffect(() => {
+        setPendingDate(selectedDate);
+    }, [selectedDate]);
+
     // Load dashboard data and set up real-time updates
     useEffect(() => {
         if (!user) return;
@@ -70,19 +74,19 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
             }
 
             console.log('Fetching dashboard stats for period:', selectedPeriod, 'User:', user);
-            dispatch(fetchDashboardStats({ period: selectedPeriod }));
+            dispatch(fetchDashboardStats({ period: selectedPeriod, date: selectedDate }));
 
             socketService.connect();
             socketService.joinDashboard(user.id);
 
             const handleDashboardUpdate = (data) => {
                 console.log('Real-time dashboard update:', data);
-                dispatch(fetchDashboardStats({ period: selectedPeriod }));
+                dispatch(fetchDashboardStats({ period: selectedPeriod, date: selectedDate }));
             };
 
             const handleNewCheckin = (checkinData) => {
                 console.log('New check-in received:', checkinData);
-                dispatch(fetchDashboardStats({ period: selectedPeriod, force: true }));
+                dispatch(fetchDashboardStats({ period: selectedPeriod, date: selectedDate, force: true }));
                 console.log('Dashboard updated with new check-in data');
             };
 
@@ -111,21 +115,17 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
 
         console.log('User not authorized for dashboard:', { user });
         navigate('/support-hub', { replace: true });
-    }, [canViewDashboard, dispatch, isDirectorate, navigate, selectedPeriod, user]);
+    }, [canViewDashboard, dispatch, isDirectorate, navigate, selectedPeriod, selectedDate, user]);
 
     const handlePeriodChange = useCallback((period) => {
         dispatch(setSelectedPeriod(period));
     }, [dispatch]);
 
-    const handleDateChange = useCallback((date) => {
-        dispatch(setSelectedDate(date));
-    }, [dispatch]);
-
     const handleFiltersChange = useCallback((newFilters) => {
         setFilters(newFilters);
         // Refetch data with filters
-        dispatch(fetchDashboardStats({ period: selectedPeriod, filters: newFilters }));
-    }, [dispatch, selectedPeriod]);
+        dispatch(fetchDashboardStats({ period: selectedPeriod, date: selectedDate, filters: newFilters }));
+    }, [dispatch, selectedDate, selectedPeriod]);
 
     // Debug: Log current state (remove in production)
     // console.log('Dashboard state:', { stats, loading, error, user });
@@ -163,6 +163,22 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
         return false;
     }, []);
 
+    const handleDateInputChange = useCallback((value) => {
+        setPendingDate(value);
+    }, []);
+
+    const handleApplyDate = useCallback(() => {
+        if (!pendingDate) return;
+        dispatch(setSelectedDate(pendingDate));
+        dispatch(fetchDashboardStats({ period: selectedPeriod, date: pendingDate }));
+    }, [dispatch, pendingDate, selectedPeriod]);
+
+    const isApplyDisabled = useMemo(() => {
+        if (selectedPeriod === "all") return true;
+        if (!pendingDate) return true;
+        return pendingDate === selectedDate;
+    }, [pendingDate, selectedDate, selectedPeriod]);
+
     return (
         <div className="min-h-screen text-foreground relative overflow-hidden">
             {/* Optimized Decorative Elements */}
@@ -192,8 +208,10 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
                         <DashboardHeader
                             selectedPeriod={selectedPeriod}
                             onPeriodChange={handlePeriodChange}
-                            selectedDate={selectedDate}
-                            onDateChange={handleDateChange}
+                            selectedDate={pendingDate}
+                            onDateChange={handleDateInputChange}
+                            onApplyDate={handleApplyDate}
+                            isApplyDisabled={isApplyDisabled}
                             isHeadUnit={isHeadUnit}
                             userUnit={user?.unit || user?.department}
                             isDirectorate={isDirectorate}
