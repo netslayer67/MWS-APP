@@ -28,6 +28,31 @@ const GRADE_VARIANTS = {
     "Grade 9": ["Grade 9", "Grade 9 - Messier 87"],
 };
 
+const KINDERGARTEN_GRADES = ["Kindergarten Pre-K", "Kindergarten K1", "Kindergarten K2", "Kindergarten"];
+
+const KINDERGARTEN_CLASSES = [
+    "Kindergarten - Milky Way",
+    "Kindergarten - Bear Paw",
+    "Kindergarten - Starlight",
+];
+
+export const normalizeClassLabel = (value = "") => {
+    if (!value) return "";
+    const cleaned = value.toString().replace(/\s+/g, " ").trim();
+    if (!cleaned) return "";
+    const kindergartenMatch = cleaned.match(/^kind(?:ergarten)?(?:\s*-\s*(.*))?$/i);
+    if (kindergartenMatch) {
+        const suffix = kindergartenMatch[1]?.trim();
+        if (!suffix) return "Kindergarten";
+        const formatted = suffix
+            .split(/\s+/)
+            .map((token) => token.charAt(0).toUpperCase() + token.slice(1).toLowerCase())
+            .join(" ");
+        return `Kindergarten - ${formatted}`;
+    }
+    return cleaned;
+};
+
 // Fallback mapping for teachers/principals whose jobPosition/classes do not list grade explicitly.
 // Keys are lowercased username or name tokens.
 const FALLBACK_GRADE_MAP = {
@@ -130,6 +155,33 @@ export const normalizeGradeLabel = (value) => {
     return raw.split("-")[0].trim();
 };
 
+const collectClassNames = (user = {}) => {
+    const classes = new Set();
+    (user.classes || []).forEach((cls) => {
+        if (cls?.className) {
+            const normalized = normalizeClassLabel(cls.className);
+            const lower = cls.className.toLowerCase();
+            const mentionsKindyBand = /kindy|kindergarten|pre[-\s]?k|k\s*1|k\s*2/.test(lower);
+            const isGenericKindy = normalized.toLowerCase() === "kindergarten" || !normalized.startsWith("Kindergarten -");
+            if (mentionsKindyBand && isGenericKindy) {
+                KINDERGARTEN_CLASSES.forEach((className) => classes.add(className));
+            } else if (normalized) {
+                classes.add(normalized);
+            }
+        }
+    });
+
+    const unit = (user.unit || "").toLowerCase();
+    if (!classes.size && (unit === "kindergarten" || unit === "pelangi")) {
+        KINDERGARTEN_CLASSES.forEach((className) => classes.add(className));
+    }
+
+    return Array.from(classes).filter(Boolean);
+};
+
+export const buildClassQueryValues = (segments = {}) =>
+    Array.from(new Set((segments.allowedClasses || []).map(normalizeClassLabel).filter(Boolean)));
+
 const resolveFallbackGrades = (user = {}) => {
     const candidates = [];
     if (user.username) {
@@ -210,7 +262,9 @@ export const deriveTeacherSegments = (user = {}) => {
         allowedGrades = unitGrades.slice();
     }
 
+    const classNameSet = new Set(collectClassNames(user));
     const lowerUnit = (user?.unit || "").toLowerCase();
+
     if (
         (lowerUnit === "kindergarten" || lowerUnit === "pelangi") &&
         !allowedGrades.some((grade) => grade.toLowerCase() === "kindergarten")
@@ -218,10 +272,19 @@ export const deriveTeacherSegments = (user = {}) => {
         allowedGrades.push("Kindergarten");
     }
 
+    if ((lowerUnit === "kindergarten" || lowerUnit === "pelangi") && !classNameSet.size) {
+        KINDERGARTEN_CLASSES.forEach((className) => classNameSet.add(className));
+    }
+
+    const allowedClasses = Array.from(classNameSet);
+    const shouldFilterServer =
+        Boolean(allowedClasses.length) || Boolean(allowedGrades.length && (source === "classes" || source === "job"));
+
     return {
         allowedGrades,
+        allowedClasses,
         source,
-        shouldFilterServer: !!allowedGrades.length && (source === "classes" || source === "job"),
+        shouldFilterServer,
         unit: user?.unit || "",
         label: allowedGrades.length ? allowedGrades.join(", ") : user?.unit || "All Grades",
     };
@@ -231,8 +294,14 @@ export const buildGradeQueryValues = (segments = {}) => {
     const values = new Set();
     const addVariants = (grade) => {
         if (!grade) return;
-        values.add(grade);
-        const variants = GRADE_VARIANTS[grade];
+        const normalized = normalizeGradeLabel(grade);
+        if (!normalized) return;
+        values.add(normalized);
+        if (normalized.toLowerCase() === "kindergarten") {
+            KINDERGARTEN_GRADES.forEach((entry) => values.add(entry));
+            return;
+        }
+        const variants = GRADE_VARIANTS[normalized];
         if (variants?.length) {
             variants.forEach((variant) => values.add(variant));
         }
@@ -446,13 +515,24 @@ export const mergeRosterWithAssignments = (
         assignmentStudents.map((student) => [student.id?.toString?.() || student.slug || student.name, student]),
     );
     const allowedGrades = segments.allowedGrades || [];
+    const allowedClasses = segments.allowedClasses || [];
     const matchesGrade = (grade) => !allowedGrades.length || allowedGrades.includes(normalizeGradeLabel(grade));
+    const matchesClass = (className) => {
+        if (!allowedClasses.length) return true;
+        const normalized = normalizeClassLabel(className);
+        if (!normalized) return false;
+        return allowedClasses.includes(normalized);
+    };
 
     const merged = rosterStudents
         .map((student) => {
             const id = student.id?.toString?.() || student._id?.toString?.() || student.slug || student.name;
             const gradeLabel = normalizeGradeLabel(student.grade || student.currentGrade || student.className || "-");
+            const classLabel = normalizeClassLabel(student.className || student.currentGrade || student.unit);
             if (!matchesGrade(gradeLabel)) {
+                return null;
+            }
+            if (!matchesClass(classLabel)) {
                 return null;
             }
             const assignment = assignmentMap.get(id);
@@ -461,7 +541,7 @@ export const mergeRosterWithAssignments = (
                 slug: student.slug || slugify(student.name),
                 name: student.name,
                 grade: gradeLabel,
-                className: student.className,
+                className: classLabel || student.className,
                 type: assignment?.type || student.type || "Universal Supports",
                 tier: assignment?.tier || student.tier || "Tier 1",
                 progress: assignment?.progress || student.progress || "Not Assigned",

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
+import { ensureStudentInterventions, pickPrimaryIntervention } from "../utils/interventionUtils";
 
 const buildOptions = (students = [], key) => {
     const values = new Set();
@@ -28,9 +29,14 @@ export const useAdminDashboardState = (students = []) => {
     const filteredStudents = useMemo(() => {
         const query = filters.query.trim().toLowerCase();
         return students.filter((student) => {
+            const interventions = ensureStudentInterventions(student.interventions);
+            const primarySupport = pickPrimaryIntervention(interventions);
             const matchesGrade = filters.grade === "all" || student.grade === filters.grade;
-            const matchesTier = filters.tier === "all" || student.tier === filters.tier;
-            const matchesType = filters.type === "all" || student.type === filters.type;
+            const matchesTier = filters.tier === "all" || (primarySupport?.tier || student.tier) === filters.tier;
+            const matchesType =
+                filters.type === "all" ||
+                student.type === filters.type ||
+                interventions.some((entry) => entry.label === filters.type);
             const mentorLabel = student.mentor || student.profile?.mentor;
             const teacherRoster =
                 Array.isArray(student.teachers) && student.teachers.length
@@ -45,6 +51,8 @@ export const useAdminDashboardState = (students = []) => {
                 !query ||
                 student.name?.toLowerCase().includes(query) ||
                 student.type?.toLowerCase().includes(query) ||
+                interventions.some((entry) => entry.label.toLowerCase().includes(query)) ||
+                (student.className || "").toLowerCase().includes(query) ||
                 mentorLabel?.toLowerCase().includes(query) ||
                 teacherRoster.some((teacher) => teacher.toLowerCase().includes(query));
 
@@ -53,8 +61,25 @@ export const useAdminDashboardState = (students = []) => {
     }, [students, filters]);
 
     const gradeOptions = useMemo(() => buildOptions(students, "grade"), [students]);
-    const tierOptions = useMemo(() => buildOptions(students, "tier"), [students]);
-    const typeOptions = useMemo(() => buildOptions(students, "type"), [students]);
+    const tierOptions = useMemo(() => {
+        const normalized = students.map((student) => {
+            const interventions = ensureStudentInterventions(student.interventions);
+            const primary = pickPrimaryIntervention(interventions);
+            return {
+                ...student,
+                tier: primary?.tier || student.tier,
+            };
+        });
+        return buildOptions(normalized, "tier");
+    }, [students]);
+    const typeOptions = useMemo(() => {
+        const values = new Set(["all"]);
+        students.forEach((student) => {
+            if (student.type) values.add(student.type);
+            ensureStudentInterventions(student.interventions).forEach((entry) => values.add(entry.label));
+        });
+        return Array.from(values);
+    }, [students]);
     const mentorOptions = useMemo(() => {
         const values = new Set();
         students.forEach((student) => {
