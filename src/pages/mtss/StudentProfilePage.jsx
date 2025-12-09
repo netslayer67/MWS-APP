@@ -1,11 +1,17 @@
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, BookOpen, Sparkles, CalendarDays, Target, Timer } from "lucide-react";
+import { ArrowLeft, BookOpen, Sparkles, CalendarDays, Target, Timer, Users } from "lucide-react";
 import { ResponsiveContainer, LineChart, Line, XAxis, Tooltip, CartesianGrid } from "recharts";
 import { TierPill, ProgressBadge } from "./components/StatusPills";
 import { fetchMentorAssignments, fetchMtssStudentById } from "@/services/mtssService";
 import { getStoredUser, mapAssignmentsToStudents } from "./utils/teacherDashboardUtils";
+import {
+    ensureStudentInterventions,
+    pickPrimaryIntervention,
+    getStatusLabel,
+    tierToneClasses,
+} from "./utils/interventionUtils";
 
 const StudentProfilePage = memo(() => {
     const { slug } = useParams();
@@ -22,20 +28,27 @@ const StudentProfilePage = memo(() => {
             setLoading(true);
             setError(null);
             try {
-                const { assignments = [] } = await fetchMentorAssignments({}, { signal: controller.signal });
+                const payload = await fetchMtssStudentById(slug, { signal: controller.signal });
                 if (!mounted) return;
-                const { students: normalized } = mapAssignmentsToStudents(assignments, mentor?.username || mentor?.name || "MTSS Mentor");
-                const assigned = normalized.find((item) => item.slug === slug);
-                if (assigned) {
-                    setStudent(assigned);
-                    return;
+                setStudent(payload?.student || null);
+            } catch (error) {
+                if (!mounted || error?.name === "CanceledError" || error?.name === "AbortError") return;
+                try {
+                    const { assignments = [] } = await fetchMentorAssignments({}, { signal: controller.signal });
+                    if (!mounted) return;
+                    const { students: normalized } = mapAssignmentsToStudents(
+                        assignments,
+                        mentor?.username || mentor?.name || "MTSS Mentor",
+                    );
+                    const assigned = normalized.find((item) => item.slug === slug);
+                    if (assigned) {
+                        setStudent(assigned);
+                        return;
+                    }
+                } catch (fallbackError) {
+                    if (!mounted || fallbackError?.name === "CanceledError" || fallbackError?.name === "AbortError") return;
                 }
-                const fallback = await fetchMtssStudentById(slug, { signal: controller.signal });
-                if (!mounted) return;
-                setStudent(fallback?.student || null);
-            } catch (err) {
-                if (!mounted || err?.name === "CanceledError" || err?.name === "AbortError") return;
-                setError(err.response?.data?.message || err.message || "Unable to load student profile");
+                setError(error.response?.data?.message || error.message || "Unable to load student profile");
             } finally {
                 if (mounted) setLoading(false);
             }
@@ -65,9 +78,17 @@ const StudentProfilePage = memo(() => {
     }
 
     const { profile } = student;
+    const interventions = ensureStudentInterventions(student.interventions);
+    const highlight = pickPrimaryIntervention(interventions);
     const chartData = profile?.chart?.length ? profile.chart : [{ label: "Start", date: "Start", value: 0, reading: 0, goal: 100 }];
     const history = profile?.history || [];
-    const measurementUnit = profile?.progressUnit || (student.type === "Behavior" ? "pts" : student.type === "Attendance" ? "%" : "wpm");
+    const measurementUnit =
+        profile?.progressUnit ||
+        (student.type === "Attendance" || highlight?.label === "Attendance"
+            ? "%"
+            : student.type === "Behavior"
+                ? "pts"
+                : "wpm");
     const statusPercent = profile?.target ? Math.round((profile.current / profile.target) * 100) : 0;
     const teacherRoster =
         Array.isArray(student.teachers) && student.teachers.length
@@ -79,14 +100,14 @@ const StudentProfilePage = memo(() => {
         ? teacherRoster.join(", ")
         : profile?.mentor || student.profile?.teacher || "TBD";
     const quickFacts = [
-        { label: "Focus", value: profile?.type || "-", icon: Target, accent: "text-primary" },
+        { label: "Grade", value: student.grade || "-", icon: BookOpen, accent: "text-primary" },
+        { label: "Class", value: student.className || "-", icon: Users, accent: "text-emerald-500" },
         { label: "Started", value: profile?.started || "-", icon: CalendarDays, accent: "text-rose-500 dark:text-rose-300" },
-        { label: "Duration", value: profile?.duration || "-", icon: Timer, accent: "text-emerald-500" },
         { label: "Mentor", value: mentorDisplay, icon: BookOpen, accent: "text-sky-500" },
     ];
     const focusChips = [
-        { label: "Tier", value: student.tier || "Tier 2", gradient: "from-[#14b8a6] via-[#3b82f6] to-[#a855f7]" },
-        { label: "Progress", value: student.progress || "On Track", gradient: "from-[#f97316] via-[#ef4444] to-[#ec4899]" },
+        { label: "Tier", value: highlight?.tier || student.tier || "Tier 1", gradient: "from-[#14b8a6] via-[#3b82f6] to-[#a855f7]" },
+        { label: "Focus", value: highlight?.label || student.type || "Universal Supports", gradient: "from-[#f97316] via-[#ef4444] to-[#ec4899]" },
         { label: "Next Update", value: student.nextUpdate || "Not scheduled", gradient: "from-[#34d399] via-[#10b981] to-[#22d3ee]" },
     ];
 
@@ -111,7 +132,9 @@ const StudentProfilePage = memo(() => {
                         <div>
                             <p className="text-xs uppercase tracking-[0.45em] opacity-80">Student Spotlight</p>
                             <h1 className="text-3xl font-black tracking-tight">{student.name}</h1>
-                            <p className="text-sm opacity-90">{student.grade} · {student.type}</p>
+                            <p className="text-sm opacity-90">
+                                {student.grade} · {highlight?.label || student.type || "Universal Supports"}
+                            </p>
                         </div>
                         <div className="flex flex-wrap gap-3 items-center">
                             {focusChips.map((chip) => (
@@ -142,6 +165,37 @@ const StudentProfilePage = memo(() => {
                                 );
                             })}
                         </div>
+                        <section className="rounded-[30px] bg-gradient-to-br from-white/95 via-white/80 to-white/65 dark:from-white/10 dark:via-white/5 dark:to-white/5 border border-white/40 dark:border-white/10 p-6 space-y-4 shadow-inner backdrop-blur-xl">
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                                <div>
+                                    <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground">Support Map</p>
+                                    <h3 className="text-xl font-black text-foreground dark:text-white">Tier by intervention type</h3>
+                                </div>
+                            </div>
+                            <div className="grid gap-3 md:grid-cols-2">
+                                {interventions.map((entry) => (
+                                    <div
+                                        key={`support-${entry.type}`}
+                                        className="rounded-2xl border border-white/50 dark:border-white/10 bg-white/90 dark:bg-white/5 p-4 space-y-2 shadow-sm"
+                                    >
+                                        <div className="flex items-center justify-between gap-3">
+                                            <span className="text-sm font-semibold text-foreground dark:text-white">{entry.label}</span>
+                                            <span
+                                                className={`text-xs font-bold uppercase tracking-wide px-3 py-1 rounded-full border ${tierToneClasses[entry.tierCode] || tierToneClasses.tier1}`}
+                                            >
+                                                {entry.tier}
+                                            </span>
+                                        </div>
+                                        <p className="text-[11px] uppercase tracking-[0.4em] text-muted-foreground">
+                                            {getStatusLabel(entry.status)}
+                                        </p>
+                                        <p className="text-sm text-muted-foreground dark:text-white/75">
+                                            Focus: {entry.strategies?.length ? entry.strategies.join(", ") : "Core supports"}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
                         <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
                             <div className="rounded-[30px] bg-white/85 dark:bg-white/5 border border-primary/10 p-6 space-y-4 shadow-inner backdrop-blur-xl">
                                 <div className="flex items-center justify-between flex-wrap gap-2">

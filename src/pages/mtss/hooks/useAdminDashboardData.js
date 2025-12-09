@@ -6,7 +6,13 @@ import {
     fetchMtssStudents,
     fetchMtssMentors,
 } from "@/services/mtssService";
-import { deriveTeacherSegments, normalizeGradeLabel, buildGradeQueryValues } from "../utils/teacherDashboardUtils";
+import {
+    deriveTeacherSegments,
+    normalizeGradeLabel,
+    normalizeClassLabel,
+    buildGradeQueryValues,
+    buildClassQueryValues,
+} from "../utils/teacherDashboardUtils";
 import {
     buildAdminStatCards,
     buildSystemSnapshot,
@@ -23,6 +29,13 @@ import {
 
 const STUDENT_LIMIT = 650;
 
+const isKindergartenLabel = (value = "") => {
+    const normalized = value?.toString().toLowerCase();
+    return normalized?.includes("kindergarten") || normalized?.includes("kindy");
+};
+
+const isSpecificKindergartenVariant = (value = "") => /\b(pre[-\s]?k|k\s*1|k\s*2)\b/i.test(value || "");
+
 const useAdminDashboardData = () => {
     const { user } = useSelector((state) => state.auth);
     const [students, setStudents] = useState([]);
@@ -32,18 +45,30 @@ const useAdminDashboardData = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const segments = useMemo(() => deriveTeacherSegments(user), [user]);
-    const gradeQueryValues = useMemo(() => buildGradeQueryValues(segments), [segments]);
+const segments = useMemo(() => deriveTeacherSegments(user), [user]);
+const gradeQueryValues = useMemo(() => buildGradeQueryValues(segments), [segments]);
+const classQueryValues = useMemo(() => buildClassQueryValues(segments), [segments]);
+const hasKindergartenWildcard = useMemo(
+    () => (segments.allowedGrades || []).some((grade) => isKindergartenLabel(grade) && !isSpecificKindergartenVariant(grade)),
+    [segments.allowedGrades],
+);
 
 const withinSegments = useCallback(
     (student = {}) => {
-        if (!segments.allowedGrades.length) return true;
+        const allowedClasses = segments.allowedClasses || [];
+        if (!segments.allowedGrades.length && !allowedClasses.length) return true;
         const gradeLabel = normalizeGradeLabel(
             student.grade || student.currentGrade || student.className || student.unit || student.classes?.[0]?.grade,
         );
-        return segments.allowedGrades.includes(gradeLabel);
+        const classLabel = normalizeClassLabel(student.className || student.currentGrade);
+        const matchesGrade = !segments.allowedGrades.length || segments.allowedGrades.includes(gradeLabel) || (hasKindergartenWildcard && isKindergartenLabel(gradeLabel));
+        const matchesClass = !allowedClasses.length || (classLabel && allowedClasses.includes(classLabel));
+        if (matchesGrade && matchesClass) {
+            return true;
+        }
+        return false;
     },
-    [segments],
+    [hasKindergartenWildcard, segments],
 );
 
 const transformStudent = useCallback(
@@ -51,10 +76,11 @@ const transformStudent = useCallback(
         const gradeLabel = normalizeGradeLabel(
             student.grade || student.currentGrade || student.className || student.unit || student.classes?.[0]?.grade,
         );
+        const classLabel = normalizeClassLabel(student.className || student.currentGrade || student.unit || student.classes?.[0]?.grade);
         return {
             ...student,
             grade: gradeLabel || student.grade,
-            className: student.className || student.currentGrade || student.unit || student.classes?.[0]?.grade,
+            className: classLabel || student.className || student.currentGrade || student.unit || student.classes?.[0]?.grade,
         };
     },
     [],
@@ -132,6 +158,9 @@ const loadDashboard = useCallback(async () => {
         if (gradeQueryValues.length) {
             studentParams.grade = gradeQueryValues.join(",");
         }
+        if (classQueryValues.length) {
+            studentParams.className = classQueryValues.join(",");
+        }
 
             const [studentResponse, assignmentResponse, mentorResponse] = await Promise.all([
                 fetchMtssStudents(studentParams),
@@ -168,7 +197,7 @@ const loadDashboard = useCallback(async () => {
     } finally {
         setLoading(false);
     }
-}, [gradeQueryValues, mentorMatchesSegments, segments.allowedGrades.length, transformStudent, withinSegments]);
+}, [classQueryValues, gradeQueryValues, mentorMatchesSegments, segments.allowedGrades.length, transformStudent, withinSegments]);
 
 useEffect(() => {
     loadDashboard();

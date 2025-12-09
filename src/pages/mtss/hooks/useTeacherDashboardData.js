@@ -3,6 +3,7 @@ import { fetchMentorAssignments, fetchMtssStudents } from "@/services/mtssServic
 import {
     buildStatCards,
     buildGradeQueryValues,
+    buildClassQueryValues,
     deriveTeacherSegments,
     getStoredUser,
     mapAssignmentsToStudents,
@@ -59,12 +60,19 @@ const useTeacherDashboardData = () => {
         setError(null);
         try {
             const gradeQueryValues = buildGradeQueryValues(segments);
+            const classQueryValues = buildClassQueryValues(segments);
             const shouldSendGradeParam =
                 gradeQueryValues.length && (segments.shouldFilterServer || segments.unit !== "Junior High");
 
-            const studentParams = shouldSendGradeParam
-                ? { grade: gradeQueryValues.join(","), limit: segments.unit === "Junior High" ? 500 : 200 }
-                : { limit: segments.unit === "Junior High" ? 500 : 200 };
+            const studentParams = {
+                limit: segments.unit === "Junior High" ? 500 : 200,
+            };
+            if (shouldSendGradeParam) {
+                studentParams.grade = gradeQueryValues.join(",");
+            }
+            if (classQueryValues.length) {
+                studentParams.className = classQueryValues.join(",");
+            }
 
             const [assignmentPayload, rosterPayload] = await Promise.all([
                 fetchMentorAssignments({ limit: 150 }, signal ? { signal } : {}),

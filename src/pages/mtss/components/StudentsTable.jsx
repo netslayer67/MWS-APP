@@ -1,4 +1,9 @@
 import React, { memo } from "react";
+import {
+    ensureStudentInterventions,
+    pickPrimaryIntervention,
+    tierToneClasses,
+} from "../utils/interventionUtils";
 
 const ROW_THEMES = [
     { bg: "from-[#ecfeff]/90 via-[#fef3c7]/80 to-white/80 dark:from-white/5 dark:via-white/5 dark:to-white/0", accent: "bg-[#22d3ee]/70", aos: "fade-up" },
@@ -37,8 +42,8 @@ const StudentsTable = memo(
                                 <th className="py-3 w-2" />
                                 {selectable && <th className="py-3 font-semibold text-left w-12 text-slate-500 tracking-[0.2em] uppercase">Select</th>}
                                 <th className="py-3 font-semibold text-left tracking-[0.2em] uppercase text-xs text-slate-500">Student</th>
-                                <th className="py-3 font-semibold text-left tracking-[0.2em] uppercase text-xs text-slate-500">Grade</th>
-                                <th className="py-3 font-semibold text-left tracking-[0.2em] uppercase text-xs text-slate-500">Intervention</th>
+                                <th className="py-3 font-semibold text-left tracking-[0.2em] uppercase text-xs text-slate-500">Class / Mentor</th>
+                                <th className="py-3 font-semibold text-left tracking-[0.2em] uppercase text-xs text-slate-500">Supports</th>
                                 <th className="py-3 font-semibold text-left tracking-[0.2em] uppercase text-xs text-slate-500">Tier</th>
                                 <th className="py-3 font-semibold text-left tracking-[0.2em] uppercase text-xs text-slate-500">Progress</th>
                                 <th className="py-3 font-semibold text-left tracking-[0.2em] uppercase text-xs text-slate-500">Next Update</th>
@@ -99,39 +104,147 @@ const StudentsTable = memo(
     },
 );
 
-const DesktopRow = memo(({ student, TierPill, ProgressBadge, showActions, onView, onUpdate, selectable, selected, onSelect, theme }) => (
-    <tr
-        className={`mtss-table-row border-b border-transparent last:border-none bg-gradient-to-r ${theme?.bg} relative`}
-        data-aos={theme?.aos || "fade-up"}
-        data-aos-delay="180"
-        data-aos-duration="450"
-    >
-        <td className="w-1">
-            <span className={`block w-1 h-full ${theme?.accent || "bg-primary/40"} rounded-full`} />
-        </td>
-        {selectable && (
-            <td className="py-4">
-                <input
-                    type="checkbox"
-                    className="rounded border-border/60"
-                    checked={selected}
-                    onChange={() => onSelect?.(student)}
-                />
+const DesktopRow = memo(({ student, TierPill, ProgressBadge, showActions, onView, onUpdate, selectable, selected, onSelect, theme }) => {
+    const interventions = ensureStudentInterventions(student.interventions);
+    const highlight = pickPrimaryIntervention(interventions);
+    const tierLabel = highlight?.tier || student.tier;
+    const classLabel = student.className || "—";
+    const mentorLabel = student.mentor || student.profile?.mentor || "-";
+    const badgeClass = (entry) =>
+        `px-2 py-1 rounded-2xl text-[11px] font-semibold bg-gradient-to-r ${entry.accent}`;
+    return (
+        <tr
+            className={`mtss-table-row border-b border-transparent last:border-none bg-gradient-to-r ${theme?.bg} relative`}
+            data-aos={theme?.aos || "fade-up"}
+            data-aos-delay="180"
+            data-aos-duration="450"
+        >
+            <td className="w-1">
+                <span className={`block w-1 h-full ${theme?.accent || "bg-primary/40"} rounded-full`} />
             </td>
-        )}
-        <td className="py-4 font-semibold text-foreground dark:text-white">{student.name}</td>
-        <td className="py-4 text-muted-foreground dark:text-white/70">{student.grade}</td>
-        <td className="py-4 text-foreground dark:text-white">{student.type}</td>
-        <td className="py-4">
-            <TierPill tier={student.tier} />
-        </td>
-        <td className="py-4">
-            <ProgressBadge status={student.progress} />
-        </td>
-        <td className="py-4 text-muted-foreground">{student.nextUpdate}</td>
-        {showActions && (
+            {selectable && (
+                <td className="py-4">
+                    <input
+                        type="checkbox"
+                        className="rounded border-border/60"
+                        checked={selected}
+                        onChange={() => onSelect?.(student)}
+                    />
+                </td>
+            )}
             <td className="py-4">
-                <div className="flex items-center gap-2 justify-center">
+                <button
+                    type="button"
+                    onClick={() => onView?.(student)}
+                    className="text-left font-semibold text-foreground dark:text-white hover:text-primary transition"
+                >
+                    {student.name}
+                </button>
+                <div className="text-xs text-muted-foreground dark:text-white/60">{student.grade}</div>
+            </td>
+            <td className="py-4 text-sm text-muted-foreground">
+                <div className="font-medium text-foreground dark:text-white">{classLabel}</div>
+                <div className="text-xs text-muted-foreground dark:text-white/70">Mentor: {mentorLabel}</div>
+            </td>
+            <td className="py-4">
+                <div className="flex flex-wrap gap-2 max-w-[320px]">
+                    {interventions.map((entry) => (
+                        <span key={`${student.id || student._id}-${entry.type}`} className={`${badgeClass(entry)} shadow-sm`}>
+                            <span className="mr-2">{entry.label}</span>
+                            <span
+                                className={`inline-flex items-center px-2 py-0.5 rounded-full border ${
+                                    tierToneClasses[entry.tierCode] || tierToneClasses.tier1
+                                } text-[10px] uppercase tracking-wide`}
+                            >
+                                {entry.tier}
+                            </span>
+                        </span>
+                    ))}
+                </div>
+            </td>
+            <td className="py-4">
+                <TierPill tier={tierLabel} />
+            </td>
+            <td className="py-4">
+                <ProgressBadge status={student.progress} />
+            </td>
+            <td className="py-4 text-muted-foreground">{student.nextUpdate}</td>
+            {showActions && (
+                <td className="py-4">
+                    <div className="flex items-center gap-2 justify-center">
+                        <button
+                            onClick={() => onView?.(student)}
+                            className="px-3 py-1.5 text-xs font-semibold rounded-full bg-gradient-to-r from-[#0ea5e9]/85 via-[#6366f1]/85 to-[#34d399]/80 text-white shadow-sm hover:shadow-md transition"
+                        >
+                            View
+                        </button>
+                        <button
+                            onClick={() => onUpdate?.(student)}
+                            className="px-3 py-1.5 text-xs font-semibold rounded-full bg-gradient-to-r from-[#fbbf24]/80 to-[#fb7185]/80 text-white shadow-sm hover:shadow-md transition"
+                        >
+                            Update
+                        </button>
+                    </div>
+                </td>
+            )}
+        </tr>
+    );
+});
+
+DesktopRow.displayName = "StudentsTableDesktopRow";
+
+const MobileCard = memo(({ student, TierPill, ProgressBadge, showActions, onView, onUpdate, selectable, selected, onSelect, theme }) => {
+    const interventions = ensureStudentInterventions(student.interventions);
+    const highlight = pickPrimaryIntervention(interventions);
+    const tierLabel = highlight?.tier || student.tier;
+    return (
+        <div
+            className={`glass glass-card rounded-2xl p-4 flex flex-col gap-3 shadow-[0_12px_35px_rgba(15,23,42,0.12)] bg-gradient-to-br ${theme?.bg}`}
+            data-aos={theme?.aos || "fade-up"}
+            data-aos-delay="120"
+            data-aos-duration="450"
+        >
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <button
+                        type="button"
+                        onClick={() => onView?.(student)}
+                        className="text-sm font-semibold text-foreground hover:text-primary transition"
+                    >
+                        {student.name}
+                    </button>
+                    <span className="block text-xs text-muted-foreground">
+                        {student.grade} · {student.className || "—"}
+                    </span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">{student.nextUpdate}</span>
+                    {selectable && (
+                        <input
+                            type="checkbox"
+                            className="rounded border-border/60"
+                            checked={selected}
+                            onChange={() => onSelect?.(student)}
+                        />
+                    )}
+                </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+                {interventions.map((entry) => (
+                    <span
+                        key={`${student.id || student._id}-mobile-${entry.type}`}
+                        className="rounded-2xl border border-white/60 dark:border-white/10 px-3 py-1 text-[11px] font-semibold text-foreground dark:text-white/80"
+                    >
+                        {entry.label} · {entry.tier}
+                    </span>
+                ))}
+            </div>
+            <div className="flex items-center justify-between gap-3">
+                <TierPill tier={tierLabel} compact />
+                <ProgressBadge status={student.progress} compact />
+            </div>
+            {showActions && (
+                <div className="flex items-center gap-2 justify-end pt-2">
                     <button
                         onClick={() => onView?.(student)}
                         className="px-3 py-1.5 text-xs font-semibold rounded-full bg-gradient-to-r from-[#0ea5e9]/85 via-[#6366f1]/85 to-[#34d399]/80 text-white shadow-sm hover:shadow-md transition"
@@ -145,61 +258,10 @@ const DesktopRow = memo(({ student, TierPill, ProgressBadge, showActions, onView
                         Update
                     </button>
                 </div>
-            </td>
-        )}
-    </tr>
-));
-
-DesktopRow.displayName = "StudentsTableDesktopRow";
-
-const MobileCard = memo(({ student, TierPill, ProgressBadge, showActions, onView, onUpdate, selectable, selected, onSelect, theme }) => (
-    <div
-        className={`glass glass-card rounded-2xl p-4 flex flex-col gap-3 shadow-[0_12px_35px_rgba(15,23,42,0.12)] bg-gradient-to-br ${theme?.bg}`}
-        data-aos={theme?.aos || "fade-up"}
-        data-aos-delay="120"
-        data-aos-duration="450"
-    >
-        <div className="flex items-start justify-between gap-3">
-            <div>
-                <p className="text-sm font-semibold text-foreground">{student.name}</p>
-                <span className="text-xs text-muted-foreground">
-                    {student.grade} &nbsp; {student.type}
-                </span>
-            </div>
-            <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">{student.nextUpdate}</span>
-                {selectable && (
-                    <input
-                        type="checkbox"
-                        className="rounded border-border/60"
-                        checked={selected}
-                        onChange={() => onSelect?.(student)}
-                    />
-                )}
-            </div>
+            )}
         </div>
-        <div className="flex items-center justify-between gap-3">
-            <TierPill tier={student.tier} compact />
-            <ProgressBadge status={student.progress} compact />
-        </div>
-        {showActions && (
-            <div className="flex items-center gap-2 justify-end pt-2">
-                <button
-                    onClick={() => onView?.(student)}
-                    className="px-3 py-1.5 text-xs font-semibold rounded-full bg-gradient-to-r from-[#0ea5e9]/85 via-[#6366f1]/85 to-[#34d399]/80 text-white shadow-sm hover:shadow-md transition"
-                >
-                    View
-                </button>
-                <button
-                    onClick={() => onUpdate?.(student)}
-                    className="px-3 py-1.5 text-xs font-semibold rounded-full bg-gradient-to-r from-[#fbbf24]/80 to-[#fb7185]/80 text-white shadow-sm hover:shadow-md transition"
-                >
-                    Update
-                </button>
-            </div>
-        )}
-    </div>
-));
+    );
+});
 
 MobileCard.displayName = "StudentsTableMobileCard";
 
