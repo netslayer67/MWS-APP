@@ -38,7 +38,8 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
     const { user } = useSelector((state) => state.auth);
     const { stats, loading, error, selectedPeriod, selectedDate } = useSelector((state) => state.dashboard);
 
-    const [pendingDate, setPendingDate] = useState(selectedDate);
+    const todayISO = useMemo(() => new Date().toISOString().split('T')[0], []);
+    const [pendingDate, setPendingDate] = useState(selectedDate || todayISO);
 
     const dashboardRole = useMemo(() => getEmotionalDashboardRole(user), [user]);
     const canViewDashboard = useMemo(() => hasEmotionalDashboardAccess(user), [user]);
@@ -59,8 +60,16 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
     }, []);
 
     useEffect(() => {
-        setPendingDate(selectedDate);
+        if (selectedDate) {
+            setPendingDate(selectedDate);
+        }
     }, [selectedDate]);
+
+    const resolvedDateFilter = useMemo(() => {
+        if (!selectedDate) return null;
+        if (selectedPeriod === 'all') return null;
+        return selectedDate;
+    }, [selectedDate, selectedPeriod]);
 
     // Load dashboard data and set up real-time updates
     useEffect(() => {
@@ -74,19 +83,19 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
             }
 
             console.log('Fetching dashboard stats for period:', selectedPeriod, 'User:', user);
-            dispatch(fetchDashboardStats({ period: selectedPeriod, date: selectedDate }));
+            dispatch(fetchDashboardStats({ period: selectedPeriod, date: resolvedDateFilter }));
 
             socketService.connect();
             socketService.joinDashboard(user.id);
 
             const handleDashboardUpdate = (data) => {
                 console.log('Real-time dashboard update:', data);
-                dispatch(fetchDashboardStats({ period: selectedPeriod, date: selectedDate }));
+                dispatch(fetchDashboardStats({ period: selectedPeriod, date: resolvedDateFilter }));
             };
 
             const handleNewCheckin = (checkinData) => {
                 console.log('New check-in received:', checkinData);
-                dispatch(fetchDashboardStats({ period: selectedPeriod, date: selectedDate, force: true }));
+                dispatch(fetchDashboardStats({ period: selectedPeriod, date: resolvedDateFilter, force: true }));
                 console.log('Dashboard updated with new check-in data');
             };
 
@@ -115,17 +124,20 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
 
         console.log('User not authorized for dashboard:', { user });
         navigate('/support-hub', { replace: true });
-    }, [canViewDashboard, dispatch, isDirectorate, navigate, selectedPeriod, selectedDate, user]);
+    }, [canViewDashboard, dispatch, isDirectorate, navigate, selectedPeriod, resolvedDateFilter, user]);
 
     const handlePeriodChange = useCallback((period) => {
         dispatch(setSelectedPeriod(period));
-    }, [dispatch]);
+        if (period === 'all' && selectedDate) {
+            dispatch(setSelectedDate(null));
+        }
+    }, [dispatch, selectedDate]);
 
     const handleFiltersChange = useCallback((newFilters) => {
         setFilters(newFilters);
         // Refetch data with filters
-        dispatch(fetchDashboardStats({ period: selectedPeriod, date: selectedDate, filters: newFilters }));
-    }, [dispatch, selectedDate, selectedPeriod]);
+        dispatch(fetchDashboardStats({ period: selectedPeriod, date: resolvedDateFilter, filters: newFilters }));
+    }, [dispatch, resolvedDateFilter, selectedPeriod]);
 
     // Debug: Log current state (remove in production)
     // console.log('Dashboard state:', { stats, loading, error, user });
@@ -170,7 +182,9 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
     const handleApplyDate = useCallback(() => {
         if (!pendingDate) return;
         dispatch(setSelectedDate(pendingDate));
-        dispatch(fetchDashboardStats({ period: selectedPeriod, date: pendingDate }));
+        if (selectedPeriod !== 'all') {
+            dispatch(fetchDashboardStats({ period: selectedPeriod, date: pendingDate }));
+        }
     }, [dispatch, pendingDate, selectedPeriod]);
 
     const isApplyDisabled = useMemo(() => {
