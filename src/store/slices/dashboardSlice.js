@@ -47,7 +47,7 @@ const initialState = {
     error: null,
     lastUpdated: null,
     selectedPeriod: 'today',
-    selectedDate: new Date().toISOString().split('T')[0],
+    selectedDate: null,
 };
 
 // Slice
