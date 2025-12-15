@@ -432,8 +432,138 @@ export const generateAIAnalysis = (emotionData) => {
     const detailedRecommendations = generateDetailedRecommendations(primaryEmotion, valence, arousal, intensity, confidence, authenticity);
 
     // Calculate presence and capacity based on AI data
-    const presenceScore = Math.round((valence + 1) * 5); // 0-10 scale
-    const capacityScore = Math.round((1 - Math.abs(arousal - 0.5)) * 8 + 2); // 0-10 scale
+    const presenceScore = Math.min(10, Math.max(1, Math.round((valence + 1) * 5))); // 0-10 scale
+    const capacityScore = Math.min(10, Math.max(1, Math.round((1 - Math.abs(arousal - 0.5)) * 8 + 2))); // 0-10 scale
+    const readinessScore = Math.round(((presenceScore + capacityScore) / 20) * 100);
+
+    const storylineThemes = {
+        calm: { title: "Serene Tranquility", tone: "mint", arc: "stabilizing" },
+        happy: { title: "Radiant Bloom", tone: "rose", arc: "ascending" },
+        sad: { title: "Tender Depth", tone: "lilac", arc: "softening" },
+        anxious: { title: "Quiet Storm", tone: "amber", arc: "repairing" },
+        neutral: { title: "Measured Balance", tone: "slate", arc: "balancing" },
+        angry: { title: "Fiery Focus", tone: "crimson", arc: "igniting" }
+    };
+    const storylineAnchor = storylineThemes[primaryEmotion] || storylineThemes.neutral;
+    const emotionalStoryline = {
+        title: storylineAnchor.title,
+        chapter: `${weather.internal} • ${primaryEmotion}`,
+        narrative: psychologicalInsight,
+        arc: storylineAnchor.arc,
+        inflection: authenticity.hiddenEmotionLabel || primaryEmotion,
+        confidence: Math.min(98, Math.max(62, confidence + (authenticity.isMasked ? -8 : 5))),
+        colorTone: storylineAnchor.tone
+    };
+
+    const readinessMatrix = {
+        presenceScore,
+        capacityScore,
+        overallReadiness: readinessScore,
+        readinessLane: readinessScore >= 80 ? "glide" : readinessScore >= 60 ? "steady" : readinessScore >= 40 ? "sensitive" : "repair",
+        signals: [
+            {
+                label: "Presence",
+                status: presenceScore >= 7 ? "clear" : presenceScore >= 5 ? "foggy" : "dense",
+                idea: presenceScore >= 7 ? "Channel this clarity into meaningful tasks."
+                    : "Protect your first 30 minutes from notifications to ease into the day."
+            },
+            {
+                label: "Capacity",
+                status: capacityScore >= 7 ? "charged" : capacityScore >= 5 ? "oscillating" : "drained",
+                idea: capacityScore >= 6 ? "Use the surplus energy on creative or collaborative work."
+                    : "Schedule a recovery pocket (5-7 mins) to keep your nervous system regulated."
+            }
+        ]
+    };
+
+    const needsSupport = readinessScore < 55 || presenceScore < 5 || capacityScore < 5 || authenticity.isMasked;
+    const supportCompass = {
+        needsSupport,
+        supportLevel: needsSupport ? "active" : "monitor",
+        suggestedAllies: needsSupport
+            ? ["Trusted colleague", "Mentor/coach"]
+            : ["Peer ally", "Positive accountability buddy"],
+        message: needsSupport
+            ? "This might be the day to ping someone from your circle-every nervous system needs co-regulation sometimes."
+            : "You're in a steady lane. Share your calm energy with someone who might need it today.",
+        storylineContext: emotionalStoryline.title
+    };
+
+    const themePalette = {
+        mint: {
+            gradientCss: "linear-gradient(135deg, rgba(236, 252, 203, 0.85) 0%, rgba(224, 242, 254, 0.75) 45%, rgba(255, 255, 255, 0.85) 100%)",
+            glassColor: "rgba(255, 255, 255, 0.9)",
+            borderColor: "rgba(16, 185, 129, 0.35)",
+            accentColor: "#10b981",
+            moodIntent: "soothing"
+        },
+        rose: {
+            gradientCss: "linear-gradient(135deg, rgba(253, 242, 248, 0.92) 0%, rgba(255, 228, 230, 0.85) 42%, rgba(255, 255, 255, 0.9) 100%)",
+            glassColor: "rgba(255, 255, 255, 0.88)",
+            borderColor: "rgba(244, 63, 94, 0.35)",
+            accentColor: "#f43f5e",
+            moodIntent: "warming"
+        },
+        lilac: {
+            gradientCss: "linear-gradient(135deg, rgba(245, 243, 255, 0.92) 0%, rgba(237, 233, 254, 0.85) 50%, rgba(255, 255, 255, 0.9) 100%)",
+            glassColor: "rgba(250, 250, 255, 0.85)",
+            borderColor: "rgba(99, 102, 241, 0.4)",
+            accentColor: "#8b5cf6",
+            moodIntent: "balancing"
+        },
+        amber: {
+            gradientCss: "linear-gradient(135deg, rgba(254, 249, 195, 0.9) 0%, rgba(255, 237, 213, 0.8) 45%, rgba(255, 255, 255, 0.9) 100%)",
+            glassColor: "rgba(255, 255, 255, 0.92)",
+            borderColor: "rgba(251, 191, 36, 0.35)",
+            accentColor: "#f59e0b",
+            moodIntent: "grounding"
+        },
+        slate: {
+            gradientCss: "linear-gradient(135deg, rgba(226, 232, 240, 0.9) 0%, rgba(203, 213, 225, 0.85) 48%, rgba(248, 250, 252, 0.92) 100%)",
+            glassColor: "rgba(248, 250, 252, 0.9)",
+            borderColor: "rgba(100, 116, 139, 0.35)",
+            accentColor: "#64748b",
+            moodIntent: "balancing"
+        },
+        crimson: {
+            gradientCss: "linear-gradient(135deg, rgba(254, 226, 226, 0.9) 0%, rgba(252, 231, 243, 0.85) 48%, rgba(255, 255, 255, 0.92) 100%)",
+            glassColor: "rgba(255, 255, 255, 0.9)",
+            borderColor: "rgba(220, 38, 38, 0.4)",
+            accentColor: "#dc2626",
+            moodIntent: "bright"
+        }
+    };
+
+    const displayHints = {
+        theme: storylineAnchor.tone,
+        gradientCss: (themePalette[storylineAnchor.tone] || themePalette.lilac).gradientCss,
+        glassClass: null,
+        glassColor: (themePalette[storylineAnchor.tone] || themePalette.lilac).glassColor,
+        borderColor: (themePalette[storylineAnchor.tone] || themePalette.lilac).borderColor,
+        accentColor: (themePalette[storylineAnchor.tone] || themePalette.lilac).accentColor,
+        density: readinessMatrix.overallReadiness >= 70 ? "airy" : readinessMatrix.overallReadiness >= 45 ? "balanced" : "cozy",
+        badges: [
+            emotionalStoryline.title,
+            weather.internal,
+            authenticity.isMasked ? "masked emotion alert" : null
+        ].filter(Boolean),
+        animationAnchor: authenticity.isMasked ? "fade-in" : "fade-up",
+        moodIntent: (themePalette[storylineAnchor.tone] || themePalette.lilac).moodIntent
+    };
+
+    const insightChips = [
+        ...((emotionData.secondaryEmotions || []).slice(0, 2).map((chip) => ({ label: chip, type: "mood" }))),
+        { label: weather.internal, type: "weather" },
+        authenticity.isMasked ? { label: "inner " + authenticity.hiddenEmotionLabel, type: "insight" } : null,
+        needsSupport ? { label: "support recommended", type: "support" } : null
+    ].filter(Boolean);
+
+    const metadata = {
+        callToAction: needsSupport
+            ? "Consider booking a manual check-in or reaching out to your support contact."
+            : "Document two things fueling this positive rhythm today.",
+        generatedAt: new Date().toISOString()
+    };
 
     return {
         id: `ai_${primaryEmotion}_${Date.now()}`,
@@ -451,8 +581,8 @@ export const generateAIAnalysis = (emotionData) => {
         psychologicalInsight: psychologicalInsight,
         personalizedRecommendation: personalizedRecommendation,
         presenceCapacity: {
-            estimatedPresence: Math.min(10, Math.max(1, presenceScore)),
-            estimatedCapacity: Math.min(10, Math.max(1, capacityScore)),
+            estimatedPresence: presenceScore,
+            estimatedCapacity: capacityScore,
             reasoning: `AI analysis of emotional dimensions (valence: ${valence.toFixed(2)}, arousal: ${arousal.toFixed(2)}) indicates ${primaryEmotion} state affecting cognitive presence and capacity.`
         },
         suggestedActions: detailedRecommendations.map(rec => rec.title),
@@ -469,7 +599,13 @@ export const generateAIAnalysis = (emotionData) => {
                 severity: authenticity.maskScore,
                 insights: authenticity.signals
             }]
-            : []
+            : [],
+        emotionalStoryline,
+        readinessMatrix,
+        supportCompass,
+        displayHints,
+        insightChips,
+        metadata
     };
 };
 
