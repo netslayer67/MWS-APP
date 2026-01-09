@@ -36,6 +36,18 @@ const isKindergartenLabel = (value = "") => {
 
 const isSpecificKindergartenVariant = (value = "") => /\b(pre[-\s]?k|k\s*1|k\s*2)\b/i.test(value || "");
 
+const JUNIOR_HIGH_GRADES = ["Grade 7", "Grade 8", "Grade 9"];
+
+const normalizeUnit = (value = "") => value.toString().trim().toLowerCase();
+
+const isJuniorHighPrincipal = (user = {}) => {
+    if (normalizeUnit(user?.unit) !== "junior high") return false;
+    const role = (user?.role || "").toLowerCase();
+    const jobPosition = (user?.jobPosition || "").toLowerCase();
+    const jobLevel = (user?.jobLevel || "").toLowerCase();
+    return role === "head_unit" || jobPosition.includes("principal") || jobLevel.includes("head");
+};
+
 const useAdminDashboardData = () => {
     const { user } = useSelector((state) => state.auth);
     const [students, setStudents] = useState([]);
@@ -46,29 +58,42 @@ const useAdminDashboardData = () => {
     const [error, setError] = useState(null);
 
 const segments = useMemo(() => deriveTeacherSegments(user), [user]);
-const gradeQueryValues = useMemo(() => buildGradeQueryValues(segments), [segments]);
-const classQueryValues = useMemo(() => buildClassQueryValues(segments), [segments]);
+const effectiveSegments = useMemo(() => {
+    if (isJuniorHighPrincipal(user)) {
+        return {
+            ...segments,
+            allowedGrades: JUNIOR_HIGH_GRADES,
+            allowedClasses: [],
+        };
+    }
+    return segments;
+}, [segments, user]);
+const gradeQueryValues = useMemo(() => buildGradeQueryValues(effectiveSegments), [effectiveSegments]);
+const classQueryValues = useMemo(() => buildClassQueryValues(effectiveSegments), [effectiveSegments]);
 const hasKindergartenWildcard = useMemo(
-    () => (segments.allowedGrades || []).some((grade) => isKindergartenLabel(grade) && !isSpecificKindergartenVariant(grade)),
-    [segments.allowedGrades],
+    () => (effectiveSegments.allowedGrades || []).some((grade) => isKindergartenLabel(grade) && !isSpecificKindergartenVariant(grade)),
+    [effectiveSegments.allowedGrades],
 );
 
 const withinSegments = useCallback(
     (student = {}) => {
-        const allowedClasses = segments.allowedClasses || [];
-        if (!segments.allowedGrades.length && !allowedClasses.length) return true;
+        const allowedClasses = effectiveSegments.allowedClasses || [];
+        if (!effectiveSegments.allowedGrades.length && !allowedClasses.length) return true;
         const gradeLabel = normalizeGradeLabel(
             student.grade || student.currentGrade || student.className || student.unit || student.classes?.[0]?.grade,
         );
         const classLabel = normalizeClassLabel(student.className || student.currentGrade);
-        const matchesGrade = !segments.allowedGrades.length || segments.allowedGrades.includes(gradeLabel) || (hasKindergartenWildcard && isKindergartenLabel(gradeLabel));
+        const matchesGrade =
+            !effectiveSegments.allowedGrades.length ||
+            effectiveSegments.allowedGrades.includes(gradeLabel) ||
+            (hasKindergartenWildcard && isKindergartenLabel(gradeLabel));
         const matchesClass = !allowedClasses.length || (classLabel && allowedClasses.includes(classLabel));
         if (matchesGrade && matchesClass) {
             return true;
         }
         return false;
     },
-    [hasKindergartenWildcard, segments],
+    [effectiveSegments, hasKindergartenWildcard],
 );
 
 const transformStudent = useCallback(
@@ -125,21 +150,21 @@ const mergeAssignment = useCallback((action, assignment) => {
 
 const mentorMatchesSegments = useCallback(
     (mentor = {}) => {
-        if (!segments.allowedGrades.length && !segments.unit) {
+        if (!effectiveSegments.allowedGrades.length && !effectiveSegments.unit) {
             return true;
         }
         const mentorSegments = deriveTeacherSegments(mentor);
-        if (segments.allowedGrades.length && mentorSegments.allowedGrades?.length) {
-            if (mentorSegments.allowedGrades.some((grade) => segments.allowedGrades.includes(grade))) {
+        if (effectiveSegments.allowedGrades.length && mentorSegments.allowedGrades?.length) {
+            if (mentorSegments.allowedGrades.some((grade) => effectiveSegments.allowedGrades.includes(grade))) {
                 return true;
             }
         }
-        if (segments.unit && mentor.unit) {
-            return mentor.unit.toLowerCase() === segments.unit.toLowerCase();
+        if (effectiveSegments.unit && mentor.unit) {
+            return mentor.unit.toLowerCase() === effectiveSegments.unit.toLowerCase();
         }
-        return !segments.allowedGrades.length;
+        return !effectiveSegments.allowedGrades.length;
     },
-    [segments],
+    [effectiveSegments],
 );
 
 const loadDashboard = useCallback(async () => {
@@ -147,13 +172,13 @@ const loadDashboard = useCallback(async () => {
         setError(null);
         try {
             const mentorParams = {};
-            if (segments.unit) {
-                mentorParams.unit = segments.unit;
+            if (effectiveSegments.unit) {
+                mentorParams.unit = effectiveSegments.unit;
             }
 
             const studentParams = { limit: STUDENT_LIMIT };
-        if (segments.unit) {
-            studentParams.unit = segments.unit;
+        if (effectiveSegments.unit) {
+            studentParams.unit = effectiveSegments.unit;
         }
         if (gradeQueryValues.length) {
             studentParams.grade = gradeQueryValues.join(",");
@@ -169,7 +194,7 @@ const loadDashboard = useCallback(async () => {
             ]);
 
         const roster = studentResponse.students || [];
-        const scopedRoster = segments.allowedGrades.length ? roster.filter(withinSegments) : roster;
+        const scopedRoster = effectiveSegments.allowedGrades.length ? roster.filter(withinSegments) : roster;
         const normalizedRoster = scopedRoster.map(transformStudent);
         const studentIdSet = new Set(
             normalizedRoster
@@ -197,7 +222,7 @@ const loadDashboard = useCallback(async () => {
     } finally {
         setLoading(false);
     }
-}, [classQueryValues, gradeQueryValues, mentorMatchesSegments, segments.allowedGrades.length, transformStudent, withinSegments]);
+}, [classQueryValues, effectiveSegments.allowedGrades.length, effectiveSegments.unit, gradeQueryValues, mentorMatchesSegments, transformStudent, withinSegments]);
 
 useEffect(() => {
     loadDashboard();

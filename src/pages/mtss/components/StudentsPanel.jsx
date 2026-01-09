@@ -131,13 +131,15 @@ const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh }) =>
             }
             setSavingUpdate(true);
             try {
+                const trimmedNotes = formState.notes?.trim() || "";
+                const parsedScoreValue = formState.scoreValue !== "" ? Number(formState.scoreValue) : undefined;
                 await updateMentorAssignment(student.assignmentId, {
                     checkIns: [
                         {
                             date: formState.date,
-                            summary: formState.notes || "Quick update",
-                            nextSteps: formState.notes,
-                            value: formState.scoreValue ? Number(formState.scoreValue) : undefined,
+                            summary: trimmedNotes || "Quick update",
+                            nextSteps: trimmedNotes || undefined,
+                            value: Number.isFinite(parsedScoreValue) ? parsedScoreValue : undefined,
                             unit: formState.scoreUnit,
                             performed: formState.performed === "yes",
                             celebration: formState.badge,
