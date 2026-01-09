@@ -74,14 +74,16 @@ const TeacherDashboardPage = memo(() => {
                 return;
             }
             try {
+                const trimmedNotes = progressForm.notes?.trim() || "";
+                const parsedScoreValue = progressForm.scoreValue !== "" ? Number(progressForm.scoreValue) : undefined;
                 setSubmittingProgress(true);
                 await updateMentorAssignment(selectedStudent.assignmentId, {
                     checkIns: [
                         {
                             date: progressForm.date || new Date(),
-                            summary: progressForm.notes || "Progress update logged via dashboard",
-                            nextSteps: progressForm.notes,
-                            value: progressForm.scoreValue ? Number(progressForm.scoreValue) : undefined,
+                            summary: trimmedNotes || "Progress update logged via dashboard",
+                            nextSteps: trimmedNotes || undefined,
+                            value: Number.isFinite(parsedScoreValue) ? parsedScoreValue : undefined,
                             unit: progressForm.scoreUnit,
                             performed: progressForm.performed === "yes",
                         },

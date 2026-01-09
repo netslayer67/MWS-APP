@@ -12,6 +12,20 @@ const ROW_THEMES = [
     { bg: "from-[#ecfccb]/90 via-[#d9f99d]/80 to-white/80 dark:from-white/5 dark:via-white/5 dark:to-white/0", accent: "bg-[#4ade80]/70", aos: "zoom-in-up" },
 ];
 const MAX_RENDER = 50;
+const TIER_PRIORITY = { tier1: 1, tier2: 2, tier3: 3 };
+
+const buildSupportDisplay = (interventions = []) => {
+    const escalated = interventions.filter((entry) => entry.tierCode && entry.tierCode !== "tier1");
+    if (!escalated.length) {
+        return { mode: "universal", items: [] };
+    }
+    const highest = escalated.reduce(
+        (max, entry) => Math.max(max, TIER_PRIORITY[entry.tierCode] || 0),
+        0,
+    );
+    const items = escalated.filter((entry) => (TIER_PRIORITY[entry.tierCode] || 0) === highest);
+    return { mode: "focused", items };
+};
 
 const StudentsTable = memo(
     ({
@@ -110,6 +124,7 @@ const DesktopRow = memo(({ student, TierPill, ProgressBadge, showActions, onView
     const tierLabel = highlight?.tier || student.tier;
     const classLabel = student.className || "—";
     const mentorLabel = student.mentor || student.profile?.mentor || "-";
+    const supportDisplay = buildSupportDisplay(interventions);
     const badgeClass = (entry) =>
         `px-2 py-1 rounded-2xl text-[11px] font-semibold bg-gradient-to-r ${entry.accent}`;
     return (
@@ -148,18 +163,24 @@ const DesktopRow = memo(({ student, TierPill, ProgressBadge, showActions, onView
             </td>
             <td className="py-4">
                 <div className="flex flex-wrap gap-2 max-w-[320px]">
-                    {interventions.map((entry) => (
-                        <span key={`${student.id || student._id}-${entry.type}`} className={`${badgeClass(entry)} shadow-sm`}>
-                            <span className="mr-2">{entry.label}</span>
-                            <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded-full border ${
-                                    tierToneClasses[entry.tierCode] || tierToneClasses.tier1
-                                } text-[10px] uppercase tracking-wide`}
-                            >
-                                {entry.tier}
-                            </span>
+                    {supportDisplay.mode === "universal" ? (
+                        <span className="px-3 py-1 rounded-2xl text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                            Universal
                         </span>
-                    ))}
+                    ) : (
+                        supportDisplay.items.map((entry) => (
+                            <span key={`${student.id || student._id}-${entry.type}`} className={`${badgeClass(entry)} shadow-sm`}>
+                                <span className="mr-2">{entry.label}</span>
+                                <span
+                                    className={`inline-flex items-center px-2 py-0.5 rounded-full border ${
+                                        tierToneClasses[entry.tierCode] || tierToneClasses.tier1
+                                    } text-[10px] uppercase tracking-wide`}
+                                >
+                                    {entry.tier}
+                                </span>
+                            </span>
+                        ))
+                    )}
                 </div>
             </td>
             <td className="py-4">
@@ -197,6 +218,7 @@ const MobileCard = memo(({ student, TierPill, ProgressBadge, showActions, onView
     const interventions = ensureStudentInterventions(student.interventions);
     const highlight = pickPrimaryIntervention(interventions);
     const tierLabel = highlight?.tier || student.tier;
+    const supportDisplay = buildSupportDisplay(interventions);
     return (
         <div
             className={`glass glass-card rounded-2xl p-4 flex flex-col gap-3 shadow-[0_12px_35px_rgba(15,23,42,0.12)] bg-gradient-to-br ${theme?.bg}`}
@@ -230,14 +252,20 @@ const MobileCard = memo(({ student, TierPill, ProgressBadge, showActions, onView
                 </div>
             </div>
             <div className="flex flex-wrap gap-2">
-                {interventions.map((entry) => (
-                    <span
-                        key={`${student.id || student._id}-mobile-${entry.type}`}
-                        className="rounded-2xl border border-white/60 dark:border-white/10 px-3 py-1 text-[11px] font-semibold text-foreground dark:text-white/80"
-                    >
-                        {entry.label} · {entry.tier}
+                {supportDisplay.mode === "universal" ? (
+                    <span className="rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700">
+                        Universal
                     </span>
-                ))}
+                ) : (
+                    supportDisplay.items.map((entry) => (
+                        <span
+                            key={`${student.id || student._id}-mobile-${entry.type}`}
+                            className="rounded-2xl border border-white/60 dark:border-white/10 px-3 py-1 text-[11px] font-semibold text-foreground dark:text-white/80"
+                        >
+                            {entry.label} · {entry.tier}
+                        </span>
+                    ))
+                )}
             </div>
             <div className="flex items-center justify-between gap-3">
                 <TierPill tier={tierLabel} compact />
