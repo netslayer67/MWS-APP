@@ -160,7 +160,7 @@ const AdminStudentsPanel = ({
                             All students in MTSS
                         </h3>
                         <p className="text-sm text-muted-foreground max-w-xl">
-                            Liquid glass rows highlight tiers, next updates, and progress streaks so principals can triage faster.
+                            Highlight tiers, next updates, and progress streaks so principals can triage faster.
                         </p>
                     </div>
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end" data-aos="fade-left" data-aos-delay="180">
@@ -179,22 +179,20 @@ const AdminStudentsPanel = ({
                             <button
                                 onClick={onResetSelection}
                                 disabled={selectedStudents.length === 0}
-                                className={`flex-1 sm:flex-none px-4 py-2 rounded-full border text-sm font-semibold transition ${
-                                    selectedStudents.length === 0
+                                className={`flex-1 sm:flex-none px-4 py-2 rounded-full border text-sm font-semibold transition ${selectedStudents.length === 0
                                         ? "border-white/40 dark:border-white/10 text-slate-400 dark:text-white/30 cursor-not-allowed"
                                         : "border-white/70 dark:border-white/30 text-foreground dark:text-white bg-white/80 dark:bg-white/5 shadow-inner hover:-translate-y-0.5"
-                                }`}
+                                    }`}
                             >
                                 Clear selection
                             </button>
                             <button
                                 disabled={disableAssignment}
                                 onClick={() => setAssignmentOpen(true)}
-                                className={`flex-1 sm:flex-none px-4 py-2 rounded-full text-sm font-semibold text-white flex items-center justify-center gap-2 transition ${
-                                    disableAssignment
+                                className={`flex-1 sm:flex-none px-4 py-2 rounded-full text-sm font-semibold text-white flex items-center justify-center gap-2 transition ${disableAssignment
                                         ? "bg-gradient-to-r from-slate-200 to-slate-100 dark:from-white/10 dark:to-white/5 text-slate-400 dark:text-white/40 cursor-not-allowed"
                                         : "bg-gradient-to-r from-[#34d399] via-[#3b82f6] to-[#a855f7] shadow-lg shadow-primary/30 hover:-translate-y-0.5"
-                                }`}
+                                    }`}
                             >
                                 <Sparkles className="w-4 h-4" />
                                 Assign Selected

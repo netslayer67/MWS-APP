@@ -1,4 +1,4 @@
-import React, { memo, Suspense, lazy, useCallback, useMemo } from "react";
+import React, { memo, Suspense, lazy, useCallback, useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { TierPill, ProgressBadge } from "./components/StatusPills";
 import { fieldClasses, tabs } from "./data/teacherDashboardContent";
@@ -8,6 +8,8 @@ import TeacherHeroSection from "./teacher/TeacherHeroSection";
 import { useToast } from "@/components/ui/use-toast";
 import { updateMentorAssignment } from "@/services/mtssService";
 import PageLoader from "@/components/PageLoader";
+import { useNavigate } from "react-router-dom";
+import QuickUpdateModal from "./components/QuickUpdateModal";
 
 const DashboardOverview = lazy(() => import("./components/DashboardOverview"));
 const StudentsPanel = lazy(() => import("./components/StudentsPanel"));
@@ -20,6 +22,7 @@ const PanelFallback = () => (
 
 const TeacherDashboardPage = memo(() => {
     const { toast } = useToast();
+    const navigate = useNavigate();
     const {
         statCards,
         students,
@@ -42,6 +45,8 @@ const TeacherDashboardPage = memo(() => {
         setSubmittingProgress,
         submittingProgress,
     } = useTeacherDashboardState(tabs);
+    const [quickUpdateStudent, setQuickUpdateStudent] = useState(null);
+    const [savingQuickUpdate, setSavingQuickUpdate] = useState(false);
 
     const { base: baseFieldClass, textarea: textareaClass, notes: notesTextareaClass } = fieldClasses;
 
@@ -108,6 +113,63 @@ const TeacherDashboardPage = memo(() => {
         [progressForm, students, toast, resetProgressForm, refresh, setSubmittingProgress],
     );
 
+    const handleViewStudent = useCallback(
+        (student) => {
+            if (!student?.slug) return;
+            navigate(`/mtss/student/${student.slug}`);
+        },
+        [navigate],
+    );
+
+    const handleOpenQuickUpdate = useCallback((student) => setQuickUpdateStudent(student), []);
+    const handleCloseQuickUpdate = useCallback(() => setQuickUpdateStudent(null), []);
+
+    const handleQuickUpdateSubmit = useCallback(
+        async (student, formState) => {
+            if (!student?.assignmentId) {
+                toast({
+                    title: "No active intervention",
+                    description: `${student?.name || "Student"} isn't linked to an active intervention yet.`,
+                    variant: "destructive",
+                });
+                return;
+            }
+            setSavingQuickUpdate(true);
+            try {
+                const trimmedNotes = formState.notes?.trim() || "";
+                const parsedScoreValue = formState.scoreValue !== "" ? Number(formState.scoreValue) : undefined;
+                await updateMentorAssignment(student.assignmentId, {
+                    checkIns: [
+                        {
+                            date: formState.date,
+                            summary: trimmedNotes || "Quick update",
+                            nextSteps: trimmedNotes || undefined,
+                            value: Number.isFinite(parsedScoreValue) ? parsedScoreValue : undefined,
+                            unit: formState.scoreUnit,
+                            performed: formState.performed === "yes",
+                            celebration: formState.badge,
+                        },
+                    ],
+                });
+                toast({
+                    title: "Progress update saved",
+                    description: `${student.name}'s update was recorded!`,
+                });
+                handleCloseQuickUpdate();
+                refresh();
+            } catch (error) {
+                toast({
+                    title: "Failed to save update",
+                    description: error?.response?.data?.message || error.message || "Please try again in a moment.",
+                    variant: "destructive",
+                });
+            } finally {
+                setSavingQuickUpdate(false);
+            }
+        },
+        [toast, handleCloseQuickUpdate, refresh],
+    );
+
     const panelContent = useMemo(() => {
         switch (activeTab) {
             case "dashboard":
@@ -118,6 +180,8 @@ const TeacherDashboardPage = memo(() => {
                         progressData={progressData}
                         TierPill={TierPill}
                         ProgressBadge={ProgressBadge}
+                        onView={handleViewStudent}
+                        onUpdate={handleOpenQuickUpdate}
                     />
                 );
             case "students":
@@ -164,6 +228,8 @@ const TeacherDashboardPage = memo(() => {
         handleProgressChange,
         handleSavePlan,
         handleProgressSubmitForm,
+        handleViewStudent,
+        handleOpenQuickUpdate,
         baseFieldClass,
         textareaClass,
         notesTextareaClass,
@@ -175,7 +241,7 @@ const TeacherDashboardPage = memo(() => {
 
     return (
         <div className="mtss-theme mtss-animated-bg min-h-screen relative overflow-hidden text-foreground dark:text-white transition-colors">
-            {(submittingPlan || submittingProgress) && <PageLoader />}
+            {(submittingPlan || submittingProgress || savingQuickUpdate) && <PageLoader />}
             <div className="mtss-bg-overlay" />
             <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-white/70 via-[#fef2f2]/40 to-transparent dark:from-white/10 dark:via-white/5" />
@@ -210,6 +276,14 @@ const TeacherDashboardPage = memo(() => {
 
                 <Suspense fallback={<PanelFallback />}>{panelContent}</Suspense>
             </div>
+            {quickUpdateStudent && (
+                <QuickUpdateModal
+                    student={quickUpdateStudent}
+                    onClose={handleCloseQuickUpdate}
+                    onSubmit={handleQuickUpdateSubmit}
+                    submitting={savingQuickUpdate}
+                />
+            )}
         </div>
     );
 });

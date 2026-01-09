@@ -36,6 +36,15 @@ const KINDERGARTEN_CLASSES = [
     "Kindergarten - Starlight",
 ];
 
+const STRICT_CLASS_GRADES = new Set(["Grade 1", "Grade 2", "Grade 3", "Grade 4"]);
+
+const shouldStrictClassFilter = (unit = "", grades = []) => {
+    const normalizedUnit = (unit || "").toLowerCase();
+    if (normalizedUnit === "kindergarten" || normalizedUnit === "pelangi") return true;
+    if (grades.some((grade) => grade.toLowerCase().startsWith("kindergarten"))) return true;
+    return grades.some((grade) => STRICT_CLASS_GRADES.has(normalizeGradeLabel(grade)));
+};
+
 export const normalizeClassLabel = (value = "") => {
     if (!value) return "";
     const cleaned = value.toString().replace(/\s+/g, " ").trim();
@@ -180,7 +189,9 @@ const collectClassNames = (user = {}) => {
 };
 
 export const buildClassQueryValues = (segments = {}) =>
-    Array.from(new Set((segments.allowedClasses || []).map(normalizeClassLabel).filter(Boolean)));
+    segments.strictClassFilter
+        ? Array.from(new Set((segments.allowedClasses || []).map(normalizeClassLabel).filter(Boolean)))
+        : [];
 
 const resolveFallbackGrades = (user = {}) => {
     const candidates = [];
@@ -277,12 +288,15 @@ export const deriveTeacherSegments = (user = {}) => {
     }
 
     const allowedClasses = Array.from(classNameSet);
+    const strictClassFilter = shouldStrictClassFilter(user?.unit || "", allowedGrades);
+    const normalizedClasses = strictClassFilter ? allowedClasses : [];
     const shouldFilterServer =
-        Boolean(allowedClasses.length) || Boolean(allowedGrades.length && (source === "classes" || source === "job"));
+        Boolean(normalizedClasses.length) || Boolean(allowedGrades.length && (source === "classes" || source === "job"));
 
     return {
         allowedGrades,
-        allowedClasses,
+        allowedClasses: normalizedClasses,
+        strictClassFilter,
         source,
         shouldFilterServer,
         unit: user?.unit || "",
@@ -516,9 +530,10 @@ export const mergeRosterWithAssignments = (
     );
     const allowedGrades = segments.allowedGrades || [];
     const allowedClasses = segments.allowedClasses || [];
+    const strictClassFilter = segments.strictClassFilter;
     const matchesGrade = (grade) => !allowedGrades.length || allowedGrades.includes(normalizeGradeLabel(grade));
     const matchesClass = (className) => {
-        if (!allowedClasses.length) return true;
+        if (!strictClassFilter || !allowedClasses.length) return true;
         const normalized = normalizeClassLabel(className);
         if (!normalized) return false;
         return allowedClasses.includes(normalized);
