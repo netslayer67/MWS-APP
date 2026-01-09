@@ -357,12 +357,6 @@ const InterventionFormPanel = memo(({ formState, onChange, onSubmit, baseFieldCl
                         {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                         {submitting ? "Saving..." : "Save Intervention Plan"}
                     </button>
-                    <button
-                        type="button"
-                        className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white/90 dark:bg-white/10 text-foreground font-semibold border border-border/60"
-                    >
-                        Cancel
-                    </button>
                 </div>
             </form>
         </section>

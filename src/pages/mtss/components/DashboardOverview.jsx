@@ -7,7 +7,7 @@ import TeacherStatCards from "../teacher/TeacherStatCards";
 
 const BATCH = 10;
 
-const DashboardOverview = memo(({ statCards, students, progressData, TierPill, ProgressBadge }) => {
+const DashboardOverview = memo(({ statCards, students, progressData, TierPill, ProgressBadge, onView, onUpdate }) => {
     const [spotlightIndex, setSpotlightIndex] = useState(0);
 
     useEffect(() => {
@@ -79,7 +79,15 @@ const DashboardOverview = memo(({ statCards, students, progressData, TierPill, P
                     </motion.button>
                 </header>
                 <div data-aos="fade-up" data-aos-delay="120">
-                    <StudentsTable students={visibleStudents} TierPill={TierPill} ProgressBadge={ProgressBadge} dense />
+                    <StudentsTable
+                        students={visibleStudents}
+                        TierPill={TierPill}
+                        ProgressBadge={ProgressBadge}
+                        dense
+                        showActions
+                        onView={onView}
+                        onUpdate={onUpdate}
+                    />
                 </div>
                 <div className="flex flex-col items-center gap-2 text-xs text-muted-foreground" data-aos="fade-up" data-aos-delay="180">
                     {visibleStudents.length < students.length ? (
