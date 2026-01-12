@@ -78,7 +78,12 @@ const AuthCallback = () => {
                 console.log('📱 User state updated in Redux');
                 console.log('🎯 Expected dashboard access:', canViewDashboard ? 'YES' : 'NO');
 
-                navigate('/support-hub', { replace: true });
+                const normalizedRole = (canonicalUser.role || '').toLowerCase();
+                const redirectParam = searchParams.get('redirect');
+                const safeRedirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : null;
+                const target = normalizedRole === 'student' ? '/emotional-checkin' : (safeRedirect || '/support-hub');
+
+                navigate(target, { replace: true });
 
             } catch (error) {
                 console.error('Auth callback error:', error);
