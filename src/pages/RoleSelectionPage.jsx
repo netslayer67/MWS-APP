@@ -153,6 +153,8 @@ const RoleSelection = memo(() => {
         ? headUnitFeatures
         : directorateFeatures;
 
+    const isTeacherRole = user && ['teacher', 'se_teacher'].includes(user.role);
+
     // Debug logging
     React.useEffect(() => {
         console.log('RoleSelection - User state:', user);
@@ -171,6 +173,8 @@ const RoleSelection = memo(() => {
             navigate('/emotional-checkin/face-scan');
         } else if (method === 'dashboard') {
             navigate('/emotional-checkin/dashboard');
+        } else if (method === 'teacher-dashboard') {
+            navigate('/emotional-checkin/teacher-dashboard');
         }
     };
 
@@ -250,6 +254,22 @@ const RoleSelection = memo(() => {
                             isPremium={true}
                             onClick={() => selectMethod('ai')}
                         />
+
+                        {isTeacherRole && (
+                            <MethodCard
+                                icon={BarChart3}
+                                title="Student Daily Check-in Dashboard"
+                                desc="Review daily check-ins for your assigned class and track support needs."
+                                features={[
+                                    "Class-scoped student check-ins",
+                                    "Daily submission tracking",
+                                    "Needs support highlights",
+                                    "Quick search by student"
+                                ]}
+                                isPremium={false}
+                                onClick={() => selectMethod('teacher-dashboard')}
+                            />
+                        )}
 
                         {/* Dashboard Access for Directorate and Head Unit */}
                         {canAccessDashboard && (

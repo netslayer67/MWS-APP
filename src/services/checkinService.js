@@ -38,6 +38,15 @@ export const getPersonalDashboard = async () => {
     return response;
 };
 
+export const getTeacherDailyCheckins = async (date = null) => {
+    const params = {};
+    if (date) {
+        params.date = date;
+    }
+    const response = await api.get('/checkin/teacher/dashboard', { params });
+    return response;
+};
+
 // Default export for backward compatibility
 const checkinService = {
     submitCheckin,
@@ -45,7 +54,8 @@ const checkinService = {
     getCheckinResults,
     getCheckinHistory,
     getTodayCheckinStatus,
-    getPersonalDashboard
+    getPersonalDashboard,
+    getTeacherDailyCheckins
 };
 
 export default checkinService;

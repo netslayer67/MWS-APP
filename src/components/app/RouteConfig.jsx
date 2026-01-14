@@ -17,6 +17,7 @@ const RatingPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/Rating
 const EmotionalCheckinPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/EmotionalCheckinPage'));
 const EmotionalCheckinStaffPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/EmotionalCheckinStaffPage'));
 const EmotionalCheckinDashboard = lazy(() => import(/* webpackPrefetch: true */ '@/pages/EmotionalCheckinDashboard'));
+const EmotionalCheckinTeacherDashboard = lazy(() => import(/* webpackPrefetch: true */ '@/pages/EmotionalCheckinTeacherDashboard'));
 const NotSubmittedUsersPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/dashboard/NotSubmittedUsersPage'));
 const EmotionalWellnessPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/dashboard/IndividualDashboard'));
 const PersonalStatsPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/PersonalStatsPage'));
@@ -114,6 +115,17 @@ const publicRoutes = [
     <Route key="rate" path="/emotional-checkin/rate" element={<ProtectedRoute><MemoizedPageTransition><RatingPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="rate-with-id" path="/emotional-checkin/rate/:checkinId" element={<ProtectedRoute><MemoizedPageTransition><RatingPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="emotional-checkin-dashboard" path="/emotional-checkin/dashboard" element={<ProtectedRoute requireDirectorateAcademic={true}><MemoizedPageTransition><EmotionalCheckinDashboard /></MemoizedPageTransition></ProtectedRoute>} />,
+    <Route
+        key="emotional-checkin-teacher-dashboard"
+        path="/emotional-checkin/teacher-dashboard"
+        element={
+            <ProtectedRoute allowedRoles={['teacher', 'se_teacher']}>
+                <MemoizedPageTransition>
+                    <EmotionalCheckinTeacherDashboard />
+                </MemoizedPageTransition>
+            </ProtectedRoute>
+        }
+    />,
     <Route key="emotional-checkin-not-submitted" path="/emotional-checkin/not-submitted" element={<ProtectedRoute requireDirectorateAcademic={true}><MemoizedPageTransition><NotSubmittedUsersPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="emotional-wellness" path="/emotional-wellness" element={<ProtectedRoute><MemoizedPageTransition><EmotionalWellnessPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="emotional-wellness-user" path="/emotional-wellness/:userId" element={<ProtectedRoute><MemoizedPageTransition><EmotionalWellnessPage /></MemoizedPageTransition></ProtectedRoute>} />,
