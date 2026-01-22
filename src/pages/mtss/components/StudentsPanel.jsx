@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import StudentsTable from "./StudentsTable";
 import QuickUpdateModal from "./QuickUpdateModal";
 import { updateMentorAssignment } from "@/services/mtssService";
-import { ensureStudentInterventions, pickPrimaryIntervention } from "../utils/interventionUtils";
+import { ensureStudentInterventions, getMostCriticalForDisplay } from "../utils/interventionUtils";
 
 const tierFilters = ["All", "Tier 1", "Tier 2", "Tier 3"];
 const BATCH = 10;
@@ -90,12 +90,12 @@ const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh }) =>
     const filteredStudents = useMemo(() => {
         return students.filter((student) => {
             const interventions = ensureStudentInterventions(student.interventions);
-            const highlight = pickPrimaryIntervention(interventions);
-            const tierLabel = highlight?.tier || student.tier;
+            const criticalInfo = getMostCriticalForDisplay(interventions, student.profile, student);
+            const tierLabel = criticalInfo?.tier || student.tier;
             const matchesTier = activeTier === "All" || tierLabel === activeTier;
             if (!deferredQuery) return matchesTier;
             const chipLabels = interventions.map((entry) => entry.label).join(" ");
-            const searchPool = `${student.name} ${student.type || ""} ${student.grade || ""} ${student.className || ""} ${chipLabels}`.toLowerCase();
+            const searchPool = `${student.name} ${student.type || ""} ${student.grade || ""} ${student.className || ""} ${criticalInfo?.label || ""} ${chipLabels}`.toLowerCase();
             return matchesTier && searchPool.includes(deferredQuery);
         });
     }, [students, activeTier, deferredQuery]);

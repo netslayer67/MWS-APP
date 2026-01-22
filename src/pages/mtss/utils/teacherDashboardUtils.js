@@ -363,6 +363,17 @@ const mapTierLabel = (tier) => {
     return "Tier 2";
 };
 
+const TIER_PRIORITY = { tier1: 1, tier2: 2, tier3: 3 };
+
+const normalizeTierCode = (value) => {
+    if (!value) return null;
+    const normalized = value.toString().toLowerCase();
+    if (normalized.includes("3")) return "tier3";
+    if (normalized.includes("2")) return "tier2";
+    if (normalized.includes("1")) return "tier1";
+    return null;
+};
+
 const deriveFocus = (assignment) => {
     if (assignment?.focusAreas?.length) return assignment.focusAreas[0];
     if (assignment?.tier === "tier3") return "Intensive Support";
@@ -551,18 +562,28 @@ export const mergeRosterWithAssignments = (
                 return null;
             }
             const assignment = assignmentMap.get(id);
+            const rosterTierCode = normalizeTierCode(
+                student.tier || student.primaryIntervention?.tier || student.profile?.tier,
+            );
+            const assignmentTierCode = normalizeTierCode(assignment?.tier);
+            const rosterScore = TIER_PRIORITY[rosterTierCode] || 0;
+            const assignmentScore = TIER_PRIORITY[assignmentTierCode] || 0;
+            const useAssignment = assignment && (!rosterScore || assignmentScore > rosterScore);
+            const displaySource = useAssignment ? assignment : student;
             return {
                 id,
                 slug: student.slug || slugify(student.name),
                 name: student.name,
                 grade: gradeLabel,
                 className: classLabel || student.className,
-                type: assignment?.type || student.type || "Universal Supports",
-                tier: assignment?.tier || student.tier || "Tier 1",
-                progress: assignment?.progress || student.progress || "Not Assigned",
-                nextUpdate: assignment?.nextUpdate || student.nextUpdate || "Not scheduled",
+                type: displaySource?.type || student.type || "Universal Supports",
+                tier: displaySource?.tier || student.tier || "Tier 1",
+                progress: displaySource?.progress || student.progress || "Not Assigned",
+                nextUpdate: displaySource?.nextUpdate || student.nextUpdate || "Not scheduled",
                 assignmentId: assignment?.assignmentId || null,
-                profile: assignment?.profile || student.profile,
+                profile: displaySource?.profile || assignment?.profile || student.profile,
+                interventions: student.interventions,
+                primaryIntervention: student.primaryIntervention,
             };
         })
         .filter(Boolean);
