@@ -1,0 +1,1 @@
+const l={happy:{Icon:null,color:"emerald"},excited:{Icon:null,color:"gold"},okay:{Icon:null,color:"muted"},sad:{Icon:null,color:"primary"}},o=[{id:"today",label:"Today"},{id:"week",label:"Week"},{id:"month",label:"Month"},{id:"semester",label:"Semester"},{id:"all",label:"All Data"}];export{l as m,o as p};

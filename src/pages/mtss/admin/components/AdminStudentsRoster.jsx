@@ -1,6 +1,6 @@
 import { Users, Sparkles } from "lucide-react";
-import StudentsTable from "../components/StudentsTable";
-import { TierPill, ProgressBadge } from "../components/StatusPills";
+import StudentsTable from "../../components/StudentsTable";
+import { TierPill, ProgressBadge } from "../../components/StatusPills";
 
 const AdminStudentsRoster = ({
     visibleStudents,
