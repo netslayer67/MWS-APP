@@ -1,24 +1,15 @@
-import React, { memo, Suspense, lazy, useCallback, useMemo, useState } from "react";
-import { Loader2 } from "lucide-react";
-import { TierPill, ProgressBadge } from "./components/StatusPills";
+import React, { memo, useCallback, useState } from "react";
 import { fieldClasses, tabs } from "./data/teacherDashboardContent";
 import { useTeacherDashboardState } from "./hooks/useTeacherDashboardState";
 import useTeacherDashboardData from "./hooks/useTeacherDashboardData";
 import TeacherHeroSection from "./teacher/TeacherHeroSection";
 import { useToast } from "@/components/ui/use-toast";
-import { updateMentorAssignment } from "@/services/mtssService";
 import PageLoader from "@/components/PageLoader";
 import { useNavigate } from "react-router-dom";
 import QuickUpdateModal from "./components/QuickUpdateModal";
-
-const DashboardOverview = lazy(() => import("./components/DashboardOverview"));
-const StudentsPanel = lazy(() => import("./components/StudentsPanel"));
-const InterventionFormPanel = lazy(() => import("./components/InterventionFormPanel"));
-const ProgressFormPanel = lazy(() => import("./components/ProgressFormPanel"));
-
-const PanelFallback = () => (
-    <div className="glass glass-card p-8 text-center text-muted-foreground animate-pulse">Loading panel...</div>
-);
+import TeacherDashboardPanels from "./components/TeacherDashboardPanels";
+import TeacherDashboardStatus from "./components/TeacherDashboardStatus";
+import useTeacherDashboardActions from "./hooks/useTeacherDashboardActions";
 
 const TeacherDashboardPage = memo(() => {
     const { toast } = useToast();
@@ -49,70 +40,6 @@ const TeacherDashboardPage = memo(() => {
     const [savingQuickUpdate, setSavingQuickUpdate] = useState(false);
 
     const { base: baseFieldClass, textarea: textareaClass, notes: notesTextareaClass } = fieldClasses;
-
-    const handleProgressSubmitForm = useCallback(
-        async (event) => {
-            event.preventDefault();
-            if (!progressForm.studentId || !progressForm.date || progressForm.scoreValue === "") {
-                toast({
-                    title: "Complete the required fields",
-                    description: "Student, date, and score are required to submit progress.",
-                    variant: "destructive",
-                });
-                return;
-            }
-            const selectedStudent = students.find((student) => student.id === progressForm.studentId);
-            if (!selectedStudent) {
-                toast({
-                    title: "Select a student",
-                    description: "Choose a student before logging progress.",
-                    variant: "destructive",
-                });
-                return;
-            }
-            if (!selectedStudent.assignmentId) {
-                toast({
-                    title: "No active intervention",
-                    description: `${selectedStudent.name} is not linked to an active intervention yet.`,
-                    variant: "destructive",
-                });
-                return;
-            }
-            try {
-                const trimmedNotes = progressForm.notes?.trim() || "";
-                const parsedScoreValue = progressForm.scoreValue !== "" ? Number(progressForm.scoreValue) : undefined;
-                setSubmittingProgress(true);
-                await updateMentorAssignment(selectedStudent.assignmentId, {
-                    checkIns: [
-                        {
-                            date: progressForm.date || new Date(),
-                            summary: trimmedNotes || "Progress update logged via dashboard",
-                            nextSteps: trimmedNotes || undefined,
-                            value: Number.isFinite(parsedScoreValue) ? parsedScoreValue : undefined,
-                            unit: progressForm.scoreUnit,
-                            performed: progressForm.performed === "yes",
-                        },
-                    ],
-                });
-                toast({
-                    title: "Progress saved",
-                    description: `${selectedStudent.name}'s update is now on the dashboard.`,
-                });
-                resetProgressForm();
-                refresh();
-            } catch (error) {
-                toast({
-                    title: "Failed to save progress",
-                    description: error?.response?.data?.message || error.message || "Unable to record update now.",
-                    variant: "destructive",
-                });
-            } finally {
-                setSubmittingProgress(false);
-            }
-        },
-        [progressForm, students, toast, resetProgressForm, refresh, setSubmittingProgress],
-    );
-
     const handleViewStudent = useCallback(
         (student) => {
             if (!student?.slug) return;
@@ -123,121 +50,16 @@ const TeacherDashboardPage = memo(() => {
 
     const handleOpenQuickUpdate = useCallback((student) => setQuickUpdateStudent(student), []);
     const handleCloseQuickUpdate = useCallback(() => setQuickUpdateStudent(null), []);
-
-    const handleQuickUpdateSubmit = useCallback(
-        async (student, formState) => {
-            if (!student?.assignmentId) {
-                toast({
-                    title: "No active intervention",
-                    description: `${student?.name || "Student"} isn't linked to an active intervention yet.`,
-                    variant: "destructive",
-                });
-                return;
-            }
-            setSavingQuickUpdate(true);
-            try {
-                const trimmedNotes = formState.notes?.trim() || "";
-                const parsedScoreValue = formState.scoreValue !== "" ? Number(formState.scoreValue) : undefined;
-                await updateMentorAssignment(student.assignmentId, {
-                    checkIns: [
-                        {
-                            date: formState.date,
-                            summary: trimmedNotes || "Quick update",
-                            nextSteps: trimmedNotes || undefined,
-                            value: Number.isFinite(parsedScoreValue) ? parsedScoreValue : undefined,
-                            unit: formState.scoreUnit,
-                            performed: formState.performed === "yes",
-                            celebration: formState.badge,
-                        },
-                    ],
-                });
-                toast({
-                    title: "Progress update saved",
-                    description: `${student.name}'s update was recorded!`,
-                });
-                handleCloseQuickUpdate();
-                refresh();
-            } catch (error) {
-                toast({
-                    title: "Failed to save update",
-                    description: error?.response?.data?.message || error.message || "Please try again in a moment.",
-                    variant: "destructive",
-                });
-            } finally {
-                setSavingQuickUpdate(false);
-            }
-        },
-        [toast, handleCloseQuickUpdate, refresh],
-    );
-
-    const panelContent = useMemo(() => {
-        switch (activeTab) {
-            case "dashboard":
-                return (
-                    <DashboardOverview
-                        statCards={statCards}
-                        students={students}
-                        progressData={progressData}
-                        TierPill={TierPill}
-                        ProgressBadge={ProgressBadge}
-                        onView={handleViewStudent}
-                        onUpdate={handleOpenQuickUpdate}
-                    />
-                );
-            case "students":
-                return (
-                    <StudentsPanel
-                        students={students}
-                        TierPill={TierPill}
-                        ProgressBadge={ProgressBadge}
-                        onRefresh={refresh}
-                    />
-                );
-            case "create":
-                return (
-                    <InterventionFormPanel
-                        formState={interventionForm}
-                        onChange={handleInterventionChange}
-                        onSubmit={(event) => handleSavePlan(event, interventionForm)}
-                        baseFieldClass={baseFieldClass}
-                        textareaClass={textareaClass}
-                        students={students}
-                        submitting={submittingPlan}
-                    />
-                );
-            case "submit":
-                return (
-                    <ProgressFormPanel
-                        formState={progressForm}
-                        onChange={handleProgressChange}
-                        onSubmit={handleProgressSubmitForm}
-                        baseFieldClass={baseFieldClass}
-                        textareaClass={notesTextareaClass}
-                        students={students}
-                        submitting={submittingProgress}
-                    />
-                );
-            default:
-                return null;
-        }
-    }, [
-        activeTab,
-        interventionForm,
-        progressForm,
-        handleInterventionChange,
-        handleProgressChange,
-        handleSavePlan,
-        handleProgressSubmitForm,
-        handleViewStudent,
-        handleOpenQuickUpdate,
-        baseFieldClass,
-        textareaClass,
-        notesTextareaClass,
-        statCards,
+    const { handleProgressSubmitForm, handleQuickUpdateSubmit } = useTeacherDashboardActions({
         students,
-        progressData,
+        progressForm,
+        resetProgressForm,
         refresh,
-    ]);
+        setSubmittingProgress,
+        toast,
+        setSavingQuickUpdate,
+        onCloseQuickUpdate: handleCloseQuickUpdate,
+    });
 
     return (
         <div className="mtss-theme mtss-animated-bg min-h-screen relative overflow-hidden text-foreground dark:text-white transition-colors">
@@ -257,24 +79,28 @@ const TeacherDashboardPage = memo(() => {
                     <TeacherHeroSection heroBadge={heroBadge} tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
                 </section>
 
-                {(dataLoading || dataError) && (
-                    <div
-                        className="rounded-2xl border border-border/50 bg-white/60 dark:bg-white/5 px-4 py-3 flex items-center justify-between gap-4 text-sm text-muted-foreground"
-                        data-aos="fade-up"
-                    >
-                        <div className="flex items-center gap-2">
-                            {dataLoading && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
-                            <span>{dataError ? dataError : "Syncing live MTSS data..."}</span>
-                        </div>
-                        {dataError && (
-                            <button onClick={refresh} className="text-primary font-semibold hover:underline">
-                                Retry
-                            </button>
-                        )}
-                    </div>
-                )}
+                <TeacherDashboardStatus loading={dataLoading} error={dataError} onRetry={refresh} />
 
-                <Suspense fallback={<PanelFallback />}>{panelContent}</Suspense>
+                <TeacherDashboardPanels
+                    activeTab={activeTab}
+                    statCards={statCards}
+                    students={students}
+                    progressData={progressData}
+                    interventionForm={interventionForm}
+                    progressForm={progressForm}
+                    handleInterventionChange={handleInterventionChange}
+                    handleProgressChange={handleProgressChange}
+                    handleSavePlan={handleSavePlan}
+                    handleProgressSubmitForm={handleProgressSubmitForm}
+                    baseFieldClass={baseFieldClass}
+                    textareaClass={textareaClass}
+                    notesTextareaClass={notesTextareaClass}
+                    submittingPlan={submittingPlan}
+                    submittingProgress={submittingProgress}
+                    onViewStudent={handleViewStudent}
+                    onQuickUpdate={handleOpenQuickUpdate}
+                    refresh={refresh}
+                />
             </div>
             {quickUpdateStudent && (
                 <QuickUpdateModal

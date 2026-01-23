@@ -31,7 +31,7 @@
     "@tensorflow/tfjs-backend-webgl": "^4.22.0",
     "aos": "^2.3.4",
     "axios": "^1.12.2",
-    "canvas-confetti": "^1.9.3",
+    "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "framer-motion": "^10.16.4",

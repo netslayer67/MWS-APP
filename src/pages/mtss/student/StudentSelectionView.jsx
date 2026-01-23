@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+﻿import React, { memo } from "react";
 import { motion } from "framer-motion";
 
 const StudentSelectionView = ({ students, onSelect, onBack }) => (
@@ -13,7 +13,7 @@ const StudentSelectionView = ({ students, onSelect, onBack }) => (
         <div className="relative z-10 container-tight py-14 text-foreground dark:text-white space-y-10">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center space-y-4">
                 <p className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-white/80 dark:bg-white/10 text-xs font-black tracking-[0.6em] text-rose-500 shadow-lg">
-                    ????? Student/Parent
+                    {"\uD83D\uDC4B"} Student/Parent
                 </p>
                 <h1 className="text-4xl md:text-5xl font-black">
                     <span className="bg-gradient-to-r from-[#f97316] via-[#ec4899] to-[#14b8a6] bg-clip-text text-transparent">My MTSS Portal</span>
@@ -50,7 +50,7 @@ const StudentSelectionView = ({ students, onSelect, onBack }) => (
                             <span className="inline-flex items-center gap-2 text-sm uppercase font-black tracking-[0.5em]">
                                 Enter Portal
                                 <motion.span animate={{ x: [0, 6, 0] }} transition={{ repeat: Infinity, duration: 1.4 }}>
-                                    →
+                                    {"\u2192"}
                                 </motion.span>
                             </span>
                         </div>
@@ -64,7 +64,7 @@ const StudentSelectionView = ({ students, onSelect, onBack }) => (
                     onClick={onBack}
                     className="px-6 py-3 rounded-full bg-white/85 dark:bg-white/10 text-sm font-semibold text-rose-500 shadow-lg border border-white/60 hover:shadow-xl transition"
                 >
-                    ← Back to Role Selection
+                    {"\u2190"} Back to Role Selection
                 </button>
             </div>
         </div>

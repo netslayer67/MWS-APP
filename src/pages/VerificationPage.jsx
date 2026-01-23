@@ -82,8 +82,8 @@ const EmotionalCheckinFaceScanPage = memo(() => {
         if (stage === "results" && analysis && isRescanDisabled && !rescanLimitNoticeShownRef.current) {
             rescanLimitNoticeShownRef.current = true;
             toast({
-                title: "Kuota Scan Ulang Habis",
-                description: "Anda telah menggunakan seluruh kuota scan ulang AI (2x). Silakan lanjutkan proses check-in atau simpan hasil analisis ini.",
+                title: "Rescan Quota Exhausted",
+                description: "You have used all AI rescan quota (2x). Please proceed with check-in or save this analysis result.",
                 variant: "destructive"
             });
         }
@@ -107,16 +107,16 @@ const EmotionalCheckinFaceScanPage = memo(() => {
                 <DecorativeBlob className="bottom-0 right-0 w-56 h-56 md:w-72 md:h-72 bg-primary/4" delay={1.5} />
                 <GridPattern />
 
-                <div className="relative z-10 flex min-h-screen items-center justify-center p-4">
+                <div className="relative z-10 flex min-h-screen items-center justify-center p-4 sm:p-6 lg:p-8">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                        className="w-full max-w-md"
+                        className={`w-full ${stage === "results" ? "max-w-[1600px]" : "max-w-md"}`}
                         role="main"
                         aria-label="AI Emotional Analysis"
                     >
-                        <div className="glass glass--frosted glass--deep relative p-6">
+                        <div className={`glass glass--frosted glass--deep relative ${stage === "results" ? "p-0" : "p-6"}`}>
                             <div className="glass__refract" />
                             <div className="glass__noise" />
 

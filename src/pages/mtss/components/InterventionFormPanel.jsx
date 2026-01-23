@@ -1,34 +1,8 @@
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import { fetchStrategies } from "@/services/mtssService";
-
-const INTERVENTION_TYPES = [
-    { label: "English", value: "english" },
-    { label: "Math", value: "math" },
-    { label: "Behavior", value: "behavior" },
-    { label: "SEL", value: "sel" },
-    { label: "Attendance", value: "attendance" },
-    { label: "Universal Supports", value: "universal" },
-];
-
-const STRATEGY_TYPE_ALIASES = {
-    english: ["english", "ela", "literacy", "reading", "ela/reading", "ela & reading", "sight words"],
-    math: ["math", "mathematics", "numeracy", "stem"],
-    behavior: ["behavior", "behaviour", "conduct", "regulation", "sel"],
-    sel: ["sel", "social emotional", "social-emotional", "behavior", "wellness"],
-    attendance: ["attendance", "present", "absent", "absences", "engagement"],
-    universal: ["universal", "schoolwide", "all", "tier 1"],
-};
-
-const TIERS = ["Tier 1", "Tier 2", "Tier 3"];
-const DURATIONS = ["4 weeks", "6 weeks", "8 weeks"];
-const FREQUENCIES = ["Daily", "Weekly", "Bi-weekly"];
-const METHODS = [
-    "Option 1 - Direct Observation",
-    "Option 2 - Student Self-Report",
-    "Option 3 - Assessment Data",
-];
-const SCORE_UNITS = ["wpm", "%", "pts", "score"];
+import { filterStrategiesByType, validateInterventionForm } from "../config/interventionFormConfig";
+import InterventionFormFields from "./InterventionFormFields";
 
 const InterventionFormPanel = memo(({ formState, onChange, onSubmit, baseFieldClass, textareaClass, students = [], submitting = false }) => {
     const [strategies, setStrategies] = useState([]);
@@ -48,40 +22,19 @@ const InterventionFormPanel = memo(({ formState, onChange, onSubmit, baseFieldCl
                 setStrategies([]);
             })
             .finally(() => {
-                if (mounted) {
-                    setLoadingStrategies(false);
-                }
+                if (mounted) setLoadingStrategies(false);
             });
-        return () => {
-            mounted = false;
-        };
+        return () => { mounted = false; };
     }, [formState.type]);
 
-    const filteredStrategies = useMemo(() => {
-        if (!formState.type) return strategies;
-        const typeKey = formState.type.toLowerCase();
-        const aliasList = STRATEGY_TYPE_ALIASES[typeKey] || [typeKey];
-        const aliasSet = new Set(aliasList.map((token) => token.toLowerCase()));
-        const matchesAlias = (value = "") => {
-            const normalized = value.toString().toLowerCase();
-            if (!normalized) return false;
-            return Array.from(aliasSet).some((alias) => normalized === alias || normalized.includes(alias));
-        };
-
-        return strategies.filter((strategy) => {
-            const bestForMatches = Array.isArray(strategy.bestFor)
-                ? strategy.bestFor.some((area) => matchesAlias(area))
-                : false;
-            const tagMatches = Array.isArray(strategy.tags)
-                ? strategy.tags.some((tag) => matchesAlias(tag))
-                : false;
-            return bestForMatches || tagMatches;
-        });
-    }, [formState.type, strategies]);
+    const filteredStrategies = useMemo(
+        () => filterStrategiesByType(strategies, formState.type),
+        [formState.type, strategies]
+    );
 
     const selectedStudent = useMemo(
         () => students.find((student) => student.id === formState.studentId),
-        [students, formState.studentId],
+        [students, formState.studentId]
     );
 
     const handleStudentChange = (event) => {
@@ -101,269 +54,63 @@ const InterventionFormPanel = memo(({ formState, onChange, onSubmit, baseFieldCl
         }
     };
 
-    const dualFieldClass = `${baseFieldClass} flex-1`;
-    const isValid =
-        Boolean(
-            formState.studentId &&
-            formState.type &&
-            formState.tier &&
-            formState.startDate &&
-            formState.monitorFrequency &&
-            formState.monitorMethod,
-        );
+    const isValid = validateInterventionForm(formState);
 
     return (
         <section
-            className="mtss-theme rounded-[32px] border border-white/40 bg-white/90 dark:bg-slate-900/40 shadow-[0_25px_80px_rgba(15,23,42,0.15)] p-6 space-y-6"
+            className="mtss-theme relative overflow-hidden rounded-[36px] border border-white/50 dark:border-white/10 bg-white/75 dark:bg-slate-900/50 shadow-[0_30px_90px_rgba(15,23,42,0.18)] p-6 sm:p-8 space-y-6 backdrop-blur-2xl"
             data-aos="fade-up"
             data-aos-duration="700"
         >
-            <header className="space-y-1" data-aos="fade-up" data-aos-delay="60">
-                <p className="uppercase text-xs tracking-[0.4em] text-muted-foreground flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-primary" />
-                    Plan Builder
-                </p>
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Set up a playful boost</h2>
-                <p className="text-sm text-muted-foreground">
-                    Drop a mini plan for the kids who need a little more spark this week.
-                </p>
-            </header>
+            <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute -top-20 -left-10 h-56 w-56 bg-gradient-to-br from-[#f472b6]/25 via-[#60a5fa]/20 to-transparent blur-[120px]" />
+                <div className="absolute -bottom-16 right-0 h-64 w-64 bg-gradient-to-br from-[#22d3ee]/20 via-[#a855f7]/15 to-transparent blur-[140px]" />
+                <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.6),_transparent_60%)] dark:opacity-20" />
+            </div>
+            <div className="relative space-y-6">
+                <header className="space-y-2" data-aos="fade-up" data-aos-delay="60">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-white/80 dark:bg-white/10 border border-white/60 dark:border-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.4em] text-slate-600 dark:text-slate-200">
+                        <Sparkles className="w-4 h-4 text-primary" />
+                        Plan Builder
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-black leading-tight bg-gradient-to-r from-[#0f172a] via-[#334155] to-[#2563eb] dark:from-white dark:via-[#c7d2fe] dark:to-[#f472b6] text-transparent bg-clip-text">
+                        Set up a playful boost
+                    </h2>
+                    <p className="text-sm text-slate-600 dark:text-slate-200 max-w-2xl">
+                        Drop a mini plan for the kids who need a little more spark this week.
+                    </p>
+                </header>
 
-            <form className="space-y-5" onSubmit={onSubmit}>
-                <div className="grid md:grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="90">
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                            Student Name
-                        </label>
-                        <select className={baseFieldClass} value={formState.studentId} onChange={handleStudentChange}>
-                            <option value="">Select student</option>
-                            {students.map((student) => (
-                                <option key={student.id} value={student.id}>
-                                    {student.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                            Class Scope
-                        </label>
-                        <div className="px-4 py-3 rounded-2xl bg-white/70 dark:bg-white/10 border border-primary/10 text-sm text-muted-foreground">
-                            {selectedStudent?.className || selectedStudent?.grade || formState.grade || "Filtered to your classes"}
-                        </div>
-                    </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="120">
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                            Intervention Type
-                        </label>
-                        <select
-                            className={baseFieldClass}
-                            value={formState.type}
-                            onChange={(e) => onChange("type", e.target.value)}
-                        >
-                            <option value="">Select type</option>
-                            {INTERVENTION_TYPES.map((type) => (
-                                <option key={type.value} value={type.value}>
-                                    {type.label}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                            Tier Level
-                        </label>
-                        <select className={baseFieldClass} value={formState.tier} onChange={(e) => onChange("tier", e.target.value)}>
-                            {TIERS.map((tier) => (
-                                <option key={tier} value={tier}>
-                                    {tier}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="150">
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                            Strategy Library
-                        </label>
-                        <select
-                            className={baseFieldClass}
-                            value={formState.strategyId || ""}
-                            onChange={handleStrategyChange}
-                            disabled={loadingStrategies}
-                        >
-                            <option value="">{loadingStrategies ? "Loading strategies..." : "Select strategy"}</option>
-                            {filteredStrategies.map((strategy) => (
-                                <option key={strategy._id} value={strategy._id}>
-                                    {strategy.name}
-                                </option>
-                            ))}
-                        </select>
-                        <p className="text-xs text-muted-foreground">
-                            Suggestions filtered by intervention type.
-                        </p>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                            Duration
-                        </label>
-                        <select className={baseFieldClass} value={formState.duration} onChange={(e) => onChange("duration", e.target.value)}>
-                            <option value="">Select duration</option>
-                            {DURATIONS.map((duration) => (
-                                <option key={duration} value={duration}>
-                                    {duration}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-
-                <div className="flex flex-col gap-2" data-aos="fade-up" data-aos-delay="170">
-                    <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">Goal</label>
-                    <textarea
-                        className={textareaClass}
-                        placeholder="Describe the intervention goal..."
-                        value={formState.goal}
-                        onChange={(e) => onChange("goal", e.target.value)}
-                    />
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="190">
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                            Start Date
-                        </label>
-                        <input
-                            type="date"
-                            className={baseFieldClass}
-                            value={formState.startDate}
-                            onChange={(e) => onChange("startDate", e.target.value)}
-                        />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                            Monitoring Frequency
-                        </label>
-                        <select
-                            className={baseFieldClass}
-                            value={formState.monitorFrequency}
-                            onChange={(e) => onChange("monitorFrequency", e.target.value)}
-                        >
-                            <option value="">Select frequency</option>
-                            {FREQUENCIES.map((frequency) => (
-                                <option key={frequency} value={frequency}>
-                                    {frequency}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="210">
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                            Monitoring Method
-                        </label>
-                        <select
-                            className={baseFieldClass}
-                            value={formState.monitorMethod}
-                            onChange={(e) => onChange("monitorMethod", e.target.value)}
-                        >
-                            <option value="">Select method</option>
-                            {METHODS.map((method) => (
-                                <option key={method} value={method}>
-                                    {method}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                            Notes
-                        </label>
-                        <textarea
-                            className={textareaClass}
-                            placeholder="Add context or reminders..."
-                            value={formState.notes}
-                            onChange={(e) => onChange("notes", e.target.value)}
-                        />
-                    </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="230">
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                            Baseline Score
-                        </label>
-                        <div className="flex gap-2">
-                            <input
-                                type="number"
-                                className={dualFieldClass}
-                                placeholder="e.g. 45"
-                                value={formState.baselineValue}
-                                onChange={(e) => onChange("baselineValue", e.target.value)}
-                            />
-                            <select
-                                className={`${baseFieldClass} w-28`}
-                                value={formState.baselineUnit}
-                                onChange={(e) => onChange("baselineUnit", e.target.value)}
-                            >
-                                {SCORE_UNITS.map((unit) => (
-                                    <option key={unit} value={unit}>
-                                        {unit}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                            Target Score
-                        </label>
-                        <div className="flex gap-2">
-                            <input
-                                type="number"
-                                className={dualFieldClass}
-                                placeholder="e.g. 70"
-                                value={formState.targetValue}
-                                onChange={(e) => onChange("targetValue", e.target.value)}
-                            />
-                            <select
-                                className={`${baseFieldClass} w-28`}
-                                value={formState.targetUnit}
-                                onChange={(e) => onChange("targetUnit", e.target.value)}
-                            >
-                                {SCORE_UNITS.map((unit) => (
-                                    <option key={unit} value={unit}>
-                                        {unit}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-                </div>
+                <form className="space-y-5" onSubmit={onSubmit}>
+                <InterventionFormFields
+                    formState={formState}
+                    onChange={onChange}
+                    students={students}
+                    selectedStudent={selectedStudent}
+                    strategies={strategies}
+                    filteredStrategies={filteredStrategies}
+                    loadingStrategies={loadingStrategies}
+                    baseFieldClass={baseFieldClass}
+                    textareaClass={textareaClass}
+                    onStudentChange={handleStudentChange}
+                    onStrategyChange={handleStrategyChange}
+                />
 
                 <div className="flex flex-wrap gap-3 pt-3" data-aos="fade-up" data-aos-delay="260">
                     <button
                         type="submit"
                         disabled={!isValid || submitting}
-                        className={`inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#ff58c2] to-[#ffb347] text-white font-semibold shadow-[0_15px_40px_rgba(255,88,194,0.25)] transition hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#22d3ee] via-[#3b82f6] to-[#a855f7] text-white font-semibold shadow-[0_18px_45px_rgba(59,130,246,0.3)] transition hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                         {submitting ? "Saving..." : "Save Intervention Plan"}
                     </button>
                 </div>
             </form>
+            </div>
         </section>
     );
 });
 
 InterventionFormPanel.displayName = "InterventionFormPanel";
 export default InterventionFormPanel;
-
-
