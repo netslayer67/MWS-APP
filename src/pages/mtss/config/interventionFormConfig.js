@@ -20,7 +20,11 @@ export const STRATEGY_TYPE_ALIASES = {
     universal: ["universal", "schoolwide", "all", "tier 1"],
 };
 
-export const TIERS = ["Tier 1", "Tier 2", "Tier 3"];
+export const TIERS = [
+    { label: "Tier 1", value: "tier1" },
+    { label: "Tier 2", value: "tier2" },
+    { label: "Tier 3", value: "tier3" },
+];
 
 export const DURATIONS = ["4 weeks", "6 weeks", "8 weeks"];
 

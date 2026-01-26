@@ -33,24 +33,26 @@ const InterventionFormPanel = memo(({ formState, onChange, onSubmit, baseFieldCl
     );
 
     const selectedStudent = useMemo(
-        () => students.find((student) => student.id === formState.studentId),
+        () => students.find((student) => student.id === formState.studentId || student._id === formState.studentId),
         [students, formState.studentId]
     );
 
     const handleStudentChange = (event) => {
         const value = event.target.value;
-        const student = students.find((candidate) => candidate.id === value);
+        const student = students.find((candidate) => candidate.id === value || candidate._id === value);
         onChange("studentId", value);
         onChange("studentName", student?.name || "");
-        onChange("grade", student?.grade || "");
+        onChange("grade", student?.grade || student?.currentGrade || "");
+        onChange("className", student?.className || "");
     };
 
     const handleStrategyChange = (event) => {
         const strategyId = event.target.value;
         const strategy = strategies.find((item) => item._id === strategyId);
         onChange("strategyId", strategyId);
-        if (strategy?.name) {
-            onChange("goal", strategy.overview || formState.goal);
+        onChange("strategyName", strategy?.name || "");
+        if (strategy?.name && !formState.goal) {
+            onChange("goal", strategy.overview || "");
         }
     };
 

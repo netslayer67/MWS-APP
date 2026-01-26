@@ -88,12 +88,29 @@ export const mergeRosterWithAssignments = (rosterStudents = [], assignmentStuden
     const allowedGrades = segments.allowedGrades || [];
     const allowedClasses = segments.allowedClasses || [];
     const strictClassFilter = segments.strictClassFilter;
-    const matchesGrade = (grade) => !allowedGrades.length || allowedGrades.includes(normalizeGradeLabel(grade));
+
+    // Helper to check if grade matches (supports partial match)
+    const matchesGrade = (grade) => {
+        if (!allowedGrades.length) return true;
+        const normalized = normalizeGradeLabel(grade);
+        return allowedGrades.some((allowed) => {
+            const normalizedAllowed = normalizeGradeLabel(allowed);
+            return normalized === normalizedAllowed || normalized.startsWith(normalizedAllowed);
+        });
+    };
+
+    // Helper to check if class matches (supports partial match for "Fireworks" matching "Grade 2 - Fireworks")
     const matchesClass = (className) => {
         if (!strictClassFilter || !allowedClasses.length) return true;
+        if (!className) return false;
         const normalized = normalizeClassLabel(className);
-        if (!normalized) return false;
-        return allowedClasses.includes(normalized);
+        return allowedClasses.some((allowed) => {
+            const normalizedAllowed = normalizeClassLabel(allowed);
+            // Match exact or as suffix (e.g., "Fireworks" matches "Grade 2 - Fireworks")
+            return normalized === normalizedAllowed ||
+                   normalized.endsWith(normalizedAllowed) ||
+                   normalized.endsWith(`- ${normalizedAllowed}`);
+        });
     };
 
     const merged = rosterStudents

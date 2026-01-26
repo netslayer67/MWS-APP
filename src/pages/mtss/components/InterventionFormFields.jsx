@@ -71,7 +71,7 @@ const InterventionFormFields = memo(({
                     </label>
                     <select className={fieldClass} value={formState.tier} onChange={(e) => onChange("tier", e.target.value)}>
                         {TIERS.map((tier) => (
-                            <option key={tier} value={tier}>{tier}</option>
+                            <option key={tier.value} value={tier.value}>{tier.label}</option>
                         ))}
                     </select>
                 </div>
