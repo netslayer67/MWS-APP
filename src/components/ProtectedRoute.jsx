@@ -6,6 +6,9 @@ import { hasEmotionalDashboardAccess } from '@/utils/accessControl';
 const ProtectedRoute = ({ children, allowedRoles = [], allowedDepartments = [], requireDirectorateAcademic = false }) => {
     const { user, isAuthenticated, loading } = useSelector((state) => state.auth);
 
+    // Role-aware fallback: students go to student hub, others to staff hub
+    const fallbackPath = user?.role === 'student' ? '/student/support-hub' : '/support-hub';
+
     // Show loading while checking authentication
     if (loading) {
         return (
@@ -23,16 +26,16 @@ const ProtectedRoute = ({ children, allowedRoles = [], allowedDepartments = [], 
     // Special check for dashboard access (directorate + academic department + head_unit)
     if (requireDirectorateAcademic) {
         if (!hasEmotionalDashboardAccess(user)) {
-            return <Navigate to="/support-hub" replace />;
+            return <Navigate to={fallbackPath} replace />;
         }
     }
 
     if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
-        return <Navigate to="/support-hub" replace />;
+        return <Navigate to={fallbackPath} replace />;
     }
 
     if (allowedDepartments.length > 0 && !allowedDepartments.includes(user?.department)) {
-        return <Navigate to="/support-hub" replace />;
+        return <Navigate to={fallbackPath} replace />;
     }
 
     return children;

@@ -150,7 +150,7 @@ const InterventionFormFields = memo(({
                     <label className={labelClass}>Baseline Score</label>
                     <div className="flex gap-2">
                         <input type="number" className={dualFieldClass} placeholder="e.g. 45" value={formState.baselineValue} onChange={(e) => onChange("baselineValue", e.target.value)} />
-                        <select className={`${fieldClass} w-28`} value={formState.baselineUnit} onChange={(e) => onChange("baselineUnit", e.target.value)}>
+                        <select className={`${fieldClass} w-28`} value={formState.baselineUnit} onChange={(e) => { onChange("baselineUnit", e.target.value); onChange("targetUnit", e.target.value); }}>
                             {SCORE_UNITS.map((unit) => (
                                 <option key={unit} value={unit}>{unit}</option>
                             ))}
@@ -161,11 +161,9 @@ const InterventionFormFields = memo(({
                     <label className={labelClass}>Target Score</label>
                     <div className="flex gap-2">
                         <input type="number" className={dualFieldClass} placeholder="e.g. 70" value={formState.targetValue} onChange={(e) => onChange("targetValue", e.target.value)} />
-                        <select className={`${fieldClass} w-28`} value={formState.targetUnit} onChange={(e) => onChange("targetUnit", e.target.value)}>
-                            {SCORE_UNITS.map((unit) => (
-                                <option key={unit} value={unit}>{unit}</option>
-                            ))}
-                        </select>
+                        <div className="px-4 py-3 rounded-2xl bg-white/70 dark:bg-white/10 border border-white/40 dark:border-white/10 text-sm text-slate-500 dark:text-slate-300 w-28 flex items-center">
+                            {formState.baselineUnit || "score"}
+                        </div>
                     </div>
                 </div>
             </div>

@@ -31,7 +31,8 @@ const useTeacherDashboardActions = ({
                 });
                 return;
             }
-            if (!selectedStudent.assignmentId) {
+            const assignmentId = progressForm.assignmentId || selectedStudent.assignmentId;
+            if (!assignmentId) {
                 toast({
                     title: "No active intervention",
                     description: `${selectedStudent.name} is not linked to an active intervention yet.`,
@@ -43,7 +44,7 @@ const useTeacherDashboardActions = ({
                 const trimmedNotes = progressForm.notes?.trim() || "";
                 const parsedScoreValue = progressForm.scoreValue !== "" ? Number(progressForm.scoreValue) : undefined;
                 setSubmittingProgress(true);
-                await updateMentorAssignment(selectedStudent.assignmentId, {
+                await updateMentorAssignment(assignmentId, {
                     checkIns: [
                         {
                             date: progressForm.date || new Date(),
@@ -76,7 +77,8 @@ const useTeacherDashboardActions = ({
 
     const handleQuickUpdateSubmit = useCallback(
         async (student, formState) => {
-            if (!student?.assignmentId) {
+            const assignmentId = formState?.assignmentId || student?.assignmentId;
+            if (!assignmentId) {
                 toast({
                     title: "No active intervention",
                     description: `${student?.name || "Student"} isn't linked to an active intervention yet.`,
@@ -88,7 +90,7 @@ const useTeacherDashboardActions = ({
             try {
                 const trimmedNotes = formState.notes?.trim() || "";
                 const parsedScoreValue = formState.scoreValue !== "" ? Number(formState.scoreValue) : undefined;
-                await updateMentorAssignment(student.assignmentId, {
+                await updateMentorAssignment(assignmentId, {
                     checkIns: [
                         {
                             date: formState.date,

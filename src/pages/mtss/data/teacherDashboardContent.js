@@ -1,5 +1,4 @@
 import {
-    FileCheck2,
     LineChart as LineChartIcon,
     PlusCircle,
     Users2,
@@ -9,7 +8,6 @@ export const tabs = [
     { key: "dashboard", label: "Dashboard", icon: LineChartIcon },
     { key: "students", label: "My Students", icon: Users2 },
     { key: "create", label: "Create Intervention", icon: PlusCircle },
-    { key: "submit", label: "Submit Progress", icon: FileCheck2 },
 ];
 
 export const fieldClasses = {

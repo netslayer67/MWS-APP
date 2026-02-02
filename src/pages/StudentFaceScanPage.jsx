@@ -1,0 +1,149 @@
+import React, { memo, useCallback, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet";
+import { Shield } from "lucide-react";
+import AnimatedPage from "@/components/AnimatedPage";
+import { useToast } from "@/components/ui/use-toast";
+import IntroSection from "@/components/emotion-scan/IntroSection";
+import ScanningSection from "@/components/emotion-scan/ScanningSection";
+import AnalyzingSection from "@/components/emotion-scan/AnalyzingSection";
+import StudentResultsSection from "@/components/emotion-scan/StudentResultsSection";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchSupportContacts } from "@/store/slices/supportSlice";
+import { DecorativeBlob, GridPattern } from "@/pages/verification/components/DecorativeElements";
+import { useCameraScanner } from "@/pages/verification/hooks/useCameraScanner";
+import { useEmotionAnalysis } from "@/pages/verification/hooks/useEmotionAnalysis";
+import { useCheckinSubmission } from "@/pages/verification/hooks/useCheckinSubmission";
+
+const MAX_AI_RESCAN_ATTEMPTS = 2;
+
+const StudentFaceScanPage = memo(() => {
+    const navigate = useNavigate();
+    const { toast } = useToast();
+    const dispatch = useDispatch();
+    const { contacts: supportContacts } = useSelector((state) => state.support);
+    const { isAuthenticated } = useSelector((state) => state.auth);
+    const rescanLimitNoticeShownRef = useRef(false);
+
+    const {
+        stage, setStage, videoRef, scanProgress, detectedFeatures,
+        startScan, capturePhoto, handleRescanRequest,
+        isRescanDisabled, remainingRescans, rescanCount
+    } = useCameraScanner({ toast, maxRescanAttempts: MAX_AI_RESCAN_ATTEMPTS });
+
+    const {
+        analysis, setAnalysis, analyzePhoto,
+        selectedSupportContact, setSelectedSupportContact
+    } = useEmotionAnalysis({ toast, setStage });
+
+    const { isSubmitting, completeCheckin } = useCheckinSubmission({
+        analysis, selectedSupportContact, supportContacts, toast, navigate
+    });
+
+    const handleTakePhoto = useCallback(async () => {
+        const photoDataUrl = await capturePhoto();
+        if (photoDataUrl) {
+            await analyzePhoto(photoDataUrl);
+        }
+    }, [analyzePhoto, capturePhoto]);
+
+    const handleRescan = useCallback(() => {
+        setAnalysis(null);
+        setSelectedSupportContact(null);
+        handleRescanRequest();
+    }, [handleRescanRequest, setAnalysis, setSelectedSupportContact]);
+
+    useEffect(() => {
+        if (supportContacts.length === 0 && isAuthenticated) {
+            dispatch(fetchSupportContacts());
+        }
+    }, [dispatch, isAuthenticated, supportContacts.length]);
+
+    useEffect(() => {
+        if (stage === "results" && analysis && isRescanDisabled && !rescanLimitNoticeShownRef.current) {
+            rescanLimitNoticeShownRef.current = true;
+            toast({
+                title: "Rescan Quota Exhausted",
+                description: "You have used all AI rescan quota (2x). Please proceed with check-in or save this analysis result.",
+                variant: "destructive"
+            });
+        }
+        if (!isRescanDisabled) {
+            rescanLimitNoticeShownRef.current = false;
+        }
+    }, [analysis, isRescanDisabled, stage, toast]);
+
+    const analysisForView = analysis ? { ...analysis, isSubmitting } : null;
+
+    return (
+        <AnimatedPage>
+            <Helmet>
+                <title>AI Emotional Check-in - Student</title>
+            </Helmet>
+
+            <div className="relative min-h-screen bg-background text-foreground overflow-hidden">
+                {/* Colorful decorative blobs for student version */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                    <div className="absolute -top-32 -left-32 w-80 h-80 bg-gradient-to-br from-pink-300/25 to-purple-300/25 rounded-full blur-3xl" />
+                    <div className="absolute -bottom-32 -right-32 w-80 h-80 bg-gradient-to-br from-sky-300/25 to-indigo-300/25 rounded-full blur-3xl" />
+                    <div className="absolute top-1/3 left-1/2 w-64 h-64 bg-gradient-to-br from-amber-200/20 to-emerald-200/20 rounded-full blur-3xl" />
+                </div>
+
+                <div className="relative z-10 flex min-h-screen items-center justify-center p-4 sm:p-6 lg:p-8">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                        className={`w-full ${stage === "results" ? "max-w-[1600px]" : "max-w-md"}`}
+                        role="main"
+                        aria-label="AI Emotional Analysis - Student"
+                    >
+                        <div className={`relative ${stage === "results" ? "" : "backdrop-blur-xl bg-white/60 dark:bg-white/5 border border-white/40 dark:border-white/10 rounded-2xl p-6"}`}>
+                            <AnimatePresence mode="wait">
+                                {stage === "intro" && <IntroSection onStartScan={startScan} />}
+                                {(stage === "preview" || stage === "scanning") && (
+                                    <ScanningSection
+                                        videoRef={videoRef}
+                                        scanProgress={scanProgress}
+                                        detectedFeatures={detectedFeatures}
+                                        onTakePhoto={handleTakePhoto}
+                                        stage={stage}
+                                    />
+                                )}
+                                {stage === "analyzing" && <AnalyzingSection />}
+                                {stage === "results" && analysisForView && (
+                                    <StudentResultsSection
+                                        analysis={analysisForView}
+                                        onReset={handleRescan}
+                                        onComplete={completeCheckin}
+                                        onSupportChange={setSelectedSupportContact}
+                                        isRescanDisabled={isRescanDisabled}
+                                        remainingRescans={remainingRescans}
+                                        maxRescans={MAX_AI_RESCAN_ATTEMPTS}
+                                    />
+                                )}
+                            </AnimatePresence>
+                        </div>
+
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.5 }}
+                            className="mt-6 text-center"
+                        >
+                            <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5">
+                                <Shield className="w-3 h-3" />
+                                Your wellbeing is our priority
+                            </p>
+                        </motion.div>
+                    </motion.div>
+                </div>
+            </div>
+        </AnimatedPage>
+    );
+});
+
+StudentFaceScanPage.displayName = "StudentFaceScanPage";
+
+export default StudentFaceScanPage;

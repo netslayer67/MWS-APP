@@ -52,7 +52,8 @@ const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh }) =>
 
     const handleQuickSubmit = useCallback(
         async (student, formState) => {
-            if (!student?.assignmentId) {
+            const assignmentId = formState?.assignmentId || student?.assignmentId;
+            if (!assignmentId) {
                 toast({
                     title: "No active intervention",
                     description: `${student?.name || "Student"} isn't linked to an active intervention yet.`,
@@ -64,7 +65,7 @@ const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh }) =>
             try {
                 const trimmedNotes = formState.notes?.trim() || "";
                 const parsedScoreValue = formState.scoreValue !== "" ? Number(formState.scoreValue) : undefined;
-                await updateMentorAssignment(student.assignmentId, {
+                await updateMentorAssignment(assignmentId, {
                     checkIns: [
                         {
                             date: formState.date,

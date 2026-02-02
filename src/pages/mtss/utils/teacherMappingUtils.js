@@ -18,26 +18,46 @@ import { buildChartSeries, buildHistory } from "./teacherMappingCharts";
 
 export const mapAssignmentsToStudents = (assignments = [], teacherName = "MTSS Mentor") => {
     const map = new Map();
+    const assignmentOptionsMap = new Map();
     assignments.forEach((assignment) => {
         const focus = deriveFocus(assignment);
         const tier = mapTierLabel(assignment.tier);
+        const tierCode = normalizeTierCode(assignment.tier) || "tier2";
         const statusKey = assignment.status || "active";
         const nextUpdate = inferNextUpdate(assignment);
         const chart = buildChartSeries(assignment);
         const history = buildHistory(assignment);
         const goals = assignment.goals || [];
         const completedGoals = goals.filter((goal) => goal.completed).length;
+        const assignmentId = assignment._id?.toString?.() || assignment.id || assignment.assignmentId || null;
 
         (assignment.studentIds || []).forEach((student) => {
             const id = student?._id?.toString?.() || student?.id || student;
             if (!id) return;
+            if (assignmentId) {
+                const existingOptions = assignmentOptionsMap.get(id) || [];
+                if (!existingOptions.some((option) => option.assignmentId === assignmentId)) {
+                    assignmentOptionsMap.set(id, [
+                        ...existingOptions,
+                        {
+                            assignmentId,
+                            focus,
+                            tier,
+                            tierCode,
+                            statusKey,
+                            statusLabel: STATUS_LABELS[statusKey] || "On Track",
+                            metricLabel: assignment.metricLabel || null,
+                        },
+                    ]);
+                }
+            }
             const grade = normalizeGradeLabel(
                 student?.currentGrade || student?.classes?.[0]?.grade || student?.unit || student?.class || "-",
             );
             const progressUnit = inferProgressUnit(assignment, student);
             const record = {
                 id,
-                assignmentId: assignment._id?.toString?.() || null,
+                assignmentId,
                 slug: student?.slug || slugify(student?.name),
                 name: student?.name || "Student",
                 grade,
@@ -69,7 +89,18 @@ export const mapAssignmentsToStudents = (assignments = [], teacherName = "MTSS M
         });
     });
 
-    const students = Array.from(map.values());
+    const students = Array.from(map.values()).map((student) => {
+        const options = assignmentOptionsMap.get(student.id) || [];
+        const sortedOptions = [...options].sort((a, b) => {
+            const tierDiff = (TIER_PRIORITY[b.tierCode] || 0) - (TIER_PRIORITY[a.tierCode] || 0);
+            if (tierDiff !== 0) return tierDiff;
+            return (STATUS_PRIORITY[b.statusKey] || 0) - (STATUS_PRIORITY[a.statusKey] || 0);
+        });
+        return {
+            ...student,
+            assignmentOptions: sortedOptions,
+        };
+    });
     const sorted = students.sort((a, b) => STATUS_PRIORITY[b.statusKey] - STATUS_PRIORITY[a.statusKey]);
     const spotlightChart = sorted[0]?.profile?.chart || [];
     const focusLabel = sorted[0] ? `${sorted[0].tier} ${sorted[0].type}` : null;
@@ -127,6 +158,7 @@ export const mergeRosterWithAssignments = (rosterStudents = [], assignmentStuden
             const assignmentScore = TIER_PRIORITY[assignmentTierCode] || 0;
             const useAssignment = assignment && (!rosterScore || assignmentScore > rosterScore);
             const displaySource = useAssignment ? assignment : student;
+            const assignmentOptions = assignment?.assignmentOptions || [];
             return {
                 id,
                 slug: student.slug || slugify(student.name),
@@ -138,6 +170,7 @@ export const mergeRosterWithAssignments = (rosterStudents = [], assignmentStuden
                 progress: displaySource?.progress || student.progress || "Not Assigned",
                 nextUpdate: displaySource?.nextUpdate || student.nextUpdate || "Not scheduled",
                 assignmentId: assignment?.assignmentId || null,
+                assignmentOptions,
                 profile: displaySource?.profile || assignment?.profile || student.profile,
                 interventions: student.interventions,
                 primaryIntervention: student.primaryIntervention,

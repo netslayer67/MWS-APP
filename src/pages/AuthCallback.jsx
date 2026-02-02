@@ -81,7 +81,7 @@ const AuthCallback = () => {
                 const normalizedRole = (canonicalUser.role || '').toLowerCase();
                 const redirectParam = searchParams.get('redirect');
                 const safeRedirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : null;
-                const target = normalizedRole === 'student' ? '/emotional-checkin' : (safeRedirect || '/support-hub');
+                const target = normalizedRole === 'student' ? '/student/support-hub' : (safeRedirect || '/support-hub');
 
                 navigate(target, { replace: true });
 

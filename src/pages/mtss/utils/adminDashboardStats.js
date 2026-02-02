@@ -35,8 +35,24 @@ export const buildAdminStatCards = (studentCount = 0, mentorCount = 0, successRa
         return { ...card, value: `${successRate}%` };
     });
 
+const isTargetMet = (assignment) => {
+    if (assignment.status === "completed") return true;
+
+    const goals = assignment.goals || [];
+    if (goals.length > 0 && goals.every((g) => g.completed)) return true;
+
+    const target = assignment.targetScore?.value;
+    if (target != null) {
+        const checkIns = assignment.checkIns || [];
+        const latest = checkIns.filter((c) => c.value != null).slice(-1)[0];
+        if (latest && latest.value >= target) return true;
+    }
+
+    return false;
+};
+
 export const calculateSuccessRate = (assignments = []) => {
     if (!assignments.length) return 0;
-    const completed = assignments.filter((assignment) => assignment.status === "completed").length;
-    return Math.round((completed / assignments.length) * 100);
+    const hitting = assignments.filter(isTargetMet).length;
+    return Math.round((hitting / assignments.length) * 100);
 };

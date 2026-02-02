@@ -499,8 +499,9 @@ const ProfilePage = memo(function ProfilePage() {
         const updated = { ...snapshot, count: snapshot.count + 1 };
         persistCheckinUsageSnapshot(updated);
         setCheckinUsage({ ...updated, ready: true });
-        navigate("/support-hub");
-    }, [navigate, toast]);
+        const isStudent = currentUser?.role === 'student';
+        navigate(isStudent ? "/student/support-hub" : "/support-hub");
+    }, [navigate, toast, currentUser]);
 
     // Derived info for today's check-in
     const todayCard = useMemo(() => {
@@ -564,6 +565,7 @@ const ProfilePage = memo(function ProfilePage() {
     }), []);
 
     // Menu configuration
+    const isStudent = currentUser?.role === 'student';
     const menuItems = useMemo(() => {
         const emotionalBadge = checkinUsage.ready
             ? checkinLimitReached
@@ -576,7 +578,7 @@ const ProfilePage = memo(function ProfilePage() {
                 key: "emotional-checkin",
                 icon: Sparkles,
                 title: "Emotional Check-in",
-                to: "/support-hub",
+                to: isStudent ? "/student/support-hub" : "/support-hub",
                 onClick: handleEmotionalCheckin,
                 disabled: checkinLimitReached,
                 description: checkinDescription,
@@ -618,7 +620,7 @@ const ProfilePage = memo(function ProfilePage() {
         }
 
         return baseItems;
-    }, [currentUser, handleEmotionalCheckin, checkinDescription, checkinLimitReached, checkinUsage.ready, remainingCheckins, canAccessDashboard, dashboardRole, delegatedDashboardAccess]);
+    }, [currentUser, isStudent, handleEmotionalCheckin, checkinDescription, checkinLimitReached, checkinUsage.ready, remainingCheckins, canAccessDashboard, dashboardRole, delegatedDashboardAccess]);
 
     // Quick actions
     const quickActions = useMemo(() => {
@@ -772,7 +774,7 @@ const ProfilePage = memo(function ProfilePage() {
                                                 View History <ChevronRight className="h-3.5 w-3.5" />
                                             </Link>
                                         ) : (
-                                            <Link to={(currentUser?.role === 'staff' || currentUser?.role === 'teacher') ? '/emotional-checkin/staff' : '/emotional-checkin'} className="inline-flex items-center gap-2 rounded-md border border-border/50 px-3 py-1.5 text-xs hover:border-primary/40 hover:bg-primary/5 transition-colors">
+                                            <Link to={currentUser?.role === 'student' ? '/student/emotional-checkin' : (currentUser?.role === 'staff' || currentUser?.role === 'teacher') ? '/emotional-checkin/staff' : '/emotional-checkin'} className="inline-flex items-center gap-2 rounded-md border border-border/50 px-3 py-1.5 text-xs hover:border-primary/40 hover:bg-primary/5 transition-colors">
                                                 Start Check-in <ChevronRight className="h-3.5 w-3.5" />
                                             </Link>
                                         )}

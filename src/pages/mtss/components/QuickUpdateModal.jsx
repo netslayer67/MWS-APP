@@ -1,25 +1,70 @@
 import React, { memo, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
+import { normalizeTierCode } from "../utils/teacherMappingHelpers";
 
 const baseField =
     "px-4 py-3 rounded-2xl bg-white/80 dark:bg-white/10 border border-primary/20 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all w-full";
-const SCORE_UNITS = ["wpm", "%", "pts", "score"];
+const readonlyField =
+    "px-4 py-3 rounded-2xl bg-white/70 dark:bg-white/10 border border-primary/10 text-sm text-muted-foreground";
+
+const getAssignmentOptions = (student) => {
+    if (!student) return [];
+    const rawOptions = Array.isArray(student.assignmentOptions) ? student.assignmentOptions : [];
+    if (rawOptions.length) return rawOptions;
+    if (!student.assignmentId) return [];
+    return [
+        {
+            assignmentId: student.assignmentId,
+            focus: student.type || "Focused Support",
+            tier: student.tier || "Tier 1",
+            tierCode: normalizeTierCode(student.tier) || "tier1",
+            statusLabel: student.progress || "On Track",
+        },
+    ];
+};
+
+const getEscalatedOptions = (options = []) => {
+    const escalated = options.filter((option) => option.tierCode && option.tierCode !== "tier1");
+    return escalated.length ? escalated : options;
+};
+
+const formatSubjectLabel = (option) => {
+    const focusLabel = option.focus || option.label || "Focused Support";
+    const tierLabel = option.tier || "Tier 1";
+    return `${focusLabel} - ${tierLabel}`;
+};
 
 const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false }) => {
     const initialDate = useMemo(() => new Date().toISOString().split("T")[0], []);
+    const assignmentOptions = useMemo(() => getEscalatedOptions(getAssignmentOptions(student)), [student]);
+    const defaultOption = assignmentOptions[0];
+    const defaultAssignmentId = defaultOption?.assignmentId || "";
     const [formState, setFormState] = useState({
         date: initialDate,
         performed: "yes",
         scoreValue: "",
-        scoreUnit: "score",
+        scoreUnit: defaultOption?.metricLabel || "score",
         notes: "",
         badge: "🎉 Progress Party",
+        assignmentId: defaultAssignmentId,
     });
+
+    const selectedOption = assignmentOptions.find((opt) => opt.assignmentId === formState.assignmentId);
+    const lockedUnit = selectedOption?.metricLabel || formState.scoreUnit || "score";
 
     if (!student) return null;
 
+    const gradeLabel = student.grade || student.currentGrade || "Grade";
+    const tierLabel = student.tier || student.primaryIntervention?.tier || "Tier 1";
+    const gradeTierLabel = `${gradeLabel} - ${tierLabel}`;
+
     const handleChange = (field, value) => {
+        if (field === "assignmentId") {
+            const option = assignmentOptions.find((opt) => opt.assignmentId === value);
+            setFormState((prev) => ({ ...prev, assignmentId: value, scoreUnit: option?.metricLabel || prev.scoreUnit }));
+            return;
+        }
         setFormState((prev) => ({ ...prev, [field]: value }));
     };
 
@@ -56,6 +101,43 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                 <form className="p-6 space-y-4" onSubmit={handleSubmit}>
                     <div className="grid md:grid-cols-2 gap-4">
                         <div className="flex flex-col gap-2">
+                            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                                Student Name
+                            </label>
+                            <div className={readonlyField}>{student.name}</div>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                                Grade / Tier
+                            </label>
+                            <div className={readonlyField}>{gradeTierLabel}</div>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                        <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                            Focus Subject (Tier 2/3)
+                        </label>
+                        <select
+                            className={baseField}
+                            value={formState.assignmentId}
+                            onChange={(event) => handleChange("assignmentId", event.target.value)}
+                            disabled={!assignmentOptions.length}
+                        >
+                            {assignmentOptions.length ? (
+                                assignmentOptions.map((option) => (
+                                    <option key={option.assignmentId} value={option.assignmentId}>
+                                        {formatSubjectLabel(option)}
+                                    </option>
+                                ))
+                            ) : (
+                                <option value="">No Tier 2/3 subjects available</option>
+                            )}
+                        </select>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-2">
                             <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">Date</label>
                             <input
                                 type="date"
@@ -90,17 +172,7 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                                     value={formState.scoreValue}
                                     onChange={(event) => handleChange("scoreValue", event.target.value)}
                                 />
-                                <select
-                                    className={`${baseField} w-28`}
-                                    value={formState.scoreUnit}
-                                    onChange={(event) => handleChange("scoreUnit", event.target.value)}
-                                >
-                                    {SCORE_UNITS.map((unit) => (
-                                        <option key={unit} value={unit}>
-                                            {unit}
-                                        </option>
-                                    ))}
-                                </select>
+                                <div className={`${readonlyField} w-28 flex items-center`}>{lockedUnit}</div>
                             </div>
                         </div>
                         <div className="flex flex-col gap-2">
@@ -154,3 +226,4 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
 
 QuickUpdateModal.displayName = "QuickUpdateModal";
 export default QuickUpdateModal;
+

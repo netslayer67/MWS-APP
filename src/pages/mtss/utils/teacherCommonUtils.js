@@ -43,17 +43,31 @@ const isUpdateDue = (assignment) => {
     return diffDays >= 7;
 };
 
+const isTargetMet = (assignment) => {
+    // 1. Explicitly completed
+    if (assignment.status === "completed") return true;
+
+    // 2. All goals completed (when goals exist)
+    const goals = assignment.goals || [];
+    if (goals.length > 0 && goals.every((g) => g.completed)) return true;
+
+    // 3. Latest check-in value meets or exceeds target score
+    const target = assignment.targetScore?.value;
+    if (target != null) {
+        const checkIns = assignment.checkIns || [];
+        const latest = checkIns.filter((c) => c.value != null).slice(-1)[0];
+        if (latest && latest.value >= target) return true;
+    }
+
+    return false;
+};
+
 export const buildStatCards = (assignments = []) => {
     const active = assignments.filter((assignment) => assignment.status === "active").length;
     const due = assignments.filter(isUpdateDue).length;
-    const totalGoals = assignments.reduce((sum, assignment) => sum + (assignment.goals?.length || 0), 0);
-    const completedGoals = assignments.reduce(
-        (sum, assignment) => sum + (assignment.goals?.filter((goal) => goal.completed).length || 0),
-        0
-    );
-    const successBase = totalGoals || assignments.length || 1;
-    const successfulAssignments = assignments.filter((item) => item.status === "completed").length;
-    const successRate = Math.round(((completedGoals || successfulAssignments) / successBase) * 100);
+    const total = assignments.length || 1;
+    const hitting = assignments.filter(isTargetMet).length;
+    const successRate = Math.round((hitting / total) * 100);
 
     return [
         { ...STAT_TEMPLATE[0], value: active },

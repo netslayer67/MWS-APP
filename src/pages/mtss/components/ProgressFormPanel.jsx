@@ -1,8 +1,37 @@
 import React, { memo, useMemo } from "react";
 import { motion } from "framer-motion";
 import { ClipboardCheck, Loader2 } from "lucide-react";
+import { normalizeTierCode } from "../utils/teacherMappingHelpers";
 
-const SCORE_UNITS = ["wpm", "%", "pts", "score"];
+const readonlyField =
+    "px-4 py-3 rounded-2xl bg-white/70 dark:bg-white/10 border border-primary/10 text-sm text-muted-foreground";
+
+const getAssignmentOptions = (student) => {
+    if (!student) return [];
+    const raw = Array.isArray(student.assignmentOptions) ? student.assignmentOptions : [];
+    if (raw.length) return raw;
+    if (!student.assignmentId) return [];
+    return [
+        {
+            assignmentId: student.assignmentId,
+            focus: student.type || "Focused Support",
+            tier: student.tier || "Tier 1",
+            tierCode: normalizeTierCode(student.tier) || "tier1",
+            metricLabel: null,
+        },
+    ];
+};
+
+const getEscalatedOptions = (options = []) => {
+    const escalated = options.filter((o) => o.tierCode && o.tierCode !== "tier1");
+    return escalated.length ? escalated : options;
+};
+
+const formatSubjectLabel = (option) => {
+    const focus = option.focus || option.label || "Focused Support";
+    const tier = option.tier || "Tier 1";
+    return `${focus} - ${tier}`;
+};
 
 const ProgressFormPanel = memo(
     ({ formState, onChange, onSubmit, baseFieldClass, textareaClass, students = [], submitting = false }) => {
@@ -11,12 +40,35 @@ const ProgressFormPanel = memo(
             [students, formState.studentId],
         );
 
+        const assignmentOptions = useMemo(
+            () => getEscalatedOptions(getAssignmentOptions(selectedStudent)),
+            [selectedStudent],
+        );
+
+        const selectedOption = useMemo(
+            () => assignmentOptions.find((o) => o.assignmentId === formState.assignmentId) || assignmentOptions[0],
+            [assignmentOptions, formState.assignmentId],
+        );
+
+        const lockedUnit = selectedOption?.metricLabel || "score";
+
         const handleStudentChange = (event) => {
             const value = event.target.value;
             const student = students.find((candidate) => candidate.id === value);
             onChange("studentId", value);
             onChange("studentName", student?.name || "");
-            onChange("assignmentId", student?.assignmentId || "");
+
+            const options = getEscalatedOptions(getAssignmentOptions(student));
+            const firstOption = options[0];
+            onChange("assignmentId", firstOption?.assignmentId || student?.assignmentId || "");
+            onChange("scoreUnit", firstOption?.metricLabel || "score");
+        };
+
+        const handleAssignmentChange = (event) => {
+            const id = event.target.value;
+            onChange("assignmentId", id);
+            const option = assignmentOptions.find((o) => o.assignmentId === id);
+            onChange("scoreUnit", option?.metricLabel || "score");
         };
 
         const isValid = Boolean(formState.studentId && formState.date && formState.scoreValue !== "");
@@ -53,13 +105,36 @@ const ProgressFormPanel = memo(
                             <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
                                 Grade / Tier
                             </label>
-                            <div className="px-4 py-3 rounded-2xl bg-white/70 dark:bg-white/10 border border-primary/10 text-sm text-muted-foreground">
+                            <div className={readonlyField}>
                                 {selectedStudent
                                     ? `${selectedStudent.grade || "Grade"} - ${selectedStudent.tier || "Tier 1"}`
                                     : "Select a student to view current tier"}
                             </div>
                         </div>
                     </div>
+
+                    <div className="flex flex-col gap-2">
+                        <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                            Focus Subject
+                        </label>
+                        <select
+                            className={baseFieldClass}
+                            value={formState.assignmentId}
+                            onChange={handleAssignmentChange}
+                            disabled={!assignmentOptions.length}
+                        >
+                            {assignmentOptions.length ? (
+                                assignmentOptions.map((option) => (
+                                    <option key={option.assignmentId} value={option.assignmentId}>
+                                        {formatSubjectLabel(option)}
+                                    </option>
+                                ))
+                            ) : (
+                                <option value="">Select a student first</option>
+                            )}
+                        </select>
+                    </div>
+
                     <div className="grid md:grid-cols-2 gap-4">
                         <div className="flex flex-col gap-2">
                             <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
@@ -99,38 +174,30 @@ const ProgressFormPanel = memo(
                                     value={formState.scoreValue}
                                     onChange={(e) => onChange("scoreValue", e.target.value)}
                                 />
-                                <select
-                                    className={`${baseFieldClass} w-28`}
-                                    value={formState.scoreUnit}
-                                    onChange={(e) => onChange("scoreUnit", e.target.value)}
-                                >
-                                    {SCORE_UNITS.map((unit) => (
-                                        <option key={unit} value={unit}>
-                                            {unit}
-                                        </option>
-                                    ))}
-                                </select>
+                                <div className={`${readonlyField} w-28 flex items-center justify-center font-semibold`}>
+                                    {lockedUnit}
+                                </div>
                             </div>
                         </div>
                         <div className="flex flex-col gap-2">
                             <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
                                 Celebration Emoji
                             </label>
-                        <select
-                            className={baseFieldClass}
-                            value={formState.badge || "🎉 Progress Party"}
-                            onChange={(e) => onChange("badge", e.target.value)}
-                        >
-                            <option value="🎉 Progress Party">🎉 Progress Party</option>
-                            <option value="🌟 Stellar Boost">🌟 Stellar Boost</option>
-                            <option value="🎯 Focus Mode">🎯 Focus Mode</option>
-                            <option value="👏 Great Effort">👏 Great Effort</option>
-                            <option value="🏅 Milestone Hit">🏅 Milestone Hit</option>
-                            <option value="📈 Growth Spurt">📈 Growth Spurt</option>
-                            <option value="🌱 Keep Going">🌱 Keep Going</option>
-                        </select>
+                            <select
+                                className={baseFieldClass}
+                                value={formState.badge || "🎉 Progress Party"}
+                                onChange={(e) => onChange("badge", e.target.value)}
+                            >
+                                <option value="🎉 Progress Party">🎉 Progress Party</option>
+                                <option value="🌟 Stellar Boost">🌟 Stellar Boost</option>
+                                <option value="🎯 Focus Mode">🎯 Focus Mode</option>
+                                <option value="👏 Great Effort">👏 Great Effort</option>
+                                <option value="🏅 Milestone Hit">🏅 Milestone Hit</option>
+                                <option value="📈 Growth Spurt">📈 Growth Spurt</option>
+                                <option value="🌱 Keep Going">🌱 Keep Going</option>
+                            </select>
+                        </div>
                     </div>
-                </div>
                     <div className="flex flex-col gap-2">
                         <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
                             Notes & Observations
