@@ -1,4 +1,21 @@
 import { ensureStudentInterventions, pickPrimaryIntervention } from "./interventionUtils";
+import { formatDate } from "./teacherCommonUtils";
+
+const hasValue = (value) => value !== null && value !== undefined && value !== "";
+
+const resolveGoalLabel = (intervention) => {
+    if (!intervention) return null;
+    if (hasValue(intervention.goal)) return intervention.goal;
+
+    const goals = intervention.goals;
+    if (typeof goals === "string") return goals;
+    if (!Array.isArray(goals) || goals.length === 0) return null;
+
+    const entry = goals.find((goal) => goal);
+    if (!entry) return null;
+    if (typeof entry === "string") return entry;
+    return entry.description || entry.goal || entry.title || entry.name || null;
+};
 
 const buildMergedInterventions = (student) => {
     const { interventionDetails = [] } = student;
@@ -41,10 +58,14 @@ export const buildStudentProfileView = (student, selectedIntervention) => {
             highlight: null,
             sortedInterventions: [],
             currentIntervention: null,
-            strategyLabel: "Core supports",
-            durationLabel: "Ongoing",
-            frequencyLabel: "Weekly",
-            mentorLabel: "TBD",
+            strategyLabel: null,
+            durationLabel: null,
+            frequencyLabel: null,
+            mentorLabel: null,
+            goalLabel: null,
+            monitoringMethodLabel: null,
+            startDateLabel: null,
+            notesLabel: null,
         };
     }
 
@@ -64,10 +85,16 @@ export const buildStudentProfileView = (student, selectedIntervention) => {
     const defaultSelected = escalatedInterventions[0] || sortedInterventions[0] || null;
     const currentIntervention = selectedIntervention || defaultSelected;
 
-    const strategyLabel = currentIntervention?.strategyName || currentIntervention?.focusArea || "Core supports";
-    const durationLabel = currentIntervention?.duration || "Ongoing";
-    const frequencyLabel = currentIntervention?.monitoringFrequency || currentIntervention?.monitoringMethod || "Weekly";
+    const strategyLabel = currentIntervention?.strategyName || currentIntervention?.focusArea || null;
+    const durationLabel = currentIntervention?.duration || null;
+    const frequencyLabel = currentIntervention?.monitoringFrequency || currentIntervention?.monitoringMethod || null;
     const mentorLabel = currentIntervention?.mentor || profile?.mentor || student.mentor || "TBD";
+    const goalLabel = resolveGoalLabel(currentIntervention) || null;
+    const monitoringMethodLabel = currentIntervention?.monitoringMethod || currentIntervention?.monitorMethod || null;
+    const startDateLabel = currentIntervention?.startDate
+        ? formatDate(currentIntervention.startDate, { month: "short", day: "numeric", year: "numeric" })
+        : null;
+    const notesLabel = hasValue(currentIntervention?.notes) ? currentIntervention.notes : null;
 
     return {
         profile,
@@ -78,5 +105,9 @@ export const buildStudentProfileView = (student, selectedIntervention) => {
         durationLabel,
         frequencyLabel,
         mentorLabel,
+        goalLabel,
+        monitoringMethodLabel,
+        startDateLabel,
+        notesLabel,
     };
 };

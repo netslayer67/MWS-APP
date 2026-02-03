@@ -7,6 +7,44 @@ const baseField =
     "px-4 py-3 rounded-2xl bg-white/80 dark:bg-white/10 border border-primary/20 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all w-full";
 const readonlyField =
     "px-4 py-3 rounded-2xl bg-white/70 dark:bg-white/10 border border-primary/10 text-sm text-muted-foreground";
+const hasValue = (value) => value !== null && value !== undefined && value !== "";
+
+const resolveGoalValue = (option) => {
+    if (!option) return null;
+    if (hasValue(option.goal)) return option.goal;
+    const goals = option.goals;
+    if (typeof goals === "string") return goals;
+    if (!Array.isArray(goals) || goals.length === 0) return null;
+    const entry = goals.find((goal) => goal);
+    if (!entry) return null;
+    if (typeof entry === "string") return entry;
+    return entry.description || entry.goal || entry.title || entry.name || null;
+};
+
+const formatScoreValue = (score, fallbackUnit) => {
+    if (score === null || score === undefined || score === "") return null;
+    if (typeof score === "number" || typeof score === "string") {
+        const text = `${score}`.trim();
+        if (!text) return null;
+        return `${text}${fallbackUnit ? ` ${fallbackUnit}` : ""}`;
+    }
+    const value = score?.value ?? score?.score ?? score?.amount;
+    if (value === null || value === undefined || value === "") return null;
+    const unit = score?.unit || fallbackUnit;
+    return `${value}${unit ? ` ${unit}` : ""}`;
+};
+
+const buildMonitoringLabel = (option) => {
+    const parts = [option?.monitoringMethod, option?.monitoringFrequency].filter((part) => hasValue(part));
+    return parts.length ? parts.join(" / ") : "Not set";
+};
+
+const buildBaselineTargetLabel = (option) => {
+    const baseline = formatScoreValue(option?.baselineScore, option?.metricLabel);
+    const target = formatScoreValue(option?.targetScore, option?.metricLabel);
+    if (!baseline && !target) return "Not set";
+    return `${baseline || "Not set"} to ${target || "Not set"}`;
+};
 
 const getAssignmentOptions = (student) => {
     if (!student) return [];
@@ -52,6 +90,11 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
 
     const selectedOption = assignmentOptions.find((opt) => opt.assignmentId === formState.assignmentId);
     const lockedUnit = selectedOption?.metricLabel || formState.scoreUnit || "score";
+    const strategyDetail = selectedOption?.strategyName || selectedOption?.strategy || selectedOption?.focus || "Not set";
+    const goalDetail = resolveGoalValue(selectedOption) || "Not set";
+    const durationDetail = selectedOption?.duration || "Ongoing";
+    const monitoringDetail = buildMonitoringLabel(selectedOption);
+    const baselineTargetDetail = buildBaselineTargetLabel(selectedOption);
 
     if (!student) return null;
 
@@ -96,6 +139,42 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                     >
                         <X className="w-5 h-5" />
                     </button>
+                </div>
+
+                <div className="px-6 py-4 border-b border-white/40 bg-white/80 dark:bg-white/5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">Intervention Details</p>
+                    <div className="grid sm:grid-cols-2 gap-3 mt-3">
+                        <div className="flex flex-col gap-2">
+                            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                                Strategy
+                            </label>
+                            <div className={readonlyField}>{strategyDetail}</div>
+                        </div>
+                        <div className="flex flex-col gap-2 sm:col-span-2">
+                            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                                Goal
+                            </label>
+                            <div className={readonlyField}>{goalDetail}</div>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                                Duration
+                            </label>
+                            <div className={readonlyField}>{durationDetail}</div>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                                Monitoring Method / Frequency
+                            </label>
+                            <div className={readonlyField}>{monitoringDetail}</div>
+                        </div>
+                        <div className="flex flex-col gap-2 sm:col-span-2">
+                            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                                Baseline to Target
+                            </label>
+                            <div className={readonlyField}>{baselineTargetDetail}</div>
+                        </div>
+                    </div>
                 </div>
 
                 <form className="p-6 space-y-4" onSubmit={handleSubmit}>
@@ -226,4 +305,3 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
 
 QuickUpdateModal.displayName = "QuickUpdateModal";
 export default QuickUpdateModal;
-

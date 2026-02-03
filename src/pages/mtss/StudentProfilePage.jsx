@@ -39,7 +39,20 @@ const StudentProfilePage = memo(() => {
         setSelectedIntervention(intervention);
     }, [setSelectedIntervention]);
 
-    const { profile, highlight, sortedInterventions, currentIntervention, strategyLabel, durationLabel, frequencyLabel, mentorLabel } = useMemo(
+    const {
+        profile,
+        highlight,
+        sortedInterventions,
+        currentIntervention,
+        strategyLabel,
+        durationLabel,
+        frequencyLabel,
+        mentorLabel,
+        goalLabel,
+        monitoringMethodLabel,
+        startDateLabel,
+        notesLabel,
+    } = useMemo(
         () => buildStudentProfileView(student, selectedIntervention),
         [student, selectedIntervention],
     );
@@ -104,6 +117,10 @@ const StudentProfilePage = memo(() => {
                                     durationLabel={durationLabel}
                                     frequencyLabel={frequencyLabel}
                                     mentorLabel={mentorLabel}
+                                    goalLabel={goalLabel}
+                                    monitoringMethodLabel={monitoringMethodLabel}
+                                    startDateLabel={startDateLabel}
+                                    notesLabel={notesLabel}
                                 />
                             )}
                         </AnimatePresence>

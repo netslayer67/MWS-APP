@@ -27,8 +27,27 @@ export const mapAssignmentsToStudents = (assignments = [], teacherName = "MTSS M
         const nextUpdate = inferNextUpdate(assignment);
         const chart = buildChartSeries(assignment);
         const history = buildHistory(assignment);
-        const goals = assignment.goals || [];
-        const completedGoals = goals.filter((goal) => goal.completed).length;
+        const goals = Array.isArray(assignment.goals) ? assignment.goals : [];
+        const completedGoals = goals.filter((goal) => goal?.completed).length;
+        const goalEntry = goals.find((goal) => goal);
+        const goalDescription =
+            assignment.goal ||
+            (typeof assignment.goals === "string" ? assignment.goals : null) ||
+            (typeof goalEntry === "string" ? goalEntry : null) ||
+            goalEntry?.description ||
+            goalEntry?.goal ||
+            goalEntry?.title ||
+            goalEntry?.name ||
+            null;
+        const strategyName =
+            assignment.strategyName ||
+            assignment.strategy?.name ||
+            assignment.strategy?.label ||
+            assignment.strategy?.title ||
+            null;
+        const duration = assignment.duration || formatDuration(assignment.startDate, assignment.endDate);
+        const monitoringFrequency = assignment.monitoringFrequency || assignment.monitorFrequency || null;
+        const monitoringMethod = assignment.monitoringMethod || assignment.monitorMethod || null;
         const assignmentId = assignment._id?.toString?.() || assignment.id || assignment.assignmentId || null;
 
         (assignment.studentIds || []).forEach((student) => {
@@ -47,6 +66,14 @@ export const mapAssignmentsToStudents = (assignments = [], teacherName = "MTSS M
                             statusKey,
                             statusLabel: STATUS_LABELS[statusKey] || "On Track",
                             metricLabel: assignment.metricLabel || null,
+                            strategyName,
+                            duration,
+                            monitoringFrequency,
+                            monitoringMethod,
+                            goal: goalDescription,
+                            baselineScore: assignment.baselineScore || null,
+                            targetScore: assignment.targetScore || null,
+                            notes: assignment.notes || null,
                         },
                     ]);
                 }

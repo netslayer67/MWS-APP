@@ -65,9 +65,25 @@ const TeacherDashboardPage = memo(() => {
         <div className="mtss-theme mtss-animated-bg min-h-screen relative overflow-hidden text-foreground dark:text-white transition-colors">
             {(submittingPlan || submittingProgress || savingQuickUpdate) && <PageLoader />}
             <div className="mtss-bg-overlay" />
-            <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-white/70 via-[#fef2f2]/40 to-transparent dark:from-white/10 dark:via-white/5" />
-                <div className="absolute -bottom-24 left-12 w-[28rem] h-[28rem] bg-gradient-to-br from-[#22d3ee]/35 via-[#a855f7]/25 to-[#f472b6]/20 dark:from-[#0ea5e9]/25 dark:via-[#a855f7]/20 dark:to-[#f472b6]/15 blur-[200px]" />
+            {/* Soft color blobs (background layer) */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
+                <div className="absolute -top-20 left-[10%] w-[26rem] h-[26rem] rounded-full bg-[#6366f1] opacity-[0.22] dark:opacity-[0.14] blur-[90px]" />
+                <div className="absolute -top-32 right-[5%] w-[30rem] h-[30rem] rounded-full bg-[#c084fc] opacity-[0.20] dark:opacity-[0.13] blur-[100px]" />
+                <div className="absolute top-[15%] right-[30%] w-[22rem] h-[22rem] rounded-full bg-[#22d3ee] opacity-[0.18] dark:opacity-[0.10] blur-[80px]" />
+                <div className="absolute top-[40%] left-[45%] w-[28rem] h-[28rem] rounded-full bg-[#fbbf24] opacity-[0.14] dark:opacity-[0.08] blur-[120px]" />
+                <div className="absolute -bottom-32 -left-20 w-[30rem] h-[30rem] rounded-full bg-[#22d3ee] opacity-[0.20] dark:opacity-[0.12] blur-[100px]" />
+                <div className="absolute -bottom-20 right-[15%] w-[24rem] h-[24rem] rounded-full bg-[#f472b6] opacity-[0.18] dark:opacity-[0.11] blur-[100px]" />
+                <div className="absolute top-[60%] left-[5%] w-[20rem] h-[20rem] rounded-full bg-[#10b981] opacity-[0.14] dark:opacity-[0.09] blur-[90px]" />
+            </div>
+            {/* Floating gradient orbs */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 2 }}>
+                <div className="mtss-orb mtss-orb-1" />
+                <div className="mtss-orb mtss-orb-2" />
+                <div className="mtss-orb mtss-orb-3" />
+                <div className="mtss-orb mtss-orb-4" />
+                <div className="mtss-orb mtss-orb-5" />
+                <div className="mtss-orb mtss-orb-6" />
+                <div className="mtss-orb mtss-orb-7" />
             </div>
 
             <div className="relative z-20 container-tight px-4 sm:px-6 py-8 lg:py-14 space-y-8 lg:space-y-10">

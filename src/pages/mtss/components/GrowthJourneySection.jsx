@@ -5,7 +5,17 @@ import { INTERVENTION_CONFIG, glassStyles } from "../config/studentProfileConfig
 import GrowthJourneyMain from "./GrowthJourneyMain";
 import GrowthJourneyHistory from "./GrowthJourneyHistory";
 
-const GrowthJourneySection = memo(({ intervention, strategyLabel, durationLabel, frequencyLabel, mentorLabel }) => {
+const GrowthJourneySection = memo(({
+    intervention,
+    strategyLabel,
+    durationLabel,
+    frequencyLabel,
+    mentorLabel,
+    goalLabel,
+    monitoringMethodLabel,
+    startDateLabel,
+    notesLabel,
+}) => {
     const config = INTERVENTION_CONFIG[intervention?.type] || INTERVENTION_CONFIG.SEL;
     const CurrentIcon = config.icon || Sparkles;
 
@@ -29,6 +39,10 @@ const GrowthJourneySection = memo(({ intervention, strategyLabel, durationLabel,
                     durationLabel={durationLabel}
                     frequencyLabel={frequencyLabel}
                     mentorLabel={mentorLabel}
+                    goalLabel={goalLabel}
+                    monitoringMethodLabel={monitoringMethodLabel}
+                    startDateLabel={startDateLabel}
+                    notesLabel={notesLabel}
                 />
                 <GrowthJourneyHistory intervention={intervention} config={config} glassStyles={glassStyles} />
             </div>

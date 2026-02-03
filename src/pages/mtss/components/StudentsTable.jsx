@@ -1,13 +1,7 @@
-﻿import { memo } from "react";
+import { memo } from "react";
 import StudentsTableDesktopRow from "./StudentsTableDesktopRow";
 import StudentsTableMobileCard from "./StudentsTableMobileCard";
 
-const ROW_THEMES = [
-    { bg: "from-[#ecfeff]/90 via-[#fef3c7]/80 to-white/80 dark:from-white/5 dark:via-white/5 dark:to-white/0", accent: "bg-[#22d3ee]/70", aos: "fade-up" },
-    { bg: "from-[#f5f3ff]/90 via-[#ede9fe]/85 to-white/80 dark:from-white/10 dark:via-white/5 dark:to-white/5", accent: "bg-[#a855f7]/60", aos: "fade-up-right" },
-    { bg: "from-[#fff7ed]/90 via-[#fef3c7]/85 to-white/80 dark:from-white/5 dark:via-white/5 dark:to-white/0", accent: "bg-[#fb923c]/60", aos: "fade-up-left" },
-    { bg: "from-[#ecfccb]/90 via-[#d9f99d]/80 to-white/80 dark:from-white/5 dark:via-white/5 dark:to-white/0", accent: "bg-[#4ade80]/70", aos: "zoom-in-up" },
-];
 const MAX_RENDER = 50;
 
 const tierBadgeStyles = {
@@ -39,6 +33,15 @@ const interventionIcons = {
 const DEFAULT_ICON = "\uD83D\uDCCB";
 const UNIVERSAL_ICON = "\uD83C\uDF1F";
 
+const HEADER_COLS = [
+    { label: "Student", align: "text-left" },
+    { label: "Class / Mentor", align: "text-left" },
+    { label: "Focus Area", align: "text-left" },
+    { label: "Tier", align: "text-left" },
+    { label: "Progress", align: "text-left" },
+    { label: "Next Update", align: "text-left" },
+];
+
 const StudentsTable = memo(
     ({
         students,
@@ -56,40 +59,32 @@ const StudentsTable = memo(
 
         return (
             <div className="space-y-5">
+                {/* Desktop table */}
                 <div
-                    className="hidden md:block overflow-x-auto rounded-[28px] border border-white/30 dark:border-white/10 bg-gradient-to-br from-white/90 via-white/70 to-white/60 dark:from-white/5 dark:via-white/5 dark:to-white/0 shadow-[0_25px_70px_rgba(15,23,42,0.18)] backdrop-blur-xl"
+                    className="hidden md:block overflow-x-auto rounded-2xl border border-slate-200/60 dark:border-slate-700/50 bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl shadow-[0_20px_60px_rgba(15,23,42,0.10)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.30)]"
                     data-aos="fade-up"
-                    data-aos-delay="220"
+                    data-aos-delay="120"
+                    data-aos-duration="500"
                 >
                     <table className="w-full text-sm">
-                        <thead className="mtss-table-head">
-                            <tr className={`${dense ? "text-[11px]" : ""} mtss-table-head-row`}>
-                                <th className="py-3 w-2" />
+                        <thead>
+                            <tr className="border-b border-slate-100 dark:border-slate-800/80">
+                                <th className="py-3.5 w-2" />
                                 {selectable && (
-                                    <th className="py-3 font-semibold text-left w-12 text-slate-500 tracking-[0.2em] uppercase">
-                                        Select
+                                    <th className="py-3.5 pl-2 font-semibold text-left w-12 text-[10px] text-slate-400 dark:text-slate-500 tracking-[0.2em] uppercase">
+                                        Sel
                                     </th>
                                 )}
-                                <th className="py-3 font-semibold text-left tracking-[0.2em] uppercase text-xs text-slate-500">
-                                    Student
-                                </th>
-                                <th className="py-3 font-semibold text-left tracking-[0.2em] uppercase text-xs text-slate-500">
-                                    Class / Mentor
-                                </th>
-                                <th className="py-3 font-semibold text-left tracking-[0.2em] uppercase text-xs text-slate-500">
-                                    Focus Area
-                                </th>
-                                <th className="py-3 font-semibold text-left tracking-[0.2em] uppercase text-xs text-slate-500">
-                                    Tier
-                                </th>
-                                <th className="py-3 font-semibold text-left tracking-[0.2em] uppercase text-xs text-slate-500">
-                                    Progress
-                                </th>
-                                <th className="py-3 font-semibold text-left tracking-[0.2em] uppercase text-xs text-slate-500">
-                                    Next Update
-                                </th>
+                                {HEADER_COLS.map((col) => (
+                                    <th
+                                        key={col.label}
+                                        className={`py-3.5 font-semibold ${col.align} tracking-[0.18em] uppercase text-[10px] text-slate-400 dark:text-slate-500 ${dense ? "text-[9px]" : ""}`}
+                                    >
+                                        {col.label}
+                                    </th>
+                                ))}
                                 {showActions && (
-                                    <th className="py-3 font-semibold text-center tracking-[0.2em] uppercase text-xs text-slate-500">
+                                    <th className="py-3.5 font-semibold text-center tracking-[0.18em] uppercase text-[10px] text-slate-400 dark:text-slate-500">
                                         Action
                                     </th>
                                 )}
@@ -99,7 +94,6 @@ const StudentsTable = memo(
                             {limitedStudents.map((student, index) => {
                                 const key = student.id || student._id || student.name;
                                 const selected = activeSelectedIds.includes(student.id || student._id);
-                                const theme = ROW_THEMES[index % ROW_THEMES.length];
                                 return (
                                     <StudentsTableDesktopRow
                                         key={key}
@@ -112,7 +106,6 @@ const StudentsTable = memo(
                                         selectable={selectable}
                                         selected={selected}
                                         onSelect={onSelect}
-                                        theme={theme}
                                         tierBadgeStyles={tierBadgeStyles}
                                         interventionIcons={interventionIcons}
                                         defaultIcon={DEFAULT_ICON}
@@ -124,11 +117,11 @@ const StudentsTable = memo(
                     </table>
                 </div>
 
+                {/* Mobile cards */}
                 <div className="md:hidden space-y-3">
                     {limitedStudents.map((student, index) => {
                         const key = student.id || student._id || student.name;
                         const selected = activeSelectedIds.includes(student.id || student._id);
-                        const theme = ROW_THEMES[index % ROW_THEMES.length];
                         return (
                             <StudentsTableMobileCard
                                 key={key}
@@ -141,7 +134,6 @@ const StudentsTable = memo(
                                 selectable={selectable}
                                 selected={selected}
                                 onSelect={onSelect}
-                                theme={theme}
                                 tierBadgeStyles={tierBadgeStyles}
                                 interventionIcons={interventionIcons}
                                 defaultIcon={DEFAULT_ICON}

@@ -203,6 +203,22 @@ body {
     letter-spacing: -0.01em;
 }
 
+/* Dark-mode select / option contrast fix */
+.mtss-theme select {
+    color-scheme: light;
+}
+html.dark .mtss-theme select {
+    color-scheme: dark;
+}
+.mtss-theme select option {
+    background-color: #ffffff;
+    color: #1e293b;
+}
+html.dark .mtss-theme select option {
+    background-color: #1e293b;
+    color: #f1f5f9;
+}
+
 .mtss-chip {
     display: inline-flex;
     align-items: center;
@@ -714,13 +730,183 @@ html.dark .mtss-filter-chip--active {
 .mtss-bg-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(255, 255, 255, 0.35);
     pointer-events: none;
+    z-index: 1;
+    background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(99,102,241,0.06) 59px, rgba(99,102,241,0.06) 60px),
+        repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(99,102,241,0.06) 59px, rgba(99,102,241,0.06) 60px);
 }
 
 html.dark .mtss-bg-overlay {
-    background: rgba(0, 0, 0, 0.35);
+    background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(148,163,184,0.08) 59px, rgba(148,163,184,0.08) 60px),
+        repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(148,163,184,0.08) 59px, rgba(148,163,184,0.08) 60px);
 }
+
+/* Abstract gradient orbs — pure CSS, GPU-accelerated */
+.mtss-orb {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    will-change: transform;
+}
+
+/* Orb 1 — top-left, indigo-pink */
+.mtss-orb-1 {
+    width: 180px;
+    height: 180px;
+    top: 2%;
+    left: 5%;
+    background: radial-gradient(circle at 35% 35%, rgba(244,114,182,0.7), rgba(129,140,248,0.5) 50%, rgba(99,102,241,0.2) 80%, transparent);
+    opacity: 0.45;
+    animation: mtssOrbFloat1 20s ease-in-out infinite;
+}
+
+/* Orb 2 — top-right, cyan-purple, larger */
+.mtss-orb-2 {
+    width: 220px;
+    height: 220px;
+    top: -2%;
+    right: 8%;
+    background: radial-gradient(circle at 40% 30%, rgba(192,132,252,0.75), rgba(34,211,238,0.5) 55%, rgba(6,182,212,0.15) 85%, transparent);
+    opacity: 0.40;
+    animation: mtssOrbFloat2 24s ease-in-out infinite;
+}
+
+/* Orb 3 — mid-right, small pink accent */
+.mtss-orb-3 {
+    width: 90px;
+    height: 90px;
+    top: 18%;
+    right: 22%;
+    background: radial-gradient(circle at 45% 40%, rgba(251,113,133,0.8), rgba(244,114,182,0.4) 60%, transparent);
+    opacity: 0.50;
+    animation: mtssOrbFloat3 16s ease-in-out infinite;
+}
+
+/* Orb 4 — mid-left, amber-emerald */
+.mtss-orb-4 {
+    width: 150px;
+    height: 150px;
+    top: 50%;
+    left: 3%;
+    background: radial-gradient(circle at 35% 40%, rgba(251,191,36,0.65), rgba(52,211,153,0.4) 55%, rgba(16,185,129,0.1) 85%, transparent);
+    opacity: 0.38;
+    animation: mtssOrbFloat4 22s ease-in-out infinite;
+}
+
+/* Orb 5 — bottom-right, purple-blue-pink blend */
+.mtss-orb-5 {
+    width: 200px;
+    height: 200px;
+    bottom: 5%;
+    right: 5%;
+    background: radial-gradient(circle at 50% 45%, rgba(168,85,247,0.65), rgba(99,102,241,0.4) 50%, rgba(244,114,182,0.2) 80%, transparent);
+    opacity: 0.38;
+    animation: mtssOrbFloat5 26s ease-in-out infinite;
+}
+
+/* Orb 6 — tiny cyan accent, top-center */
+.mtss-orb-6 {
+    width: 60px;
+    height: 60px;
+    top: 10%;
+    left: 42%;
+    background: radial-gradient(circle at 50% 50%, rgba(34,211,238,0.85), rgba(6,182,212,0.3) 65%, transparent);
+    opacity: 0.50;
+    animation: mtssOrbFloat6 14s ease-in-out infinite;
+}
+
+/* Orb 7 — tiny orange accent, bottom-left */
+.mtss-orb-7 {
+    width: 70px;
+    height: 70px;
+    bottom: 12%;
+    left: 18%;
+    background: radial-gradient(circle at 45% 45%, rgba(251,146,60,0.80), rgba(251,191,36,0.3) 65%, transparent);
+    opacity: 0.45;
+    animation: mtssOrbFloat3 18s ease-in-out infinite reverse;
+}
+
+/* Dark mode — reduce opacity */
+html.dark .mtss-orb-1 { opacity: 0.30; }
+html.dark .mtss-orb-2 { opacity: 0.28; }
+html.dark .mtss-orb-3 { opacity: 0.35; }
+html.dark .mtss-orb-4 { opacity: 0.25; }
+html.dark .mtss-orb-5 { opacity: 0.25; }
+html.dark .mtss-orb-6 { opacity: 0.35; }
+html.dark .mtss-orb-7 { opacity: 0.30; }
+
+/* Float keyframes — each orb moves on its own path */
+@keyframes mtssOrbFloat1 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(15px, -20px) scale(1.05); }
+    50% { transform: translate(-10px, -35px) scale(0.97); }
+    75% { transform: translate(20px, -10px) scale(1.03); }
+}
+
+@keyframes mtssOrbFloat2 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(-20px, 15px) scale(1.04); }
+    50% { transform: translate(10px, 30px) scale(0.96); }
+    75% { transform: translate(-15px, 10px) scale(1.02); }
+}
+
+@keyframes mtssOrbFloat3 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(12px, -18px) scale(1.08); }
+    66% { transform: translate(-8px, 12px) scale(0.94); }
+}
+
+@keyframes mtssOrbFloat4 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(10px, 20px) scale(1.06); }
+    50% { transform: translate(25px, -5px) scale(0.98); }
+    75% { transform: translate(5px, 15px) scale(1.03); }
+}
+
+@keyframes mtssOrbFloat5 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(-15px, -10px) scale(1.05); }
+    50% { transform: translate(10px, -25px) scale(0.97); }
+    75% { transform: translate(-20px, -15px) scale(1.02); }
+}
+
+@keyframes mtssOrbFloat6 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(10px, -15px) scale(1.12); }
+}
+
+/* Stat card animations */
+@keyframes mtssSlideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes mtssIconPop {
+    0% { opacity: 0; transform: scale(0.4) rotate(-15deg); }
+    60% { opacity: 1; transform: scale(1.15) rotate(3deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+@keyframes mtssIconWiggle {
+    0%, 100% { transform: rotate(0deg); }
+    20% { transform: rotate(-12deg); }
+    40% { transform: rotate(10deg); }
+    60% { transform: rotate(-6deg); }
+    80% { transform: rotate(4deg); }
+}
+
+@keyframes mtssShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+@keyframes mtssRowFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
 .mtss-pill {
     display: inline-flex;
     align-items: center;
@@ -1215,13 +1401,18 @@ html.dark .mtss-bg-overlay {
     background-color: rgba(14, 165, 233, 0.1);
 }
 .mtss-animated-bg {
+    background-color: #eef2ff !important;
     background-image:
-        radial-gradient(circle at 20% 15%, rgba(79, 70, 229, 0.25), transparent 45%),
-        radial-gradient(circle at 70% -5%, rgba(14, 165, 233, 0.28), transparent 45%),
-        radial-gradient(circle at 35% 80%, rgba(16, 185, 129, 0.25), transparent 45%),
-        radial-gradient(circle at 90% 55%, rgba(251, 191, 36, 0.18), transparent 50%),
-        linear-gradient(135deg, #eef2ff 0%, #f0fdfa 40%, #fefce8 80%);
-    animation: mtssGradientShift 18s ease-in-out infinite alternate;
+        radial-gradient(ellipse 700px 550px at 10% 5%, rgba(99,102,241,0.50), transparent) !important,
+        radial-gradient(ellipse 600px 500px at 85% 3%, rgba(6,182,212,0.44), transparent) !important,
+        radial-gradient(ellipse 500px 400px at 50% 8%, rgba(168,85,247,0.28), transparent) !important,
+        radial-gradient(ellipse 450px 450px at 50% 50%, rgba(244,114,182,0.25), transparent) !important,
+        radial-gradient(ellipse 550px 500px at 25% 85%, rgba(16,185,129,0.38), transparent) !important,
+        radial-gradient(ellipse 400px 400px at 90% 65%, rgba(251,146,60,0.30), transparent) !important,
+        radial-gradient(ellipse 400px 400px at 5% 55%, rgba(168,85,247,0.28), transparent) !important,
+        linear-gradient(135deg, #eef2ff 0%, #e0f2fe 20%, #fdf2f8 40%, #fefce8 60%, #ecfdf5 80%, #eef2ff 100%) !important;
+    background-size: 200% 200% !important;
+    animation: mtssGradientShift 16s ease-in-out infinite alternate !important;
 }
 
 .mtss-hero-gradient {
@@ -1304,23 +1495,32 @@ html.dark .mtss-hero-shine {
 }
 
 html.dark .mtss-animated-bg {
+    background-color: #0f172a !important;
     background-image:
-        radial-gradient(circle at 25% 15%, rgba(37, 99, 235, 0.3), transparent 45%),
-        radial-gradient(circle at 75% 0%, rgba(6, 95, 70, 0.2), transparent 45%),
-        radial-gradient(circle at 50% 90%, rgba(14, 165, 233, 0.2), transparent 45%),
-        linear-gradient(135deg, #0f172a 0%, #0b1120 45%, #020617 100%);
-    animation: mtssGradientShiftDark 18s ease-in-out infinite alternate;
+        radial-gradient(ellipse 700px 550px at 10% 5%, rgba(99,102,241,0.40), transparent) !important,
+        radial-gradient(ellipse 600px 500px at 85% 3%, rgba(6,182,212,0.32), transparent) !important,
+        radial-gradient(ellipse 500px 400px at 50% 8%, rgba(168,85,247,0.24), transparent) !important,
+        radial-gradient(ellipse 450px 450px at 50% 45%, rgba(168,85,247,0.22), transparent) !important,
+        radial-gradient(ellipse 550px 500px at 20% 85%, rgba(16,185,129,0.25), transparent) !important,
+        radial-gradient(ellipse 400px 400px at 90% 65%, rgba(251,146,60,0.18), transparent) !important,
+        radial-gradient(ellipse 400px 400px at 5% 50%, rgba(244,114,182,0.16), transparent) !important,
+        linear-gradient(135deg, #0f172a 0%, #0c1631 25%, #1a0f2e 50%, #0c1e2e 75%, #0f172a 100%) !important;
+    background-size: 200% 200% !important;
+    animation: mtssGradientShiftDark 16s ease-in-out infinite alternate !important;
 }
 
 @keyframes mtssGradientShift {
     0% {
         background-position: 0% 0%;
     }
-    50% {
-        background-position: 20% 30%, 80% 10%, 35% 70%, 100% 100%;
+    33% {
+        background-position: 40% 20%;
+    }
+    66% {
+        background-position: 80% 60%;
     }
     100% {
-        background-position: 0% 0%;
+        background-position: 100% 100%;
     }
 }
 
@@ -1328,11 +1528,14 @@ html.dark .mtss-animated-bg {
     0% {
         background-position: 0% 0%;
     }
-    50% {
-        background-position: 60% 20%, 20% 30%, 50% 90%, 100% 100%;
+    33% {
+        background-position: 30% 40%;
+    }
+    66% {
+        background-position: 70% 20%;
     }
     100% {
-        background-position: 0% 0%;
+        background-position: 100% 100%;
     }
 }
 
