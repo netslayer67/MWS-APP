@@ -70,7 +70,7 @@ const TeacherHeroSection = ({ heroBadge, tabs, activeTab, onTabChange }) => (
 
                 {/* Tab navigation */}
                 <div className="mt-6 sm:mt-7">
-                    <div className="grid grid-cols-1 xs:grid-cols-3 gap-2 sm:gap-3">
+                    <div className="grid grid-cols-3 gap-2 sm:gap-3">
                         {tabs.map((tab) => {
                             const Icon = tab.icon;
                             const active = activeTab === tab.key;
