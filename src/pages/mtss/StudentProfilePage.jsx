@@ -90,7 +90,7 @@ const StudentProfilePage = memo(() => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
-                    className={`${glassStyles.card} rounded-3xl overflow-hidden shadow-2xl`}
+                    className={`${glassStyles.card} rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl`}
                 >
                     <StudentProfileHeader
                         student={student}
@@ -99,7 +99,7 @@ const StudentProfilePage = memo(() => {
                         currentInterventionLabel={currentIntervention?.label}
                     />
 
-                    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+                    <div className="p-2.5 sm:p-6 lg:p-8 space-y-3 sm:space-y-6">
                         <QuickFactsGrid student={student} profile={profile} mentorLabel={mentorLabel} />
 
                         <StudentInterventionsSection

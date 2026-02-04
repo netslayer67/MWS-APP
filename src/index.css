@@ -1625,6 +1625,41 @@ html.dark .mtss-animated-bg {
         transform: translateX(110%) skewX(-5deg);
     }
 }
+
+/* low power mode - keep visuals but stop heavy glass animations */
+html[data-reduce-motion="true"] {
+    --transition: 120ms;
+}
+
+html[data-reduce-motion="true"] .glass,
+html[data-reduce-motion="true"] .glass-strong {
+    -webkit-backdrop-filter: blur(calc(6px * var(--gs)));
+    backdrop-filter: blur(calc(6px * var(--gs)));
+}
+
+html[data-reduce-motion="true"] .glass__refract,
+html[data-reduce-motion="true"] .glass__refract--soft,
+html[data-reduce-motion="true"] .glass__caustic,
+html[data-reduce-motion="true"] .glass__bubble,
+html[data-reduce-motion="true"] .glass__orb,
+html[data-reduce-motion="true"] .glass__wave {
+    display: none !important;
+}
+
+html[data-reduce-motion="true"] .glass.sheen-animate::before,
+html[data-reduce-motion="true"] .glass-strong.sheen-animate::before,
+html[data-reduce-motion="true"] .glass--liquid::before {
+    animation: none !important;
+    opacity: 0.12 !important;
+}
+
+/* Hide floating utility dock when a bottom sheet is open */
+html[data-sheet-open="true"] .utility-dock {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(14px) scale(0.98);
+    filter: blur(4px);
+}
 .animate-gradient-shift {
     background-size: 300% 300%;
     animation: gradientShift 18s ease infinite;

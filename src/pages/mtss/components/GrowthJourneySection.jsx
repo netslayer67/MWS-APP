@@ -28,9 +28,9 @@ const GrowthJourneySection = memo(({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
-            className={`${glassStyles.inner} rounded-2xl sm:rounded-3xl p-4 sm:p-6`}
+            className={`${glassStyles.inner} rounded-xl sm:rounded-3xl p-2.5 sm:p-6`}
         >
-            <div className="flex flex-col lg:flex-row gap-6">
+            <div className="flex flex-col lg:flex-row gap-3 sm:gap-6">
                 <GrowthJourneyMain
                     intervention={intervention}
                     config={config}

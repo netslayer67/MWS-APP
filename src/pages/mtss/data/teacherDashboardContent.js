@@ -5,9 +5,9 @@ import {
 } from "lucide-react";
 
 export const tabs = [
-    { key: "dashboard", label: "Dashboard", icon: LineChartIcon },
-    { key: "students", label: "My Students", icon: Users2 },
-    { key: "create", label: "Create Intervention", icon: PlusCircle },
+    { key: "dashboard", label: "Dashboard", shortLabel: "Dashboard", icon: LineChartIcon },
+    { key: "students", label: "My Students", shortLabel: "Students", icon: Users2 },
+    { key: "create", label: "Create Intervention", shortLabel: "Create", icon: PlusCircle },
 ];
 
 export const fieldClasses = {
