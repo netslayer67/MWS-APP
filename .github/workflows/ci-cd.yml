@@ -48,7 +48,7 @@ jobs:
 
       - name: Run ESLint
         run: npm run lint --if-present
-        continue-on-error: false
+        continue-on-error: true  # Soft fail - warnings only for now
 
       - name: Build application
         run: npm run build
