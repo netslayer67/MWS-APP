@@ -118,7 +118,7 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64
           build-args: |
-            VITE_API_BASE=${{ vars.VITE_API_BASE || 'https://api.millenniaws.sch.id/api/v1' }}
+            VITE_API_BASE=${{ vars.VITE_API_BASE || '/api/v1' }}
 
       - name: Summary
         run: |
