@@ -13,7 +13,7 @@ import { syncInitialTheme } from '@/lib/theme';
 syncInitialTheme();
 
 // Initialize auth state from localStorage
-const token = localStorage.getItem('auth_token');
+const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
 const user = localStorage.getItem('auth_user');
 
 console.log('Initializing app - localStorage values:', { token: !!token, user: !!user });

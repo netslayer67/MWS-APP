@@ -74,6 +74,7 @@ const authSlice = createSlice({
             state.error = null;
             // Store in localStorage
             localStorage.setItem('auth_token', action.payload.token);
+            localStorage.setItem('token', action.payload.token);
             localStorage.setItem('auth_user', JSON.stringify(action.payload.user));
             console.log('OAuth login success - Token saved to localStorage:', action.payload.token);
         },
@@ -99,6 +100,7 @@ const authSlice = createSlice({
                 state.error = null;
                 // Store in localStorage
                 localStorage.setItem('auth_token', action.payload.token);
+                localStorage.setItem('token', action.payload.token);
                 localStorage.setItem('auth_user', JSON.stringify(action.payload.user));
                 console.log('Token saved to localStorage:', action.payload.token);
             })
@@ -120,6 +122,7 @@ const authSlice = createSlice({
                 // Clear localStorage
                 localStorage.removeItem('auth_token');
                 localStorage.removeItem('auth_user');
+                localStorage.removeItem('token');
             })
             .addCase(logoutUser.rejected, (state, action) => {
                 state.loading = false;
@@ -130,6 +133,7 @@ const authSlice = createSlice({
                 state.isAuthenticated = false;
                 localStorage.removeItem('auth_token');
                 localStorage.removeItem('auth_user');
+                localStorage.removeItem('token');
             })
             // Fetch current user
             .addCase(fetchCurrentUser.pending, (state) => {
@@ -156,6 +160,7 @@ const authSlice = createSlice({
                     state.token = null;
                     localStorage.removeItem('auth_token');
                     localStorage.removeItem('auth_user');
+                    localStorage.removeItem('token');
                 }
             });
     },

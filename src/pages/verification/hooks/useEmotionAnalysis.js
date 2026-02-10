@@ -16,7 +16,8 @@ export const useEmotionAnalysis = ({ toast, setStage }) => {
             const formData = new FormData();
             formData.append("image", blob, "emotion_capture.jpg");
 
-            const apiResponse = await fetch(`${import.meta.env.VITE_API_BASE}/checkin/emotion/analyze`, {
+            const apiBase = import.meta.env.VITE_API_BASE || "/api/v1";
+            const apiResponse = await fetch(`${apiBase}/checkin/emotion/analyze`, {
                 method: "POST",
                 body: formData
             });

@@ -21,7 +21,8 @@ const HeroSection = memo(() => {
     const handleGoogleSignIn = useCallback(() => {
         console.log("Initiating Google Sign-in...");
         // Redirect to backend Google OAuth
-        const backendUrl = import.meta.env.VITE_API_BASE?.replace('/api/v1', '') || 'https://bemws-production.up.railway.app';
+        const apiBase = import.meta.env.VITE_API_BASE || '/api/v1';
+        const backendUrl = apiBase.replace(/\/api(?:\/v\d+)?\/?$/, '');
         window.location.href = `${backendUrl}/auth/google`;
     }, []);
 

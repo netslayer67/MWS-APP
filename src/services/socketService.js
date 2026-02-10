@@ -11,7 +11,7 @@ class SocketService {
             return this.socket;
         }
 
-        const rawBase = import.meta.env.VITE_API_BASE || 'https://bemws-production.up.railway.app/api/v1';
+        const rawBase = import.meta.env.VITE_API_BASE || '/api/v1';
         // Remove trailing /api or /api/v{n}
         const API_BASE = rawBase.replace(/\/api(?:\/v\d+)?\/?$/, '');
 

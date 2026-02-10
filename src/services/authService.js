@@ -2,7 +2,7 @@ import axios from 'axios';
 import { startGlobalLoading, stopGlobalLoading } from '@/lib/loadingManager';
 
 // Default to versioned API to match backend routing
-const API_BASE_URL = import.meta.env.VITE_API_BASE || 'https://bemws-production.up.railway.app/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE || '/api/v1';
 
 // Create axios instance with default config
 const api = axios.create({
@@ -16,7 +16,7 @@ const api = axios.create({
 api.interceptors.request.use(
     (config) => {
         startGlobalLoading();
-        const token = localStorage.getItem('auth_token');
+        const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -37,13 +37,13 @@ api.interceptors.response.use(
     (error) => {
         stopGlobalLoading();
         if (error.response?.status === 401) {
-            const url = error.config?.url || '';
             const msg = error.response?.data?.message || '';
-            // Only clear auth for actual token failures (from /auth/me),
-            // not for role-based 401s from other endpoints
-            if (url.includes('/auth/me') || msg.includes('Token expired') || msg.includes('Invalid token') || msg.includes('jwt expired')) {
+            // Only clear auth for explicit token failures.
+            // Keep auth state for non-token 401s to avoid forced logout loops.
+            if (msg.includes('Token expired') || msg.includes('Invalid token') || msg.includes('jwt expired')) {
                 localStorage.removeItem('auth_token');
                 localStorage.removeItem('auth_user');
+                localStorage.removeItem('token');
                 window.location.href = '/login';
             }
         }
