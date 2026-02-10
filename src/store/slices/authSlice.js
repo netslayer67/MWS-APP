@@ -148,7 +148,15 @@ const authSlice = createSlice({
             .addCase(fetchCurrentUser.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
-                state.isAuthenticated = false;
+                // Only clear auth if it's a 401 (token invalid/expired)
+                // Don't log out on transient network errors
+                if (action.payload === 'Unauthorized' || action.payload === 'Token expired') {
+                    state.isAuthenticated = false;
+                    state.user = null;
+                    state.token = null;
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('auth_user');
+                }
             });
     },
 });
