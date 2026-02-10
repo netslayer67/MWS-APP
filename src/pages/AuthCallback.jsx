@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../store/slices/authSlice';
 import PageLoader from '../components/PageLoader';
-import { getCurrentUser } from '@/services/authService';
 import { hasEmotionalDashboardAccess, getEmotionalDashboardRole } from '@/utils/accessControl';
 
 const AuthCallback = () => {
@@ -32,31 +31,14 @@ const AuthCallback = () => {
                 localStorage.setItem('token', token);
                 localStorage.setItem('auth_token', token);
 
-                // Try to fetch canonical user from backend to get complete user data including role
+                // Use OAuth callback payload directly to avoid auth reset loops.
                 let canonicalUser = userFromQuery;
-                try {
-                    const resp = await getCurrentUser();
-                    console.log('🔍 Backend /auth/me response:', resp);
 
-                    // Handle different response structures
-                    if (resp?.data?.data?.user) {
-                        canonicalUser = resp.data.data.user;
-                    } else if (resp?.data?.user) {
-                        canonicalUser = resp.data.user;
-                    } else if (resp?.data) {
-                        canonicalUser = resp.data;
-                    }
-
-                    console.log('✅ Canonical user from database:', canonicalUser);
-                } catch (e) {
-                    console.warn('⚠️ Failed to fetch canonical user via /auth/me:', e);
-                    console.log('📋 Using user data from OAuth callback:', userFromQuery);
-                }
-
-                // Ensure the user has the required role field and validate
+                // Ensure the user has required role field
                 if (!canonicalUser.role) {
-                    console.warn('⚠️ User missing role field, using query data as fallback');
-                    canonicalUser = { ...userFromQuery, ...canonicalUser };
+                    console.error('❌ OAuth callback user missing role field');
+                    navigate('/login?error=missing_role');
+                    return;
                 }
 
                 // Log role validation for dashboard access
