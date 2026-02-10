@@ -37,8 +37,15 @@ api.interceptors.response.use(
     (error) => {
         stopGlobalLoading();
         if (error.response?.status === 401) {
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('auth_user');
+            const url = error.config?.url || '';
+            const msg = error.response?.data?.message || '';
+            // Only clear auth for actual token failures (from /auth/me),
+            // not for role-based 401s from other endpoints
+            if (url.includes('/auth/me') || msg.includes('Token expired') || msg.includes('Invalid token') || msg.includes('jwt expired')) {
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('auth_user');
+                window.location.href = '/login';
+            }
         }
         return Promise.reject(error);
     }
