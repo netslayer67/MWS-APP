@@ -9,6 +9,7 @@ export default defineConfig({
         VitePWA({
             strategies: 'generateSW',
             registerType: 'autoUpdate',
+            filename: 'mws-sw.js',
             includeAssets: ['vite.svg', 'Millennia.webp'],
             manifest: {
                 name: 'MWS IntegraLearn - Premium Education Platform',
