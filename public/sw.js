@@ -55,6 +55,13 @@ self.addEventListener('fetch', (event) => {
     // Skip external requests (fonts, APIs, etc.)
     if (!url.origin.includes(self.location.origin)) return;
 
+    // Let backend auth routes pass through to the server (OAuth, login, etc.)
+    // /auth/callback is a React SPA route handled by nginx separately
+    if (url.pathname.startsWith('/auth/') && !url.pathname.startsWith('/auth/callback')) return;
+
+    // Let socket.io requests pass through
+    if (url.pathname.startsWith('/socket.io/')) return;
+
     // Handle API requests with network-first strategy
     if (url.pathname.startsWith('/api/')) {
         event.respondWith(
