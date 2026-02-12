@@ -15,12 +15,9 @@ syncInitialTheme();
 const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
 const user = localStorage.getItem('auth_user');
 
-console.log('Initializing app - localStorage values:', { token: !!token, user: !!user });
-
 if (token && user) {
     try {
         const userData = JSON.parse(user);
-        console.log('Restoring auth state:', { user: userData.name, token: token.substring(0, 20) + '...' });
         store.dispatch({
             type: 'auth/setUser',
             payload: { user: userData, token }
@@ -29,10 +26,9 @@ if (token && user) {
         console.error('Error parsing stored user data:', error);
         // Clear invalid data
         localStorage.removeItem('auth_token');
+        localStorage.removeItem('token');
         localStorage.removeItem('auth_user');
     }
-} else {
-    console.log('No stored auth data found');
 }
 
 // Service worker registration is handled by Vite PWA plugin

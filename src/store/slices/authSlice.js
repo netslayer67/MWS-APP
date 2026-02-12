@@ -6,15 +6,11 @@ export const loginUser = createAsyncThunk(
     'auth/loginUser',
     async ({ email, password }, { rejectWithValue }) => {
         try {
-            console.log('Attempting login for:', email);
             const response = await loginApi(email, password);
-            console.log('Login thunk received:', response.data);
             // Extract data from the nested response structure
             const { data } = response.data;
-            console.log('Extracted data:', data);
             return data;
         } catch (error) {
-            console.error('Login thunk error:', error);
             return rejectWithValue(error.response?.data?.message || 'Login failed');
         }
     }
@@ -74,9 +70,7 @@ const authSlice = createSlice({
             state.error = null;
             // Store in localStorage
             localStorage.setItem('auth_token', action.payload.token);
-            localStorage.setItem('token', action.payload.token);
             localStorage.setItem('auth_user', JSON.stringify(action.payload.user));
-            console.log('OAuth login success - Token saved to localStorage:', action.payload.token);
         },
         clearAuth: (state) => {
             state.user = null;
@@ -100,9 +94,7 @@ const authSlice = createSlice({
                 state.error = null;
                 // Store in localStorage
                 localStorage.setItem('auth_token', action.payload.token);
-                localStorage.setItem('token', action.payload.token);
                 localStorage.setItem('auth_user', JSON.stringify(action.payload.user));
-                console.log('Token saved to localStorage:', action.payload.token);
             })
             .addCase(loginUser.rejected, (state, action) => {
                 state.loading = false;

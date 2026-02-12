@@ -44,7 +44,7 @@ api.interceptors.response.use(
                 localStorage.removeItem('auth_token');
                 localStorage.removeItem('auth_user');
                 localStorage.removeItem('token');
-                window.location.href = '/login';
+                window.location.assign('/');
             }
         }
         return Promise.reject(error);
@@ -54,7 +54,6 @@ api.interceptors.response.use(
 // Auth API functions
 export const login = async (email, password) => {
     const response = await api.post('/auth/login', { email, password });
-    console.log('Login API response:', response.data);
     return response;
 };
 
