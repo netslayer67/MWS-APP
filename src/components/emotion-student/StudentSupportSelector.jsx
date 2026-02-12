@@ -20,7 +20,7 @@ const categoryConfig = {
         borderLight: "border-amber-200 dark:border-amber-700/40"
     },
     psychologist: {
-        label: "School Counselor",
+        label: "School Psychologist",
         icon: Heart,
         gradient: "from-pink-400 to-rose-500",
         bgLight: "bg-pink-50 dark:bg-pink-900/20",
