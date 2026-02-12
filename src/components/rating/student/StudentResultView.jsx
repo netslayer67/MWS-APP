@@ -56,9 +56,14 @@ const metricTone = (score = 0) => {
     return "text-amber-600";
 };
 
-const StudentResultView = memo(({ checkInData, analysis, recommendations = [] }) => {
+const StudentResultView = memo(({ checkInData, analysis, recommendations = [], displayName }) => {
     const moodBadge = moodBadgeMap[analysis?.emotionalState] || moodBadgeMap.balanced;
     const WeatherIcon = weatherIconMap[analysis?.weatherValue || checkInData?.weatherType] || Cloud;
+    const shortName = useMemo(() => {
+        const raw = String(displayName || checkInData?.nickname || checkInData?.name || "Student").trim();
+        if (!raw) return "Student";
+        return raw.split(/\s+/)[0];
+    }, [displayName, checkInData?.nickname, checkInData?.name]);
 
     const normalizedRecommendations = useMemo(() => {
         if (Array.isArray(recommendations) && recommendations.length) return recommendations.slice(0, 4);
@@ -105,7 +110,7 @@ const StudentResultView = memo(({ checkInData, analysis, recommendations = [] })
                         <Heart className="w-8 h-8" />
                     </div>
                     <h1 className="text-3xl sm:text-4xl font-black tracking-tight">
-                        Great job, {sanitizeInput(checkInData?.name || "Student")}!
+                        Great job, {sanitizeInput(shortName)}!
                     </h1>
                     <p className="mt-2 text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
                         Your emotional check-in is complete. Here is a kind snapshot of how you are feeling today.

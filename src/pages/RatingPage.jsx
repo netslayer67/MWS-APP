@@ -42,6 +42,7 @@ const RatingPage = memo(function RatingPage() {
         if (checkinResults) {
             return {
                 name: checkinResults.userId?.name || checkinResults.name || "Staff Member",
+                nickname: checkinResults.userId?.nickname || checkinResults.nickname || null,
                 weatherType: checkinResults.weatherType,
                 selectedMoods: checkinResults.selectedMoods,
                 emotionsDetails: checkinResults.details,
@@ -62,6 +63,7 @@ const RatingPage = memo(function RatingPage() {
             console.log('Using todayCheckin data:', todayCheckin);
             return {
                 name: todayCheckin.userId?.name || todayCheckin.name || "Staff Member",
+                nickname: todayCheckin.userId?.nickname || todayCheckin.nickname || null,
                 weatherType: todayCheckin.weatherType,
                 selectedMoods: todayCheckin.selectedMoods || [],
                 emotionsDetails: todayCheckin.details || "",
@@ -81,6 +83,7 @@ const RatingPage = memo(function RatingPage() {
         if (currentCheckin) {
             return {
                 name: currentCheckin.userId?.name || currentCheckin.name || "Staff Member",
+                nickname: currentCheckin.userId?.nickname || currentCheckin.nickname || null,
                 weatherType: currentCheckin.weatherType,
                 selectedMoods: currentCheckin.selectedMoods,
                 emotionsDetails: currentCheckin.details,
@@ -409,6 +412,7 @@ const RatingPage = memo(function RatingPage() {
                         checkInData={checkInData}
                         analysis={studentAnalysis}
                         recommendations={studentRecommendations}
+                        displayName={user?.nickname || checkInData?.nickname || checkInData?.name}
                     />
                 </Suspense>
             </AnimatedPage>
