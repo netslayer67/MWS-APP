@@ -22,6 +22,7 @@ const PsychologicalInsights = lazy(() => import("@/components/rating/Psychologic
 const MotivationalMessage = lazy(() => import("@/components/rating/MotivationalMessage"));
 const SupportSection = lazy(() => import("@/components/rating/SupportSection"));
 const BackHomeButton = lazy(() => import("@/components/rating/BackHomeButton"));
+const StudentResultView = lazy(() => import("@/components/rating/student/StudentResultView"));
 
 // ============= MAIN COMPONENT =============
 const RatingPage = memo(function RatingPage() {
@@ -32,6 +33,7 @@ const RatingPage = memo(function RatingPage() {
     const navigate = useNavigate();
     const { checkinId } = useParams();
     const dispatch = useDispatch();
+    const { user } = useSelector((state) => state.auth);
     const { checkinResults, currentCheckin, todayCheckin } = useSelector((state) => state.checkin);
 
     // Use real API data if available, otherwise fall back to location state or dummy data
@@ -47,6 +49,7 @@ const RatingPage = memo(function RatingPage() {
                 capacityLevel: checkinResults.capacityLevel,
                 supportPerson: checkinResults.supportContact?.name || checkinResults.supportContactUserId?.name || "No Need",
                 aiAnalysis: checkinResults.aiAnalysis,
+                aiDetected: checkinResults.aiDetected,
                 // Add weather report for components that need it
                 weatherReport: checkinResults.weatherType ? `${checkinResults.weatherType} – AI analyzed` : "⛅ Partly Cloudy – Doing alright",
                 weatherValue: checkinResults.weatherType || "partly-cloudy",
@@ -66,6 +69,7 @@ const RatingPage = memo(function RatingPage() {
                 capacityLevel: todayCheckin.capacityLevel || 5,
                 supportPerson: todayCheckin.supportContact?.name || todayCheckin.supportContactUserId?.name || "No Need",
                 aiAnalysis: todayCheckin.aiAnalysis,
+                aiDetected: todayCheckin.aiDetected,
                 // Add weather report for components that need it
                 weatherReport: todayCheckin.weatherType ? `${todayCheckin.weatherType} – AI analyzed` : "⛅ Partly Cloudy – Doing alright",
                 weatherValue: todayCheckin.weatherType || "partly-cloudy",
@@ -84,6 +88,7 @@ const RatingPage = memo(function RatingPage() {
                 capacityLevel: currentCheckin.capacityLevel,
                 supportPerson: currentCheckin.supportContact?.name || currentCheckin.supportContactUserId?.name || "No Need",
                 aiAnalysis: currentCheckin.aiAnalysis,
+                aiDetected: currentCheckin.aiDetected,
                 // Add weather report for components that need it
                 weatherReport: currentCheckin.weatherType ? `${currentCheckin.weatherType} – AI analyzed` : "⛅ Partly Cloudy – Doing alright",
                 weatherValue: currentCheckin.weatherType || "partly-cloudy",
@@ -253,6 +258,74 @@ const RatingPage = memo(function RatingPage() {
         return generateRecommendations(analysis, checkInData);
     }, [analysis, checkInData]);
 
+    const isStudent = user?.role === "student";
+
+    const studentAnalysis = useMemo(() => {
+        const ai = checkInData?.aiAnalysis || {};
+        return {
+            emotionalState: ai.emotionalState || analysis?.emotionalState || "balanced",
+            presenceState: ai.presenceState || analysis?.presenceState || "moderate",
+            capacityState: ai.capacityState || analysis?.capacityState || "moderate",
+            needsSupport: typeof ai.needsSupport === "boolean" ? ai.needsSupport : !!analysis?.needsSupport,
+            confidence: ai.confidence || analysis?.confidence || 75,
+            psychologicalInsights: ai.psychologicalInsights || analysis?.psychologicalInsights || "You are building emotional awareness, and that is a strong skill.",
+            motivationalMessage: ai.motivationalMessage || analysis?.motivationalMessage || "Your feelings matter. Small positive steps still count.",
+            weatherValue: checkInData?.weatherValue || checkInData?.weatherType || analysis?.weatherValue || "partly-cloudy"
+        };
+    }, [analysis, checkInData]);
+
+    const studentRecommendations = useMemo(() => {
+        const aiRecs = Array.isArray(checkInData?.aiAnalysis?.recommendations)
+            ? checkInData.aiAnalysis.recommendations
+            : [];
+        if (aiRecs.length) {
+            return aiRecs.slice(0, 4).map((rec) => ({
+                title: rec.title,
+                description: rec.description,
+                priority: rec.priority,
+                category: rec.category || "mindfulness"
+            }));
+        }
+
+        const fallback = [
+            {
+                title: "Breathe and Reset",
+                description: "Take 5 slow breaths. Inhale for 4 counts and exhale for 6 counts.",
+                category: "mindfulness",
+                priority: "medium"
+            },
+            {
+                title: "One Small Task",
+                description: "Complete one simple school task first to make progress feel easier.",
+                category: "school",
+                priority: "medium"
+            },
+            {
+                title: "Kind Self-Talk",
+                description: "Say one kind sentence to yourself, like “I can do this step by step.”",
+                category: "self-care",
+                priority: "low"
+            },
+            {
+                title: "Reach Out for Support",
+                description: "Talk to your trusted adult at school when you need help.",
+                category: "connection",
+                priority: "high"
+            }
+        ];
+
+        if (!studentAnalysis.needsSupport) {
+            fallback[3] = {
+                title: "Share One Good Thing",
+                description: "Tell someone one positive thing from your day to strengthen your mood.",
+                category: "connection",
+                priority: "low"
+            };
+        }
+
+        return fallback;
+    }, [checkInData?.aiAnalysis?.recommendations, studentAnalysis.needsSupport]);
+
     // Helper functions for mapping API data to component format
     function getIconForCategory(category) {
         const iconMap = {
@@ -322,6 +395,24 @@ const RatingPage = memo(function RatingPage() {
     // Show loading if we're still fetching data and have no data yet
     if (isLoading && !checkinResults && !todayCheckin && !currentCheckin) {
         return <PageLoader />;
+    }
+
+    if (isStudent) {
+        return (
+            <AnimatedPage>
+                <Helmet>
+                    <title>My Emotional Result — Millennia World School</title>
+                    <meta name="description" content="Student emotional wellbeing result and supportive recommendations" />
+                </Helmet>
+                <Suspense fallback={<PageLoader />}>
+                    <StudentResultView
+                        checkInData={checkInData}
+                        analysis={studentAnalysis}
+                        recommendations={studentRecommendations}
+                    />
+                </Suspense>
+            </AnimatedPage>
+        );
     }
 
     // Handle submission of user reflection with enhanced AI analysis
