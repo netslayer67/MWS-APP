@@ -6,11 +6,18 @@ import { UserCircle, GraduationCap, Heart, CheckCircle2, School } from "lucide-r
 
 const categoryConfig = {
     classTeacher: {
-        label: "Your Teachers",
+        label: "Homeroom Teachers",
         icon: GraduationCap,
         gradient: "from-sky-400 to-blue-500",
         bgLight: "bg-sky-50 dark:bg-sky-900/20",
         borderLight: "border-sky-200 dark:border-sky-700/40"
+    },
+    seTeacher: {
+        label: "SE Teachers",
+        icon: UserCircle,
+        gradient: "from-emerald-400 to-teal-500",
+        bgLight: "bg-emerald-50 dark:bg-emerald-900/20",
+        borderLight: "border-emerald-200 dark:border-emerald-700/40"
     },
     principal: {
         label: "Your Principal",
@@ -49,12 +56,16 @@ const StudentSupportSelector = memo(({ supportContact, onSupportChange }) => {
 
     // Group contacts by category
     const groupedContacts = useMemo(() => {
-        const groups = { classTeacher: [], principal: [], psychologist: [], other: [] };
+        const groups = { classTeacher: [], seTeacher: [], principal: [], psychologist: [], other: [] };
         const noNeedOption = supportContacts.find(c => c.id === "no-need");
 
         supportContacts.forEach(contact => {
             if (contact.id === "no-need") return;
-            const cat = contact.isClassTeacher ? 'classTeacher' : (contact.contactCategory || 'other');
+            const cat = contact.isClassTeacher
+                ? 'classTeacher'
+                : (contact.isSETeacher || contact.contactCategory === 'seTeacher'
+                    ? 'seTeacher'
+                    : (contact.contactCategory || 'other'));
             if (groups[cat]) {
                 groups[cat].push(contact);
             } else {
