@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useEffect, memo } from "react";
+import { useMemo, useState, useCallback, useEffect, memo } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
@@ -12,8 +12,6 @@ import {
     Star,
     CheckCircle,
     Award,
-    Wallet,
-    Gift,
     TrendingUp,
     Calendar,
     Activity,
@@ -372,6 +370,240 @@ const ActionCard = memo(function ActionCard({ icon: Icon, label, hint, to, compa
     );
 });
 
+const StudentQuickCard = memo(function StudentQuickCard({ title, hint, icon: Icon, to, onClick, highlight = false }) {
+    const baseClass = highlight
+        ? "rounded-2xl border border-transparent bg-gradient-to-r from-rose-500 via-pink-500 to-violet-500 text-white shadow-[0_18px_45px_rgba(236,72,153,0.35)]"
+        : "rounded-2xl border border-white/60 bg-white/70 text-foreground backdrop-blur-xl shadow-sm";
+
+    const content = (
+        <div className={`group flex items-center justify-between gap-3 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${baseClass}`}>
+            <div className="flex items-center gap-3 min-w-0">
+                <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${highlight ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'}`}>
+                    <Icon className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                    <p className={`text-sm font-semibold truncate ${highlight ? 'text-white' : 'text-foreground'}`}>{title}</p>
+                    <p className={`text-xs truncate ${highlight ? 'text-white/85' : 'text-muted-foreground'}`}>{hint}</p>
+                </div>
+            </div>
+            <ChevronRight className={`h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 ${highlight ? 'text-white/90' : 'text-muted-foreground'}`} />
+        </div>
+    );
+
+    if (onClick) {
+        return (
+            <button type="button" onClick={onClick} className="block w-full text-left">
+                {content}
+            </button>
+        );
+    }
+
+    return (
+        <Link to={to} className="block">
+            {content}
+        </Link>
+    );
+});
+
+const StudentProfileView = memo(function StudentProfileView({
+    currentUser,
+    user,
+    todayCard,
+    overallCard,
+    insights,
+    recentSnapshots,
+    checkinDescription,
+    checkinLimitReached,
+    remainingCheckins,
+    onBack,
+    onStartCheckin,
+    onOpenLogout
+}) {
+    const displayName = useMemo(() => {
+        const raw = sanitizeInput(currentUser?.nickname || currentUser?.username || currentUser?.name || "Student");
+        return raw.split(" ")[0] || "Student";
+    }, [currentUser]);
+
+    const streakDays = overallCard?.streaks?.current || 0;
+    const totalCheckins = overallCard?.totalCheckins || user?.completed || 0;
+    const supportLabel = checkinLimitReached
+        ? "Today completed - come back later"
+        : `${remainingCheckins} check-in slot${remainingCheckins === 1 ? "" : "s"} left`;
+    const latestInsight = insights?.[0] || "Keep taking small mindful pauses between classes.";
+
+    return (
+        <div className="relative min-h-dvh overflow-hidden bg-gradient-to-br from-rose-50 via-amber-50 to-sky-50 text-foreground">
+            <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute -top-24 -left-20 w-80 h-80 rounded-full blur-3xl bg-pink-300/30" />
+                <div className="absolute -bottom-24 -right-20 w-80 h-80 rounded-full blur-3xl bg-sky-300/30" />
+                <div className="absolute top-1/3 left-1/2 w-64 h-64 -translate-x-1/2 rounded-full blur-3xl bg-amber-300/25" />
+            </div>
+
+            <div className="relative z-10 mx-auto max-w-4xl px-4 py-6 sm:py-8 space-y-5">
+                <header className="flex items-center justify-between gap-3">
+                    <button
+                        onClick={onBack}
+                        aria-label="Go back"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/60 bg-white/70 backdrop-blur-xl hover:border-primary/30 hover:bg-primary/5 transition"
+                    >
+                        <ArrowLeft className="h-5 w-5 text-foreground/80" />
+                    </button>
+                    <div className="text-right">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Student Profile</p>
+                        <p className="text-sm font-semibold text-foreground">Your wellbeing, your pace</p>
+                    </div>
+                </header>
+
+                <section className="rounded-3xl border border-white/70 bg-white/75 backdrop-blur-xl p-5 sm:p-6 shadow-lg">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0">
+                            <p className="text-xs font-semibold uppercase tracking-wider text-rose-500">Welcome back</p>
+                            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">
+                                Hi {displayName}
+                            </h1>
+                            <p className="mt-1 text-sm text-muted-foreground">{checkinDescription}</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-rose-500 to-violet-500 text-white flex items-center justify-center text-2xl font-black shadow-lg">
+                                {user?.initials || "S"}
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-xs font-semibold text-muted-foreground">Class</p>
+                                <p className="text-sm font-bold text-foreground">
+                                    {sanitizeInput(currentUser?.currentGrade || "Grade")} - {sanitizeInput(currentUser?.className || "Class")}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="rounded-2xl border border-rose-200/70 bg-rose-50/80 px-4 py-3">
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-rose-500">Streak</p>
+                            <p className="mt-1 text-2xl font-black text-rose-600">{streakDays}</p>
+                            <p className="text-xs text-rose-500/80">days in a row</p>
+                        </div>
+                        <div className="rounded-2xl border border-sky-200/70 bg-sky-50/80 px-4 py-3">
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-sky-500">Check-ins</p>
+                            <p className="mt-1 text-2xl font-black text-sky-600">{fmtShort(totalCheckins)}</p>
+                            <p className="text-xs text-sky-500/80">completed</p>
+                        </div>
+                        <div className="rounded-2xl border border-amber-200/70 bg-amber-50/80 px-4 py-3">
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-600">Today</p>
+                            <p className="mt-1 text-sm font-bold text-amber-700">{supportLabel}</p>
+                            <p className="text-xs text-amber-600/80">you are doing great</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className="rounded-3xl border border-white/70 bg-white/75 backdrop-blur-xl p-5 shadow-sm space-y-3">
+                        <div className="flex items-center gap-2">
+                            <Heart className="h-5 w-5 text-rose-500" />
+                            <h2 className="text-lg font-black text-foreground">Today's Mood Snapshot</h2>
+                        </div>
+                        {todayCard ? (
+                            <div className="space-y-2 text-sm">
+                                <p><span className="font-semibold text-foreground">Weather:</span> <span className="text-muted-foreground capitalize">{todayCard.weather || "not set"}</span></p>
+                                <p><span className="font-semibold text-foreground">Presence:</span> <span className="text-muted-foreground">{todayCard.presence ?? "-"} / 10</span></p>
+                                <p><span className="font-semibold text-foreground">Capacity:</span> <span className="text-muted-foreground">{todayCard.capacity ?? "-"} / 10</span></p>
+                                {todayCard.moods && (
+                                    <p><span className="font-semibold text-foreground">Moods:</span> <span className="text-muted-foreground">{todayCard.moods}</span></p>
+                                )}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-muted-foreground">No check-in yet today. Start one and keep your streak alive.</p>
+                        )}
+                    </div>
+
+                    <div className="rounded-3xl border border-white/70 bg-white/75 backdrop-blur-xl p-5 shadow-sm space-y-3">
+                        <div className="flex items-center gap-2">
+                            <Sparkles className="h-5 w-5 text-violet-500" />
+                            <h2 className="text-lg font-black text-foreground">Your Cheer Boost</h2>
+                        </div>
+                        <p className="text-sm leading-relaxed text-foreground/85">{sanitizeInput(latestInsight)}</p>
+                        <div className="rounded-2xl border border-violet-200/70 bg-violet-50/70 px-4 py-3 text-xs text-violet-700">
+                            Small steps count. Share how you feel, even when it is just one sentence.
+                        </div>
+                    </div>
+                </section>
+
+                <section className="space-y-3">
+                    <h2 className="text-lg font-black text-foreground">Quick Adventures</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <StudentQuickCard
+                            title="Start Emotional Check-in"
+                            hint={checkinLimitReached ? "Daily limit reached" : "Manual or AI flow"}
+                            icon={Sparkles}
+                            onClick={onStartCheckin}
+                            highlight
+                        />
+                        <StudentQuickCard
+                            title="Support Hub"
+                            hint="Choose your wellbeing activity"
+                            icon={Heart}
+                            to="/student/support-hub"
+                        />
+                        <StudentQuickCard
+                            title="Emotional History"
+                            hint="Look at your reflection journey"
+                            icon={Calendar}
+                            to="/profile/emotional-history"
+                        />
+                        <StudentQuickCard
+                            title="Emotion Insights"
+                            hint="See your personal trends"
+                            icon={Activity}
+                            to="/profile/emotional-patterns"
+                        />
+                    </div>
+                </section>
+
+                {recentSnapshots?.length > 0 && (
+                    <section className="rounded-3xl border border-white/70 bg-white/75 backdrop-blur-xl p-5 shadow-sm">
+                        <div className="flex items-center justify-between gap-3">
+                            <h2 className="text-lg font-black text-foreground">Recent Moments</h2>
+                            <Link to="/profile/emotional-history" className="text-xs font-semibold text-primary hover:underline">
+                                View all
+                            </Link>
+                        </div>
+                        <div className="mt-3 space-y-2">
+                            {recentSnapshots.slice(0, 3).map((entry) => (
+                                <div key={entry.id || entry.date} className="rounded-xl border border-border/60 bg-card/40 px-3 py-2 text-sm">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <p className="font-medium text-foreground">{formatDateLabel(entry.date)}</p>
+                                        <span className={`text-[11px] font-semibold rounded-full px-2 py-0.5 ${entry.aiAnalysis?.needsSupport ? "bg-rose-100 text-rose-600" : "bg-emerald-100 text-emerald-600"}`}>
+                                            {entry.aiAnalysis?.needsSupport ? "Needs support" : "Steady"}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        Presence {entry.presenceLevel ?? "-"} / Capacity {entry.capacityLevel ?? "-"}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                <section className="rounded-2xl border border-white/70 bg-white/70 backdrop-blur-xl px-4 py-3 flex items-center justify-between gap-3">
+                    <div>
+                        <p className="text-sm font-semibold text-foreground">Theme</p>
+                        <p className="text-xs text-muted-foreground">Pick your preferred look</p>
+                    </div>
+                    <ThemeToggle />
+                </section>
+
+                <button
+                    type="button"
+                    onClick={onOpenLogout}
+                    className="w-full rounded-2xl bg-destructive/90 px-4 py-3 text-sm font-semibold text-destructive-foreground transition hover:bg-destructive"
+                >
+                    Sign Out
+                </button>
+            </div>
+        </div>
+    );
+});
+
 /* ---------------------- Main Component ---------------------- */
 const ProfilePage = memo(function ProfilePage() {
     const navigate = useNavigate();
@@ -421,11 +653,6 @@ const ProfilePage = memo(function ProfilePage() {
         checkMobile();
         window.addEventListener('resize', checkMobile);
         return () => window.removeEventListener('resize', checkMobile);
-    }, []);
-
-    useEffect(() => {
-        if (typeof window === "undefined") return;
-        setCheckinUsage({ ...readCheckinUsageSnapshot(), ready: true });
     }, []);
 
     // Processed user data
@@ -673,6 +900,67 @@ const ProfilePage = memo(function ProfilePage() {
             navigate("/");
         }
     };
+
+    const handleStudentBack = useCallback(() => {
+        navigate("/student/support-hub");
+    }, [navigate]);
+
+    if (isStudent) {
+        return (
+            <>
+                <Helmet>
+                    <title>Student Profile - MWS APP</title>
+                </Helmet>
+
+                <StudentProfileView
+                    currentUser={currentUser}
+                    user={user}
+                    todayCard={todayCard}
+                    overallCard={overallCard}
+                    insights={insights}
+                    recentSnapshots={recentSnapshots}
+                    checkinDescription={checkinDescription}
+                    checkinLimitReached={checkinLimitReached}
+                    remainingCheckins={remainingCheckins}
+                    onBack={handleStudentBack}
+                    onStartCheckin={handleEmotionalCheckin}
+                    onOpenLogout={() => setShowLogoutDialog(true)}
+                />
+
+                <Dialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+                    <DialogContent className="sm:max-w-[425px] border-0 bg-transparent shadow-none">
+                        <GlassCard variant="elevated" className="p-6 border-0 shadow-glass-lg">
+                            <DialogHeader className="space-y-3">
+                                <DialogTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
+                                    <LogOut className="h-5 w-5 text-destructive" />
+                                    Sign Out
+                                </DialogTitle>
+                                <DialogDescription className="text-foreground/70 leading-relaxed">
+                                    Are you sure you want to sign out? You can log in again anytime.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter className="flex gap-3 mt-6">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setShowLogoutDialog(false)}
+                                    className="flex-1 border-border/60 bg-card/40 hover:bg-card/60 text-foreground"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    variant="destructive"
+                                    onClick={handleLogout}
+                                    className="flex-1 bg-destructive hover:bg-destructive/90 text-primary"
+                                >
+                                    Sign Out
+                                </Button>
+                            </DialogFooter>
+                        </GlassCard>
+                    </DialogContent>
+                </Dialog>
+            </>
+        );
+    }
 
     return (
         <>
