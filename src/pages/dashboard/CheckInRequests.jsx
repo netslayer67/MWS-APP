@@ -4,14 +4,12 @@ import { MessageCircle, User } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { removeFlaggedUser } from "../../store/slices/dashboardSlice";
 import { toast } from "../../components/ui/use-toast";
-
-const STATUS_BADGES = {
-    requested: "bg-amber-100 text-amber-900 dark:bg-amber-900/20 dark:text-amber-200 border border-amber-200/70",
-    acknowledged: "bg-sky-100 text-sky-900 dark:bg-sky-900/20 dark:text-sky-200 border border-sky-200/70",
-    handled: "bg-emerald-100 text-emerald-900 dark:bg-emerald-900/20 dark:text-emerald-200 border border-emerald-200/70",
-};
-
-const PAGE_SIZE = 10;
+import CheckInRequestPagination from "@/pages/dashboard/components/checkin-requests/CheckInRequestPagination";
+import {
+    normalizeRequestStatus,
+    PAGE_SIZE,
+    STATUS_BADGES,
+} from "@/pages/dashboard/components/checkin-requests/checkinRequestUtils";
 
 const CheckInRequests = memo(({ requests = [], isHeadUnit }) => {
     const navigate = useNavigate();
@@ -106,10 +104,7 @@ const CheckInRequests = memo(({ requests = [], isHeadUnit }) => {
 
                 <div className="space-y-3">
                     {visibleRequests.map((request, index) => {
-                        const status =
-                            request.status === "handled" || request.status === "acknowledged"
-                                ? request.status
-                                : "requested";
+                        const status = normalizeRequestStatus(request.status);
                         const badgeClass = STATUS_BADGES[status] || STATUS_BADGES.requested;
 
                         return (
@@ -184,27 +179,11 @@ const CheckInRequests = memo(({ requests = [], isHeadUnit }) => {
                 </div>
 
                 {showPagination && (
-                    <div className="pt-1 flex items-center justify-between text-xs text-muted-foreground">
-                        <button
-                            type="button"
-                            onClick={() => goToPage(currentPage - 1)}
-                            disabled={currentPage === 1}
-                            className="px-3 py-1.5 rounded-full border border-border hover:border-primary hover:text-primary disabled:opacity-50 transition"
-                        >
-                            Previous
-                        </button>
-                        <span>
-                            Page {currentPage} of {totalPages}
-                        </span>
-                        <button
-                            type="button"
-                            onClick={() => goToPage(currentPage + 1)}
-                            disabled={currentPage === totalPages}
-                            className="px-3 py-1.5 rounded-full border border-border hover:border-primary hover:text-primary disabled:opacity-50 transition"
-                        >
-                            Next
-                        </button>
-                    </div>
+                    <CheckInRequestPagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={goToPage}
+                    />
                 )}
             </div>
         </div>

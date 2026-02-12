@@ -42,7 +42,6 @@ const NotesBottomSheet = memo(({ open, onOpenChange, notes, interventionLabel })
                     aria-modal="true"
                     role="dialog"
                 >
-                    {/* Backdrop - covers dark mode toggle (z-50) */}
                     <motion.div
                         className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/50 to-black/30 dark:from-black/75 dark:via-black/60 dark:to-black/40 backdrop-blur-lg"
                         onClick={() => onOpenChange(false)}
@@ -51,8 +50,6 @@ const NotesBottomSheet = memo(({ open, onOpenChange, notes, interventionLabel })
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
                     />
-
-                    {/* Sheet */}
                     <motion.div
                         initial={reduce ? { opacity: 0 } : { y: "100%" }}
                         animate={reduce ? { opacity: 1 } : { y: 0 }}
@@ -64,7 +61,6 @@ const NotesBottomSheet = memo(({ open, onOpenChange, notes, interventionLabel })
                         }
                         className={`relative z-[96] w-full max-w-lg overflow-hidden rounded-t-[32px] border border-white/30 dark:border-white/[0.08] glass-strong glass--liquid ${reduce ? "" : "sheen-animate"} shadow-[0_-35px_90px_rgba(15,23,42,0.35)]`}
                     >
-                        {/* Liquid glass layers */}
                         <div className="glass__noise" />
                         <div className="glass__refract glass__refract--soft" />
                         {!reduce && (
@@ -86,16 +82,9 @@ const NotesBottomSheet = memo(({ open, onOpenChange, notes, interventionLabel })
                                 />
                             </>
                         )}
-
-                        {/* Iridescent tint */}
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,188,220,0.35),transparent_55%),radial-gradient(circle_at_80%_20%,rgba(125,211,252,0.3),transparent_55%),radial-gradient(circle_at_45%_80%,rgba(253,224,71,0.25),transparent_60%)] opacity-70 pointer-events-none" />
-
-                        {/* Top edge highlight */}
                         <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-white/80 dark:via-white/20 to-transparent" />
-
-                        {/* Content (relative to sit above glass layers) */}
                         <div className="relative">
-                            {/* Drag handle */}
                             <div className="flex justify-center pt-3 pb-1.5">
                                 <motion.div
                                     className="w-9 h-1 rounded-full bg-slate-300/80 dark:bg-slate-500/50 shadow-[0_0_12px_rgba(255,255,255,0.45)]"
@@ -104,8 +93,6 @@ const NotesBottomSheet = memo(({ open, onOpenChange, notes, interventionLabel })
                                     transition={{ delay: 0.2, duration: 0.3, ease: "easeOut" }}
                                 />
                             </div>
-
-                            {/* Header */}
                             <div className="flex items-center justify-between px-5 pb-3">
                                 <motion.div
                                     className="flex items-center gap-3"
@@ -138,11 +125,7 @@ const NotesBottomSheet = memo(({ open, onOpenChange, notes, interventionLabel })
                                     <X className="w-4 h-4" />
                                 </motion.button>
                             </div>
-
-                            {/* Separator - glass edge */}
                             <div className="mx-5 h-[1px] bg-gradient-to-r from-transparent via-white/60 dark:via-white/10 to-transparent" />
-
-                            {/* Body */}
                             <motion.div
                                 className="px-5 py-4 max-h-[55vh] overflow-y-auto custom-scroll"
                                 initial={{ opacity: 0, y: 8 }}
@@ -166,8 +149,6 @@ const NotesBottomSheet = memo(({ open, onOpenChange, notes, interventionLabel })
                                     </div>
                                 )}
                             </motion.div>
-
-                            {/* Footer */}
                             {notes && (
                                 <motion.div
                                     className="px-5 pb-5 pt-2"
@@ -175,9 +156,7 @@ const NotesBottomSheet = memo(({ open, onOpenChange, notes, interventionLabel })
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: 0.25 }}
                                 >
-                                    {/* Separator */}
                                     <div className="mb-3 h-[1px] bg-gradient-to-r from-transparent via-white/60 dark:via-white/10 to-transparent" />
-
                                     <motion.button
                                         onClick={handleCopy}
                                         whileTap={{ scale: 0.97 }}
@@ -202,8 +181,6 @@ const NotesBottomSheet = memo(({ open, onOpenChange, notes, interventionLabel })
                                     </motion.button>
                                 </motion.div>
                             )}
-
-                            {/* Safe area for iOS */}
                             <div className="h-[env(safe-area-inset-bottom,0px)]" />
                         </div>
                     </motion.div>

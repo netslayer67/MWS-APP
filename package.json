@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "lint": "eslint src --ext .js,.jsx --report-unused-disable-directives",
     "lint:strict": "eslint src --ext .js,.jsx --report-unused-disable-directives --max-warnings 0",
-    "lint:fix": "eslint src --ext .js,.jsx --fix"
+    "lint:fix": "eslint src --ext .js,.jsx --fix",
+    "max-lines:report": "node scripts/check-max-lines.mjs --report",
+    "max-lines:check": "node scripts/check-max-lines.mjs"
   },
   "dependencies": {
     "@mediapipe/camera_utils": "^0.3.1675466862",

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { generateAIAnalysis } from "@/pages/verification/utils/generateAIAnalysis";
 import { startGlobalLoading, stopGlobalLoading } from "@/lib/loadingManager";
 
-export const useEmotionAnalysis = ({ toast, setStage }) => {
+export const useEmotionAnalysis = ({ toast, setStage, fallbackStage = "intro" }) => {
     const [analysis, setAnalysis] = useState(null);
     const [selectedSupportContact, setSelectedSupportContact] = useState(null);
     const [aiEmotionResult, setAiEmotionResult] = useState(null);
@@ -36,16 +36,21 @@ export const useEmotionAnalysis = ({ toast, setStage }) => {
             setAiEmotionResult(emotionResult);
         } catch (error) {
             console.error("Emotion analysis failed:", error);
+            const isNetworkError =
+                error?.message?.includes("Failed to fetch") ||
+                error?.name === "TypeError";
             toast?.({
                 title: "Analysis Failed",
-                description: "Unable to perform AI emotion analysis. Please try again.",
+                description: isNetworkError
+                    ? "Backend API is unreachable. Make sure backend is running, then try again."
+                    : "Unable to perform AI emotion analysis. Please try again.",
                 variant: "destructive"
             });
-            setStage("intro");
+            setStage(fallbackStage);
         } finally {
             stopGlobalLoading();
         }
-    }, [setStage, toast]);
+    }, [fallbackStage, setStage, toast]);
 
     const finalizeAnalysis = useCallback(() => {
         if (!aiEmotionResult) {
@@ -65,9 +70,9 @@ export const useEmotionAnalysis = ({ toast, setStage }) => {
                 description: "Unable to process AI emotion analysis. Please try again.",
                 variant: "destructive"
             });
-            setStage("intro");
+            setStage(fallbackStage);
         }
-    }, [aiEmotionResult, selectedSupportContact, setStage, toast]);
+    }, [aiEmotionResult, fallbackStage, selectedSupportContact, setStage, toast]);
 
     useEffect(() => {
         if (!aiEmotionResult) {

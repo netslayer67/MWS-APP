@@ -5,9 +5,11 @@ const DEFAULT_STAGE = "intro";
 
 export const useCameraScanner = ({
     toast,
-    maxRescanAttempts = 2
+    maxRescanAttempts = 2,
+    autoStart = false
 }) => {
-    const [stage, setStage] = useState(DEFAULT_STAGE);
+    const initialStage = autoStart ? "loading" : DEFAULT_STAGE;
+    const [stage, setStage] = useState(initialStage);
     const [stream, setStream] = useState(null);
     const [scanProgress, setScanProgress] = useState(0);
     const [detectedFeatures, setDetectedFeatures] = useState([]);
@@ -36,6 +38,13 @@ export const useCameraScanner = ({
         }
     }, [toast]);
 
+    // Auto-start camera when autoStart is true (skip intro)
+    useEffect(() => {
+        if (autoStart) {
+            startScan();
+        }
+    }, [autoStart, startScan]);
+
     const capturePhoto = useCallback(async () => {
         try {
             if (!videoRef.current) {
@@ -62,9 +71,9 @@ export const useCameraScanner = ({
                 description: "Unable to capture photo for analysis.",
                 variant: "destructive"
             });
-            setStage(DEFAULT_STAGE);
+            setStage(autoStart ? "preview" : initialStage);
         }
-    }, [stream, toast]);
+    }, [autoStart, initialStage, stream, toast]);
 
     const resetScan = useCallback(() => {
         emotionAnalysisService.stopAnalysis();
@@ -76,10 +85,10 @@ export const useCameraScanner = ({
             stream.getTracks().forEach((track) => track.stop());
         }
         setStream(null);
-        setStage(DEFAULT_STAGE);
+        setStage(initialStage);
         setScanProgress(0);
         setDetectedFeatures([]);
-    }, [stream]);
+    }, [initialStage, stream]);
 
     const handleRescanRequest = useCallback(() => {
         if (rescanCount >= maxRescanAttempts) {
@@ -87,7 +96,10 @@ export const useCameraScanner = ({
         }
         setRescanCount((prev) => prev + 1);
         resetScan();
-    }, [maxRescanAttempts, resetScan, rescanCount]);
+        if (autoStart) {
+            startScan();
+        }
+    }, [autoStart, maxRescanAttempts, resetScan, rescanCount, startScan]);
 
     const remainingRescans = useMemo(
         () => Math.max(maxRescanAttempts - rescanCount, 0),

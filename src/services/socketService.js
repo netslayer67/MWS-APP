@@ -6,13 +6,34 @@ class SocketService {
         this.isConnected = false;
     }
 
+    canEmit() {
+        return Boolean(this.socket && this.isConnected);
+    }
+
+    emit(event, payload) {
+        if (this.canEmit()) {
+            this.socket.emit(event, payload);
+        }
+    }
+
+    on(event, callback) {
+        if (this.socket) {
+            this.socket.on(event, callback);
+        }
+    }
+
+    off(event, callback) {
+        if (this.socket) {
+            this.socket.off(event, callback);
+        }
+    }
+
     connect() {
-        if (this.socket && this.isConnected) {
+        if (this.canEmit()) {
             return this.socket;
         }
 
         const rawBase = import.meta.env.VITE_API_BASE || '/api/v1';
-        // Remove trailing /api or /api/v{n}
         const API_BASE = rawBase.replace(/\/api(?:\/v\d+)?\/?$/, '');
 
         this.socket = io(API_BASE, {
@@ -39,164 +60,48 @@ class SocketService {
     }
 
     disconnect() {
-        if (this.socket) {
-            this.socket.disconnect();
-            this.socket = null;
-            this.isConnected = false;
-        }
+        if (!this.socket) return;
+        this.socket.disconnect();
+        this.socket = null;
+        this.isConnected = false;
     }
 
-    // Dashboard specific methods
-    joinDashboard(userId) {
-        if (this.socket && this.isConnected) {
-            this.socket.emit('join-dashboard', userId);
-        }
-    }
+    joinDashboard(userId) { this.emit('join-dashboard', userId); }
+    leaveDashboard() { this.emit('leave-dashboard'); }
+    joinPersonal(userId) { this.emit('join-personal', userId); }
+    leavePersonal() { this.emit('leave-personal'); }
 
-    leaveDashboard() {
-        if (this.socket && this.isConnected) {
-            this.socket.emit('leave-dashboard');
-        }
-    }
+    onDashboardUpdate(callback) { this.on('dashboard:update', callback); }
+    onNewCheckin(callback) { this.on('dashboard:new-checkin', callback); }
+    onUserFlagged(callback) { this.on('user:flagged', callback); }
+    onSupportRequestHandled(callback) { this.on('support_request_handled', callback); }
+    onPersonalNewCheckin(callback) { this.on('personal:new-checkin', callback); }
 
-    // Personal specific methods
-    joinPersonal(userId) {
-        if (this.socket && this.isConnected) {
-            this.socket.emit('join-personal', userId);
-        }
-    }
+    joinMtssAdmin() { this.emit('join-mtss-admin'); }
+    leaveMtssAdmin() { this.emit('leave-mtss-admin'); }
+    joinMtssMentor(mentorId) { if (mentorId) this.emit('join-mtss-mentor', mentorId); }
+    leaveMtssMentor(mentorId) { if (mentorId) this.emit('leave-mtss-mentor', mentorId); }
 
-    leavePersonal() {
-        if (this.socket && this.isConnected) {
-            this.socket.emit('leave-personal');
-        }
-    }
+    onMtssStudentsChanged(callback) { this.on('mtss:students:changed', callback); }
+    offMtssStudentsChanged(callback) { this.off('mtss:students:changed', callback); }
+    onMtssAssignment(callback) { this.on('mtss:assignment', callback); }
+    offMtssAssignment(callback) { this.off('mtss:assignment', callback); }
 
-    // Event listeners for dashboard updates
-    onDashboardUpdate(callback) {
-        if (this.socket) {
-            this.socket.on('dashboard:update', callback);
-        }
-    }
+    offDashboardUpdate(callback) { this.off('dashboard:update', callback); }
+    offNewCheckin(callback) { this.off('dashboard:new-checkin', callback); }
+    offUserFlagged(callback) { this.off('user:flagged', callback); }
+    offSupportRequestHandled(callback) { this.off('support_request_handled', callback); }
+    offPersonalNewCheckin(callback) { this.off('personal:new-checkin', callback); }
 
-    onNewCheckin(callback) {
-        if (this.socket) {
-            this.socket.on('dashboard:new-checkin', callback);
-        }
-    }
-
-    onUserFlagged(callback) {
-        if (this.socket) {
-            this.socket.on('user:flagged', callback);
-        }
-    }
-
-    onSupportRequestHandled(callback) {
-        if (this.socket) {
-            this.socket.on('support_request_handled', callback);
-        }
-    }
-
-    // Event listeners for personal updates
-    onPersonalNewCheckin(callback) {
-        if (this.socket) {
-            this.socket.on('personal:new-checkin', callback);
-        }
-    }
-
-    // MTSS channels
-    joinMtssAdmin() {
-        if (this.socket && this.isConnected) {
-            this.socket.emit('join-mtss-admin');
-        }
-    }
-
-    leaveMtssAdmin() {
-        if (this.socket && this.isConnected) {
-            this.socket.emit('leave-mtss-admin');
-        }
-    }
-
-    joinMtssMentor(mentorId) {
-        if (this.socket && this.isConnected && mentorId) {
-            this.socket.emit('join-mtss-mentor', mentorId);
-        }
-    }
-
-    leaveMtssMentor(mentorId) {
-        if (this.socket && this.isConnected && mentorId) {
-            this.socket.emit('leave-mtss-mentor', mentorId);
-        }
-    }
-
-    onMtssStudentsChanged(callback) {
-        if (this.socket) {
-            this.socket.on('mtss:students:changed', callback);
-        }
-    }
-
-    offMtssStudentsChanged(callback) {
-        if (this.socket) {
-            this.socket.off('mtss:students:changed', callback);
-        }
-    }
-
-    onMtssAssignment(callback) {
-        if (this.socket) {
-            this.socket.on('mtss:assignment', callback);
-        }
-    }
-
-    offMtssAssignment(callback) {
-        if (this.socket) {
-            this.socket.off('mtss:assignment', callback);
-        }
-    }
-
-    // Remove listeners
-    offDashboardUpdate(callback) {
-        if (this.socket) {
-            this.socket.off('dashboard:update', callback);
-        }
-    }
-
-    offNewCheckin(callback) {
-        if (this.socket) {
-            this.socket.off('dashboard:new-checkin', callback);
-        }
-    }
-
-    offUserFlagged(callback) {
-        if (this.socket) {
-            this.socket.off('user:flagged', callback);
-        }
-    }
-
-    offSupportRequestHandled(callback) {
-        if (this.socket) {
-            this.socket.off('support_request_handled', callback);
-        }
-    }
-
-    // Remove personal listeners
-    offPersonalNewCheckin(callback) {
-        if (this.socket) {
-            this.socket.off('personal:new-checkin', callback);
-        }
-    }
-
-    // Get current connection status
     get isSocketConnected() {
         return this.isConnected;
     }
 
-    // Get socket instance
     getSocket() {
         return this.socket;
     }
 }
 
-// Create singleton instance
 const socketService = new SocketService();
 
 export default socketService;

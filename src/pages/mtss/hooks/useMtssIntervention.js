@@ -1,221 +1,148 @@
-/**
- * Custom hook for MTSS intervention form management using Redux
- */
-import { useCallback, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useToast } from '@/components/ui/use-toast';
-import {
-    fetchStudents,
-    fetchMtssStrategies,
-    createInterventionPlan,
-    submitProgressUpdate,
-    updateInterventionForm,
-    resetInterventionForm,
-    updateProgressForm,
-    resetProgressForm,
-    prefillInterventionFromStudent,
-    selectStudents,
-    selectStudentsLoading,
-    selectStrategies,
-    selectStrategiesLoading,
-    selectInterventionForm,
-    selectInterventionSubmitting,
-    selectInterventionError,
-    selectInterventionSuccess,
-    selectProgressForm,
-    selectProgressSubmitting,
-    selectProgressError,
-    selectProgressSuccess,
-    selectAssignments,
-    fetchAssignments,
-    clearInterventionError,
-    clearProgressError,
-} from '@/store/slices/mtssSlice';
-import { validateInterventionForm } from '../config/interventionFormConfig';
+import { useCallback, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useToast } from "@/components/ui/use-toast";
+import * as mtss from "@/store/slices/mtssSlice";
+import { validateInterventionForm } from "../config/interventionFormConfig";
 
 export const useMtssIntervention = () => {
     const dispatch = useDispatch();
     const { toast } = useToast();
 
-    // Selectors
-    const students = useSelector(selectStudents);
-    const studentsLoading = useSelector(selectStudentsLoading);
-    const strategies = useSelector(selectStrategies);
-    const strategiesLoading = useSelector(selectStrategiesLoading);
-    const assignments = useSelector(selectAssignments);
+    const students = useSelector(mtss.selectStudents);
+    const studentsLoading = useSelector(mtss.selectStudentsLoading);
+    const strategies = useSelector(mtss.selectStrategies);
+    const strategiesLoading = useSelector(mtss.selectStrategiesLoading);
+    const assignments = useSelector(mtss.selectAssignments);
 
-    // Intervention form state
-    const interventionForm = useSelector(selectInterventionForm);
-    const interventionSubmitting = useSelector(selectInterventionSubmitting);
-    const interventionError = useSelector(selectInterventionError);
-    const interventionSuccess = useSelector(selectInterventionSuccess);
+    const interventionForm = useSelector(mtss.selectInterventionForm);
+    const interventionSubmitting = useSelector(mtss.selectInterventionSubmitting);
+    const interventionError = useSelector(mtss.selectInterventionError);
+    const interventionSuccess = useSelector(mtss.selectInterventionSuccess);
 
-    // Progress form state
-    const progressForm = useSelector(selectProgressForm);
-    const progressSubmitting = useSelector(selectProgressSubmitting);
-    const progressError = useSelector(selectProgressError);
-    const progressSuccess = useSelector(selectProgressSuccess);
+    const progressForm = useSelector(mtss.selectProgressForm);
+    const progressSubmitting = useSelector(mtss.selectProgressSubmitting);
+    const progressError = useSelector(mtss.selectProgressError);
+    const progressSuccess = useSelector(mtss.selectProgressSuccess);
 
-    // Load students on mount
     useEffect(() => {
-        if (!students.length && !studentsLoading) {
-            dispatch(fetchStudents());
-        }
+        if (!students.length && !studentsLoading) dispatch(mtss.fetchStudents());
     }, [dispatch, students.length, studentsLoading]);
 
-    // Load strategies when intervention type changes
     useEffect(() => {
         const params = interventionForm.type ? { type: interventionForm.type } : {};
-        dispatch(fetchMtssStrategies(params));
+        dispatch(mtss.fetchMtssStrategies(params));
     }, [dispatch, interventionForm.type]);
 
-    // Load assignments
     useEffect(() => {
-        if (!assignments.length) {
-            dispatch(fetchAssignments());
-        }
+        if (!assignments.length) dispatch(mtss.fetchAssignments());
     }, [dispatch, assignments.length]);
 
-    // Show toast on intervention success
     useEffect(() => {
         if (interventionSuccess) {
             toast({
-                title: 'Intervention plan saved',
-                description: 'Student plan created successfully. Track their progress!',
+                title: "Intervention plan saved",
+                description: "Student plan created successfully. Track their progress!",
             });
         }
-    }, [interventionSuccess, toast]);
-
-    // Show toast on intervention error
-    useEffect(() => {
         if (interventionError) {
             toast({
-                title: 'Failed to save plan',
+                title: "Failed to save plan",
                 description: interventionError,
-                variant: 'destructive',
+                variant: "destructive",
             });
-            dispatch(clearInterventionError());
+            dispatch(mtss.clearInterventionError());
         }
-    }, [interventionError, toast, dispatch]);
+    }, [dispatch, interventionError, interventionSuccess, toast]);
 
-    // Show toast on progress success
     useEffect(() => {
         if (progressSuccess) {
             toast({
-                title: 'Progress submitted',
-                description: 'Your monitoring update is live on the MTSS dashboard.',
+                title: "Progress submitted",
+                description: "Your monitoring update is live on the MTSS dashboard.",
             });
         }
-    }, [progressSuccess, toast]);
-
-    // Show toast on progress error
-    useEffect(() => {
         if (progressError) {
             toast({
-                title: 'Failed to submit progress',
+                title: "Failed to submit progress",
                 description: progressError,
-                variant: 'destructive',
+                variant: "destructive",
             });
-            dispatch(clearProgressError());
+            dispatch(mtss.clearProgressError());
         }
-    }, [progressError, toast, dispatch]);
+    }, [dispatch, progressError, progressSuccess, toast]);
 
-    // Handlers
-    const handleInterventionChange = useCallback(
-        (field, value) => {
-            dispatch(updateInterventionForm({ field, value }));
+    const handleInterventionChange = useCallback((field, value) => {
+        dispatch(mtss.updateInterventionForm({ field, value }));
 
-            // Auto-fill strategy name when strategy is selected
-            if (field === 'strategyId' && value) {
-                const strategy = strategies.find((s) => s._id === value);
-                if (strategy) {
-                    dispatch(updateInterventionForm({ field: 'strategyName', value: strategy.name }));
-                    // Optionally prefill goal with strategy overview
-                    if (!interventionForm.goal && strategy.overview) {
-                        dispatch(updateInterventionForm({ field: 'goal', value: strategy.overview }));
-                    }
-                }
-            }
-        },
-        [dispatch, strategies, interventionForm.goal]
-    );
+        if (field !== "strategyId" || !value) return;
+        const strategy = strategies.find((item) => item._id === value);
+        if (!strategy) return;
 
-    const handleProgressChange = useCallback(
-        (field, value) => {
-            dispatch(updateProgressForm({ field, value }));
-        },
-        [dispatch]
-    );
+        dispatch(mtss.updateInterventionForm({ field: "strategyName", value: strategy.name }));
+        if (!interventionForm.goal && strategy.overview) {
+            dispatch(mtss.updateInterventionForm({ field: "goal", value: strategy.overview }));
+        }
+    }, [dispatch, interventionForm.goal, strategies]);
 
-    const handleStudentSelect = useCallback(
-        (studentId) => {
-            const student = students.find((s) => s.id === studentId || s._id === studentId);
-            if (student) {
-                dispatch(prefillInterventionFromStudent(student));
-            }
-        },
-        [dispatch, students]
-    );
+    const handleProgressChange = useCallback((field, value) => {
+        dispatch(mtss.updateProgressForm({ field, value }));
+    }, [dispatch]);
 
-    const handleSavePlan = useCallback(
-        async (event) => {
-            event?.preventDefault?.();
-            if (interventionSubmitting) return;
+    const handleStudentSelect = useCallback((studentId) => {
+        const student = students.find((s) => s.id === studentId || s._id === studentId);
+        if (student) dispatch(mtss.prefillInterventionFromStudent(student));
+    }, [dispatch, students]);
 
-            if (!validateInterventionForm(interventionForm)) {
-                toast({
-                    title: 'Complete the required fields',
-                    description: 'Student, type, tier, start date, frequency, and method are required.',
-                    variant: 'destructive',
-                });
-                return;
-            }
+    const handleSavePlan = useCallback((event) => {
+        event?.preventDefault?.();
+        if (interventionSubmitting) return;
 
-            dispatch(createInterventionPlan(interventionForm));
-        },
-        [dispatch, interventionForm, interventionSubmitting, toast]
-    );
+        if (!validateInterventionForm(interventionForm)) {
+            toast({
+                title: "Complete the required fields",
+                description: "Student, type, tier, start date, frequency, and method are required.",
+                variant: "destructive",
+            });
+            return;
+        }
 
-    const handleSubmitProgress = useCallback(
-        async (event) => {
-            event?.preventDefault?.();
-            if (progressSubmitting) return;
+        dispatch(mtss.createInterventionPlan(interventionForm));
+    }, [dispatch, interventionForm, interventionSubmitting, toast]);
 
-            if (!progressForm.assignmentId || !progressForm.summary) {
-                toast({
-                    title: 'Complete the required fields',
-                    description: 'Please select a student and provide a progress summary.',
-                    variant: 'destructive',
-                });
-                return;
-            }
+    const handleSubmitProgress = useCallback((event) => {
+        event?.preventDefault?.();
+        if (progressSubmitting) return;
 
-            dispatch(submitProgressUpdate(progressForm));
-        },
-        [dispatch, progressForm, progressSubmitting, toast]
-    );
+        if (!progressForm.assignmentId || !progressForm.summary) {
+            toast({
+                title: "Complete the required fields",
+                description: "Please select a student and provide a progress summary.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        dispatch(mtss.submitProgressUpdate(progressForm));
+    }, [dispatch, progressForm, progressSubmitting, toast]);
 
     const handleResetInterventionForm = useCallback(() => {
-        dispatch(resetInterventionForm());
+        dispatch(mtss.resetInterventionForm());
     }, [dispatch]);
 
     const handleResetProgressForm = useCallback(() => {
-        dispatch(resetProgressForm());
+        dispatch(mtss.resetProgressForm());
     }, [dispatch]);
 
     const refreshStudents = useCallback(() => {
-        dispatch(fetchStudents());
+        dispatch(mtss.fetchStudents());
     }, [dispatch]);
 
     return {
-        // Data
         students,
         studentsLoading,
         strategies,
         strategiesLoading,
         assignments,
-
-        // Intervention form
         interventionForm,
         interventionSubmitting,
         interventionSuccess,
@@ -223,16 +150,12 @@ export const useMtssIntervention = () => {
         handleSavePlan,
         handleResetInterventionForm,
         handleStudentSelect,
-
-        // Progress form
         progressForm,
         progressSubmitting,
         progressSuccess,
         handleProgressChange,
         handleSubmitProgress,
         handleResetProgressForm,
-
-        // Utilities
         refreshStudents,
     };
 };

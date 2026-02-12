@@ -2,7 +2,7 @@
  * Assignment to Student mapping utilities
  */
 
-import { normalizeGradeLabel, normalizeClassLabel } from "./teacherGradeUtils";
+import { normalizeGradeLabel } from "./teacherGradeUtils";
 import { formatDate, slugify } from "./teacherCommonUtils";
 import { STATUS_LABELS, STATUS_PRIORITY, TIER_PRIORITY } from "./teacherMappingConstants";
 import {
@@ -15,6 +15,7 @@ import {
     isUpdateDue,
 } from "./teacherMappingHelpers";
 import { buildChartSeries, buildHistory } from "./teacherMappingCharts";
+import { mergeRosterWithAssignments } from "./teacherRosterMerge";
 
 export const mapAssignmentsToStudents = (assignments = [], teacherName = "MTSS Mentor") => {
     const map = new Map();
@@ -139,74 +140,4 @@ export const mapAssignmentsToStudents = (assignments = [], teacherName = "MTSS M
     };
 };
 
-export const mergeRosterWithAssignments = (rosterStudents = [], assignmentStudents = [], segments = { allowedGrades: [] }) => {
-    const assignmentMap = new Map(
-        assignmentStudents.map((student) => [student.id?.toString?.() || student.slug || student.name, student]),
-    );
-    const allowedGrades = segments.allowedGrades || [];
-    const allowedClasses = segments.allowedClasses || [];
-    const strictClassFilter = segments.strictClassFilter;
-
-    // Helper to check if grade matches (supports partial match)
-    const matchesGrade = (grade) => {
-        if (!allowedGrades.length) return true;
-        const normalized = normalizeGradeLabel(grade);
-        return allowedGrades.some((allowed) => {
-            const normalizedAllowed = normalizeGradeLabel(allowed);
-            return normalized === normalizedAllowed || normalized.startsWith(normalizedAllowed);
-        });
-    };
-
-    // Helper to check if class matches (supports partial match for "Fireworks" matching "Grade 2 - Fireworks")
-    const matchesClass = (className) => {
-        if (!strictClassFilter || !allowedClasses.length) return true;
-        if (!className) return false;
-        const normalized = normalizeClassLabel(className);
-        return allowedClasses.some((allowed) => {
-            const normalizedAllowed = normalizeClassLabel(allowed);
-            // Match exact or as suffix (e.g., "Fireworks" matches "Grade 2 - Fireworks")
-            return normalized === normalizedAllowed ||
-                   normalized.endsWith(normalizedAllowed) ||
-                   normalized.endsWith(`- ${normalizedAllowed}`);
-        });
-    };
-
-    const merged = rosterStudents
-        .map((student) => {
-            const id = student.id?.toString?.() || student._id?.toString?.() || student.slug || student.name;
-            const gradeLabel = normalizeGradeLabel(student.grade || student.currentGrade || student.className || "-");
-            const classLabel = normalizeClassLabel(student.className || student.currentGrade || student.unit);
-            if (!matchesGrade(gradeLabel)) return null;
-            if (!matchesClass(classLabel)) return null;
-            const assignment = assignmentMap.get(id);
-            const rosterTierCode = normalizeTierCode(student.tier || student.primaryIntervention?.tier || student.profile?.tier);
-            const assignmentTierCode = normalizeTierCode(assignment?.tier);
-            const rosterScore = TIER_PRIORITY[rosterTierCode] || 0;
-            const assignmentScore = TIER_PRIORITY[assignmentTierCode] || 0;
-            const useAssignment = assignment && (!rosterScore || assignmentScore > rosterScore);
-            const displaySource = useAssignment ? assignment : student;
-            const assignmentOptions = assignment?.assignmentOptions || [];
-            return {
-                id,
-                slug: student.slug || slugify(student.name),
-                name: student.name,
-                grade: gradeLabel,
-                className: classLabel || student.className,
-                type: displaySource?.type || student.type || "Universal Supports",
-                tier: displaySource?.tier || student.tier || "Tier 1",
-                progress: displaySource?.progress || student.progress || "Not Assigned",
-                nextUpdate: displaySource?.nextUpdate || student.nextUpdate || "Not scheduled",
-                assignmentId: assignment?.assignmentId || null,
-                assignmentOptions,
-                profile: displaySource?.profile || assignment?.profile || student.profile,
-                interventions: student.interventions,
-                primaryIntervention: student.primaryIntervention,
-            };
-        })
-        .filter(Boolean);
-
-    if (!merged.length && assignmentStudents.length) return assignmentStudents;
-    return merged;
-};
-
-export { STATUS_LABELS, STATUS_PRIORITY, isUpdateDue, buildChartSeries, buildHistory };
+export { mergeRosterWithAssignments, STATUS_LABELS, STATUS_PRIORITY, isUpdateDue, buildChartSeries, buildHistory };

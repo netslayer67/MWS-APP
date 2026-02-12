@@ -13,10 +13,8 @@ export const fetchSupportContacts = createAsyncThunk(
             }
 
             const response = await getSupportContacts();
-            console.log('Support contacts API response:', response.data);
             // Extract the data array from the nested response
             const { data } = response.data;
-            console.log('Extracted contacts data:', data);
             return data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to fetch support contacts');
@@ -49,7 +47,6 @@ const supportSlice = createSlice({
             })
             .addCase(fetchSupportContacts.fulfilled, (state, action) => {
                 state.loading = false;
-                console.log('Support contacts stored in Redux:', action.payload);
                 state.contacts = action.payload;
                 state.error = null;
             })

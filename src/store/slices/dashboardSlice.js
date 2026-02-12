@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { getDashboardStats, getMoodDistribution } from '../../services/dashboardService';
+import { getDashboardStats, getMoodDistribution, getUserCheckinHistory } from '../../services/dashboardService';
 
 // Async thunks
 export const fetchDashboardStats = createAsyncThunk(

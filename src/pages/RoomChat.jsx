@@ -7,34 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import AnimatedSlidePage from "@/components/AnimatedSlidePage";
 import { Helmet } from "react-helmet";
-
-/* ---------------- Dummy data ---------------- */
-const chatList = [
-    { id: 1, name: "Budi Santoso", initials: "B", online: true },
-    { id: 2, name: "Citra Dewi", initials: "C", online: false },
-    { id: 3, name: "Andi W.", initials: "A", online: false },
-];
-
-const initialMessages = [
-    { id: 1, sender: "other", text: "Hello, I’m on my way to your location.", time: "10:30" },
-    { id: 2, sender: "me", text: "Okay, I’ll wait. Let me know when you’re close.", time: "10:31" },
-    { id: 3, sender: "other", text: "Got it!", time: "10:31" },
-];
-
-/* ---------------- Utilities ---------------- */
-const sanitizeMessage = (v = "", maxLen = 800) =>
-    String(v || "")
-        .replace(/<[^>]*>/g, "")
-        .replace(/\b(?:https?:|mailto:|ftp:|javascript:)[^\s]*/gi, "")
-        .replace(/https?:\/\/[^\s]+/gi, "")
-        .replace(/\s{2,}/g, " ")
-        .trim()
-        .slice(0, maxLen);
-
-const nowTime = () => {
-    const d = new Date();
-    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-};
+import {
+    chatList,
+    currentTime,
+    initialMessages,
+    sanitizeMessage,
+} from "@/pages/chat/roomChatData";
 
 /* ---------------- Message Bubble ---------------- */
 const MessageBubble = React.memo(({ msg }) => {
@@ -84,7 +62,7 @@ export default function RoomChat() {
             const clean = sanitizeMessage(text, 600);
             if (!clean) return;
 
-            const next = { id: Date.now(), sender: "me", text: clean, time: nowTime() };
+            const next = { id: Date.now(), sender: "me", text: clean, time: currentTime() };
             setSending(true);
             setMessages((prev) => [...prev, next]);
             setText("");

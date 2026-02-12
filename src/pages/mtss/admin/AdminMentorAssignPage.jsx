@@ -196,5 +196,4 @@ const AdminMentorAssignPage = () => {
     );
 };
 
-AdminMentorAssignPage.displayName = "AdminMentorAssignPage";
 export default AdminMentorAssignPage;

@@ -195,7 +195,7 @@ export default function SignupPage() {
                         {/* footer */}
                         <div className="mt-4 text-center text-xs text-muted-foreground">
                             Sudah punya akun?{" "}
-                            <Link to="/login" className="text-accent font-medium hover:underline">
+                            <Link to="/" className="text-accent font-medium hover:underline">
                                 Sign in
                             </Link>
                         </div>

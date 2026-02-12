@@ -1,76 +1,117 @@
-import React, { memo } from "react";
-import { motion } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
-import { studentTabs } from "./data/studentPortalContent";
+import React, { memo, useState } from "react";
+import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { useStudentPortalState } from "./hooks/useStudentPortalState";
 import StudentSelectionView from "./student/StudentSelectionView";
 import StudentProgressPanel from "./student/StudentProgressPanel";
 import StudentSchedulePanel from "./student/StudentSchedulePanel";
 import StudentMessagesPanel from "./student/StudentMessagesPanel";
+import StudentBottomBar from "./student/portal/StudentBottomBar";
+import StudentPortalHeader from "./student/portal/StudentPortalHeader";
+import StudentPortalTabs from "./student/portal/StudentPortalTabs";
+import { resolveBadges, resolveTierShortLabel } from "./student/portal/studentPortalUtils";
 
 const StudentPortalPage = memo(() => {
-    const { selectedStudent, activeTab, setActiveTab, currentStudent, handleBack, handleSelectStudent, students } =
-        useStudentPortalState();
+    const {
+        selectedStudent,
+        activeTab,
+        setActiveTab,
+        currentStudent,
+        handleBack,
+        handleSelectStudent,
+        students,
+        isLoadingList,
+        isLoadingDetail,
+        error,
+        refreshPortal,
+    } = useStudentPortalState();
+
+    const [isHeaderSnapped, setIsHeaderSnapped] = useState(false);
+    const { scrollY } = useScroll();
+
+    useMotionValueEvent(scrollY, "change", (latest) => {
+        setIsHeaderSnapped((prev) => {
+            if (!prev && latest > 22) return true;
+            if (prev && latest < 10) return false;
+            return prev;
+        });
+    });
 
     if (!selectedStudent) {
-        return <StudentSelectionView students={students} onSelect={handleSelectStudent} onBack={handleBack} />;
+        return (
+            <>
+                <StudentSelectionView
+                    students={students}
+                    onSelect={handleSelectStudent}
+                    onBack={handleBack}
+                    isLoading={isLoadingList}
+                    error={error}
+                    onRetry={refreshPortal}
+                />
+                <StudentBottomBar />
+            </>
+        );
     }
 
+    const gradeLabel = currentStudent?.grade || currentStudent?.currentGrade || "-";
+    const classLabel = currentStudent?.className || "Class not set";
+    const tierLabel = currentStudent?.tier || currentStudent?.primaryIntervention?.tier || "Tier 1";
+    const tierShortLabel = resolveTierShortLabel(tierLabel);
+    const navBadges = resolveBadges(currentStudent);
+
     return (
-        <div className="mtss-theme mtss-animated-bg min-h-screen relative overflow-hidden text-foreground dark:text-white">
-            <div className="mtss-bg-overlay" />
-            <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#fde68a]/50 via-[#f9a8d4]/50 to-[#c4b5fd]/50" />
-                <motion.div
-                    className="absolute top-10 left-10 w-20 h-20 rounded-full bg-white/40"
-                    animate={{ scale: [1, 1.2, 1], rotate: [0, 8, 0] }}
-                    transition={{ repeat: Infinity, duration: 6 }}
+        <div className="mtss-theme min-h-screen relative overflow-hidden text-slate-800 dark:text-white">
+            <div className="pointer-events-none absolute inset-0">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_12%,rgba(251,191,36,0.35),transparent_45%),radial-gradient(circle_at_82%_18%,rgba(244,114,182,0.28),transparent_42%),radial-gradient(circle_at_60%_82%,rgba(129,140,248,0.3),transparent_50%),linear-gradient(135deg,#fff7ed_0%,#fdf2f8_40%,#eef2ff_100%)] dark:bg-[radial-gradient(circle_at_15%_12%,rgba(251,191,36,0.12),transparent_45%),radial-gradient(circle_at_82%_18%,rgba(244,114,182,0.12),transparent_42%),radial-gradient(circle_at_60%_82%,rgba(129,140,248,0.13),transparent_50%),linear-gradient(135deg,#1f1b2e_0%,#1e2030_50%,#1a2238_100%)]" />
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.18)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.16)_1px,transparent_1px)] bg-[size:52px_52px] opacity-25 dark:opacity-20" />
+            </div>
+
+            <div
+                className="relative z-10 container-tight pt-5 space-y-6 md:pt-8 md:space-y-7"
+                style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 9.5rem)" }}
+            >
+                <StudentPortalHeader
+                    isHeaderSnapped={isHeaderSnapped}
+                    currentStudent={currentStudent}
+                    tierLabel={tierLabel}
+                    tierShortLabel={tierShortLabel}
+                    gradeLabel={gradeLabel}
+                    classLabel={classLabel}
+                    refreshPortal={refreshPortal}
+                    isLoadingList={isLoadingList}
+                    isLoadingDetail={isLoadingDetail}
                 />
-            </div>
 
-            <div className="relative z-10 container-tight py-12 space-y-10">
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                    <button
-                        onClick={handleBack}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-[28px] bg-white/90 dark:bg-white/10 shadow-lg text-sm font-semibold text-rose-500"
+                <StudentPortalTabs
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                    isHeaderSnapped={isHeaderSnapped}
+                />
+
+                <AnimatePresence mode="wait" initial={false}>
+                    <motion.div
+                        key={activeTab}
+                        initial={{ opacity: 0, y: 12, scale: 0.988 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -8, scale: 0.988 }}
+                        transition={{ type: "spring", stiffness: 290, damping: 30, mass: 0.45 }}
+                        className="space-y-6"
                     >
-                        <ArrowLeft className="w-4 h-4" />
-                        Back
-                    </button>
-                    <div className="text-right space-y-1">
-                        <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground dark:text-white/70">My MTSS Portal</p>
-                        <h1 className="text-3xl md:text-4xl font-black">{currentStudent.data.title || `${currentStudent.name} Journey`}</h1>
-                    </div>
-                    <div className="px-4 py-2 rounded-[28px] bg-gradient-to-r from-[#fecdd3] to-[#f5d0fe] text-sm font-black text-rose-700 shadow-lg">
-                        Logged in as: {currentStudent.name}
-                    </div>
-                </div>
+                        {activeTab === "progress" && <StudentProgressPanel student={currentStudent} isLoading={isLoadingDetail} />}
+                        {activeTab === "schedule" && <StudentSchedulePanel student={currentStudent} isLoading={isLoadingDetail} />}
+                        {activeTab === "messages" && <StudentMessagesPanel student={currentStudent} isLoading={isLoadingDetail} />}
+                    </motion.div>
+                </AnimatePresence>
 
-                <div className="flex flex-wrap gap-3">
-                    {studentTabs.map((tab) => {
-                        const TabIcon = tab.icon;
-                        const active = activeTab === tab.key;
-                        return (
-                            <button
-                                key={tab.key}
-                                onClick={() => setActiveTab(tab.key)}
-                                className={`px-5 py-3 rounded-[30px] border font-semibold text-sm flex items-center gap-2 transition ${
-                                    active
-                                        ? "bg-gradient-to-r from-[#fdf2f8] to-[#eef2ff] text-rose-600 border-white/60"
-                                        : "bg-white/15 text-white border-white/30 hover:bg-white/25"
-                                }`}
-                            >
-                                <TabIcon className="w-4 h-4" />
-                                {tab.label}
-                            </button>
-                        );
-                    })}
-                </div>
+                {!currentStudent && !isLoadingDetail && (
+                    <div className="rounded-[24px] border border-white/65 bg-white/80 p-6 text-center text-sm text-slate-600 shadow-sm dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
+                        Student data is unavailable right now. Try refreshing.
+                    </div>
+                )}
 
-                {activeTab === "progress" && <StudentProgressPanel student={currentStudent} />}
-                {activeTab === "schedule" && <StudentSchedulePanel student={currentStudent} />}
-                {activeTab === "messages" && <StudentMessagesPanel student={currentStudent} />}
+                <div className="h-1" />
             </div>
+
+            <StudentBottomBar badges={navBadges} />
         </div>
     );
 });

@@ -3,36 +3,19 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchSupportContacts } from "@/store/slices/supportSlice";
 import { motion } from "framer-motion";
 import { UserCircle, GraduationCap, Heart, CheckCircle2, School } from "lucide-react";
+import StudentSupportContactCard from "@/components/emotion-student/StudentSupportContactCard";
+import {
+    categoryConfig,
+    getDisplayName,
+    groupContactsByCategory,
+    isSelectedContact,
+} from "@/components/emotion-student/studentSupportSelectorUtils";
 
-const categoryConfig = {
-    classTeacher: {
-        label: "Homeroom Teachers",
-        icon: GraduationCap,
-        gradient: "from-sky-400 to-blue-500",
-        bgLight: "bg-sky-50 dark:bg-sky-900/20",
-        borderLight: "border-sky-200 dark:border-sky-700/40"
-    },
-    seTeacher: {
-        label: "SE Teachers",
-        icon: UserCircle,
-        gradient: "from-emerald-400 to-teal-500",
-        bgLight: "bg-emerald-50 dark:bg-emerald-900/20",
-        borderLight: "border-emerald-200 dark:border-emerald-700/40"
-    },
-    principal: {
-        label: "Your Principal",
-        icon: School,
-        gradient: "from-amber-400 to-orange-500",
-        bgLight: "bg-amber-50 dark:bg-amber-900/20",
-        borderLight: "border-amber-200 dark:border-amber-700/40"
-    },
-    psychologist: {
-        label: "School Psychologist",
-        icon: Heart,
-        gradient: "from-pink-400 to-rose-500",
-        bgLight: "bg-pink-50 dark:bg-pink-900/20",
-        borderLight: "border-pink-200 dark:border-pink-700/40"
-    }
+const GROUP_ICON_MAP = {
+    UserCircle,
+    GraduationCap,
+    Heart,
+    School,
 };
 
 const StudentSupportSelector = memo(({ supportContact, onSupportChange }) => {
@@ -49,48 +32,15 @@ const StudentSupportSelector = memo(({ supportContact, onSupportChange }) => {
     const handleSelect = useCallback((contact) => {
         if (contact.id === "no-need") {
             onSupportChange?.("No Need");
-        } else {
-            onSupportChange?.(contact.name || contact.id);
+            return;
         }
+        onSupportChange?.(contact.name || contact.id);
     }, [onSupportChange]);
 
-    // Group contacts by category
-    const groupedContacts = useMemo(() => {
-        const groups = { classTeacher: [], seTeacher: [], principal: [], psychologist: [], other: [] };
-        const noNeedOption = supportContacts.find(c => c.id === "no-need");
-
-        supportContacts.forEach(contact => {
-            if (contact.id === "no-need") return;
-            const cat = contact.isClassTeacher
-                ? 'classTeacher'
-                : (contact.isSETeacher || contact.contactCategory === 'seTeacher'
-                    ? 'seTeacher'
-                    : (contact.contactCategory || 'other'));
-            if (groups[cat]) {
-                groups[cat].push(contact);
-            } else {
-                groups.other.push(contact);
-            }
-        });
-
-        return { groups, noNeedOption };
-    }, [supportContacts]);
-
-    const isSelected = (contact) => {
-        if (contact.id === "no-need") return supportContact === "No Need";
-        return supportContact === contact.name || supportContact === contact.id;
-    };
-
-    const getDisplayName = (contact) => {
-        const name = contact.displayName || contact.preferredName || contact.name || '';
-        if (contact.gender === 'female' && !name.startsWith('Ms.') && !name.startsWith('Mrs.')) {
-            return `Ms. ${name.split(' ')[0]}`;
-        }
-        if (contact.gender === 'male' && !name.startsWith('Mr.')) {
-            return `Mr. ${name.split(' ')[0]}`;
-        }
-        return name;
-    };
+    const groupedContacts = useMemo(
+        () => groupContactsByCategory(supportContacts),
+        [supportContacts]
+    );
 
     return (
         <motion.div
@@ -113,24 +63,23 @@ const StudentSupportSelector = memo(({ supportContact, onSupportChange }) => {
                 <div className="text-center py-6 text-sm text-muted-foreground">Loading your support team...</div>
             ) : (
                 <div className="space-y-4">
-                    {/* Grouped contacts */}
                     {Object.entries(groupedContacts.groups).map(([category, contacts]) => {
                         if (contacts.length === 0) return null;
                         const config = categoryConfig[category];
+
                         if (!config) {
-                            // Render ungrouped "other" contacts
-                            return contacts.map(contact => (
-                                <ContactCard
+                            return contacts.map((contact) => (
+                                <StudentSupportContactCard
                                     key={contact.id}
                                     contact={contact}
-                                    selected={isSelected(contact)}
+                                    selected={isSelectedContact(contact, supportContact)}
                                     onSelect={handleSelect}
                                     displayName={getDisplayName(contact)}
                                 />
                             ));
                         }
 
-                        const GroupIcon = config.icon;
+                        const GroupIcon = GROUP_ICON_MAP[config.icon] || UserCircle;
                         return (
                             <div key={category}>
                                 <div className="flex items-center gap-2 mb-2">
@@ -140,11 +89,11 @@ const StudentSupportSelector = memo(({ supportContact, onSupportChange }) => {
                                     <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{config.label}</span>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    {contacts.map(contact => (
-                                        <ContactCard
+                                    {contacts.map((contact) => (
+                                        <StudentSupportContactCard
                                             key={contact.id}
                                             contact={contact}
-                                            selected={isSelected(contact)}
+                                            selected={isSelectedContact(contact, supportContact)}
                                             onSelect={handleSelect}
                                             displayName={getDisplayName(contact)}
                                             categoryConfig={config}
@@ -155,20 +104,19 @@ const StudentSupportSelector = memo(({ supportContact, onSupportChange }) => {
                         );
                     })}
 
-                    {/* No Need option */}
                     {groupedContacts.noNeedOption && (
                         <button
                             onClick={() => handleSelect(groupedContacts.noNeedOption)}
-                            className={`w-full flex items-center gap-3 rounded-xl border px-4 py-3 transition-all duration-200 ${isSelected(groupedContacts.noNeedOption)
+                            className={`w-full flex items-center gap-3 rounded-xl border px-4 py-3 transition-all duration-200 ${isSelectedContact(groupedContacts.noNeedOption, supportContact)
                                 ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-300 dark:border-emerald-600 shadow-sm"
                                 : "bg-white/40 dark:bg-white/5 border-white/50 dark:border-white/10 hover:bg-white/60"
                                 }`}
                         >
-                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isSelected(groupedContacts.noNeedOption) ? "bg-emerald-100 dark:bg-emerald-800/30" : "bg-gray-100 dark:bg-gray-800/30"}`}>
-                                <CheckCircle2 className={`w-4.5 h-4.5 ${isSelected(groupedContacts.noNeedOption) ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400"}`} />
+                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isSelectedContact(groupedContacts.noNeedOption, supportContact) ? "bg-emerald-100 dark:bg-emerald-800/30" : "bg-gray-100 dark:bg-gray-800/30"}`}>
+                                <CheckCircle2 className={`w-4.5 h-4.5 ${isSelectedContact(groupedContacts.noNeedOption, supportContact) ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400"}`} />
                             </div>
                             <div className="text-left">
-                                <p className={`text-sm font-semibold ${isSelected(groupedContacts.noNeedOption) ? "text-emerald-700 dark:text-emerald-300" : "text-foreground"}`}>
+                                <p className={`text-sm font-semibold ${isSelectedContact(groupedContacts.noNeedOption, supportContact) ? "text-emerald-700 dark:text-emerald-300" : "text-foreground"}`}>
                                     I'm feeling supported
                                 </p>
                                 <p className="text-xs text-muted-foreground">No support needed right now</p>
@@ -180,38 +128,6 @@ const StudentSupportSelector = memo(({ supportContact, onSupportChange }) => {
         </motion.div>
     );
 });
-
-const ContactCard = memo(({ contact, selected, onSelect, displayName, categoryConfig }) => {
-    const avatarInitials = (contact.name || '').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-    const roleLabel = contact.displayRole || contact.classInfo || contact.jobPosition || contact.role;
-
-    return (
-        <button
-            onClick={() => onSelect(contact)}
-            className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all duration-200 text-left ${selected
-                ? `${categoryConfig?.bgLight || 'bg-purple-50 dark:bg-purple-900/20'} ${categoryConfig?.borderLight || 'border-purple-200 dark:border-purple-700/40'} shadow-sm`
-                : "bg-white/40 dark:bg-white/5 border-white/50 dark:border-white/10 hover:bg-white/60"
-                }`}
-        >
-            <div className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold ${selected
-                ? `bg-gradient-to-br ${categoryConfig?.gradient || 'from-purple-400 to-pink-500'} text-white`
-                : "bg-gray-100 dark:bg-gray-800/50 text-muted-foreground"
-                }`}>
-                {contact.avatar && contact.avatar !== '✓' ? contact.avatar : avatarInitials || <UserCircle className="w-4 h-4" />}
-            </div>
-            <div className="flex-1 min-w-0">
-                <p className={`text-sm font-semibold truncate ${selected ? "text-foreground" : "text-foreground"}`}>
-                    {displayName}
-                </p>
-                <p className="text-[10px] text-muted-foreground truncate">{roleLabel}</p>
-            </div>
-            {selected && (
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-            )}
-        </button>
-    );
-});
-ContactCard.displayName = "ContactCard";
 
 StudentSupportSelector.displayName = "StudentSupportSelector";
 

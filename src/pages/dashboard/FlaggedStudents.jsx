@@ -2,8 +2,10 @@ import React, { memo, useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { AlertTriangle, Users, Brain } from "lucide-react";
 import MoodIcon from "./MoodIcon";
-
-const PAGE_SIZE = 10;
+import {
+    mapFlaggedUsers,
+    PAGE_SIZE,
+} from "@/pages/dashboard/components/flagged-users/flaggedUsersUtils";
 
 const FlaggedUsers = memo(({
     users = [],
@@ -18,41 +20,7 @@ const FlaggedUsers = memo(({
 
     useEffect(() => setCurrentPage(1), [users]);
 
-    const transformedUsers = useMemo(() => {
-        return (
-            users?.map((user) => {
-                const presence = user.presenceLevel || 0;
-                const capacity = user.capacityLevel || 0;
-                const aiAnalysis = user.aiAnalysis || {};
-                const reasons = [];
-                if (presence < 4) reasons.push("Low presence level");
-                if (capacity < 4) reasons.push("Low capacity level");
-                if (aiAnalysis.needsSupport) reasons.push("AI detected support need");
-                if (aiAnalysis.emotionalInstability) reasons.push("Emotional instability detected");
-                if (aiAnalysis.trendDecline) reasons.push("Declining trend");
-                if (aiAnalysis.historicalPatterns?.consistentLowPresence) reasons.push("Consistently low presence");
-                if (aiAnalysis.historicalPatterns?.increasingSupportNeeds) reasons.push("Increasing support requests");
-
-                return {
-                    id: user.id || user._id,
-                    name: user.name,
-                    mood: user.mood || "neutral",
-                    grade: user.classes?.[0]?.grade || user.grade || "-",
-                    role: user.role,
-                    department: user.department,
-                    lastCheckin:
-                        user.lastCheckin ||
-                        (user.submittedAt ? new Date(user.submittedAt).toLocaleDateString() : "—"),
-                    presenceLevel: presence,
-                    capacityLevel: capacity,
-                    weatherType: user.weatherType,
-                    selectedMoods: user.selectedMoods || [],
-                    aiReason: reasons.join(", "),
-                    raw: user,
-                };
-            }) || []
-        );
-    }, [users]);
+    const transformedUsers = useMemo(() => mapFlaggedUsers(users || []), [users]);
 
     const totalPages = Math.max(1, Math.ceil(transformedUsers.length / PAGE_SIZE));
     useEffect(() => {
