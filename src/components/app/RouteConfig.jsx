@@ -1,9 +1,8 @@
 // RouteConfig.jsx
-import React, { Suspense, lazy, memo, useMemo } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Suspense, lazy, memo, useMemo } from "react";
+import { Routes, Route } from "react-router-dom";
 import { useSelector } from "react-redux";
 import PageLoader from "@/components/PageLoader";
-import AppLayout from "@/components/Layout/AppLayout";
 import PageTransition from "./PageTransition";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProfilePage from "../../pages/ProfilePage";
@@ -124,7 +123,7 @@ const publicRoutes = [
         key="emotional-checkin-teacher-dashboard"
         path="/emotional-checkin/teacher-dashboard"
         element={
-            <ProtectedRoute allowedRoles={['teacher', 'se_teacher']}>
+            <ProtectedRoute allowedRoles={['teacher', 'se_teacher', 'head_unit', 'directorate', 'admin', 'superadmin']}>
                 <MemoizedPageTransition>
                     <EmotionalCheckinTeacherDashboard />
                 </MemoizedPageTransition>

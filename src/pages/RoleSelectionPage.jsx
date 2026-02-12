@@ -154,6 +154,20 @@ const RoleSelection = memo(() => {
         : directorateFeatures;
 
     const isTeacherRole = user && ['teacher', 'se_teacher'].includes(user.role);
+    const isPrincipalRole = user && ['head_unit', 'directorate', 'admin', 'superadmin'].includes(user.role);
+    const studentDashboardFeatures = isPrincipalRole
+        ? [
+            "Student emotional overview by grade and class",
+            "Needs-support spotlight for faster follow up",
+            "Unit-aligned scope for each principal",
+            "Quick search and daily refresh monitoring"
+        ]
+        : [
+            "Class-scoped student check-ins",
+            "Daily submission tracking",
+            "Needs support highlights",
+            "Quick search by student"
+        ];
 
     // Debug logging
     React.useEffect(() => {
@@ -255,17 +269,15 @@ const RoleSelection = memo(() => {
                             onClick={() => selectMethod('ai')}
                         />
 
-                        {isTeacherRole && (
+                        {(isTeacherRole || isPrincipalRole) && (
                             <MethodCard
                                 icon={BarChart3}
-                                title="Student Daily Check-in Dashboard"
-                                desc="Review daily check-ins for your assigned class and track support needs."
-                                features={[
-                                    "Class-scoped student check-ins",
-                                    "Daily submission tracking",
-                                    "Needs support highlights",
-                                    "Quick search by student"
-                                ]}
+                                title={isPrincipalRole ? "Student Emotional Dashboard" : "Student Daily Check-in Dashboard"}
+                                desc={isPrincipalRole
+                                    ? "Monitor emotional wellbeing for students in your unit with grade-aware filtering."
+                                    : "Review daily check-ins for your assigned class and track support needs."
+                                }
+                                features={studentDashboardFeatures}
                                 isPremium={false}
                                 onClick={() => selectMethod('teacher-dashboard')}
                             />

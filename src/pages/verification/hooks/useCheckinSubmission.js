@@ -33,13 +33,21 @@ export const useCheckinSubmission = ({
                 return;
             }
 
+            const normalizedSupportSelection = String(selectedSupportContact || "").trim().toLowerCase();
+            const isNoNeedSelection = !normalizedSupportSelection ||
+                normalizedSupportSelection === "no need" ||
+                normalizedSupportSelection === "no-need" ||
+                normalizedSupportSelection === "no_need";
+
             let supportContactUserId = null;
-            if (selectedSupportContact && selectedSupportContact !== "No Need") {
+            if (!isNoNeedSelection) {
                 const selectedContact = supportContacts.find(
                     (contact) =>
                         contact.name === selectedSupportContact || contact.id === selectedSupportContact
                 );
-                supportContactUserId = selectedContact?.id || null;
+                if (selectedContact?.id && selectedContact.id !== "no-need" && selectedContact.id !== "no_need") {
+                    supportContactUserId = selectedContact.id;
+                }
             }
 
             const checkInData = {
@@ -92,6 +100,5 @@ export const useCheckinSubmission = ({
 
     return { isSubmitting, completeCheckin };
 };
-
 
 

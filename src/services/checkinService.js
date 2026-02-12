@@ -1,8 +1,5 @@
 import api from './authService';
 
-// Update API base URL to use v1 endpoints
-const checkinApi = api;
-
 // Check-in API functions
 export const submitCheckin = async (checkinData) => {
     const response = await api.post('/checkin/submit', checkinData);
@@ -38,10 +35,19 @@ export const getPersonalDashboard = async () => {
     return response;
 };
 
-export const getTeacherDailyCheckins = async (date = null) => {
+export const getTeacherDailyCheckins = async (date = null, options = {}) => {
     const params = {};
     if (date) {
         params.date = date;
+    }
+    if (options.grade) {
+        params.grade = options.grade;
+    }
+    if (options.className) {
+        params.className = options.className;
+    }
+    if (options.unit) {
+        params.unit = options.unit;
     }
     const response = await api.get('/checkin/teacher/dashboard', { params });
     return response;
