@@ -316,7 +316,7 @@ const EmotionalCheckinPage = memo(function EmotionalCheckinPage() {
                 details: reflection,
                 presenceLevel: 7, // Default values for manual check-in
                 capacityLevel: 7,
-                supportContactUserId: 'no_need',
+                supportContactUserId: null,
                 // Add flag to trigger notifications
                 needsSupport: false // Manual check-in doesn't automatically trigger support notifications
             };

@@ -362,8 +362,8 @@ const StudentManualCheckinPage = memo(function StudentManualCheckinPage() {
                 details: reflection,
                 presenceLevel: presenceLevel || 7,
                 capacityLevel: capacityLevel || 7,
-                supportContactUserId: supportContactId || 'no_need',
-                needsSupport: supportContact !== "No Need"
+                supportContactUserId: supportContactId || null,
+                needsSupport: Boolean(supportContactId)
             };
             const response = await checkinService.submitCheckin(checkinData);
             const checkinId = response.data.data.checkin.id;
