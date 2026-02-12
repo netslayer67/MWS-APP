@@ -170,6 +170,10 @@ const StudentEmotionalCheckinPage = memo(function StudentEmotionalCheckinPage() 
         loadCheckinStatus();
     }, []);
 
+    const manualCount = checkinStatus?.manualCount ?? (checkinStatus?.hasManualCheckin ? 1 : 0);
+    const aiCount = checkinStatus?.aiCount ?? (checkinStatus?.hasAICheckin ? 1 : 0);
+    const manualLimit = checkinStatus?.manualLimit ?? 1;
+    const aiLimit = checkinStatus?.aiLimit ?? 1;
     const bothDone = checkinStatus?.hasManualCheckin && checkinStatus?.hasAICheckin;
 
     return (
@@ -245,7 +249,7 @@ const StudentEmotionalCheckinPage = memo(function StudentEmotionalCheckinPage() 
                             }`}>
                                 {checkinStatus.hasManualCheckin ? <CheckCircle className="w-3.5 h-3.5 text-emerald-500" /> : <XCircle className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />}
                                 <span className={`text-[10px] font-bold ${checkinStatus.hasManualCheckin ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400 dark:text-gray-500"}`}>
-                                    Manual {checkinStatus.hasManualCheckin ? "Done" : "Pending"}
+                                    Manual {manualCount}/{manualLimit}
                                 </span>
                             </div>
                             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-sm border ${
@@ -255,7 +259,7 @@ const StudentEmotionalCheckinPage = memo(function StudentEmotionalCheckinPage() 
                             }`}>
                                 {checkinStatus.hasAICheckin ? <CheckCircle className="w-3.5 h-3.5 text-emerald-500" /> : <XCircle className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />}
                                 <span className={`text-[10px] font-bold ${checkinStatus.hasAICheckin ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400 dark:text-gray-500"}`}>
-                                    AI Scan {checkinStatus.hasAICheckin ? "Done" : "Pending"}
+                                    AI Scan {aiCount}/{aiLimit}
                                 </span>
                             </div>
                         </motion.div>
@@ -310,7 +314,9 @@ const StudentEmotionalCheckinPage = memo(function StudentEmotionalCheckinPage() 
                                             {isDone && (
                                                 <div className="flex items-center gap-1 mt-1">
                                                     <CheckCircle className="w-3 h-3 text-emerald-500" />
-                                                    <span className="text-[10px] font-bold text-emerald-500">Completed today</span>
+                                                    <span className="text-[10px] font-bold text-emerald-500">
+                                                        {opt.id === "manual" ? `${manualCount}/${manualLimit} completed` : `${aiCount}/${aiLimit} completed`}
+                                                    </span>
                                                 </div>
                                             )}
                                         </div>

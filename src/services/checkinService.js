@@ -27,6 +27,10 @@ export const getCheckinHistory = async (page = 1, limit = 10, userId = null) => 
 
 export const getTodayCheckinStatus = async () => {
     const response = await api.get('/checkin/today/status');
+    const normalizedStatus = response?.data?.data?.status || response?.data?.status;
+    if (normalizedStatus && !response.data.status) {
+        response.data.status = normalizedStatus;
+    }
     return response;
 };
 

@@ -29,7 +29,7 @@ export const useCheckinSubmission = ({
                     description: "Please log in to save your AI emotion check-in.",
                     variant: "destructive"
                 });
-                navigate("/login");
+                navigate("/");
                 return;
             }
 
@@ -72,7 +72,7 @@ export const useCheckinSubmission = ({
             };
 
             const authService = (await import("@/services/authService")).default;
-            const response = await authService.post("/checkin/submit", checkInData);
+            const response = await authService.post("/checkin/ai-submit", checkInData);
             const result = response.data;
             const checkinId =
                 result.checkin?.id ||
@@ -100,5 +100,4 @@ export const useCheckinSubmission = ({
 
     return { isSubmitting, completeCheckin };
 };
-
 
