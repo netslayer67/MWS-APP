@@ -2,14 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { Calendar, Search, Users, AlertTriangle, CheckCircle2, Filter } from "lucide-react";
 import { getTeacherDailyCheckins } from "@/services/checkinService";
-
-const toTitleCase = (value = "") =>
-    value
-        .toString()
-        .replace(/_/g, " ")
-        .trim()
-        .replace(/\s+/g, " ")
-        .replace(/\b\w/g, (char) => char.toUpperCase());
+import StudentCheckinInsightCard from "@/components/emotion-staff/StudentCheckinInsightCard";
 
 const formatClassLabels = (classes = []) => {
     if (!Array.isArray(classes)) return [];
@@ -40,6 +33,9 @@ const EmotionalCheckinTeacherDashboard = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedGrade, setSelectedGrade] = useState("");
     const [selectedClassName, setSelectedClassName] = useState("");
+    const [selectedMoodState, setSelectedMoodState] = useState("");
+    const [supportFilter, setSupportFilter] = useState("");
+    const [notesFilter, setNotesFilter] = useState("");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [payload, setPayload] = useState(null);
@@ -115,11 +111,30 @@ const EmotionalCheckinTeacherDashboard = () => {
             .sort((a, b) => a.localeCompare(b));
     }, [selectedGrade, students]);
 
+    const moodOptions = useMemo(() => {
+        const states = students
+            .map((student) => student?.checkin?.aiAnalysis?.emotionalState || student?.progress?.trend?.slice(-1)?.[0]?.moodState)
+            .filter(Boolean);
+        return Array.from(new Set(states)).sort((a, b) => a.localeCompare(b));
+    }, [students]);
+
     const normalizedQuery = searchQuery.trim().toLowerCase();
     const filteredStudents = useMemo(() => {
         return students.filter((student) => {
             if (selectedGrade && student?.currentGrade !== selectedGrade) return false;
             if (selectedClassName && student?.className !== selectedClassName) return false;
+            if (supportFilter === "needs-support" && !student?.checkin?.aiAnalysis?.needsSupport) return false;
+            if (supportFilter === "stable" && student?.checkin?.aiAnalysis?.needsSupport) return false;
+
+            const recentNotesCount = Array.isArray(student?.progress?.recentNotes) ? student.progress.recentNotes.length : 0;
+            if (notesFilter === "has-notes" && recentNotesCount === 0) return false;
+            if (notesFilter === "without-notes" && recentNotesCount > 0) return false;
+
+            const effectiveMoodState =
+                student?.checkin?.aiAnalysis?.emotionalState ||
+                student?.progress?.trend?.[student?.progress?.trend?.length - 1]?.moodState ||
+                "";
+            if (selectedMoodState && effectiveMoodState !== selectedMoodState) return false;
             if (!normalizedQuery) return true;
 
             return [
@@ -132,7 +147,7 @@ const EmotionalCheckinTeacherDashboard = () => {
                 .filter(Boolean)
                 .some((field) => field.toLowerCase().includes(normalizedQuery));
         });
-    }, [normalizedQuery, selectedClassName, selectedGrade, students]);
+    }, [normalizedQuery, notesFilter, selectedClassName, selectedGrade, selectedMoodState, students, supportFilter]);
 
     const subtitle = isPrincipalView
         ? "Track student emotional wellbeing by grade, class, and support urgency."
@@ -241,6 +256,43 @@ const EmotionalCheckinTeacherDashboard = () => {
                             </select>
                         </div>
                     )}
+
+                    <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                        <div className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                            <Filter className="w-3.5 h-3.5" />
+                            Insight filters
+                        </div>
+                        <select
+                            value={supportFilter}
+                            onChange={(event) => setSupportFilter(event.target.value)}
+                            className="rounded-lg border border-border bg-background/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        >
+                            <option value="">All support states</option>
+                            <option value="needs-support">Needs support</option>
+                            <option value="stable">No support flag</option>
+                        </select>
+                        <select
+                            value={notesFilter}
+                            onChange={(event) => setNotesFilter(event.target.value)}
+                            className="rounded-lg border border-border bg-background/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        >
+                            <option value="">All note states</option>
+                            <option value="has-notes">Has recent notes</option>
+                            <option value="without-notes">No recent notes</option>
+                        </select>
+                        <select
+                            value={selectedMoodState}
+                            onChange={(event) => setSelectedMoodState(event.target.value)}
+                            className="rounded-lg border border-border bg-background/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        >
+                            <option value="">All mood states</option>
+                            {moodOptions.map((moodState) => (
+                                <option key={moodState} value={moodState}>
+                                    {moodState}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
@@ -286,67 +338,9 @@ const EmotionalCheckinTeacherDashboard = () => {
                     )}
 
                     <div className="space-y-3">
-                        {filteredStudents.map((student) => {
-                            const checkin = student.checkin;
-                            const moods = Array.isArray(checkin?.selectedMoods) ? checkin.selectedMoods : [];
-                            const needsSupport = checkin?.aiAnalysis?.needsSupport;
-
-                            return (
-                                <div
-                                    key={student.id}
-                                    className="p-4 rounded-xl border border-border/70 bg-card/40 backdrop-blur-sm"
-                                >
-                                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-                                        <div>
-                                            <p className="text-base font-semibold text-foreground">
-                                                {student.nickname || student.name || "Unnamed student"}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground">
-                                                {student.currentGrade || "Grade"} - {student.className || "Class"}
-                                            </p>
-                                            {student.email && (
-                                                <p className="text-xs text-muted-foreground">{student.email}</p>
-                                            )}
-                                        </div>
-
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            {checkin ? (
-                                                <>
-                                                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
-                                                        {toTitleCase(checkin.weatherType || "Check-in")}
-                                                    </span>
-                                                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-sky-100 text-sky-700">
-                                                        P {checkin.presenceLevel ?? "-"} / C {checkin.capacityLevel ?? "-"}
-                                                    </span>
-                                                    {needsSupport && (
-                                                        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-rose-100 text-rose-700">
-                                                            Needs support
-                                                        </span>
-                                                    )}
-                                                    {moods.slice(0, 3).map((mood) => (
-                                                        <span
-                                                            key={mood}
-                                                            className="px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary"
-                                                        >
-                                                            {toTitleCase(mood)}
-                                                        </span>
-                                                    ))}
-                                                    {moods.length > 3 && (
-                                                        <span className="text-xs text-muted-foreground">
-                                                            +{moods.length - 3} more
-                                                        </span>
-                                                    )}
-                                                </>
-                                            ) : (
-                                                <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
-                                                    Not submitted
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                        {filteredStudents.map((student) => (
+                            <StudentCheckinInsightCard key={student.id} student={student} />
+                        ))}
                     </div>
                 </div>
             </div>
