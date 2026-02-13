@@ -1,12 +1,25 @@
 import React, { memo } from "react";
 import { motion } from "framer-motion";
 import { Loader2, RefreshCw } from "lucide-react";
+import { formatMentorDisplay, formatMentorRoster } from "../utils/mentorNameUtils";
 
 const resolveMentorDisplay = (student = {}) => {
-    if (Array.isArray(student.teachers) && student.teachers.length) {
-        return student.teachers.join(", ");
+    const mentorRoster = formatMentorRoster(student.profile?.mentors || []);
+    if (mentorRoster.length) {
+        return mentorRoster.join(", ");
     }
-    return student.mentor || student.profile?.mentor || "MTSS Mentor";
+    if (Array.isArray(student.teachers) && student.teachers.length) {
+        const formattedTeachers = formatMentorRoster(student.teachers);
+        if (formattedTeachers.length) {
+            return formattedTeachers.join(", ");
+        }
+    }
+    return formatMentorDisplay({
+        name: student.mentor || student.profile?.mentor,
+        nickname: student.mentorNickname || student.profile?.mentorNickname,
+        username: student.mentorUsername || student.profile?.mentorUsername,
+        gender: student.mentorGender || student.profile?.mentorGender,
+    });
 };
 
 const resolveFocusDisplay = (student = {}) => {

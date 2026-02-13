@@ -1,31 +1,12 @@
-import React, { memo } from "react";
+import React, { memo, useMemo, useState } from "react";
 import { MessageCircleHeart, Sparkles } from "lucide-react";
 import { buildStudentProfileView } from "../utils/studentProfileUtils";
+import { formatMentorDisplay } from "../utils/mentorNameUtils";
 
-const buildFeed = (mentor, notes, history) => {
-    const entries = [];
-
-    if (notes) {
-        entries.push({
-            from: mentor || "MTSS Mentor",
-            date: "Latest Plan Note",
-            text: notes,
-        });
-    }
-
-    if (Array.isArray(history)) {
-        history.forEach((entry) => {
-            if (!entry) return;
-            entries.push({
-                from: mentor || "MTSS Mentor",
-                date: entry.date || "Recent",
-                text: entry.notes || "Check-in recorded",
-                score: entry.score,
-            });
-        });
-    }
-
-    return entries;
+const toTimestamp = (value) => {
+    if (!value) return 0;
+    const parsed = new Date(value).getTime();
+    return Number.isFinite(parsed) ? parsed : 0;
 };
 
 const StudentMessagesPanel = ({ student, isLoading = false }) => {
@@ -45,14 +26,71 @@ const StudentMessagesPanel = ({ student, isLoading = false }) => {
         );
     }
 
-    const {
-        currentIntervention,
-        mentorLabel,
-        notesLabel,
-    } = buildStudentProfileView(student);
+    const { sortedInterventions } = buildStudentProfileView(student);
+    const interventions = useMemo(() => {
+        const withRealData = sortedInterventions.filter((item) => item.hasRealData);
+        return withRealData.length ? withRealData : sortedInterventions;
+    }, [sortedInterventions]);
 
-    const history = Array.isArray(currentIntervention?.history) ? currentIntervention.history.slice(0, 10) : [];
-    const feed = buildFeed(mentorLabel, notesLabel, history);
+    const subjects = useMemo(
+        () => interventions.map((intervention) => ({
+            type: intervention.type,
+            label: intervention.label || intervention.type || "Intervention",
+        })),
+        [interventions],
+    );
+    const [selectedSubject, setSelectedSubject] = useState("all");
+
+    const feed = useMemo(() => {
+        const entries = interventions.flatMap((intervention) => {
+            const mentor = formatMentorDisplay({
+                name: intervention.mentor,
+                nickname: intervention.mentorNickname,
+                username: intervention.mentorUsername,
+                gender: intervention.mentorGender,
+            });
+            const subject = intervention.label || intervention.type || "Intervention";
+            const list = [];
+
+            if (intervention.notes) {
+                list.push({
+                    id: `${intervention.type || subject}-notes`,
+                    subjectType: intervention.type,
+                    subject,
+                    from: mentor || "MTSS Mentor",
+                    date: "Latest Plan Note",
+                    dateRaw: intervention.updatedAt || intervention.endDate || intervention.startDate || null,
+                    text: intervention.notes,
+                    score: null,
+                });
+            }
+
+            if (Array.isArray(intervention.history)) {
+                intervention.history.forEach((entry, index) => {
+                    if (!entry) return;
+                    list.push({
+                        id: `${intervention.type || subject}-${entry.date || "recent"}-${index}`,
+                        subjectType: intervention.type,
+                        subject,
+                        from: mentor || "MTSS Mentor",
+                        date: entry.date || "Recent",
+                        dateRaw: entry.dateRaw || entry.createdAt || entry.date,
+                        text: entry.notes || "Check-in recorded",
+                        score: entry.score,
+                    });
+                });
+            }
+
+            return list;
+        });
+
+        return entries.sort((a, b) => toTimestamp(b.dateRaw || b.date) - toTimestamp(a.dateRaw || a.date));
+    }, [interventions]);
+
+    const filteredFeed = useMemo(
+        () => (selectedSubject === "all" ? feed : feed.filter((entry) => entry.subjectType === selectedSubject)),
+        [feed, selectedSubject],
+    );
 
     return (
         <div className="space-y-5">
@@ -60,21 +98,53 @@ const StudentMessagesPanel = ({ student, isLoading = false }) => {
                 <div className="mb-4 flex items-center justify-between">
                     <div>
                         <p className="text-xs uppercase tracking-[0.35em] text-slate-500 dark:text-slate-300">Mentor Updates</p>
-                        <h3 className="text-lg font-black text-slate-800 dark:text-white">Communication Log</h3>
+                        <h3 className="text-lg font-black text-slate-800 dark:text-white">All Subject Communication Log</h3>
                     </div>
                     <MessageCircleHeart className="h-5 w-5 text-pink-500 dark:text-pink-300" />
                 </div>
 
-                {feed.length > 0 ? (
+                {subjects.length > 1 && (
+                    <div className="mb-4 no-scrollbar flex gap-2 overflow-x-auto pb-1">
+                        <button
+                            type="button"
+                            onClick={() => setSelectedSubject("all")}
+                            className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                                selectedSubject === "all"
+                                    ? "border-violet-300 bg-violet-100 text-violet-700 dark:border-violet-400/40 dark:bg-violet-500/20 dark:text-violet-200"
+                                    : "border-white/70 bg-white/90 text-slate-600 dark:border-white/15 dark:bg-white/5 dark:text-slate-300"
+                            }`}
+                        >
+                            All Subjects
+                        </button>
+                        {subjects.map((subject) => (
+                            <button
+                                key={subject.type}
+                                type="button"
+                                onClick={() => setSelectedSubject(subject.type)}
+                                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                                    selectedSubject === subject.type
+                                        ? "border-violet-300 bg-violet-100 text-violet-700 dark:border-violet-400/40 dark:bg-violet-500/20 dark:text-violet-200"
+                                        : "border-white/70 bg-white/90 text-slate-600 dark:border-white/15 dark:bg-white/5 dark:text-slate-300"
+                                }`}
+                            >
+                                {subject.label}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                {filteredFeed.length > 0 ? (
                     <div className="space-y-3">
-                        {feed.map((message, index) => (
+                        {filteredFeed.map((message) => (
                             <div
-                                key={`${message.from}-${message.date}-${index}`}
+                                key={message.id}
                                 className="rounded-2xl border border-white/80 bg-gradient-to-r from-sky-50 via-violet-50 to-pink-50 px-4 py-3 shadow-sm dark:border-white/10 dark:from-sky-500/10 dark:via-violet-500/10 dark:to-pink-500/10"
                             >
-                                <p className="text-sm font-black text-indigo-700 dark:text-indigo-300">
-                                    {message.from} - {message.date}
-                                </p>
+                                <div className="flex items-center justify-between gap-2">
+                                    <p className="text-[10px] uppercase tracking-[0.2em] text-violet-600 dark:text-violet-300">{message.subject}</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-300">{message.date}</p>
+                                </div>
+                                <p className="text-sm font-black text-indigo-700 dark:text-indigo-300">{message.from}</p>
                                 <p className="mt-1 text-sm text-slate-700 dark:text-slate-100">{message.text}</p>
                                 {(message.score !== undefined && message.score !== null) && (
                                     <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">Score: {message.score}</p>
@@ -84,7 +154,7 @@ const StudentMessagesPanel = ({ student, isLoading = false }) => {
                     </div>
                 ) : (
                     <div className="rounded-2xl border border-white/80 bg-gradient-to-r from-sky-50 via-violet-50 to-pink-50 px-4 py-3 text-sm text-slate-600 dark:border-white/10 dark:from-sky-500/10 dark:via-violet-500/10 dark:to-pink-500/10 dark:text-slate-300">
-                        No communication notes yet. Mentor updates will appear after intervention check-ins.
+                        No communication notes for this subject yet.
                     </div>
                 )}
 

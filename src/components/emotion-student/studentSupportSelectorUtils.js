@@ -13,6 +13,13 @@ export const categoryConfig = {
         bgLight: "bg-emerald-50 dark:bg-emerald-900/20",
         borderLight: "border-emerald-200 dark:border-emerald-700/40"
     },
+    gradeTeacher: {
+        label: "Grade Teachers",
+        icon: "GraduationCap",
+        gradient: "from-indigo-400 to-violet-500",
+        bgLight: "bg-indigo-50 dark:bg-indigo-900/20",
+        borderLight: "border-indigo-200 dark:border-indigo-700/40"
+    },
     principal: {
         label: "Your Principal",
         icon: "School",
@@ -30,16 +37,21 @@ export const categoryConfig = {
 };
 
 export function groupContactsByCategory(supportContacts = []) {
-    const groups = { classTeacher: [], seTeacher: [], principal: [], psychologist: [], other: [] };
+    const groups = { classTeacher: [], seTeacher: [], gradeTeacher: [], principal: [], psychologist: [], other: [] };
     const noNeedOption = supportContacts.find((c) => c.id === "no-need");
 
     supportContacts.forEach((contact) => {
         if (contact.id === "no-need") return;
-        const cat = contact.isClassTeacher
-            ? "classTeacher"
-            : (contact.isSETeacher || contact.contactCategory === "seTeacher"
-                ? "seTeacher"
-                : (contact.contactCategory || "other"));
+        let cat = "other";
+        if (contact.isClassTeacher) {
+            cat = "classTeacher";
+        } else if (contact.isSETeacher || contact.contactCategory === "seTeacher") {
+            cat = "seTeacher";
+        } else if (contact.isGradeTeacher || contact.contactCategory === "gradeTeacher") {
+            cat = "gradeTeacher";
+        } else if (contact.contactCategory) {
+            cat = contact.contactCategory;
+        }
 
         if (groups[cat]) {
             groups[cat].push(contact);

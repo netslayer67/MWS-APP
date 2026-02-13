@@ -1,5 +1,6 @@
 import { ensureStudentInterventions, pickPrimaryIntervention } from "./interventionUtils";
 import { formatDate } from "./teacherCommonUtils";
+import { formatMentorDisplay } from "./mentorNameUtils";
 
 const hasValue = (value) => value !== null && value !== undefined && value !== "";
 
@@ -88,7 +89,12 @@ export const buildStudentProfileView = (student, selectedIntervention) => {
     const strategyLabel = currentIntervention?.strategyName || currentIntervention?.focusArea || null;
     const durationLabel = currentIntervention?.duration || null;
     const frequencyLabel = currentIntervention?.monitoringFrequency || currentIntervention?.monitoringMethod || null;
-    const mentorLabel = currentIntervention?.mentor || profile?.mentor || student.mentor || "TBD";
+    const mentorLabel = formatMentorDisplay({
+        name: currentIntervention?.mentor || profile?.mentor || student.mentor,
+        nickname: currentIntervention?.mentorNickname || profile?.mentorNickname || student.mentorNickname,
+        username: currentIntervention?.mentorUsername || profile?.mentorUsername || student.mentorUsername,
+        gender: currentIntervention?.mentorGender || profile?.mentorGender || student.mentorGender,
+    });
     const goalLabel = resolveGoalLabel(currentIntervention) || null;
     const monitoringMethodLabel = currentIntervention?.monitoringMethod || currentIntervention?.monitorMethod || null;
     const startDateLabel = currentIntervention?.startDate

@@ -1,3 +1,5 @@
+import { formatMentorDisplay } from "../../utils/mentorNameUtils";
+
 const CARD_ACCENTS = [
     "from-[#fda4af] via-[#f472b6] to-[#c084fc]",
     "from-[#fef3c7] via-[#fcd34d] to-[#fb923c]",
@@ -16,7 +18,12 @@ const buildGradeTierLabel = (student = {}) => {
 const mapStudentCard = (student = {}, index = 0) => {
     const id = student.id || student._id || student.slug || `student-${index}`;
     const focus = student.primaryIntervention?.label || student.type || student.profile?.type || "Tiered Supports";
-    const mentor = student.mentor || student.profile?.mentor || "MTSS Mentor";
+    const mentor = formatMentorDisplay({
+        name: student.mentor || student.profile?.mentor,
+        nickname: student.mentorNickname || student.profile?.mentorNickname,
+        username: student.mentorUsername || student.profile?.mentorUsername,
+        gender: student.mentorGender || student.profile?.mentorGender,
+    });
 
     return {
         ...student,

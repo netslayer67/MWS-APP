@@ -75,7 +75,6 @@ const sanitizeInput = (value) => {
         .replace(/<[^>]*>?/gm, "")
         .replace(/https?:\/\/\S+/g, "")
         .replace(/(script|onerror|onload|data:|vbscript:)/gi, "")
-        .trim()
         .slice(0, 500);
 };
 
@@ -323,8 +322,8 @@ const StudentManualCheckinPage = memo(function StudentManualCheckinPage() {
         if (step === 0) return !!selectedWeather;
         if (step === 1) return selectedMoods.length > 0;
         if (step === 2) return presenceLevel !== null && capacityLevel !== null;
-        return true; // reflection is optional
-    }, [step, selectedWeather, selectedMoods, presenceLevel, capacityLevel]);
+        return reflection.trim().length > 0; // reflection is required
+    }, [step, selectedWeather, selectedMoods, presenceLevel, capacityLevel, reflection]);
 
     const handleNext = useCallback(() => {
         if (step < STEPS.length - 1 && canGoNext()) setStep(s => s + 1);
@@ -353,13 +352,20 @@ const StudentManualCheckinPage = memo(function StudentManualCheckinPage() {
     }, [supportContacts]);
 
     const handleSubmit = useCallback(async () => {
-        if (!selectedWeather || selectedMoods.length === 0) return;
+        if (!selectedWeather || selectedMoods.length === 0 || reflection.trim().length === 0) {
+            toast({
+                title: "Thoughts Required",
+                description: "Please share your thoughts before submitting.",
+                variant: "destructive",
+            });
+            return;
+        }
         setIsSubmitting(true);
         try {
             const checkinData = {
                 weatherType: selectedWeather,
                 selectedMoods,
-                details: reflection,
+                details: reflection.trim(),
                 presenceLevel: presenceLevel || 7,
                 capacityLevel: capacityLevel || 7,
                 supportContactUserId: supportContactId || null,
@@ -605,12 +611,13 @@ const StudentManualCheckinPage = memo(function StudentManualCheckinPage() {
                                     <Textarea
                                         value={reflection}
                                         onChange={(e) => setReflection(sanitizeInput(e.target.value))}
-                                        placeholder="What's on your mind today? (optional)"
+                                        placeholder="What's on your mind today? (required)"
                                         className="min-h-[140px] resize-none bg-white/50 dark:bg-white/5 border border-white/70 dark:border-white/10 focus:border-pink-300 focus:ring-2 focus:ring-pink-200/50 rounded-xl text-sm backdrop-blur-sm"
                                         maxLength={500}
+                                        required
                                     />
                                     <p className="text-[11px] text-gray-400 dark:text-gray-500 font-medium">
-                                        This is optional — write anything you want or skip it!
+                                        This field is required — please write at least one meaningful sentence.
                                     </p>
 
                                     {/* Summary */}

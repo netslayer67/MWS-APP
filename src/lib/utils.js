@@ -13,7 +13,7 @@ export function cn(...inputs) {
  * - removes HTML tags
  * - strips script/event keywords and dangerous protocols
  * - removes URLs
- * - normalizes whitespace and trims
+ * - normalizes repeated whitespace (without forcing trim while typing)
  */
 export function sanitizeText(v = "", maxLen = 1200) {
     return String(v || "")
@@ -22,7 +22,6 @@ export function sanitizeText(v = "", maxLen = 1200) {
         .replace(/\b(?:onerror|onload|onclick|onchange|oninput)\b/gi, "") // event attrs
         .replace(/https?:\/\/[^\s]+/gi, "") // links
         .replace(/\s{2,}/g, " ")
-        .trim()
         .slice(0, maxLen);
 }
 
@@ -34,7 +33,6 @@ export function sanitizeLight(v = "", maxLen = 1200) {
         .replace(/<[^>]*>/g, "")
         .replace(/\b(?:javascript:|data:|vbscript:)/gi, "")
         .replace(/https?:\/\/[^\s]+/gi, "")
-        .trim()
         .slice(0, maxLen);
 }
 
