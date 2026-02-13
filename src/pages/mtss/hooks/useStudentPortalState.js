@@ -3,7 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import socketService from "@/services/socketService";
 import { fetchMtssStudentById, fetchMtssStudents } from "@/services/mtssService";
-import { filterStudentsForViewer, mapStudentCard } from "../student/portal/studentPortalStateUtils";
+import {
+    buildGradeTierLabel,
+    filterStudentsForViewer,
+    mapStudentCard,
+} from "../student/portal/studentPortalStateUtils";
 
 const ADMIN_ROLES = new Set(["directorate", "admin", "superadmin", "head_unit"]);
 const MENTOR_ROLES = new Set(["teacher", "se_teacher", "staff", "support_staff"]);

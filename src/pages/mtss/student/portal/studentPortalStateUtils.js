@@ -61,4 +61,4 @@ const filterStudentsForViewer = (students = [], user = null) => {
     return students;
 };
 
-export { mapStudentCard, filterStudentsForViewer };
+export { mapStudentCard, filterStudentsForViewer, buildGradeTierLabel };
