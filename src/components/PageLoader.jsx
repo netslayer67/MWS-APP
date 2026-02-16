@@ -62,32 +62,30 @@ const PageLoader = memo(() => {
             </motion.div>
 
             {/* CSS animations for guaranteed performance */}
-            <style jsx>{`
-                @keyframes spin-reverse {
-                    from {
-                        transform: rotate(360deg);
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                    @keyframes spin-reverse {
+                        from { transform: rotate(360deg); }
+                        to { transform: rotate(0deg); }
                     }
-                    to {
-                        transform: rotate(0deg);
+                    @keyframes glow-pulse {
+                        0%, 100% {
+                            opacity: 0.4;
+                            transform: scale(0.95);
+                        }
+                        50% {
+                            opacity: 0.75;
+                            transform: scale(1.05);
+                        }
                     }
-                }
-                @keyframes glow-pulse {
-                    0%, 100% {
-                        opacity: 0.4;
-                        transform: scale(0.95);
+                    .animate-spin-reverse {
+                        animation: spin-reverse 1.5s linear infinite;
                     }
-                    50% {
-                        opacity: 0.75;
-                        transform: scale(1.05);
+                    .animate-glow-pulse {
+                        animation: glow-pulse 3s ease-in-out infinite;
                     }
-                }
-                .animate-spin-reverse {
-                    animation: spin-reverse 1.5s linear infinite;
-                }
-                .animate-glow-pulse {
-                    animation: glow-pulse 3s ease-in-out infinite;
-                }
-            `}</style>
+                `
+            }} />
         </div>
     );
 });

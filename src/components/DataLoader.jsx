@@ -66,19 +66,17 @@ const DataLoader = ({ message = "Loading...", fullScreen = false, className = ""
                 </div>
             </div>
 
-            <style jsx>{`
-                @keyframes loading-bar {
-                    0% {
-                        transform: translateX(-100%);
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                    @keyframes loading-bar {
+                        0% { transform: translateX(-100%); }
+                        100% { transform: translateX(100%); }
                     }
-                    100% {
-                        transform: translateX(100%);
+                    .animate-loading-bar {
+                        animation: loading-bar 1.5s ease-in-out infinite;
                     }
-                }
-                .animate-loading-bar {
-                    animation: loading-bar 1.5s ease-in-out infinite;
-                }
-            `}</style>
+                `
+            }} />
         </div>
     );
 };
