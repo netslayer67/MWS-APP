@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
@@ -10,13 +10,15 @@ import { Progress } from "@/components/ui/progress";
 import { getCheckinHistory } from "../store/slices/checkinSlice";
 import socketService from "../services/socketService";
 import { normalizeId } from "../utils/id";
+import DataLoader from "@/components/DataLoader";
 
 const PersonalStatsPage = () => {
     const navigate = useNavigate();
     const { userId } = useParams();
     const dispatch = useDispatch();
     const { user: currentUser } = useSelector((state) => state.auth);
-    const { checkinHistory } = useSelector((state) => state.checkin);
+    const { checkinHistory, loading } = useSelector((state) => state.checkin);
+    const [initialLoad, setInitialLoad] = useState(true);
 
     // Use userId from URL params if available, otherwise use current user
     const targetUserId = useMemo(() => {
@@ -70,7 +72,12 @@ const PersonalStatsPage = () => {
     // Load data and set up real-time updates
     useEffect(() => {
         if (currentUser && targetUserId) {
-            dispatch(getCheckinHistory({ page: 1, limit: 50, userId: targetUserId }));
+            const fetchData = async () => {
+                await dispatch(getCheckinHistory({ page: 1, limit: 50, userId: targetUserId }));
+                setInitialLoad(false);
+            };
+
+            fetchData();
 
             // Connect to socket for real-time updates
             socketService.connect();
@@ -98,6 +105,18 @@ const PersonalStatsPage = () => {
         []
     );
     const item = useMemo(() => ({ hidden: { opacity: 0, y: 6 }, show: { opacity: 1, y: 0, transition: { duration: 0.32 } } }), []);
+
+    // Show loader during initial data fetch
+    if (loading && initialLoad) {
+        return (
+            <>
+                <Helmet>
+                    <title>Personal Stats — MWS APP</title>
+                </Helmet>
+                <DataLoader message="Loading personal statistics..." fullScreen={true} />
+            </>
+        );
+    }
 
     return (
         <>

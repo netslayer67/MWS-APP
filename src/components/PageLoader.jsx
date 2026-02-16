@@ -2,7 +2,6 @@
 import React, { memo } from "react";
 import { motion } from "framer-motion";
 import usePreferLowMotion from "@/hooks/usePreferLowMotion";
-import { Loader2 } from "lucide-react";
 
 const PageLoader = memo(() => {
     const lowMotion = usePreferLowMotion();
@@ -25,35 +24,70 @@ const PageLoader = memo(() => {
           border border-border/50
         "
             >
-                {/* Loader icon */}
-                <motion.div
-                    animate={lowMotion ? {} : { rotate: 360 }}
-                    transition={lowMotion ? {} : { repeat: Infinity, duration: 1, ease: "linear" }}
-                >
-                    <Loader2 className="w-8 h-8 sm:w-12 sm:h-12 text-primary" />
-                </motion.div>
+                {/* Enhanced CSS-based loader spinner - guaranteed to animate */}
+                <div className="relative w-12 h-12 sm:w-16 sm:h-16">
+                    {/* Outer spinning ring */}
+                    <div className="absolute inset-0 rounded-full border-4 border-primary/20 border-t-primary animate-spin"
+                         style={{ animationDuration: '1s' }} />
 
-                {/* Loading text */}
-                <motion.p
-                    initial={{ opacity: 1 }}
-                    animate={lowMotion ? { opacity: 1 } : { opacity: [0.7, 1, 0.7] }}
-                    transition={lowMotion ? {} : { repeat: Infinity, duration: 2 }}
-                    className="
-            text-sm sm:text-base font-medium 
-            text-foreground tracking-wide
-          "
-                >
+                    {/* Inner counter-rotating ring */}
+                    <div className="absolute inset-2 rounded-full border-4 border-primary/30 border-b-primary animate-spin-reverse"
+                         style={{ animationDuration: '1.5s' }} />
+
+                    {/* Center pulse */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-3 h-3 bg-primary rounded-full animate-pulse"
+                             style={{ animationDuration: '2s' }} />
+                    </div>
+                </div>
+
+                {/* Loading text with CSS pulse animation */}
+                <p className="text-sm sm:text-base font-medium text-foreground tracking-wide animate-pulse"
+                   style={{ animationDuration: '2s' }}>
                     Loading...
-                </motion.p>
+                </p>
 
-                {/* Glowing accent ring */}
-                <motion.div
-                    initial={{ scale: 1, opacity: 0.5 }}
-                    animate={lowMotion ? { scale: 1, opacity: 0.5 } : { scale: [0.9, 1.05, 0.9], opacity: [0.4, 0.75, 0.4] }}
-                    transition={lowMotion ? {} : { repeat: Infinity, duration: 3, ease: "easeInOut" }}
-                    className="absolute -inset-3 sm:-inset-4 rounded-3xl border-2 border-accent/40 blur-xl"
-                />
+                {/* Animated loading dots */}
+                <div className="flex gap-1.5">
+                    <span className="w-2 h-2 bg-primary rounded-full animate-bounce"
+                          style={{ animationDelay: '0s', animationDuration: '1.4s' }} />
+                    <span className="w-2 h-2 bg-primary rounded-full animate-bounce"
+                          style={{ animationDelay: '0.2s', animationDuration: '1.4s' }} />
+                    <span className="w-2 h-2 bg-primary rounded-full animate-bounce"
+                          style={{ animationDelay: '0.4s', animationDuration: '1.4s' }} />
+                </div>
+
+                {/* Glowing accent ring with CSS animation */}
+                <div className="absolute -inset-3 sm:-inset-4 rounded-3xl border-2 border-accent/40 blur-xl animate-glow-pulse" />
             </motion.div>
+
+            {/* CSS animations for guaranteed performance */}
+            <style jsx>{`
+                @keyframes spin-reverse {
+                    from {
+                        transform: rotate(360deg);
+                    }
+                    to {
+                        transform: rotate(0deg);
+                    }
+                }
+                @keyframes glow-pulse {
+                    0%, 100% {
+                        opacity: 0.4;
+                        transform: scale(0.95);
+                    }
+                    50% {
+                        opacity: 0.75;
+                        transform: scale(1.05);
+                    }
+                }
+                .animate-spin-reverse {
+                    animation: spin-reverse 1.5s linear infinite;
+                }
+                .animate-glow-pulse {
+                    animation: glow-pulse 3s ease-in-out infinite;
+                }
+            `}</style>
         </div>
     );
 });

@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
@@ -16,13 +16,15 @@ import {
     HistoryList,
     HistorySummary,
 } from "@/pages/history/EmotionalHistorySections";
+import DataLoader from "@/components/DataLoader";
 
 const EmotionalHistoryPage = () => {
     const navigate = useNavigate();
     const { userId } = useParams();
     const dispatch = useDispatch();
     const { user: currentUser } = useSelector((state) => state.auth);
-    const { checkinHistory } = useSelector((state) => state.checkin);
+    const { checkinHistory, loading } = useSelector((state) => state.checkin);
+    const [initialLoad, setInitialLoad] = useState(true);
 
     const targetUserId = useMemo(
         () => resolveTargetUserId(userId, currentUser),
@@ -42,7 +44,12 @@ const EmotionalHistoryPage = () => {
     useEffect(() => {
         if (!currentUser || !targetUserId) return;
 
-        dispatch(getCheckinHistory({ page: 1, limit: 50, userId: targetUserId }));
+        const fetchData = async () => {
+            await dispatch(getCheckinHistory({ page: 1, limit: 50, userId: targetUserId }));
+            setInitialLoad(false);
+        };
+
+        fetchData();
         socketService.connect();
         socketService.joinPersonal(targetUserId);
 
@@ -67,6 +74,18 @@ const EmotionalHistoryPage = () => {
         () => ({ hidden: { opacity: 0, y: 6 }, show: { opacity: 1, y: 0, transition: { duration: 0.32 } } }),
         []
     );
+
+    // Show loader during initial data fetch
+    if (loading && initialLoad) {
+        return (
+            <>
+                <Helmet>
+                    <title>Emotional History — MWS APP</title>
+                </Helmet>
+                <DataLoader message="Loading emotional history..." fullScreen={true} />
+            </>
+        );
+    }
 
     return (
         <>
