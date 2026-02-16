@@ -35,6 +35,7 @@ const StudentEmotionalCheckinPage = lazy(() => import(/* webpackPrefetch: true *
 const StudentFaceScanPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/StudentFaceScanPage'));
 const StudentManualCheckinPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/StudentManualCheckinPage'));
 const StudentAICheckinPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/StudentAICheckinPage'));
+const StudentAIChatPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/StudentAIChatPage'));
 const NotFound = lazy(() => import(/* webpackPrefetch: true */ '@/pages/NotFound'));
 
 // Keep PageTransition memoized for perf if you want
@@ -73,7 +74,7 @@ const AdminProtectedRoute = memo(({ children }) => {
 AdminProtectedRoute.displayName = 'AdminProtectedRoute';
 
 const previewEmails = new Set(["faisal@millennia21.id"]);
-const mtssRoleAccess = new Set(['teacher', 'se_teacher', 'directorate', 'head_unit', 'admin', 'superadmin']);
+const mtssRoleAccess = new Set(['staff', 'support_staff', 'nurse', 'teacher', 'se_teacher', 'directorate', 'head_unit', 'admin', 'superadmin']);
 
 const MtssPreviewGate = memo(({ children }) => {
     const { user, loading } = useSelector((state) => state.auth);
@@ -112,7 +113,7 @@ const publicRoutes = [
     <Route key="landing" path="/" element={<MemoizedPageTransition><LandingPage /></MemoizedPageTransition>} />,
     <Route key="auth-callback" path="/auth/callback" element={<MemoizedPageTransition><AuthCallback /></MemoizedPageTransition>} />,
     <Route key="face-scan" path="/emotional-checkin/face-scan" element={<MemoizedPageTransition><EmotionalCheckinFaceScanPage /></MemoizedPageTransition>} />,
-    <Route key="select-role" path="/select-role" element={<ProtectedRoute allowedRoles={['staff', 'nurse', 'teacher', 'se_teacher', 'head_unit', 'directorate', 'admin', 'superadmin']}><MemoizedPageTransition><RoleSelectionPage /></MemoizedPageTransition></ProtectedRoute>} />,
+    <Route key="select-role" path="/select-role" element={<ProtectedRoute allowedRoles={['staff', 'support_staff', 'nurse', 'teacher', 'se_teacher', 'head_unit', 'directorate', 'admin', 'superadmin']}><MemoizedPageTransition><RoleSelectionPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="profile" path="/profile" element={<ProtectedRoute><MemoizedPageTransition><ProfilePage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="emotional-checkin" path="/emotional-checkin" element={<MemoizedPageTransition><EmotionalCheckinPage /></MemoizedPageTransition>} />,
     <Route key="emotional-checkin-staff" path="/emotional-checkin/staff" element={<ProtectedRoute><MemoizedPageTransition><EmotionalCheckinStaffPage /></MemoizedPageTransition></ProtectedRoute>} />,
@@ -140,7 +141,7 @@ const publicRoutes = [
     <Route key="emotional-patterns" path="/profile/emotional-patterns" element={<ProtectedRoute><MemoizedPageTransition><EmotionalPatternsPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="emotional-patterns-user" path="/profile/emotional-patterns/:userId" element={<ProtectedRoute><MemoizedPageTransition><EmotionalPatternsPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="user-management" path="/user-management" element={<AdminProtectedRoute><UserManagementDashboard /></AdminProtectedRoute>} />,
-    <Route key="support-hub" path="/support-hub" element={<ProtectedRoute allowedRoles={['staff', 'nurse', 'teacher', 'se_teacher', 'head_unit', 'directorate', 'admin', 'superadmin']}><MtssPreviewGate><MemoizedPageTransition><SupportModeSelectionPage /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
+    <Route key="support-hub" path="/support-hub" element={<ProtectedRoute allowedRoles={['staff', 'support_staff', 'nurse', 'teacher', 'se_teacher', 'head_unit', 'directorate', 'admin', 'superadmin']}><MtssPreviewGate><MemoizedPageTransition><SupportModeSelectionPage /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
     <Route key="mtss-role" path="/mtss" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSRoleSelectionPage /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
     <Route key="mtss-teacher" path="/mtss/teacher" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSTeacherDashboard /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
     <Route key="mtss-admin" path="/mtss/admin" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSAdminDashboard /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
@@ -166,6 +167,7 @@ const publicRoutes = [
     <Route key="student-face-scan" path="/student/emotional-checkin/face-scan" element={<ProtectedRoute allowedRoles={['student']}><MemoizedPageTransition><StudentFaceScanPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="student-manual-checkin" path="/student/emotional-checkin/manual" element={<ProtectedRoute allowedRoles={['student']}><MemoizedPageTransition><StudentManualCheckinPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="student-ai-checkin" path="/student/emotional-checkin/ai" element={<ProtectedRoute allowedRoles={['student']}><MemoizedPageTransition><StudentAICheckinPage /></MemoizedPageTransition></ProtectedRoute>} />,
+    <Route key="student-ai-chat" path="/student/ai-chat" element={<ProtectedRoute allowedRoles={['student']}><MemoizedPageTransition><StudentAIChatPage /></MemoizedPageTransition></ProtectedRoute>} />,
 ];
 
 

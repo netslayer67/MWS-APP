@@ -114,42 +114,114 @@ export const generateAIAnalysis = (emotionData) => {
             neutral: [
                 `I notice you're carrying yourself with remarkable composure right now. That subtle neutrality in your expression speaks volumes about your emotional resilience - you're neither overwhelmed nor disengaged, but perfectly balanced in this present moment.`,
                 `Your neutral expression tells me you're in a state of quiet observation. This isn't emotional flatness, but rather a mindful presence that allows you to process your experiences without being swept away by them.`,
-                `What beautiful emotional equilibrium I see in your face. You're maintaining that perfect balance between engagement and peace, showing me you have excellent self-regulation skills.`
+                `What beautiful emotional equilibrium I see in your face. You're maintaining that perfect balance between engagement and peace, showing me you have excellent self-regulation skills.`,
+                `There's a calm steadiness in your expression that suggests you're grounded and centered. This balanced state is actually a powerful place to be - neither pushed nor pulled by strong emotions.`,
+                `I see a thoughtful neutrality in your features. You seem to be in that valuable space between emotional extremes, able to observe and respond rather than react.`,
+                `Your expression shows a peaceful middle ground. This kind of emotional balance is a strength - it means you're present without being overwhelmed by any particular feeling.`,
+                `There's a quiet clarity in your face right now. You're demonstrating that beautiful ability to hold space for whatever arises without getting swept up in it.`,
+                `I notice you're in a state of gentle equilibrium. This isn't numbness - it's the kind of balanced awareness that allows for clear thinking and thoughtful responses.`,
+                `Your features reflect a calm centeredness. You're showing that rare capacity to be fully present while maintaining emotional steadiness.`,
+                `There's an admirable composure in your expression. You seem to be navigating this moment with a balanced perspective that serves you well.`,
+                `I see a serene neutrality that speaks to your emotional intelligence. You're neither suppressing feelings nor being consumed by them - just being present.`,
+                `Your face shows a peaceful balance. This centered state you're in allows you to respond to life from a place of calm awareness.`
             ],
             happy: [
                 `Oh, what a genuine spark of joy I see lighting up your eyes! That authentic happiness isn't just surface-level - it's the kind that radiates from deep within, telling me you're experiencing something truly meaningful right now.`,
                 `Your smile reaches your eyes in that beautiful way that only comes from real contentment. I can tell this happiness is more than just a fleeting moment - it's a reflection of genuine satisfaction in your life.`,
-                `I love seeing that authentic joy in your expression! It's the kind of happiness that comes from within, not from external circumstances. You're clearly experiencing something that nourishes your soul.`
+                `I love seeing that authentic joy in your expression! It's the kind of happiness that comes from within, not from external circumstances. You're clearly experiencing something that nourishes your soul.`,
+                `There's a wonderful warmth radiating from your face. Your eyes are sparkling with genuine delight, and it's absolutely contagious!`,
+                `I can see the joy dancing in your features. This kind of authentic happiness has a special quality - it feels both grounded and uplifting at the same time.`,
+                `Your expression is glowing with positive energy. There's a lightness and ease in your face that suggests you're truly enjoying this moment.`,
+                `What a beautiful sight - your happiness is written all over your face! There's something deeply satisfying about seeing someone in such a genuinely good place.`,
+                `I notice your features are soft and open, with that unmistakable glow of contentment. You're radiating positive energy right now.`,
+                `Your face tells a story of real joy. Not the forced kind, but the authentic happiness that comes from being aligned with what truly matters to you.`,
+                `There's a delightful brightness in your expression. You seem to be experiencing one of those precious moments where everything just feels right.`,
+                `I see genuine pleasure reflected in your features. Your happiness has that quality of being both peaceful and energizing at once.`,
+                `Your expression is radiating such positive vibes! There's an ease and lightness about you that suggests you're truly savoring this experience.`
             ],
             sad: [
                 `I can see there's a gentle sadness touching your heart right now. Your eyes tell me you're processing some deeper emotions, and that's actually a beautiful sign of your emotional depth and capacity for feeling.`,
                 `Your expression shows me you're in a reflective space, processing emotions that matter to you. This sadness isn't something to push away - it's showing me how deeply you care about the things that touch your life.`,
-                `I notice that quiet contemplation in your eyes. Sometimes our deepest growth comes from sitting with these tender emotions. You're showing incredible courage by being present with your feelings.`
+                `I notice that quiet contemplation in your eyes. Sometimes our deepest growth comes from sitting with these tender emotions. You're showing incredible courage by being present with your feelings.`,
+                `There's a softness around your eyes that speaks of sadness. You're allowing yourself to feel, which takes real bravery and emotional honesty.`,
+                `I can see you're carrying something heavy in your heart right now. Your expression tells me you're processing difficult emotions with genuine authenticity.`,
+                `Your face shows a tender melancholy. There's wisdom in allowing yourself to fully experience these moments - it's part of being human.`,
+                `I notice a gentle sorrow in your features. You're not hiding from what you feel, and that kind of emotional honesty is truly admirable.`,
+                `There's a thoughtful sadness in your expression. You seem to be giving yourself space to feel whatever needs to be felt right now.`,
+                `I can see some heaviness in your eyes. You're processing something meaningful, and that reflective quality shows real emotional maturity.`,
+                `Your expression carries a quiet sadness. There's something deeply human about these moments when we allow ourselves to truly feel.`,
+                `I notice a pensive quality in your features. You're sitting with difficult emotions rather than running from them - that's real courage.`,
+                `There's a gentle weight in your expression. You're experiencing sadness in a way that honors both the feeling and your capacity to hold it.`
             ],
             anxious: [
                 `I can see there's some tension in your expression that speaks to me of underlying worry. Your eyes tell me you're carrying concerns that are weighing on your mind - and that's completely understandable in our complex world.`,
                 `Your face shows me you're in a state of heightened alertness, which often comes when we're processing uncertainty. This anxiety is your body's way of trying to protect you, but I can help you find some gentle grounding.`,
-                `I notice that subtle tension around your eyes that suggests you're carrying some anxiety. It's brave of you to acknowledge these feelings - many people try to hide them. Let's work together to create some calm.`
+                `I notice that subtle tension around your eyes that suggests you're carrying some anxiety. It's brave of you to acknowledge these feelings - many people try to hide them. Let's work together to create some calm.`,
+                `There's a visible restlessness in your features. You seem to be navigating some worries, and your body is showing signs of that mental activity.`,
+                `I can sense an underlying tension in your expression. Your face reflects the kind of alertness that comes when the mind is working through concerns.`,
+                `Your features show signs of anxious energy. There's a tightness that suggests you're processing worries or uncertainties right now.`,
+                `I notice your expression carries some nervous energy. You appear to be in that state where the mind is actively problem-solving or worrying.`,
+                `There's a certain edginess in your face that speaks of anxiety. Your features show the kind of tension that comes with worry or stress.`,
+                `I can see you're experiencing some anxious feelings. There's a quality to your expression that suggests your mind is racing with concerns.`,
+                `Your face reflects an anxious state. There's a vigilance in your features that often accompanies worry or apprehension.`,
+                `I notice signs of nervous tension in your expression. You seem to be holding some worries that are manifesting in your facial features.`,
+                `There's an anxious quality to your features right now. Your expression shows that your mind is engaged with concerns or uncertainties.`
             ],
             calm: [
                 `What beautiful tranquility I see in your expression! Your face radiates that peaceful presence that comes from deep within. This calm isn't emptiness - it's the profound peace of someone who knows how to center themselves.`,
                 `Your serene expression tells me you're in touch with an inner peace that's quite special. This calm state shows me you have wonderful self-regulation skills and a beautiful capacity for mindfulness.`,
-                `I love seeing that gentle calm in your eyes. It's the kind of peace that comes from authentic self-acceptance and emotional wisdom. You're clearly someone who knows how to nurture their own well-being.`
+                `I love seeing that gentle calm in your eyes. It's the kind of peace that comes from authentic self-acceptance and emotional wisdom. You're clearly someone who knows how to nurture their own well-being.`,
+                `There's a lovely peacefulness in your features. You appear to be in a state of genuine relaxation and inner quiet.`,
+                `I can see a deep sense of calm radiating from your face. Your expression has that quality of someone who's truly at ease.`,
+                `Your features show a wonderful serenity. There's a softness and ease that suggests you're experiencing real tranquility right now.`,
+                `I notice a beautiful stillness in your expression. You seem to have found that sweet spot of peaceful presence.`,
+                `There's a gentle calm pervading your entire demeanor. Your face reflects the kind of peace that comes from being truly centered.`,
+                `Your expression carries a soothing tranquility. You appear to be in that lovely state where body and mind are at rest.`,
+                `I see a peaceful ease in your features. There's a relaxed quality that speaks of genuine calm and contentment.`,
+                `Your face shows remarkable serenity. You seem to be experiencing one of those precious moments of true inner peace.`,
+                `There's a calming presence in your expression. Your features reflect the kind of quiet that comes from deep relaxation.`
             ],
             angry: [
                 `I can see there's some frustration or anger present in your expression right now. Your eyes tell me you're feeling strongly about something that matters deeply to you. This passion, when channeled well, can be a tremendous force for positive change.`,
                 `Your face shows me you're experiencing some intense emotions that need expression. This anger isn't something to fear - it's showing me how much you care about justice, fairness, or the things that matter to your heart.`,
-                `I notice that intensity in your expression that suggests you're feeling quite strongly about something. This emotional energy can be transformative when we learn to work with it consciously.`
+                `I notice that intensity in your expression that suggests you're feeling quite strongly about something. This emotional energy can be transformative when we learn to work with it consciously.`,
+                `There's visible frustration in your features. Your expression shows the kind of intensity that comes when something has triggered a strong reaction.`,
+                `I can see anger manifesting in your face. There's a tension and fire in your features that speaks of powerful emotions.`,
+                `Your expression carries signs of irritation or anger. You're clearly feeling strongly about something right now.`,
+                `I notice an agitated quality in your features. There's an intensity that suggests you're processing some frustrating or angering situation.`,
+                `There's a sharpness to your expression that speaks of anger. Your face reflects the kind of energy that comes with strong feelings.`,
+                `I can see you're experiencing some angry feelings. Your features show that heated quality that accompanies frustration or outrage.`,
+                `Your face shows clear signs of anger or frustration. There's an edge to your expression that tells me you're feeling intensely.`,
+                `I notice an angry energy in your features. You appear to be in that state where strong emotions are close to the surface.`,
+                `There's a visible intensity in your expression that speaks of anger. Your face reflects the power of what you're feeling right now.`
             ],
             surprised: [
                 `Oh, I can see a spark of surprise in your eyes! That widened gaze tells me something unexpected has caught your attention. Surprise like this often opens us up to new possibilities and fresh perspectives.`,
                 `Your expression shows me you're experiencing a moment of genuine surprise. This openness to the unexpected is actually a beautiful quality - it shows you're engaged with life and open to new experiences.`,
-                `I love seeing that element of surprise in your face! It tells me you're someone who can still be delighted by life's unexpected moments. This wonder is such a precious quality to nurture.`
+                `I love seeing that element of surprise in your face! It tells me you're someone who can still be delighted by life's unexpected moments. This wonder is such a precious quality to nurture.`,
+                `There's an unmistakable look of surprise in your features! Your expression has that quality of someone who's just encountered something unexpected.`,
+                `I can see surprise written all over your face. Your eyes have that wide, alert quality that comes with unexpected discoveries.`,
+                `Your expression shows clear astonishment. There's a freshness in your features that speaks of genuine surprise.`,
+                `I notice a delightful surprise in your demeanor. You seem to be experiencing one of those moments that catches you off guard in a good way.`,
+                `There's a wonderful element of surprise in your face. Your features show that openness that comes with the unexpected.`,
+                `I can see you've been genuinely surprised by something. Your expression carries that spontaneous quality of real astonishment.`,
+                `Your face shows authentic surprise. There's an alertness and wonder in your features that's quite refreshing to see.`,
+                `I notice a surprised energy in your expression. You appear to be experiencing something that's caught you pleasantly off guard.`,
+                `There's a bright surprise in your eyes. Your features reflect the kind of wonder that comes with life's unexpected moments.`
             ],
             fearful: [
                 `I can see there's some fear or concern present in your expression. Your eyes tell me you're navigating something that feels threatening or uncertain. This vulnerability actually shows me how deeply you care about staying safe and protected.`,
                 `Your face shows me you're in a protective state right now, which is completely natural when we sense potential danger. This fear is your body's wisdom trying to keep you safe - let's honor it while finding some gentle reassurance.`,
-                `I notice that cautious quality in your expression that suggests you're feeling some fear. It's brave of you to be present with these feelings. Fear often shows us what we most deeply value and want to protect.`
+                `I notice that cautious quality in your expression that suggests you're feeling some fear. It's brave of you to be present with these feelings. Fear often shows us what we most deeply value and want to protect.`,
+                `There's visible apprehension in your features. Your expression shows the kind of wariness that comes when something feels uncertain or threatening.`,
+                `I can see signs of fear in your face. There's a defensive quality to your expression that speaks of feeling vulnerable or unsafe.`,
+                `Your features carry a fearful tension. You appear to be in that protective state that arises when we sense potential danger.`,
+                `I notice a worried concern in your expression. Your face reflects the kind of alertness that comes with feeling afraid or threatened.`,
+                `There's a cautious fear in your features. You seem to be navigating something that feels risky or uncertain right now.`,
+                `I can see you're experiencing some fearful feelings. Your expression has that guarded quality that comes with apprehension.`,
+                `Your face shows clear signs of fear or concern. There's a tension that suggests you're feeling vulnerable in this moment.`,
+                `I notice an anxious fear in your demeanor. You appear to be responding to something that feels potentially threatening.`,
+                `There's a protective wariness in your expression. Your features reflect the kind of concern that comes when safety feels uncertain.`
             ]
         };
 

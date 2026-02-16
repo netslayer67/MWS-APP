@@ -37,14 +37,27 @@ const HeroSection = memo(() => {
         try {
             const resultAction = await dispatch(loginUser({ email, password }));
             if (loginUser.fulfilled.match(resultAction)) {
+                // Role-based redirect logic
+                const userRole = (resultAction.payload?.user?.role || '').toLowerCase();
+                let redirectPath;
+
+                if (userRole === 'student') {
+                    redirectPath = '/student/support-hub';
+                } else if (['teacher', 'se_teacher', 'head_unit', 'admin', 'superadmin'].includes(userRole)) {
+                    redirectPath = '/support-hub';
+                } else {
+                    // staff, support_staff, nurse, etc. → redirect to /select-role
+                    redirectPath = '/select-role';
+                }
+
                 toast({
                     title: "Login Successful! 🎉",
-                    description: "Welcome back! Redirecting to role selection...",
+                    description: "Welcome back! Redirecting...",
                     duration: 3000,
                 });
                 setEmail("");
                 setPassword("");
-                setTimeout(() => navigate("/support-hub"), 1000);
+                setTimeout(() => navigate(redirectPath), 1000);
                 return;
             }
 

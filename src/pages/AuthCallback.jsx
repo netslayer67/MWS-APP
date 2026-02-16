@@ -42,7 +42,17 @@ const AuthCallback = () => {
                 const normalizedRole = (canonicalUser.role || '').toLowerCase();
                 const redirectParam = hashParams.get('redirect');
                 const safeRedirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : null;
-                const target = normalizedRole === 'student' ? '/student/support-hub' : (safeRedirect || '/support-hub');
+
+                // Role-based redirect logic
+                let target;
+                if (normalizedRole === 'student') {
+                    target = '/student/support-hub';
+                } else if (['teacher', 'se_teacher', 'head_unit', 'admin', 'superadmin'].includes(normalizedRole)) {
+                    target = safeRedirect || '/support-hub';
+                } else {
+                    // staff, support_staff, nurse, etc. → redirect to /select-role
+                    target = safeRedirect || '/select-role';
+                }
 
                 // Remove sensitive token/user params from URL before leaving callback route
                 window.history.replaceState({}, document.title, '/auth/callback');
