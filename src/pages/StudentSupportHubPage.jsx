@@ -20,6 +20,18 @@ const hubOptions = [
         iconShadow: "shadow-rose-400/30",
     },
     {
+        id: "ai-study-buddy",
+        title: "AI Study Buddy",
+        description: "24/7 homework help & learning companion",
+        icon: Sparkles,
+        path: "/student/ai-chat",
+        tag: "AI Helper",
+        iconBg: "from-fuchsia-400 to-violet-500",
+        cardAccent: "from-fuchsia-400/25 via-violet-300/15 to-transparent",
+        tagStyle: "text-fuchsia-600 bg-fuchsia-500/10 dark:text-fuchsia-400 dark:bg-fuchsia-500/15",
+        iconShadow: "shadow-fuchsia-400/30",
+    },
+    {
         id: "mtss-portal",
         title: "MTSS Student Portal",
         description: "Progress tracking & mentor connections",
