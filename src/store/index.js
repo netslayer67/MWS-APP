@@ -5,6 +5,7 @@ import dashboardReducer from './slices/dashboardSlice';
 import supportReducer from './slices/supportSlice';
 import userReducer from './slices/userSlice';
 import mtssReducer from './slices/mtssSlice';
+import aiChatReducer from './slices/aiChatSlice';
 
 export const store = configureStore({
     reducer: {
@@ -14,6 +15,7 @@ export const store = configureStore({
         support: supportReducer,
         users: userReducer,
         mtss: mtssReducer,
+        aiChat: aiChatReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({
