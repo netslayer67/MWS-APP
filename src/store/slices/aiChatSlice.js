@@ -29,11 +29,47 @@ export const loadConversations = createAsyncThunk(
     }
 );
 
+export const loadConversationHistory = createAsyncThunk(
+    'aiChat/loadConversationHistory',
+    async ({ sessionId, limit = 120 }, { rejectWithValue }) => {
+        try {
+            const history = await aiChatService.getConversationHistory(sessionId, limit);
+            return history;
+        } catch (error) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
 export const startNewConversation = createAsyncThunk(
     'aiChat/startNewConversation',
     async (_, { rejectWithValue }) => {
         try {
             const result = await aiChatService.startNewConversation();
+            return result;
+        } catch (error) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
+export const loadAssistantProfile = createAsyncThunk(
+    'aiChat/loadAssistantProfile',
+    async (_, { rejectWithValue }) => {
+        try {
+            const result = await aiChatService.getAssistantProfile();
+            return result;
+        } catch (error) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
+export const saveAssistantProfile = createAsyncThunk(
+    'aiChat/saveAssistantProfile',
+    async (payload, { rejectWithValue }) => {
+        try {
+            const result = await aiChatService.updateAssistantProfile(payload);
             return result;
         } catch (error) {
             return rejectWithValue(error.message);
@@ -89,6 +125,11 @@ const initialState = {
 
     // Conversations list
     conversations: [],
+    conversationsLoading: false,
+    historyLoading: false,
+    assistantProfile: null,
+    assistantLoading: false,
+    assistantSaving: false,
 
     // UI state
     isLoading: false,
@@ -219,6 +260,21 @@ const aiChatSlice = createSlice({
                 state.messages.push(aiMessage);
                 state.buddyExpression = BUDDY_EXPRESSIONS[aiMessage.expression] || BUDDY_EXPRESSIONS.happy;
                 state.buddyAnimation = aiMessage.expression === 'celebrating' ? 'celebrate' : 'bounce';
+
+                const assistantContext = action.payload?.context?.assistant;
+                if (assistantContext) {
+                    state.assistantProfile = {
+                        ...(state.assistantProfile || {}),
+                        assistant: {
+                            ...(state.assistantProfile?.assistant || {}),
+                            assistantName: assistantContext.name || state.assistantProfile?.assistant?.assistantName || 'Nova',
+                            daily: {
+                                ...(state.assistantProfile?.assistant?.daily || {}),
+                                quickActions: assistantContext.quickActions || state.assistantProfile?.assistant?.daily?.quickActions || []
+                            }
+                        }
+                    };
+                }
             })
             .addCase(sendMessage.rejected, (state, action) => {
                 state.isLoading = false;
@@ -238,8 +294,41 @@ const aiChatSlice = createSlice({
 
         // Load conversations
         builder
+            .addCase(loadConversations.pending, (state) => {
+                state.conversationsLoading = true;
+            })
             .addCase(loadConversations.fulfilled, (state, action) => {
+                state.conversationsLoading = false;
                 state.conversations = action.payload;
+            })
+            .addCase(loadConversations.rejected, (state) => {
+                state.conversationsLoading = false;
+            });
+
+        // Load conversation history
+        builder
+            .addCase(loadConversationHistory.pending, (state) => {
+                state.historyLoading = true;
+                state.error = null;
+            })
+            .addCase(loadConversationHistory.fulfilled, (state, action) => {
+                state.historyLoading = false;
+                const payload = action.payload || {};
+                const sessionId = payload.sessionId || action.meta?.arg?.sessionId || null;
+                const messages = Array.isArray(payload.messages) ? payload.messages : [];
+
+                state.sessionId = sessionId;
+                state.messages = messages.map((msg, index) => ({
+                    role: msg.role,
+                    content: msg.content,
+                    timestamp: msg.timestamp || new Date().toISOString(),
+                    id: `hist_${sessionId || 'session'}_${index}`
+                }));
+                state.isTyping = false;
+            })
+            .addCase(loadConversationHistory.rejected, (state, action) => {
+                state.historyLoading = false;
+                state.error = action.payload || 'Failed to load conversation history';
             });
 
         // Start new conversation
@@ -249,6 +338,40 @@ const aiChatSlice = createSlice({
                 state.messages = [];
                 state.buddyExpression = BUDDY_EXPRESSIONS.excited;
                 state.buddyAnimation = 'wave';
+            });
+
+        // Load assistant profile
+        builder
+            .addCase(loadAssistantProfile.pending, (state) => {
+                state.assistantLoading = true;
+            })
+            .addCase(loadAssistantProfile.fulfilled, (state, action) => {
+                state.assistantLoading = false;
+                state.assistantProfile = action.payload || null;
+            })
+            .addCase(loadAssistantProfile.rejected, (state) => {
+                state.assistantLoading = false;
+            });
+
+        // Save assistant profile
+        builder
+            .addCase(saveAssistantProfile.pending, (state) => {
+                state.assistantSaving = true;
+                state.error = null;
+            })
+            .addCase(saveAssistantProfile.fulfilled, (state, action) => {
+                state.assistantSaving = false;
+                state.assistantProfile = {
+                    ...(state.assistantProfile || {}),
+                    assistant: {
+                        ...(state.assistantProfile?.assistant || {}),
+                        ...(action.payload || {})
+                    }
+                };
+            })
+            .addCase(saveAssistantProfile.rejected, (state, action) => {
+                state.assistantSaving = false;
+                state.error = action.payload || 'Failed to save assistant profile';
             });
     }
 });
@@ -276,8 +399,13 @@ export const selectInputValue = (state) => state.aiChat.inputValue;
 export const selectBuddyExpression = (state) => state.aiChat.buddyExpression;
 export const selectBuddyAnimation = (state) => state.aiChat.buddyAnimation;
 export const selectConversations = (state) => state.aiChat.conversations;
+export const selectConversationsLoading = (state) => state.aiChat.conversationsLoading;
+export const selectHistoryLoading = (state) => state.aiChat.historyLoading;
 export const selectSoundEnabled = (state) => state.aiChat.soundEnabled;
 export const selectError = (state) => state.aiChat.error;
+export const selectAssistantProfile = (state) => state.aiChat.assistantProfile;
+export const selectAssistantLoading = (state) => state.aiChat.assistantLoading;
+export const selectAssistantSaving = (state) => state.aiChat.assistantSaving;
 
 // Computed selectors
 export const selectLastMessage = (state) => {
