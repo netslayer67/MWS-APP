@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import * as aiChatService from '@/services/aiChatService';
+import { normalizeAssistantWidgets } from '@/features/assistant/runtime/responseValidator';
 
 // Async thunks for API calls
 export const sendMessage = createAsyncThunk(
@@ -114,6 +115,8 @@ const detectExpression = (message) => {
     return 'happy';
 };
 
+const normalizeWidgets = (widgets) => normalizeAssistantWidgets(widgets);
+
 const initialState = {
     // Current session
     sessionId: null,
@@ -180,7 +183,8 @@ const aiChatSlice = createSlice({
                 content: action.payload.content,
                 timestamp: new Date().toISOString(),
                 id: `ai_${Date.now()}`,
-                expression: detectExpression(action.payload.content)
+                expression: detectExpression(action.payload.content),
+                widgets: normalizeWidgets(action.payload.widgets)
             };
             state.messages.push(message);
             state.isTyping = false;
@@ -255,7 +259,8 @@ const aiChatSlice = createSlice({
                     content: action.payload.message,
                     timestamp: new Date().toISOString(),
                     id: `ai_${Date.now()}`,
-                    expression: detectExpression(action.payload.message)
+                    expression: detectExpression(action.payload.message),
+                    widgets: normalizeWidgets(action.payload.uiWidgets)
                 };
                 state.messages.push(aiMessage);
                 state.buddyExpression = BUDDY_EXPRESSIONS[aiMessage.expression] || BUDDY_EXPRESSIONS.happy;
@@ -322,7 +327,8 @@ const aiChatSlice = createSlice({
                     role: msg.role,
                     content: msg.content,
                     timestamp: msg.timestamp || new Date().toISOString(),
-                    id: `hist_${sessionId || 'session'}_${index}`
+                    id: `hist_${sessionId || 'session'}_${index}`,
+                    widgets: normalizeWidgets(msg?.metadata?.uiWidgets || msg?.uiWidgets)
                 }));
                 state.isTyping = false;
             })

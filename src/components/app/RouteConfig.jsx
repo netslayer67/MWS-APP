@@ -160,6 +160,7 @@ const publicRoutes = [
     />,
     <Route key="mtss-student-portal" path="/mtss/student-portal" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSStudentPortalPage /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
     <Route key="mtss-student-profile" path="/mtss/student/:slug" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSStudentProfilePage /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
+    <Route key="ai-assistant" path="/ai-assistant" element={<ProtectedRoute><MemoizedPageTransition><StudentAIChatPage /></MemoizedPageTransition></ProtectedRoute>} />,
 
     // Student-specific routes
     <Route key="student-support-hub" path="/student/support-hub" element={<ProtectedRoute allowedRoles={['student']}><MemoizedPageTransition><StudentSupportHubPage /></MemoizedPageTransition></ProtectedRoute>} />,

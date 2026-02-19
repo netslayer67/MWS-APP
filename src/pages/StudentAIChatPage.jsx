@@ -6,8 +6,14 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { useToast } from "@/components/ui/use-toast";
 import { useDispatch, useSelector } from 'react-redux';
+import { ASSISTANT_WIDGET_TYPES, isWidgetTypeSupported } from '@/features/assistant/runtime/widgetRegistry';
+import {
+    detectAssistantNavigationIntent,
+    sanitizeAssistantNavigateAction
+} from '@/utils/studentAssistantNavigator';
 import {
     sendMessage,
     loadConversations,
@@ -331,6 +337,108 @@ const preprocessMarkdownContent = (content = '') =>
         // Custom underline shorthand: ++text++
         .replace(/\+\+([^\n+][\s\S]*?)\+\+/g, '<u>$1</u>');
 
+const CHAT_COACH_STORAGE_KEY = 'student_ai_chat_coach_v1';
+const CHAT_COACH_IDLE_MS = 95 * 1000;
+const CHAT_COACH_COOLDOWN_MS = 20 * 60 * 1000;
+const CHAT_COACH_SNOOZE_MS = 2 * 60 * 60 * 1000;
+const CHAT_COACH_DAILY_LIMIT = 4;
+const CHAT_COACH_SESSION_LIMIT = 2;
+const CONVERSATIONS_REFRESH_COOLDOWN_MS = 10000;
+
+const getTodayKey = () => new Date().toISOString().slice(0, 10);
+
+const readCoachState = (userKey = 'student') => {
+    if (typeof window === 'undefined') {
+        return { day: getTodayKey(), count: 0, lastAt: 0, snoozeUntil: 0 };
+    }
+
+    try {
+        const raw = window.localStorage.getItem(`${CHAT_COACH_STORAGE_KEY}:${userKey}`);
+        if (!raw) return { day: getTodayKey(), count: 0, lastAt: 0, snoozeUntil: 0 };
+        const parsed = JSON.parse(raw);
+        return {
+            day: String(parsed?.day || getTodayKey()),
+            count: Number(parsed?.count || 0),
+            lastAt: Number(parsed?.lastAt || 0),
+            snoozeUntil: Number(parsed?.snoozeUntil || 0)
+        };
+    } catch {
+        return { day: getTodayKey(), count: 0, lastAt: 0, snoozeUntil: 0 };
+    }
+};
+
+const normalizeCoachState = (state) => {
+    const today = getTodayKey();
+    if (String(state?.day || '') !== today) {
+        return {
+            day: today,
+            count: 0,
+            lastAt: 0,
+            snoozeUntil: Number(state?.snoozeUntil || 0)
+        };
+    }
+
+    return {
+        day: today,
+        count: Number(state?.count || 0),
+        lastAt: Number(state?.lastAt || 0),
+        snoozeUntil: Number(state?.snoozeUntil || 0)
+    };
+};
+
+const writeCoachState = (userKey = 'student', state = {}) => {
+    if (typeof window === 'undefined') return;
+    try {
+        window.localStorage.setItem(`${CHAT_COACH_STORAGE_KEY}:${userKey}`, JSON.stringify(state));
+    } catch {
+        // no-op
+    }
+};
+
+const buildCoachNudge = ({
+    assistantName = 'Nova',
+    studentName = 'there',
+    focusItems = [],
+    quickActions = [],
+    messages = []
+} = {}) => {
+    const latestAssistantMessage = [...messages].reverse().find((item) => item?.role === 'assistant');
+    const latestAssistantText = String(latestAssistantMessage?.content || '').trim();
+    const hasQuestion = /\?\s*$/.test(latestAssistantText);
+    const primaryFocus = String(focusItems?.[0] || '').trim();
+    const primaryAction = String(quickActions?.[0] || '').trim();
+
+    if (hasQuestion) {
+        return {
+            title: `${assistantName} follow-up`,
+            text: `I can help you answer the last question step by step, ${studentName}.`,
+            suggestion: 'Help me answer your last question in simple steps with one concrete action.'
+        };
+    }
+
+    if (primaryFocus) {
+        return {
+            title: `${assistantName} quick check-in`,
+            text: `Still want to focus on "${primaryFocus}"? I can break it into a quick mini plan.`,
+            suggestion: `Help me make a 20-minute plan for this focus: ${primaryFocus}.`
+        };
+    }
+
+    if (primaryAction) {
+        return {
+            title: `${assistantName} ready when you are`,
+            text: `Want to continue with "${primaryAction}"?`,
+            suggestion: primaryAction
+        };
+    }
+
+    return {
+        title: `${assistantName} mini boost`,
+        text: `Need a short momentum boost, ${studentName}? I can propose your next best action now.`,
+        suggestion: 'Give me one high-impact study action I can do in the next 15 minutes.'
+    };
+};
+
 // Particle decorations (Hub-style)
 const ChatParticle = React.memo(({ delay = 0, size = 'sm', type = 'dot', top = '20%', left = '10%' }) => {
     const sizeClasses = {
@@ -406,8 +514,336 @@ const AIBuddy = React.memo(({ expression, animation }) => {
 });
 AIBuddy.displayName = 'AIBuddy';
 
+const formatWidgetValue = (value) => {
+    if (value === null || value === undefined || value === '') return '-';
+    if (typeof value === 'number' && Number.isFinite(value)) return value.toString();
+    return String(value);
+};
+
+const ChartWidget = React.memo(({ widget }) => {
+    const data = Array.isArray(widget?.data) ? widget.data : [];
+    const xKey = widget?.xKey || 'label';
+    const yKey = widget?.yKey || 'value';
+    const yDomain = Array.isArray(widget?.yDomain) && widget.yDomain.length === 2 ? widget.yDomain : [0, 3];
+    const yTicks = Array.isArray(widget?.yTicks) && widget.yTicks.length > 0 ? widget.yTicks : undefined;
+    const gradientId = `chat-widget-gradient-${String(widget?.id || 'chart').replace(/[^a-zA-Z0-9_-]/g, '')}`;
+
+    if (data.length === 0) return null;
+
+    return (
+        <div className="rounded-2xl border border-cyan-200/55 dark:border-cyan-200/20 bg-gradient-to-br from-cyan-50/90 via-sky-50/85 to-violet-50/85 dark:from-cyan-500/10 dark:via-indigo-500/10 dark:to-pink-500/10 p-3 mt-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-700 dark:text-cyan-300">{widget.title || 'Chart'}</p>
+            {widget.subtitle && (
+                <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-1">{widget.subtitle}</p>
+            )}
+            <div className="h-56 mt-2">
+                <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={data} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+                        <defs>
+                            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.95} />
+                                <stop offset="55%" stopColor="#8b5cf6" stopOpacity={0.9} />
+                                <stop offset="100%" stopColor="#f472b6" stopOpacity={0.85} />
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(100,116,139,0.25)" vertical={false} />
+                        <XAxis
+                            dataKey={xKey}
+                            tick={{ fontSize: 11, fill: '#334155' }}
+                            axisLine={{ stroke: 'rgba(100,116,139,0.28)' }}
+                            tickLine={false}
+                        />
+                        <YAxis
+                            domain={yDomain}
+                            ticks={yTicks}
+                            allowDecimals={false}
+                            tick={{ fontSize: 11, fill: '#334155' }}
+                            axisLine={{ stroke: 'rgba(100,116,139,0.28)' }}
+                            tickLine={false}
+                        />
+                        <Tooltip
+                            cursor={{ fill: 'rgba(148,163,184,0.12)' }}
+                            contentStyle={{
+                                borderRadius: '0.9rem',
+                                border: '1px solid rgba(148,163,184,0.35)',
+                                background: 'rgba(255,255,255,0.96)',
+                                fontSize: '12px'
+                            }}
+                        />
+                        <Bar dataKey={yKey} radius={[9, 9, 0, 0]} fill={`url(#${gradientId})`} />
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
+    );
+});
+ChartWidget.displayName = 'ChartWidget';
+
+const TableWidget = React.memo(({ widget }) => {
+    const columns = Array.isArray(widget?.columns) ? widget.columns : [];
+    const rows = Array.isArray(widget?.rows) ? widget.rows : [];
+    if (columns.length === 0 || rows.length === 0) return null;
+
+    return (
+        <div className="rounded-2xl border border-pink-200/55 dark:border-pink-200/25 bg-gradient-to-br from-white/90 via-pink-50/85 to-orange-50/85 dark:from-slate-900/45 dark:via-fuchsia-500/10 dark:to-amber-500/10 p-3 mt-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-pink-700 dark:text-pink-300">{widget.title || 'Table'}</p>
+            {widget.subtitle && (
+                <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-1">{widget.subtitle}</p>
+            )}
+            <div className="overflow-x-auto mt-2 rounded-xl border border-white/45 dark:border-white/10">
+                <table className="min-w-full text-xs sm:text-sm">
+                    <thead className="bg-white/75 dark:bg-white/6">
+                        <tr>
+                            {columns.map((column) => (
+                                <th key={column.key} className="px-2.5 py-2 text-left font-semibold text-slate-700 dark:text-slate-200 whitespace-nowrap">
+                                    {column.label || column.key}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {rows.map((row, rowIndex) => (
+                            <tr
+                                key={`row-${rowIndex}`}
+                                className="border-t border-slate-200/70 dark:border-white/10 odd:bg-white/60 even:bg-cyan-50/45 dark:odd:bg-white/4 dark:even:bg-cyan-500/5"
+                            >
+                                {columns.map((column) => (
+                                    <td key={`${rowIndex}-${column.key}`} className="px-2.5 py-2 text-slate-700 dark:text-slate-200 align-top">
+                                        {formatWidgetValue(row?.[column.key])}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+});
+TableWidget.displayName = 'TableWidget';
+
+const StatsWidget = React.memo(({ widget }) => {
+    const items = Array.isArray(widget?.items) ? widget.items : [];
+    if (items.length === 0) return null;
+
+    return (
+        <div className="rounded-2xl border border-lime-200/65 dark:border-lime-200/25 bg-gradient-to-br from-lime-50/90 via-emerald-50/85 to-cyan-50/85 dark:from-lime-500/10 dark:via-emerald-500/10 dark:to-cyan-500/10 p-3 mt-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">{widget.title || 'Snapshot'}</p>
+            {widget.subtitle && (
+                <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-1">{widget.subtitle}</p>
+            )}
+            <div className="grid grid-cols-2 gap-2 mt-2">
+                {items.slice(0, 6).map((item, index) => (
+                    <div
+                        key={`${item.label || 'metric'}-${index}`}
+                        className="rounded-xl bg-white/80 dark:bg-white/8 border border-white/55 dark:border-white/12 px-2.5 py-2"
+                    >
+                        <p className="text-[11px] text-slate-500 dark:text-slate-300">{item.label || 'Metric'}</p>
+                        <p className="text-sm sm:text-base font-bold text-slate-800 dark:text-white">{formatWidgetValue(item.value)}</p>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+});
+StatsWidget.displayName = 'StatsWidget';
+
+const TimelineWidget = React.memo(({ widget }) => {
+    const items = Array.isArray(widget?.items) ? widget.items : [];
+    if (items.length === 0) return null;
+
+    return (
+        <div className="rounded-2xl border border-indigo-200/60 dark:border-indigo-200/20 bg-gradient-to-br from-indigo-50/90 via-cyan-50/85 to-pink-50/80 dark:from-indigo-500/10 dark:via-cyan-500/10 dark:to-pink-500/10 p-3 mt-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-300">{widget.title || 'Timeline'}</p>
+            {widget.subtitle && (
+                <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-1">{widget.subtitle}</p>
+            )}
+            <div className="mt-2 space-y-2">
+                {items.slice(0, 6).map((item, index) => (
+                    <div key={`${item.time || 'time'}-${index}`} className="flex gap-2.5">
+                        <div className="shrink-0 w-14 text-[11px] font-bold text-indigo-700 dark:text-indigo-200 pt-0.5">{formatWidgetValue(item.time)}</div>
+                        <div className="flex-1 rounded-xl px-2.5 py-2 bg-white/80 dark:bg-white/8 border border-white/60 dark:border-white/12">
+                            <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-white">{formatWidgetValue(item.title)}</p>
+                            <p className="text-[11px] sm:text-xs text-slate-600 dark:text-slate-300 mt-0.5">{formatWidgetValue(item.detail)}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+});
+TimelineWidget.displayName = 'TimelineWidget';
+
+const ChecklistWidget = React.memo(({ widget }) => {
+    const items = Array.isArray(widget?.items) ? widget.items : [];
+    if (items.length === 0) return null;
+
+    const priorityBadgeClass = (priority) => {
+        const value = String(priority || '').toLowerCase();
+        if (value === 'high') return 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-200';
+        if (value === 'medium') return 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200';
+        return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200';
+    };
+
+    return (
+        <div className="rounded-2xl border border-emerald-200/60 dark:border-emerald-200/20 bg-gradient-to-br from-emerald-50/90 via-lime-50/85 to-cyan-50/80 dark:from-emerald-500/10 dark:via-lime-500/10 dark:to-cyan-500/10 p-3 mt-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">{widget.title || 'Checklist'}</p>
+            <div className="mt-2 space-y-2">
+                {items.slice(0, 8).map((item, index) => (
+                    <div
+                        key={`${item.text || 'item'}-${index}`}
+                        className="rounded-xl px-2.5 py-2 bg-white/80 dark:bg-white/8 border border-white/60 dark:border-white/12 flex items-start gap-2"
+                    >
+                        <span className="mt-0.5 text-emerald-500">☑️</span>
+                        <div className="flex-1">
+                            <p className="text-xs sm:text-sm text-slate-800 dark:text-white">{formatWidgetValue(item.text)}</p>
+                            {item.priority && (
+                                <span className={`inline-flex mt-1 text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${priorityBadgeClass(item.priority)}`}>
+                                    {String(item.priority).toUpperCase()}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+});
+ChecklistWidget.displayName = 'ChecklistWidget';
+
+const CapabilitiesWidget = React.memo(({ widget }) => {
+    const items = Array.isArray(widget?.items) ? widget.items : [];
+    if (items.length === 0) return null;
+
+    return (
+        <div className="rounded-2xl border border-fuchsia-200/60 dark:border-fuchsia-200/20 bg-gradient-to-br from-fuchsia-50/90 via-rose-50/80 to-violet-50/85 dark:from-fuchsia-500/10 dark:via-rose-500/10 dark:to-violet-500/10 p-3 mt-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-fuchsia-700 dark:text-fuchsia-300">{widget.title || 'Capabilities'}</p>
+            {widget.subtitle && (
+                <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-1">{widget.subtitle}</p>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                {items.slice(0, 8).map((item, index) => (
+                    <div
+                        key={`${item.title || 'capability'}-${index}`}
+                        className="rounded-xl px-2.5 py-2 bg-white/80 dark:bg-white/8 border border-white/60 dark:border-white/12"
+                    >
+                        <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-white">
+                            <span className="mr-1">{item.icon || '✨'}</span>
+                            {formatWidgetValue(item.title)}
+                        </p>
+                        <p className="text-[11px] sm:text-xs text-slate-600 dark:text-slate-300 mt-1">{formatWidgetValue(item.description)}</p>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+});
+CapabilitiesWidget.displayName = 'CapabilitiesWidget';
+
+const ActionChipsWidget = React.memo(({ widget, onWidgetAction }) => {
+    const actions = Array.isArray(widget?.actions) ? widget.actions : [];
+    if (actions.length === 0) return null;
+
+    return (
+        <div className="rounded-2xl border border-cyan-200/60 dark:border-cyan-200/20 bg-gradient-to-br from-cyan-50/90 via-sky-50/80 to-indigo-50/85 dark:from-cyan-500/10 dark:via-sky-500/10 dark:to-indigo-500/10 p-3 mt-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-700 dark:text-cyan-300">{widget.title || 'Quick Actions'}</p>
+            <div className="flex flex-wrap gap-2 mt-2">
+                {actions.slice(0, 8).map((entry, index) => {
+                    const label = entry?.label || `Action ${index + 1}`;
+                    const actionPayload = entry?.action || null;
+                    return (
+                        <button
+                            key={`${label}-${index}`}
+                            type="button"
+                            onClick={() => onWidgetAction?.(actionPayload)}
+                            className="px-2.5 py-1.5 rounded-full text-xs font-semibold text-slate-800 dark:text-slate-100 bg-white/85 dark:bg-white/10 border border-white/70 dark:border-white/15 hover:brightness-105 transition-all"
+                        >
+                            {label}
+                        </button>
+                    );
+                })}
+            </div>
+        </div>
+    );
+});
+ActionChipsWidget.displayName = 'ActionChipsWidget';
+
+const SkillCardsWidget = React.memo(({ widget, onWidgetAction }) => {
+    const cards = Array.isArray(widget?.cards) ? widget.cards : [];
+    if (cards.length === 0) return null;
+
+    return (
+        <div className="rounded-2xl border border-violet-200/60 dark:border-violet-200/20 bg-gradient-to-br from-violet-50/90 via-fuchsia-50/80 to-cyan-50/85 dark:from-violet-500/10 dark:via-fuchsia-500/10 dark:to-cyan-500/10 p-3 mt-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300">{widget.title || 'Adaptive Skills'}</p>
+            {widget.subtitle && (
+                <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-1">{widget.subtitle}</p>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                {cards.slice(0, 6).map((card, index) => (
+                    <div
+                        key={card.id || `${card.title || 'skill'}-${index}`}
+                        className="rounded-xl bg-white/82 dark:bg-white/8 border border-white/65 dark:border-white/14 px-3 py-2"
+                    >
+                        <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100">
+                            <span className="mr-1">{card.icon || '🧩'}</span>
+                            {card.title || 'Skill'}
+                        </p>
+                        {card.description && (
+                            <p className="text-[11px] sm:text-xs text-slate-600 dark:text-slate-300 mt-1">{card.description}</p>
+                        )}
+                        {card.action && (
+                            <button
+                                type="button"
+                                onClick={() => onWidgetAction?.(card.action)}
+                                className="mt-2 inline-flex px-2.5 py-1.5 rounded-full text-[11px] font-semibold text-violet-700 dark:text-violet-200 bg-violet-100/85 dark:bg-violet-500/20 border border-violet-200/70 dark:border-violet-400/25 hover:brightness-105 transition-all"
+                            >
+                                Use skill
+                            </button>
+                        )}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+});
+SkillCardsWidget.displayName = 'SkillCardsWidget';
+
+const AssistantWidgets = React.memo(({ widgets, isUser, onWidgetAction }) => {
+    const normalizedWidgets = useMemo(
+        () => (
+            Array.isArray(widgets)
+                ? widgets
+                    .filter((widget) => widget && typeof widget === 'object')
+                    .filter((widget) => isWidgetTypeSupported(widget.type))
+                    .slice(0, 6)
+                : []
+        ),
+        [widgets]
+    );
+
+    if (isUser || normalizedWidgets.length === 0) return null;
+
+    return (
+        <div className="space-y-2">
+            {normalizedWidgets.map((widget, index) => {
+                const key = widget.id || `${widget.type || 'widget'}-${index}`;
+                if (widget.type === ASSISTANT_WIDGET_TYPES.BAR_CHART) return <ChartWidget key={key} widget={widget} />;
+                if (widget.type === ASSISTANT_WIDGET_TYPES.TABLE) return <TableWidget key={key} widget={widget} />;
+                if (widget.type === ASSISTANT_WIDGET_TYPES.STATS) return <StatsWidget key={key} widget={widget} />;
+                if (widget.type === ASSISTANT_WIDGET_TYPES.TIMELINE) return <TimelineWidget key={key} widget={widget} />;
+                if (widget.type === ASSISTANT_WIDGET_TYPES.CHECKLIST) return <ChecklistWidget key={key} widget={widget} />;
+                if (widget.type === ASSISTANT_WIDGET_TYPES.CAPABILITIES) return <CapabilitiesWidget key={key} widget={widget} />;
+                if (widget.type === ASSISTANT_WIDGET_TYPES.ACTION_CHIPS) return <ActionChipsWidget key={key} widget={widget} onWidgetAction={onWidgetAction} />;
+                if (widget.type === ASSISTANT_WIDGET_TYPES.SKILL_CARDS) return <SkillCardsWidget key={key} widget={widget} onWidgetAction={onWidgetAction} />;
+                return null;
+            })}
+        </div>
+    );
+});
+AssistantWidgets.displayName = 'AssistantWidgets';
+
 // Message Bubble Component
-const MessageBubble = React.memo(({ message, isUser }) => {
+const MessageBubble = React.memo(({ message, isUser, onWidgetAction }) => {
     const [showReactions, setShowReactions] = useState(false);
     const [selectedReaction, setSelectedReaction] = useState(null);
     const formattedContent = useMemo(
@@ -501,6 +937,7 @@ const MessageBubble = React.memo(({ message, isUser }) => {
                         {formattedContent}
                     </ReactMarkdown>
                 </div>
+                <AssistantWidgets widgets={message.widgets} isUser={isUser} onWidgetAction={onWidgetAction} />
 
                 {/* Quick reactions */}
                 {!isUser && showReactions && (
@@ -536,6 +973,7 @@ export default function StudentAIChatPage() {
     const { toast } = useToast();
     const navigate = useNavigate();
     const location = useLocation();
+    const authUser = useSelector((state) => state.auth?.user || null);
 
     // Redux state
     const messages = useSelector(selectMessages);
@@ -554,15 +992,46 @@ export default function StudentAIChatPage() {
     const assistantSaving = useSelector(selectAssistantSaving);
     const assistantName = assistantProfile?.assistant?.assistantName || 'Nova';
     const dailyFocus = assistantProfile?.assistant?.daily?.focusItems || [];
+    const dailyQuickActions = assistantProfile?.assistant?.daily?.quickActions || [];
+    const twinProfile = assistantProfile?.twin || {};
+    const twinRiskLevel = String(twinProfile?.riskLevel || 'low').toLowerCase();
+    const twinConfidencePct = Math.max(0, Math.min(100, Math.round(Number(twinProfile?.confidenceScore || 0.5) * 100)));
     const [isNicknameEditorOpen, setIsNicknameEditorOpen] = useState(false);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [nicknameDraft, setNicknameDraft] = useState(assistantName);
+    const [coachNudge, setCoachNudge] = useState(null);
+    const [isCoachVisible, setIsCoachVisible] = useState(false);
 
     const messagesScrollRef = useRef(null);
     const inputRef = useRef(null);
     const nicknameInputRef = useRef(null);
+    const processedDockNonceRef = useRef(null);
+    const lastInteractionAtRef = useRef(Date.now());
+    const sessionCoachCountRef = useRef(0);
+    const lastConversationsRefreshAtRef = useRef(0);
+    const refreshConversationsTimeoutRef = useRef(null);
     const displayedAssistantName = isNicknameEditorOpen ? (nicknameDraft.trim() || assistantName) : assistantName;
     const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
+    const normalizedRole = useMemo(
+        () => String(authUser?.role || '').trim().toLowerCase(),
+        [authUser?.role]
+    );
+    const isStudentRole = normalizedRole === 'student';
+    const studentCallName = useMemo(() => {
+        const nickname = String(authUser?.nickname || '').trim();
+        if (nickname) return nickname;
+        const name = String(authUser?.name || '').trim();
+        if (!name) return 'there';
+        return name.split(/\s+/)[0] || 'there';
+    }, [authUser?.name, authUser?.nickname]);
+    const assistantSupportTagline = isStudentRole ? 'daily school support' : 'daily work support';
+    const assistantWelcomeSubtitle = isStudentRole
+        ? 'I can help with daily planning, homework strategy, MTSS check-ins, and personal study coaching.'
+        : 'I can help with workday planning, MTSS follow-up, check-in workflow, and role-specific dashboard actions.';
+    const coachStateUserKey = useMemo(() => {
+        const seed = authUser?.email || authUser?.id || authUser?._id || authUser?.username || 'student';
+        return String(seed).replace(/[^a-zA-Z0-9_.@-]/g, '_');
+    }, [authUser?.email, authUser?.id, authUser?._id, authUser?.username]);
 
     // Particles configuration
     const particles = useMemo(() => [
@@ -639,6 +1108,84 @@ export default function StudentAIChatPage() {
         }
     }, [isNicknameEditorOpen]);
 
+    useEffect(() => () => {
+        if (refreshConversationsTimeoutRef.current) {
+            clearTimeout(refreshConversationsTimeoutRef.current);
+            refreshConversationsTimeoutRef.current = null;
+        }
+    }, []);
+
+    useEffect(() => {
+        lastInteractionAtRef.current = Date.now();
+        setIsCoachVisible(false);
+        setCoachNudge(null);
+        sessionCoachCountRef.current = 0;
+    }, [sessionId]);
+
+    useEffect(() => {
+        if (messages.length === 0) {
+            setIsCoachVisible(false);
+            return;
+        }
+        lastInteractionAtRef.current = Date.now();
+        setIsCoachVisible(false);
+    }, [messages.length]);
+
+    useEffect(() => {
+        if (messages.length === 0) return;
+        if (isTyping || isLoading) return;
+        if (inputValue.trim()) return;
+        if (isNicknameEditorOpen || isHistoryOpen) return;
+        if (sessionCoachCountRef.current >= CHAT_COACH_SESSION_LIMIT) return;
+
+        const timer = window.setInterval(() => {
+            if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+            if (!checkNearBottom()) return;
+
+            const now = Date.now();
+            if ((now - lastInteractionAtRef.current) < CHAT_COACH_IDLE_MS) return;
+
+            const persisted = normalizeCoachState(readCoachState(coachStateUserKey));
+            if (persisted.snoozeUntil > now) return;
+            if (persisted.count >= CHAT_COACH_DAILY_LIMIT) return;
+            if (persisted.lastAt && (now - persisted.lastAt) < CHAT_COACH_COOLDOWN_MS) return;
+
+            const payload = buildCoachNudge({
+                assistantName,
+                studentName: studentCallName,
+                focusItems: dailyFocus,
+                quickActions: dailyQuickActions,
+                messages
+            });
+
+            setCoachNudge(payload);
+            setIsCoachVisible(true);
+            sessionCoachCountRef.current += 1;
+            lastInteractionAtRef.current = now;
+
+            writeCoachState(coachStateUserKey, {
+                ...persisted,
+                count: persisted.count + 1,
+                lastAt: now
+            });
+        }, 15000);
+
+        return () => window.clearInterval(timer);
+    }, [
+        assistantName,
+        checkNearBottom,
+        coachStateUserKey,
+        dailyFocus,
+        dailyQuickActions,
+        inputValue,
+        isHistoryOpen,
+        isLoading,
+        isNicknameEditorOpen,
+        isTyping,
+        messages,
+        studentCallName
+    ]);
+
     // Reset buddy animation after it completes
     useEffect(() => {
         if (buddyAnimation && buddyAnimation !== 'idle' && buddyAnimation !== 'pulse') {
@@ -649,14 +1196,41 @@ export default function StudentAIChatPage() {
         }
     }, [buddyAnimation, dispatch]);
 
+    const scheduleConversationsRefresh = useCallback((force = false) => {
+        const now = Date.now();
+        const elapsed = now - lastConversationsRefreshAtRef.current;
+
+        if (refreshConversationsTimeoutRef.current) {
+            clearTimeout(refreshConversationsTimeoutRef.current);
+            refreshConversationsTimeoutRef.current = null;
+        }
+
+        if (force || elapsed >= CONVERSATIONS_REFRESH_COOLDOWN_MS) {
+            lastConversationsRefreshAtRef.current = now;
+            dispatch(loadConversations());
+            return;
+        }
+
+        const remaining = CONVERSATIONS_REFRESH_COOLDOWN_MS - elapsed;
+        refreshConversationsTimeoutRef.current = setTimeout(() => {
+            lastConversationsRefreshAtRef.current = Date.now();
+            dispatch(loadConversations());
+            refreshConversationsTimeoutRef.current = null;
+        }, remaining);
+    }, [dispatch]);
+
     // Handlers (memoized for performance)
     const handleStartNewChat = useCallback(() => {
+        setIsCoachVisible(false);
+        setCoachNudge(null);
+        lastInteractionAtRef.current = Date.now();
+        sessionCoachCountRef.current = 0;
         dispatch(startNewConversation())
             .unwrap()
-            .then(async () => {
+            .then(() => {
                 setAutoScrollEnabled(true);
                 setIsHistoryOpen(false);
-                await dispatch(loadConversations());
+                scheduleConversationsRefresh(true);
                 toast({
                     title: "New chat started! 🎉",
                     description: "Start chatting with your AI Assistant"
@@ -669,56 +1243,145 @@ export default function StudentAIChatPage() {
                     variant: "destructive"
                 });
             });
-    }, [dispatch, toast]);
+    }, [dispatch, scheduleConversationsRefresh, toast]);
 
     const handleClientAction = useCallback((clientAction) => {
-        if (!clientAction || clientAction.type !== 'navigate') return;
-        const targetPath = String(clientAction.navigateTo || '').trim();
-        if (!targetPath) return;
-        if (location.pathname === targetPath) return;
+        const safeAction = sanitizeAssistantNavigateAction(clientAction, normalizedRole);
+        if (!safeAction) return false;
 
-        const actionLabel = clientAction.label || 'requested page';
+        const targetPath = String(safeAction.navigateTo || '').trim();
+        if (!targetPath) return false;
+        if (location.pathname === targetPath) return true;
+
+        const workspaceLabel = isStudentRole ? 'student workspace' : 'your workspace';
+
+        const actionLabel = safeAction.label || 'requested page';
         toast({
             title: `Opening ${actionLabel}`,
-            description: 'Redirecting you now...'
+            description: `Redirecting inside ${workspaceLabel}...`
         });
 
+        dispatch(setBuddyAnimation('wave'));
         navigate(targetPath, {
             state: {
                 fromAIChat: true,
-                aiIntent: clientAction.intent || null
+                aiIntent: safeAction.intent || null
             }
         });
-    }, [location.pathname, navigate, toast]);
+        return true;
+    }, [dispatch, isStudentRole, location.pathname, navigate, normalizedRole, toast]);
 
-    const handleSendMessage = useCallback((e) => {
-        e.preventDefault();
-        if (!inputValue.trim() || isLoading) return;
+    const handleWidgetAction = useCallback((action) => {
+        if (!action || typeof action !== 'object') return;
+        const type = String(action.type || '').trim().toLowerCase();
 
-        const userMessage = inputValue.trim();
+        if (type === 'navigate') {
+            handleClientAction({
+                ...action,
+                type: 'navigate'
+            });
+            return;
+        }
+
+        if (type === 'prefill') {
+            const value = String(action.value || action.message || '').trim();
+            if (!value) return;
+            dispatch(setInputValue(value));
+            inputRef.current?.focus();
+        }
+    }, [dispatch, handleClientAction]);
+
+    const dismissCoachNudge = useCallback((withSnooze = false) => {
+        setIsCoachVisible(false);
+        lastInteractionAtRef.current = Date.now();
+
+        if (!withSnooze) return;
+
+        const persisted = normalizeCoachState(readCoachState(coachStateUserKey));
+        writeCoachState(coachStateUserKey, {
+            ...persisted,
+            snoozeUntil: Date.now() + CHAT_COACH_SNOOZE_MS
+        });
+    }, [coachStateUserKey]);
+
+    const applyCoachNudge = useCallback(() => {
+        if (!coachNudge?.suggestion) return;
+        dispatch(setInputValue(coachNudge.suggestion));
+        setIsCoachVisible(false);
+        lastInteractionAtRef.current = Date.now();
+        inputRef.current?.focus();
+    }, [coachNudge, dispatch]);
+
+    const dispatchChatMessage = useCallback((rawMessage) => {
+        const userMessage = String(rawMessage || '').trim();
+        if (!userMessage || isLoading) return;
+
         setAutoScrollEnabled(true);
-
-        // Optimistic update
+        setIsCoachVisible(false);
+        lastInteractionAtRef.current = Date.now();
         dispatch(addUserMessage(userMessage));
 
-        // Send to API
         dispatch(sendMessage({ message: userMessage, sessionId }))
             .unwrap()
             .then((payload) => {
-                dispatch(loadConversations());
-                handleClientAction(payload?.clientAction);
+                scheduleConversationsRefresh(false);
+                const navigatedByServerAction = handleClientAction(payload?.clientAction);
+
+                if (!navigatedByServerAction) {
+                    const localAction = detectAssistantNavigationIntent(userMessage, normalizedRole);
+                    if (localAction) {
+                        handleClientAction(localAction);
+                    }
+                }
             })
             .catch(() => { });
-    }, [inputValue, isLoading, sessionId, dispatch, handleClientAction]);
+    }, [dispatch, handleClientAction, isLoading, normalizedRole, scheduleConversationsRefresh, sessionId]);
+
+    useEffect(() => {
+        const routeState = location.state || {};
+        const dockNonce = routeState.dockNonce;
+        const prefillMessage = String(routeState.prefillMessage || '').trim();
+        const autoSendFromDock = Boolean(routeState.autoSendFromDock);
+
+        if (!dockNonce || processedDockNonceRef.current === dockNonce) {
+            return;
+        }
+        processedDockNonceRef.current = dockNonce;
+
+        if (prefillMessage) {
+            if (autoSendFromDock && !isLoading) {
+                dispatchChatMessage(prefillMessage);
+            } else {
+                dispatch(setInputValue(prefillMessage));
+                inputRef.current?.focus();
+            }
+        }
+
+        const restState = { ...routeState };
+        delete restState.prefillMessage;
+        delete restState.autoSendFromDock;
+        delete restState.dockNonce;
+        const nextState = Object.keys(restState).length > 0 ? restState : null;
+        navigate(location.pathname, { replace: true, state: nextState });
+    }, [dispatch, dispatchChatMessage, isLoading, location.pathname, location.state, navigate]);
+
+    const handleSendMessage = useCallback((e) => {
+        e.preventDefault();
+        dispatchChatMessage(inputValue);
+    }, [dispatchChatMessage, inputValue]);
 
     const handleInputChange = useCallback((e) => {
+        lastInteractionAtRef.current = Date.now();
+        if (isCoachVisible) {
+            setIsCoachVisible(false);
+        }
         dispatch(setInputValue(e.target.value));
 
         // Trigger buddy animation on typing
         if (e.target.value && !buddyAnimation) {
             dispatch(setBuddyAnimation('pulse'));
         }
-    }, [dispatch, buddyAnimation]);
+    }, [dispatch, buddyAnimation, isCoachVisible]);
 
     const handleToggleSound = useCallback(() => {
         dispatch(toggleSound());
@@ -727,6 +1390,10 @@ export default function StudentAIChatPage() {
     const handleOpenConversation = useCallback((targetSessionId) => {
         if (!targetSessionId || historyLoading) return;
         setAutoScrollEnabled(true);
+        setIsCoachVisible(false);
+        setCoachNudge(null);
+        lastInteractionAtRef.current = Date.now();
+        sessionCoachCountRef.current = 0;
         dispatch(loadConversationHistory({ sessionId: targetSessionId, limit: 120 }));
         setIsHistoryOpen(false);
     }, [dispatch, historyLoading]);
@@ -815,12 +1482,12 @@ export default function StudentAIChatPage() {
 
     // Quick suggestions
     const quickSuggestions = useMemo(() => [
-        ...(assistantProfile?.assistant?.daily?.quickActions || []),
+        ...dailyQuickActions,
         'Help me make a study plan for today',
         'Explain this topic step by step',
         'Quiz me in 5 quick questions',
         'Check my MTSS progress'
-    ].filter((item, index, arr) => arr.indexOf(item) === index).slice(0, 6), [assistantProfile]);
+    ].filter((item, index, arr) => arr.indexOf(item) === index).slice(0, 6), [dailyQuickActions]);
 
     const quickSuggestionStyles = useMemo(() => ([
         'bg-gradient-to-r from-cyan-300/80 to-sky-200/85 text-sky-950',
@@ -830,6 +1497,12 @@ export default function StudentAIChatPage() {
         'bg-gradient-to-r from-indigo-300/80 to-violet-200/85 text-violet-950',
         'bg-gradient-to-r from-fuchsia-300/80 to-pink-200/85 text-fuchsia-950'
     ]), []);
+
+    const twinRiskBadgeClass = useMemo(() => {
+        if (twinRiskLevel === 'high') return 'from-rose-100/90 to-red-100/85 dark:from-rose-500/20 dark:to-red-500/20 border-rose-200/55 dark:border-rose-300/25 text-rose-700 dark:text-rose-200';
+        if (twinRiskLevel === 'medium') return 'from-amber-100/90 to-orange-100/85 dark:from-amber-500/20 dark:to-orange-500/20 border-amber-200/55 dark:border-amber-300/25 text-amber-700 dark:text-amber-200';
+        return 'from-emerald-100/90 to-lime-100/85 dark:from-emerald-500/20 dark:to-lime-500/20 border-emerald-200/55 dark:border-emerald-300/25 text-emerald-700 dark:text-emerald-200';
+    }, [twinRiskLevel]);
 
     return (
         <div className="chat-bg chat-font h-[100dvh] min-h-screen relative overflow-x-hidden">
@@ -1009,7 +1682,7 @@ export default function StudentAIChatPage() {
                                                 ? 'Loading conversation context...'
                                                 : assistantLoading
                                                     ? 'Preparing your personal assistant...'
-                                                    : `Call me ${displayedAssistantName}. Your personal AI assistant for daily school support`}
+                                                    : `Call me ${displayedAssistantName}. Your personal AI assistant for ${assistantSupportTagline}`}
                                     </p>
                                     <div className="mt-2 flex items-center gap-2 flex-wrap">
                                         <button
@@ -1021,6 +1694,10 @@ export default function StudentAIChatPage() {
                                             <span>Nickname: {assistantName}</span>
                                             <Pencil className="w-3.5 h-3.5" />
                                         </button>
+                                        <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full bg-gradient-to-r border backdrop-blur-sm ${twinRiskBadgeClass}`}>
+                                            <Sparkles className="w-3.5 h-3.5" />
+                                            Twin: {twinRiskLevel} risk • {twinConfidencePct}% confidence
+                                        </span>
                                         {/* <span className="chat-pill-glow inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full bg-gradient-to-r from-lime-100/85 to-emerald-100/80 dark:from-lime-400/18 dark:to-emerald-400/16 border border-lime-200/50 dark:border-lime-200/20 text-emerald-700 dark:text-emerald-200">
                                             <Sparkles className="w-3.5 h-3.5" />
                                             Cheer Mode
@@ -1082,7 +1759,7 @@ export default function StudentAIChatPage() {
                                     Hi! I&apos;m your AI Assistant. You can call me {displayedAssistantName}. 👋
                                 </h2>
                                 <p className="text-gray-600 dark:text-gray-400 mb-6 sm:mb-8 max-w-md mx-auto px-4">
-                                    I can help with daily planning, homework strategy, MTSS check-ins, and personal study coaching.
+                                    {assistantWelcomeSubtitle}
                                 </p>
 
                                 {dailyFocus.length > 0 && (
@@ -1122,7 +1799,11 @@ export default function StudentAIChatPage() {
                                         className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} ${message.role === 'user' ? 'message-user' : 'message-assistant'}`}
                                     >
                                         <div className={`max-w-[85%] sm:max-w-[75%]`}>
-                                            <MessageBubble message={message} isUser={message.role === 'user'} />
+                                            <MessageBubble
+                                                message={message}
+                                                isUser={message.role === 'user'}
+                                                onWidgetAction={handleWidgetAction}
+                                            />
                                             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 px-2">
                                                 {new Date(message.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                                             </p>
@@ -1149,6 +1830,53 @@ export default function StudentAIChatPage() {
                         )}
                     </div>
                 </div>
+
+                <AnimatePresence>
+                    {isCoachVisible && coachNudge && messages.length > 0 && !isTyping && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                            transition={{ duration: 0.2 }}
+                            className="px-4 pb-2"
+                        >
+                            <div className="max-w-3xl mx-auto">
+                                <div className="rounded-2xl border border-cyan-200/55 dark:border-cyan-200/20 bg-gradient-to-r from-white/92 via-cyan-50/88 to-pink-50/88 dark:from-slate-900/76 dark:via-cyan-500/10 dark:to-pink-500/10 backdrop-blur-md px-3 py-2.5 sm:px-4 sm:py-3 shadow-[0_12px_28px_rgba(6,182,212,0.14)]">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="min-w-0">
+                                            <p className="text-xs font-extrabold text-cyan-700 dark:text-cyan-300">{coachNudge.title}</p>
+                                            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-0.5">{coachNudge.text}</p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => dismissCoachNudge(false)}
+                                            className="p-1 rounded-md text-slate-500 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                                            aria-label="Dismiss coach suggestion"
+                                        >
+                                            <X className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+                                    <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
+                                        <button
+                                            type="button"
+                                            onClick={applyCoachNudge}
+                                            className="px-3 py-1.5 rounded-full text-xs font-semibold text-white bg-gradient-to-r from-cyan-500 via-indigo-500 to-pink-500 hover:brightness-105 transition-all"
+                                        >
+                                            Use this prompt
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => dismissCoachNudge(true)}
+                                            className="px-3 py-1.5 rounded-full text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white/85 dark:bg-white/10 border border-slate-200/70 dark:border-white/15 hover:brightness-105 transition-all"
+                                        >
+                                            Snooze
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* Input area */}
                 <div className="shrink-0 p-4 border-t border-cyan-200/35 dark:border-cyan-200/15 bg-white/35 dark:bg-black/25 backdrop-blur-md">
