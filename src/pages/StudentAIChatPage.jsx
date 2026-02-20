@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Sparkles, MessageCircle, Plus, Loader2, Volume2, VolumeX, Pencil, Check, X, PanelLeft, PanelLeftClose, History, Clock3 } from 'lucide-react';
+import { Send, Sparkles, Plus, Loader2, Volume2, VolumeX, Pencil, Check, X, PanelLeft, PanelLeftClose, History, Clock3 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -41,6 +41,7 @@ import {
     selectAssistantLoading,
     selectAssistantSaving
 } from '@/store/slices/aiChatSlice';
+import aiChatService from '@/services/aiChatService';
 
 // Scoped styles for chat page (Hub-style design + animations)
 const ChatScopedStyles = () => (
@@ -991,8 +992,18 @@ export default function StudentAIChatPage() {
     const assistantLoading = useSelector(selectAssistantLoading);
     const assistantSaving = useSelector(selectAssistantSaving);
     const assistantName = assistantProfile?.assistant?.assistantName || 'Nova';
-    const dailyFocus = assistantProfile?.assistant?.daily?.focusItems || [];
-    const dailyQuickActions = assistantProfile?.assistant?.daily?.quickActions || [];
+    const dailyFocus = useMemo(
+        () => (Array.isArray(assistantProfile?.assistant?.daily?.focusItems)
+            ? assistantProfile.assistant.daily.focusItems
+            : []),
+        [assistantProfile]
+    );
+    const dailyQuickActions = useMemo(
+        () => (Array.isArray(assistantProfile?.assistant?.daily?.quickActions)
+            ? assistantProfile.assistant.daily.quickActions
+            : []),
+        [assistantProfile]
+    );
     const twinProfile = assistantProfile?.twin || {};
     const twinRiskLevel = String(twinProfile?.riskLevel || 'low').toLowerCase();
     const twinConfidencePct = Math.max(0, Math.min(100, Math.round(Number(twinProfile?.confidenceScore || 0.5) * 100)));
@@ -1006,7 +1017,7 @@ export default function StudentAIChatPage() {
     const inputRef = useRef(null);
     const nicknameInputRef = useRef(null);
     const processedDockNonceRef = useRef(null);
-    const lastInteractionAtRef = useRef(Date.now());
+    const lastInteractionAtRef = useRef(0);
     const sessionCoachCountRef = useRef(0);
     const lastConversationsRefreshAtRef = useRef(0);
     const refreshConversationsTimeoutRef = useRef(null);
@@ -1044,6 +1055,10 @@ export default function StudentAIChatPage() {
         { delay: 3, size: 'sm', type: 'cross', top: '55%', left: '75%' },
         { delay: 0.8, size: 'xs', type: 'diamond', top: '35%', left: '25%' }
     ], []);
+
+    useEffect(() => {
+        lastInteractionAtRef.current = Date.now();
+    }, []);
 
     const scrollToBottom = useCallback((behavior = 'smooth') => {
         const element = messagesScrollRef.current;
@@ -1271,6 +1286,176 @@ export default function StudentAIChatPage() {
         return true;
     }, [dispatch, isStudentRole, location.pathname, navigate, normalizedRole, toast]);
 
+    const buildCreateInterventionPayload = useCallback((seedPayload = {}) => {
+        if (typeof window === 'undefined') return null;
+        const payload = { ...(seedPayload || {}) };
+        const studentOptions = Array.isArray(payload.studentOptions) ? payload.studentOptions : [];
+        delete payload.studentOptions;
+
+        if (!payload.studentId) {
+            if (studentOptions.length > 0) {
+                const listText = studentOptions
+                    .slice(0, 8)
+                    .map((student, index) => {
+                        const gradeClass = [student.grade, student.className].filter(Boolean).join(' / ');
+                        return `${index + 1}. ${student.name || 'Student'}${gradeClass ? ` (${gradeClass})` : ''} [${student.id}]`;
+                    })
+                    .join('\n');
+                const studentInput = window.prompt(
+                    `Select student by number or paste Student ID:\n${listText}`,
+                    ''
+                );
+                if (studentInput === null) return null;
+                const raw = String(studentInput || '').trim();
+                if (!raw) return null;
+                const selectedNumber = Number(raw);
+                if (Number.isFinite(selectedNumber) && selectedNumber >= 1 && selectedNumber <= studentOptions.length) {
+                    payload.studentId = String(studentOptions[selectedNumber - 1]?.id || '').trim();
+                } else {
+                    payload.studentId = raw;
+                }
+            } else {
+                const studentIdInput = window.prompt('Enter Student ID for intervention submission:', '');
+                if (studentIdInput === null) return null;
+                payload.studentId = String(studentIdInput || '').trim();
+            }
+        }
+
+        if (!payload.studentId) return null;
+
+        const tierInput = window.prompt('Tier (tier1/tier2/tier3):', String(payload.tier || 'tier2'));
+        if (tierInput === null) return null;
+        const normalizedTier = String(tierInput || 'tier2').toLowerCase().replace(/\s+/g, '');
+        payload.tier = normalizedTier.startsWith('tier') ? normalizedTier : `tier${normalizedTier || '2'}`;
+
+        const focusInput = window.prompt(
+            'Focus areas (comma separated):',
+            Array.isArray(payload.focusAreas) ? payload.focusAreas.join(', ') : String(payload.focusAreas || payload.focusArea || '')
+        );
+        if (focusInput === null) return null;
+        payload.focusAreas = String(focusInput || '')
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean);
+
+        const goalInput = window.prompt('Primary goal (optional):', String(payload.goal || ''));
+        if (goalInput === null) return null;
+        payload.goal = String(goalInput || '').trim();
+
+        const notesInput = window.prompt('Notes (optional):', String(payload.notes || ''));
+        if (notesInput === null) return null;
+        payload.notes = String(notesInput || '').trim();
+
+        return payload;
+    }, []);
+
+    const buildProgressPayload = useCallback((seedPayload = {}) => {
+        if (typeof window === 'undefined') return null;
+        const payload = { ...(seedPayload || {}) };
+        const assignmentOptions = Array.isArray(payload.assignmentOptions) ? payload.assignmentOptions : [];
+        delete payload.assignmentOptions;
+
+        if (!payload.assignmentId) {
+            if (assignmentOptions.length > 0) {
+                const listText = assignmentOptions
+                    .slice(0, 8)
+                    .map((assignment, index) => (
+                        `${index + 1}. ${assignment.studentName || 'Student'} | ${assignment.tier || 'Tier'} [${assignment.id}]`
+                    ))
+                    .join('\n');
+                const assignmentInput = window.prompt(
+                    `Select assignment by number or paste Assignment ID:\n${listText}`,
+                    ''
+                );
+                if (assignmentInput === null) return null;
+                const raw = String(assignmentInput || '').trim();
+                if (!raw) return null;
+                const selectedNumber = Number(raw);
+                if (Number.isFinite(selectedNumber) && selectedNumber >= 1 && selectedNumber <= assignmentOptions.length) {
+                    payload.assignmentId = String(assignmentOptions[selectedNumber - 1]?.id || '').trim();
+                } else {
+                    payload.assignmentId = raw;
+                }
+            } else {
+                const assignmentIdInput = window.prompt('Enter Mentor Assignment ID:', '');
+                if (assignmentIdInput === null) return null;
+                payload.assignmentId = String(assignmentIdInput || '').trim();
+            }
+        }
+
+        if (!payload.assignmentId) return null;
+
+        const summaryInput = window.prompt('Progress summary (required):', String(payload.summary || 'Progress update'));
+        if (summaryInput === null) return null;
+        payload.summary = String(summaryInput || '').trim();
+        if (!payload.summary) return null;
+
+        const nextStepsInput = window.prompt('Next steps (optional):', String(payload.nextSteps || ''));
+        if (nextStepsInput === null) return null;
+        payload.nextSteps = String(nextStepsInput || '').trim();
+
+        const valueInput = window.prompt('Progress value (optional number):', payload.value != null ? String(payload.value) : '');
+        if (valueInput === null) return null;
+        const parsedValue = Number(String(valueInput || '').trim());
+        payload.value = Number.isFinite(parsedValue) ? parsedValue : undefined;
+
+        const unitInput = window.prompt('Progress unit (optional):', String(payload.unit || payload.scoreUnit || 'score'));
+        if (unitInput === null) return null;
+        payload.unit = String(unitInput || '').trim() || 'score';
+
+        const celebrationInput = window.prompt('Celebration note (optional):', String(payload.celebration || ''));
+        if (celebrationInput === null) return null;
+        payload.celebration = String(celebrationInput || '').trim();
+
+        return payload;
+    }, []);
+
+    const handleExecuteOperation = useCallback(async (action = {}) => {
+        const operation = String(action.operation || '').trim();
+        if (!operation) return;
+
+        if (action.requireConfirmation !== false) {
+            const confirmed = window.confirm(String(action.confirmText || 'Run this automation now?'));
+            if (!confirmed) return;
+        }
+
+        let payload = { ...(action.payload || {}) };
+        if (operation === 'create_mtss_intervention') {
+            payload = buildCreateInterventionPayload(payload);
+        } else if (operation === 'append_mtss_progress_checkin') {
+            payload = buildProgressPayload(payload);
+        }
+
+        if (!payload) return;
+
+        try {
+            const result = await aiChatService.executeAssistantOperation(operation, payload, sessionId);
+            dispatch(setBuddyAnimation('celebrate'));
+            toast({
+                title: 'Automation completed',
+                description: String(action.successMessage || result?.message || 'Operation executed successfully.')
+            });
+            if (sessionId) {
+                dispatch(loadConversationHistory({ sessionId, limit: 120 }));
+            }
+            scheduleConversationsRefresh(false);
+        } catch (error) {
+            const message = error?.response?.data?.message || error?.message || action.failureMessage || 'Automation failed.';
+            toast({
+                title: 'Automation failed',
+                description: String(message),
+                variant: 'destructive'
+            });
+        }
+    }, [
+        buildCreateInterventionPayload,
+        buildProgressPayload,
+        dispatch,
+        scheduleConversationsRefresh,
+        sessionId,
+        toast
+    ]);
+
     const handleWidgetAction = useCallback((action) => {
         if (!action || typeof action !== 'object') return;
         const type = String(action.type || '').trim().toLowerCase();
@@ -1288,8 +1473,13 @@ export default function StudentAIChatPage() {
             if (!value) return;
             dispatch(setInputValue(value));
             inputRef.current?.focus();
+            return;
         }
-    }, [dispatch, handleClientAction]);
+
+        if (type === 'execute_operation') {
+            handleExecuteOperation(action);
+        }
+    }, [dispatch, handleClientAction, handleExecuteOperation]);
 
     const dismissCoachNudge = useCallback((withSnooze = false) => {
         setIsCoachVisible(false);

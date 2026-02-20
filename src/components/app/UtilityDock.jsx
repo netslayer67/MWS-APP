@@ -230,11 +230,6 @@ const getQuickActions = (role = "student") => {
             description: "Log a quick emotional check-in",
             navigateTo: "/emotional-checkin/staff"
         },
-        {
-            label: "MTSS",
-            description: "Open MTSS role workspace",
-            navigateTo: "/mtss"
-        }
     ];
 };
 
