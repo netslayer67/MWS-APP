@@ -35,7 +35,7 @@ const StudentEmotionalCheckinPage = lazy(() => import(/* webpackPrefetch: true *
 const StudentFaceScanPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/StudentFaceScanPage'));
 const StudentManualCheckinPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/StudentManualCheckinPage'));
 const StudentAICheckinPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/StudentAICheckinPage'));
-// const StudentAIChatPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/StudentAIChatPage')); // Phase 2 - Available in staging branch
+const StudentAIChatPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/StudentAIChatPage')); // Phase 2 AI MTSS
 const NotFound = lazy(() => import(/* webpackPrefetch: true */ '@/pages/NotFound'));
 
 // Keep PageTransition memoized for perf if you want
@@ -160,6 +160,7 @@ const publicRoutes = [
     />,
     <Route key="mtss-student-portal" path="/mtss/student-portal" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSStudentPortalPage /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
     <Route key="mtss-student-profile" path="/mtss/student/:slug" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSStudentProfilePage /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
+    <Route key="ai-assistant" path="/ai-assistant" element={<ProtectedRoute><MemoizedPageTransition><StudentAIChatPage /></MemoizedPageTransition></ProtectedRoute>} />,
 
     // Student-specific routes
     <Route key="student-support-hub" path="/student/support-hub" element={<ProtectedRoute allowedRoles={['student']}><MemoizedPageTransition><StudentSupportHubPage /></MemoizedPageTransition></ProtectedRoute>} />,
@@ -167,8 +168,7 @@ const publicRoutes = [
     <Route key="student-face-scan" path="/student/emotional-checkin/face-scan" element={<ProtectedRoute allowedRoles={['student']}><MemoizedPageTransition><StudentFaceScanPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="student-manual-checkin" path="/student/emotional-checkin/manual" element={<ProtectedRoute allowedRoles={['student']}><MemoizedPageTransition><StudentManualCheckinPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="student-ai-checkin" path="/student/emotional-checkin/ai" element={<ProtectedRoute allowedRoles={['student']}><MemoizedPageTransition><StudentAICheckinPage /></MemoizedPageTransition></ProtectedRoute>} />,
-    // Phase 2 AI MTSS - Available in staging branch only
-    // <Route key="student-ai-chat" path="/student/ai-chat" element={<ProtectedRoute allowedRoles={['student']}><MemoizedPageTransition><StudentAIChatPage /></MemoizedPageTransition></ProtectedRoute>} />,
+    <Route key="student-ai-chat" path="/student/ai-chat" element={<ProtectedRoute allowedRoles={['student']}><MemoizedPageTransition><StudentAIChatPage /></MemoizedPageTransition></ProtectedRoute>} />, // Phase 2 AI MTSS
 ];
 
 

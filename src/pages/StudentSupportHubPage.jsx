@@ -136,29 +136,29 @@ ScopedStyles.displayName = "ScopedStyles";
 /* Decorative particles — varied shapes spread across the full viewport */
 const particles = [
     // dots
-    { t:'dot', top:'6%',  left:'7%',  sz:8,  cl:'bg-rose-300 dark:bg-rose-500/25',      anim:'shubFloat', dur:4,   del:0 },
-    { t:'dot', top:'14%', right:'10%', sz:6,  cl:'bg-amber-300 dark:bg-amber-500/25',    anim:'shubFloat', dur:5,   del:1 },
-    { t:'dot', top:'38%', left:'4%',   sz:7,  cl:'bg-violet-300 dark:bg-violet-500/25',  anim:'shubFloat', dur:4.5, del:0.5 },
-    { t:'dot', top:'60%', right:'6%',  sz:9,  cl:'bg-sky-300 dark:bg-sky-500/25',        anim:'shubFloat', dur:5.5, del:2 },
-    { t:'dot', top:'80%', left:'12%',  sz:5,  cl:'bg-emerald-300 dark:bg-emerald-500/25',anim:'shubFloat', dur:3.8, del:1.5 },
-    { t:'dot', top:'75%', right:'15%', sz:6,  cl:'bg-orange-300 dark:bg-orange-500/25',  anim:'shubFloat', dur:4.2, del:0.8 },
-    { t:'dot', top:'48%', right:'3%',  sz:5,  cl:'bg-pink-300 dark:bg-pink-500/25',      anim:'shubFloat', dur:5,   del:2.5 },
-    { t:'dot', top:'92%', left:'30%',  sz:7,  cl:'bg-teal-300 dark:bg-teal-500/25',      anim:'shubFloat', dur:4.8, del:1.2 },
+    { t: 'dot', top: '6%', left: '7%', sz: 8, cl: 'bg-rose-300 dark:bg-rose-500/25', anim: 'shubFloat', dur: 4, del: 0 },
+    { t: 'dot', top: '14%', right: '10%', sz: 6, cl: 'bg-amber-300 dark:bg-amber-500/25', anim: 'shubFloat', dur: 5, del: 1 },
+    { t: 'dot', top: '38%', left: '4%', sz: 7, cl: 'bg-violet-300 dark:bg-violet-500/25', anim: 'shubFloat', dur: 4.5, del: 0.5 },
+    { t: 'dot', top: '60%', right: '6%', sz: 9, cl: 'bg-sky-300 dark:bg-sky-500/25', anim: 'shubFloat', dur: 5.5, del: 2 },
+    { t: 'dot', top: '80%', left: '12%', sz: 5, cl: 'bg-emerald-300 dark:bg-emerald-500/25', anim: 'shubFloat', dur: 3.8, del: 1.5 },
+    { t: 'dot', top: '75%', right: '15%', sz: 6, cl: 'bg-orange-300 dark:bg-orange-500/25', anim: 'shubFloat', dur: 4.2, del: 0.8 },
+    { t: 'dot', top: '48%', right: '3%', sz: 5, cl: 'bg-pink-300 dark:bg-pink-500/25', anim: 'shubFloat', dur: 5, del: 2.5 },
+    { t: 'dot', top: '92%', left: '30%', sz: 7, cl: 'bg-teal-300 dark:bg-teal-500/25', anim: 'shubFloat', dur: 4.8, del: 1.2 },
     // rings
-    { t:'ring', top:'10%', left:'20%',  sz:14, cl:'border-rose-300/50 dark:border-rose-500/20',    anim:'shubPulse', dur:5,   del:0.3 },
-    { t:'ring', top:'50%', right:'10%', sz:12, cl:'border-violet-300/50 dark:border-violet-500/20', anim:'shubPulse', dur:6,   del:1.8 },
-    { t:'ring', top:'85%', left:'8%',   sz:10, cl:'border-amber-300/50 dark:border-amber-500/20',  anim:'shubPulse', dur:4.5, del:2.5 },
-    { t:'ring', top:'30%', right:'5%',  sz:16, cl:'border-sky-300/40 dark:border-sky-500/15',      anim:'shubPulse', dur:7,   del:0.8 },
+    { t: 'ring', top: '10%', left: '20%', sz: 14, cl: 'border-rose-300/50 dark:border-rose-500/20', anim: 'shubPulse', dur: 5, del: 0.3 },
+    { t: 'ring', top: '50%', right: '10%', sz: 12, cl: 'border-violet-300/50 dark:border-violet-500/20', anim: 'shubPulse', dur: 6, del: 1.8 },
+    { t: 'ring', top: '85%', left: '8%', sz: 10, cl: 'border-amber-300/50 dark:border-amber-500/20', anim: 'shubPulse', dur: 4.5, del: 2.5 },
+    { t: 'ring', top: '30%', right: '5%', sz: 16, cl: 'border-sky-300/40 dark:border-sky-500/15', anim: 'shubPulse', dur: 7, del: 0.8 },
     // crosses
-    { t:'cross', top:'22%', left:'6%',  sz:10, cl:'bg-fuchsia-300/60 dark:bg-fuchsia-500/20', anim:'shubSpin', dur:12, del:0 },
-    { t:'cross', top:'65%', right:'8%', sz:8,  cl:'bg-emerald-300/60 dark:bg-emerald-500/20', anim:'shubSpin', dur:15, del:2 },
-    { t:'cross', top:'45%', left:'10%', sz:9,  cl:'bg-amber-300/60 dark:bg-amber-500/20',     anim:'shubSpin', dur:18, del:4 },
+    { t: 'cross', top: '22%', left: '6%', sz: 10, cl: 'bg-fuchsia-300/60 dark:bg-fuchsia-500/20', anim: 'shubSpin', dur: 12, del: 0 },
+    { t: 'cross', top: '65%', right: '8%', sz: 8, cl: 'bg-emerald-300/60 dark:bg-emerald-500/20', anim: 'shubSpin', dur: 15, del: 2 },
+    { t: 'cross', top: '45%', left: '10%', sz: 9, cl: 'bg-amber-300/60 dark:bg-amber-500/20', anim: 'shubSpin', dur: 18, del: 4 },
     // diamonds
-    { t:'diamond', top:'16%', right:'18%', sz:8, cl:'bg-orange-300/50 dark:bg-orange-500/20', anim:'shubDrift', dur:6,   del:1 },
-    { t:'diamond', top:'70%', left:'18%',  sz:7, cl:'bg-sky-300/50 dark:bg-sky-500/20',      anim:'shubDrift', dur:7,   del:2.5 },
-    { t:'diamond', top:'55%', left:'25%',  sz:6, cl:'bg-rose-300/50 dark:bg-rose-500/20',    anim:'shubDrift', dur:5.5, del:0.5 },
-    { t:'diamond', top:'35%', right:'15%', sz:5, cl:'bg-yellow-300/60 dark:bg-yellow-500/20', anim:'shubPulse', dur:4,  del:1.5 },
-    { t:'diamond', top:'88%', right:'25%', sz:6, cl:'bg-violet-300/50 dark:bg-violet-500/20', anim:'shubDrift', dur:6,  del:3 },
+    { t: 'diamond', top: '16%', right: '18%', sz: 8, cl: 'bg-orange-300/50 dark:bg-orange-500/20', anim: 'shubDrift', dur: 6, del: 1 },
+    { t: 'diamond', top: '70%', left: '18%', sz: 7, cl: 'bg-sky-300/50 dark:bg-sky-500/20', anim: 'shubDrift', dur: 7, del: 2.5 },
+    { t: 'diamond', top: '55%', left: '25%', sz: 6, cl: 'bg-rose-300/50 dark:bg-rose-500/20', anim: 'shubDrift', dur: 5.5, del: 0.5 },
+    { t: 'diamond', top: '35%', right: '15%', sz: 5, cl: 'bg-yellow-300/60 dark:bg-yellow-500/20', anim: 'shubPulse', dur: 4, del: 1.5 },
+    { t: 'diamond', top: '88%', right: '25%', sz: 6, cl: 'bg-violet-300/50 dark:bg-violet-500/20', anim: 'shubDrift', dur: 6, del: 3 },
 ];
 
 const Particle = memo(({ p }) => {
@@ -247,10 +247,10 @@ const StudentSupportHubPage = memo(() => {
                         className="flex items-center gap-2 sm:gap-3 mb-7 sm:mb-9"
                     >
                         {[
-                            { emoji: '😊', label: 'Happy',    bg: 'hover:bg-amber-50 dark:hover:bg-amber-500/10' },
-                            { emoji: '😌', label: 'Calm',     bg: 'hover:bg-emerald-50 dark:hover:bg-emerald-500/10' },
+                            { emoji: '😊', label: 'Happy', bg: 'hover:bg-amber-50 dark:hover:bg-amber-500/10' },
+                            { emoji: '😌', label: 'Calm', bg: 'hover:bg-emerald-50 dark:hover:bg-emerald-500/10' },
                             { emoji: '🤔', label: 'Thinking', bg: 'hover:bg-violet-50 dark:hover:bg-violet-500/10' },
-                            { emoji: '💪', label: 'Strong',   bg: 'hover:bg-rose-50 dark:hover:bg-rose-500/10' },
+                            { emoji: '💪', label: 'Strong', bg: 'hover:bg-rose-50 dark:hover:bg-rose-500/10' },
                         ].map((m) => (
                             <button
                                 key={m.emoji}

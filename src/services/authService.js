@@ -15,7 +15,9 @@ const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
     (config) => {
-        startGlobalLoading();
+        if (!config?.skipGlobalLoading) {
+            startGlobalLoading();
+        }
         const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
@@ -23,7 +25,9 @@ api.interceptors.request.use(
         return config;
     },
     (error) => {
-        stopGlobalLoading();
+        if (!error?.config?.skipGlobalLoading) {
+            stopGlobalLoading();
+        }
         return Promise.reject(error);
     }
 );
@@ -31,11 +35,15 @@ api.interceptors.request.use(
 // Response interceptor to handle token expiration
 api.interceptors.response.use(
     (response) => {
-        stopGlobalLoading();
+        if (!response?.config?.skipGlobalLoading) {
+            stopGlobalLoading();
+        }
         return response;
     },
     (error) => {
-        stopGlobalLoading();
+        if (!error?.config?.skipGlobalLoading) {
+            stopGlobalLoading();
+        }
         if (error.response?.status === 401) {
             const msg = error.response?.data?.message || '';
             // Only clear auth for explicit token failures.
