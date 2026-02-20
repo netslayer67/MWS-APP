@@ -1,4 +1,8 @@
 const MAX_WIDGETS = 8;
+const ALLOWED_EXECUTE_OPERATIONS = new Set([
+    'create_mtss_intervention',
+    'append_mtss_progress_checkin'
+]);
 
 const ALLOWED_TYPES = new Set([
     'stats',
@@ -43,6 +47,24 @@ const toText = (value, max = 220) => String(value || '')
 
 const toList = (value) => (Array.isArray(value) ? value : []);
 
+const normalizeOperationPayload = (payload = {}, depth = 0) => {
+    if (depth > 3) return undefined;
+    if (Array.isArray(payload)) {
+        return payload.slice(0, 12).map((entry) => normalizeOperationPayload(entry, depth + 1));
+    }
+    if (payload && typeof payload === 'object') {
+        const normalized = {};
+        Object.entries(payload).slice(0, 20).forEach(([key, value]) => {
+            const safeKey = toText(key, 40);
+            if (!safeKey) return;
+            normalized[safeKey] = normalizeOperationPayload(value, depth + 1);
+        });
+        return normalized;
+    }
+    if (typeof payload === 'number' || typeof payload === 'boolean') return payload;
+    return toText(payload, 240);
+};
+
 const normalizeAction = (action = {}) => {
     const type = toText(action.type, 20).toLowerCase();
     if (type === 'navigate') {
@@ -64,6 +86,20 @@ const normalizeAction = (action = {}) => {
         return {
             type: 'prefill',
             value
+        };
+    }
+
+    if (type === 'execute_operation') {
+        const operation = toText(action.operation, 80).toLowerCase();
+        if (!ALLOWED_EXECUTE_OPERATIONS.has(operation)) return null;
+        return {
+            type: 'execute_operation',
+            operation,
+            payload: normalizeOperationPayload(action.payload || {}),
+            requireConfirmation: action.requireConfirmation !== false,
+            confirmText: toText(action.confirmText || 'Run this automation now?', 180),
+            successMessage: toText(action.successMessage || '', 160),
+            failureMessage: toText(action.failureMessage || '', 160)
         };
     }
 

@@ -45,6 +45,12 @@ export const getAssistantProfile = () =>
 export const updateAssistantProfile = (payload = {}) =>
     api.patch('/ai-chat/assistant-profile', payload, CHAT_REQUEST_CONFIG).then(withData);
 
+/**
+ * Execute whitelisted assistant automation operation
+ */
+export const executeAssistantOperation = (operation, payload = {}, sessionId = null) =>
+    api.post('/ai-chat/execute-operation', { operation, payload, sessionId }, CHAT_REQUEST_CONFIG).then(withData);
+
 export default {
     sendChatMessage,
     getConversationHistory,
@@ -52,5 +58,6 @@ export default {
     startNewConversation,
     archiveConversation,
     getAssistantProfile,
-    updateAssistantProfile
+    updateAssistantProfile,
+    executeAssistantOperation
 };
