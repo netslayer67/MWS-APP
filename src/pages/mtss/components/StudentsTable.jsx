@@ -71,20 +71,20 @@ const StudentsTable = memo(
                             <tr className="border-b border-slate-100 dark:border-slate-800/80">
                                 <th className="py-3.5 w-2" />
                                 {selectable && (
-                                    <th className="py-3.5 pl-2 font-semibold text-left w-12 text-[10px] text-slate-400 dark:text-slate-500 tracking-[0.2em] uppercase">
+                                    <th className="py-3.5 pl-2 font-semibold text-left w-12 text-[10px] text-slate-500 dark:text-slate-300 tracking-[0.2em] uppercase">
                                         Sel
                                     </th>
                                 )}
                                 {HEADER_COLS.map((col) => (
                                     <th
                                         key={col.label}
-                                        className={`py-3.5 font-semibold ${col.align} tracking-[0.18em] uppercase text-[10px] text-slate-400 dark:text-slate-500 ${dense ? "text-[9px]" : ""}`}
+                                        className={`py-3.5 font-semibold ${col.align} tracking-[0.18em] uppercase text-[10px] text-slate-500 dark:text-slate-300 ${dense ? "text-[9px]" : ""}`}
                                     >
                                         {col.label}
                                     </th>
                                 ))}
                                 {showActions && (
-                                    <th className="py-3.5 font-semibold text-center tracking-[0.18em] uppercase text-[10px] text-slate-400 dark:text-slate-500">
+                                    <th className="py-3.5 font-semibold text-center tracking-[0.18em] uppercase text-[10px] text-slate-500 dark:text-slate-300">
                                         Action
                                     </th>
                                 )}

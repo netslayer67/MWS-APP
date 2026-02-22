@@ -2,9 +2,9 @@ import React, { memo } from "react";
 
 export const TierPill = memo(({ tier, compact = false }) => {
     const styles = {
-        "Tier 1": "bg-gradient-to-r from-[#a7f3d0] to-[#34d399] text-emerald-900 border border-emerald/20 shadow-[0_6px_15px_rgba(52,211,153,0.35)] dark:from-[#065f46] dark:to-[#22c55e] dark:text-white",
-        "Tier 2": "bg-gradient-to-r from-[#fb7185] to-[#f97316] text-white border border-rose-200/40 shadow-[0_6px_15px_rgba(249,115,22,0.35)] dark:from-[#be185d] dark:to-[#ea580c]",
-        "Tier 3": "bg-gradient-to-r from-[#fde68a] to-[#fbbf24] text-[#7a3c00] border border-amber-200/50 shadow-[0_6px_15px_rgba(251,191,36,0.35)] dark:text-white dark:from-[#b45309] dark:to-[#fbbf24]",
+        "Tier 1": "bg-gradient-to-r from-[#22c55e] to-[#14b8a6] text-white border border-emerald-300/45 shadow-[0_6px_15px_rgba(16,185,129,0.35)] dark:from-[#047857] dark:to-[#10b981] dark:text-white",
+        "Tier 2": "bg-gradient-to-r from-[#f97316] to-[#ef4444] text-white border border-orange-300/40 shadow-[0_6px_15px_rgba(249,115,22,0.35)] dark:from-[#c2410c] dark:to-[#dc2626]",
+        "Tier 3": "bg-gradient-to-r from-[#f59e0b] to-[#f97316] text-white border border-amber-300/45 shadow-[0_6px_15px_rgba(245,158,11,0.35)] dark:from-[#b45309] dark:to-[#ea580c]",
     };
 
     const sizing = compact ? "text-[10px] px-2.5 py-0.5" : "text-xs px-3 py-1";
@@ -18,11 +18,11 @@ export const TierPill = memo(({ tier, compact = false }) => {
 TierPill.displayName = "TierPill";
 
 export const ProgressBadge = memo(({ status, compact = false }) => {
-    let style = "bg-gradient-to-r from-[#bbf7d0] to-[#34d399] text-emerald-900 border border-emerald/30 dark:text-white";
+    let style = "bg-gradient-to-r from-[#16a34a] to-[#0d9488] text-white border border-emerald-300/45 shadow-[0_6px_12px_rgba(16,185,129,0.3)]";
     if (status === "Needs Attention") {
         style = "bg-gradient-to-r from-[#f87171] to-[#fb7185] text-white border border-rose-200/50 shadow-[0_6px_12px_rgba(248,113,113,0.35)]";
     } else if (status === "Improving") {
-        style = "bg-gradient-to-r from-[#fde68a] to-[#facc15] text-[#7a3c00] border border-amber-200/40 dark:text-white";
+        style = "bg-gradient-to-r from-[#f59e0b] to-[#f97316] text-white border border-amber-300/45 shadow-[0_6px_12px_rgba(249,115,22,0.3)]";
     }
 
     const sizing = compact ? "text-[10px] px-2.5 py-0.5" : "text-xs px-3 py-1";

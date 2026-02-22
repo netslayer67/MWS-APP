@@ -1,13 +1,15 @@
 // ThemeToggle.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import usePreferLowMotion from "@/hooks/usePreferLowMotion";
 import { Sun, Moon } from "lucide-react";
-import { applyThemePreference, getStoredTheme, persistTheme } from "@/lib/theme";
+import { applyThemePreference, emitThemeSpell, getStoredTheme, persistTheme } from "@/lib/theme";
 
 export default function ThemeToggle() {
     const lowMotion = usePreferLowMotion();
     const [theme, setTheme] = useState(() => (typeof window === "undefined" ? "light" : getStoredTheme()));
+    const isFirstSyncRef = useRef(true);
+    const pendingSpellRef = useRef(null);
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -20,7 +22,43 @@ export default function ThemeToggle() {
     useEffect(() => {
         applyThemePreference(theme);
         persistTheme(theme);
+
+        if (isFirstSyncRef.current) {
+            isFirstSyncRef.current = false;
+            return;
+        }
+
+        const pendingSpell = pendingSpellRef.current;
+        if (!pendingSpell) return;
+        emitThemeSpell({
+            theme,
+            x: pendingSpell.x,
+            y: pendingSpell.y,
+            trigger: "theme-toggle"
+        });
+        pendingSpellRef.current = null;
     }, [theme]);
+
+    const handleToggleTheme = useCallback(
+        (event) => {
+            const nextTheme = theme === "dark" ? "light" : "dark";
+            const rect = event?.currentTarget?.getBoundingClientRect?.();
+            pendingSpellRef.current = rect
+                ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
+                : null;
+
+            const withViewTransition = !lowMotion && typeof document !== "undefined" && typeof document.startViewTransition === "function";
+            if (withViewTransition) {
+                document.startViewTransition(() => {
+                    setTheme(nextTheme);
+                });
+                return;
+            }
+
+            setTheme(nextTheme);
+        },
+        [lowMotion, theme]
+    );
 
     return (
         <motion.div
@@ -38,7 +76,7 @@ export default function ThemeToggle() {
 
             {/* toggle button */}
             <motion.button
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                onClick={handleToggleTheme}
                 whileTap={lowMotion ? {} : { scale: 0.9 }}
                 whileHover={lowMotion ? {} : { scale: 1.05 }}
                 transition={lowMotion ? { duration: 0.12 } : { type: "spring", stiffness: 280, damping: 18 }}

@@ -9,10 +9,10 @@
     --background: 32 16% 97%;
     --surface: 32 14% 96%;
     --card: 32 16% 100%;
-    --card-foreground: 210 8% 16%;
-    --foreground: 210 8% 16%;
-    --muted: 220 10% 90%;
-    --muted-foreground: 220 8% 38%;
+    --card-foreground: 222 28% 14%;
+    --foreground: 222 28% 14%;
+    --muted: 216 20% 90%;
+    --muted-foreground: 217 22% 30%;
     /* BRAND */
     --primary: 357 71% 29%;
     --primary-foreground: 0 0% 100%;
@@ -23,14 +23,25 @@
     --emerald-foreground: 0 0% 100%;
     --accent: 18 76% 38%;
     --accent-foreground: 0 0% 98%;
-    --secondary: 219 18% 32%;
+    --secondary: 219 22% 30%;
     --secondary-foreground: 0 0% 98%;
     --destructive: 358 75% 44%;
     --destructive-foreground: 0 0% 98%;
     /* UI */
-    --border: 220 8% 88%;
-    --input: 220 8% 97%;
-    --ring: 357 71% 33%;
+    --border: 220 14% 82%;
+    --input: 220 16% 96%;
+    --ring: 352 78% 42%;
+    /* CONTRAST LAYER TOKENS */
+    --contrast-slate-400: #475569;
+    --contrast-slate-500: #334155;
+    --contrast-slate-600: #1e293b;
+    --contrast-gray-400: #4b5563;
+    --contrast-gray-500: #374151;
+    --contrast-slate-300-dark: #cbd5e1;
+    --contrast-slate-400-dark: #a8b4c7;
+    --contrast-slate-500-dark: #94a3b8;
+    --contrast-gray-300-dark: #d1d5db;
+    --contrast-gray-400-dark: #aab2c4;
     --radius: 14px;
     --transition: 320ms;
     --easing: cubic-bezier(.2, .9, .1, 1);
@@ -99,19 +110,24 @@
 
 /* Dark mode overrides (toggle html.dark) */
 html.dark {
-    --background: 210 12% 7%;
-    --surface: 210 12% 9%;
-    --card: 210 12% 8%;
-    --card-foreground: 210 12% 96%;
-    --foreground: 210 12% 96%;
-    --muted: 210 12% 6%;
-    --muted-foreground: 210 12% 70%;
+    --background: 222 32% 8%;
+    --surface: 222 30% 10%;
+    --card: 222 28% 11%;
+    --card-foreground: 210 20% 96%;
+    --foreground: 210 20% 96%;
+    --muted: 221 22% 14%;
+    --muted-foreground: 214 24% 82%;
+    --primary: 344 82% 64%;
+    --primary-foreground: 222 34% 10%;
     --accent: 18 88% 62%;
     --accent-foreground: 215 14% 12%;
-    --secondary: 212 18% 72%;
-    --secondary-foreground: 214 18% 12%;
+    --secondary: 214 28% 76%;
+    --secondary-foreground: 222 34% 12%;
     --destructive: 356 85% 64%;
     --destructive-foreground: 210 18% 12%;
+    --border: 218 20% 28%;
+    --input: 218 24% 16%;
+    --ring: 190 90% 64%;
     --glass-strength: 0.08;
     --glass-frost: 0.06;
     --glass-roughness: 0.02;
@@ -165,6 +181,227 @@ body {
     -moz-osx-font-smoothing: grayscale;
     transition: background var(--transition) var(--easing), color var(--transition) var(--easing);
     -webkit-tap-highlight-color: transparent;
+}
+
+/* ------------------------- Contrast Harmonization Layer ------------------------- */
+.text-muted-foreground {
+    color: hsl(var(--muted-foreground));
+}
+
+.text-slate-400 {
+    color: var(--contrast-slate-400);
+}
+
+.text-slate-500 {
+    color: var(--contrast-slate-500);
+}
+
+.text-slate-600 {
+    color: var(--contrast-slate-600);
+}
+
+.text-gray-400 {
+    color: var(--contrast-gray-400);
+}
+
+.text-gray-500 {
+    color: var(--contrast-gray-500);
+}
+
+.dark .text-slate-400 {
+    color: var(--contrast-slate-300-dark);
+}
+
+.dark .text-slate-500 {
+    color: var(--contrast-slate-400-dark);
+}
+
+.dark .text-slate-600 {
+    color: var(--contrast-slate-300-dark);
+}
+
+.dark .text-gray-400 {
+    color: var(--contrast-gray-300-dark);
+}
+
+.dark .text-gray-500 {
+    color: var(--contrast-gray-300-dark);
+}
+
+.dark .dark\:text-slate-300 {
+    color: var(--contrast-slate-300-dark);
+}
+
+.dark .dark\:text-slate-400 {
+    color: var(--contrast-slate-400-dark);
+}
+
+.dark .dark\:text-slate-500 {
+    color: var(--contrast-slate-500-dark);
+}
+
+.dark .dark\:text-gray-300 {
+    color: var(--contrast-gray-300-dark);
+}
+
+.dark .dark\:text-gray-400 {
+    color: var(--contrast-gray-400-dark);
+}
+
+/* ------------------------- Theme Spell Transition ------------------------- */
+@keyframes themeSpellAuraLumos {
+    0% { opacity: 0; transform: scale(0.82); }
+    18% { opacity: 0.9; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.28); }
+}
+
+@keyframes themeSpellAuraNox {
+    0% { opacity: 0; transform: scale(1.24); }
+    24% { opacity: 0.82; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.84); }
+}
+
+@keyframes themeSpellSpark {
+    0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--spark-angle)) translateX(0) scale(0.35); }
+    20% { opacity: 0.9; }
+    100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--spark-angle)) translateX(var(--spark-distance)) scale(0.05); }
+}
+
+@keyframes themeSpellBubbleIn {
+    0% { opacity: 0; transform: translateY(12px) scale(0.92); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.theme-spell-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 70;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.theme-spell-aura {
+    position: absolute;
+    inset: -24%;
+    background:
+        radial-gradient(420px circle at var(--spell-x) var(--spell-y), rgba(254, 240, 138, 0.62) 0%, rgba(252, 211, 77, 0.4) 26%, rgba(125, 211, 252, 0.16) 44%, rgba(255, 255, 255, 0) 72%),
+        radial-gradient(860px circle at var(--spell-x) var(--spell-y), rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0) 66%);
+    filter: saturate(1.08);
+    animation: themeSpellAuraLumos 1020ms cubic-bezier(0.2, 0.75, 0.28, 1) forwards;
+}
+
+.theme-spell-layer--nox .theme-spell-aura {
+    background:
+        radial-gradient(420px circle at var(--spell-x) var(--spell-y), rgba(15, 23, 42, 0.64) 0%, rgba(30, 41, 59, 0.55) 28%, rgba(30, 64, 175, 0.2) 46%, rgba(0, 0, 0, 0) 72%),
+        radial-gradient(860px circle at var(--spell-x) var(--spell-y), rgba(15, 23, 42, 0.46) 0%, rgba(15, 23, 42, 0) 66%);
+    animation: themeSpellAuraNox 980ms cubic-bezier(0.22, 0.74, 0.24, 1) forwards;
+}
+
+.theme-spell-sparks {
+    position: absolute;
+    inset: 0;
+}
+
+.theme-spell-spark {
+    position: absolute;
+    left: var(--spell-x);
+    top: var(--spell-y);
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(251, 191, 36, 0.88));
+    box-shadow: 0 0 12px rgba(251, 191, 36, 0.5);
+    animation: themeSpellSpark 900ms ease-out both;
+    animation-delay: var(--spark-delay);
+}
+
+.theme-spell-layer--nox .theme-spell-spark {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(129, 140, 248, 0.82));
+    box-shadow: 0 0 12px rgba(129, 140, 248, 0.46);
+}
+
+.theme-spell-bubble {
+    position: absolute;
+    left: clamp(12px, calc(var(--spell-x) - 106px), calc(100% - 252px));
+    top: clamp(12px, calc(var(--spell-y) + 48px), calc(100% - 96px));
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    max-width: min(240px, calc(100vw - 24px));
+    border-radius: 18px;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.44);
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(246, 249, 255, 0.86));
+    box-shadow:
+        0 12px 30px rgba(15, 23, 42, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.74);
+    color: #0f172a;
+    animation: themeSpellBubbleIn 280ms ease-out both;
+}
+
+.theme-spell-layer--nox .theme-spell-bubble {
+    border-color: rgba(148, 163, 184, 0.35);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.86));
+    color: #e2e8f0;
+    box-shadow:
+        0 12px 30px rgba(2, 6, 23, 0.55),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.theme-spell-bubble__icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #8b5cf6;
+    background: linear-gradient(135deg, rgba(192, 132, 252, 0.25), rgba(125, 211, 252, 0.22));
+}
+
+.theme-spell-layer--nox .theme-spell-bubble__icon {
+    color: #a5b4fc;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.34), rgba(34, 211, 238, 0.18));
+}
+
+.theme-spell-bubble__copy {
+    min-width: 0;
+}
+
+.theme-spell-bubble__name {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 700;
+    opacity: 0.82;
+    letter-spacing: 0.02em;
+}
+
+.theme-spell-bubble__spell {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.theme-spell-layer--reduced .theme-spell-aura {
+    animation-duration: 420ms;
+}
+
+.theme-spell-layer--reduced .theme-spell-bubble {
+    animation-duration: 180ms;
+}
+
+@media (max-width: 640px) {
+    .theme-spell-bubble {
+        left: 12px;
+        right: 12px;
+        top: auto;
+        bottom: 18px;
+        max-width: none;
+        justify-content: center;
+    }
 }
 
 /* ------------------------- Tiny SVG noise - very small, low-cost ------------------------- */

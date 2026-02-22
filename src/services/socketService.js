@@ -4,10 +4,13 @@ class SocketService {
     constructor() {
         this.socket = null;
         this.isConnected = false;
+        this.personalUserId = null;
+        this.dashboardUserId = null;
+        this.notificationUserId = null;
     }
 
     canEmit() {
-        return Boolean(this.socket && this.isConnected);
+        return Boolean(this.socket);
     }
 
     emit(event, payload) {
@@ -29,7 +32,7 @@ class SocketService {
     }
 
     connect() {
-        if (this.canEmit()) {
+        if (this.socket) {
             return this.socket;
         }
 
@@ -66,10 +69,50 @@ class SocketService {
         this.isConnected = false;
     }
 
-    joinDashboard(userId) { this.emit('join-dashboard', userId); }
-    leaveDashboard() { this.emit('leave-dashboard'); }
-    joinPersonal(userId) { this.emit('join-personal', userId); }
-    leavePersonal() { this.emit('leave-personal'); }
+    joinDashboard(userId) {
+        if (!userId) return;
+        this.dashboardUserId = userId;
+        this.emit('join-dashboard', userId);
+    }
+
+    leaveDashboard(userId) {
+        const targetUserId = userId || this.dashboardUserId;
+        if (!targetUserId) return;
+        this.emit('leave-dashboard', targetUserId);
+        if (String(targetUserId) === String(this.dashboardUserId || '')) {
+            this.dashboardUserId = null;
+        }
+    }
+
+    joinPersonal(userId) {
+        if (!userId) return;
+        this.personalUserId = userId;
+        this.emit('join-personal', userId);
+    }
+
+    leavePersonal(userId) {
+        const targetUserId = userId || this.personalUserId;
+        if (!targetUserId) return;
+        this.emit('leave-personal', targetUserId);
+        if (String(targetUserId) === String(this.personalUserId || '')) {
+            this.personalUserId = null;
+        }
+    }
+
+    joinNotifications(userId) {
+        if (!userId) return;
+        this.notificationUserId = userId;
+        this.emit('join-notifications', userId);
+    }
+
+    leaveNotifications(userId) {
+        const targetUserId = userId || this.notificationUserId;
+        if (!targetUserId) return;
+        this.emit('leave-notifications', targetUserId);
+        if (String(targetUserId) === String(this.notificationUserId || '')) {
+            this.notificationUserId = null;
+        }
+    }
 
     onDashboardUpdate(callback) { this.on('dashboard:update', callback); }
     onNewCheckin(callback) { this.on('dashboard:new-checkin', callback); }
@@ -86,6 +129,15 @@ class SocketService {
     offMtssStudentsChanged(callback) { this.off('mtss:students:changed', callback); }
     onMtssAssignment(callback) { this.on('mtss:assignment', callback); }
     offMtssAssignment(callback) { this.off('mtss:assignment', callback); }
+
+    onNotificationNew(callback) { this.on('notification:new', callback); }
+    offNotificationNew(callback) { this.off('notification:new', callback); }
+    onNotificationUpdated(callback) { this.on('notification:updated', callback); }
+    offNotificationUpdated(callback) { this.off('notification:updated', callback); }
+    onNotificationDeleted(callback) { this.on('notification:deleted', callback); }
+    offNotificationDeleted(callback) { this.off('notification:deleted', callback); }
+    onNotificationBulkRead(callback) { this.on('notification:bulk-read', callback); }
+    offNotificationBulkRead(callback) { this.off('notification:bulk-read', callback); }
 
     offDashboardUpdate(callback) { this.off('dashboard:update', callback); }
     offNewCheckin(callback) { this.off('dashboard:new-checkin', callback); }

@@ -11,7 +11,12 @@
     "lint:strict": "eslint src --ext .js,.jsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint src --ext .js,.jsx --fix",
     "max-lines:report": "node scripts/check-max-lines.mjs --report",
-    "max-lines:check": "node scripts/check-max-lines.mjs"
+    "max-lines:check": "node scripts/check-max-lines.mjs",
+    "engineering:report": "node scripts/check-engineering-mode.mjs --report",
+    "engineering:check": "node scripts/check-engineering-mode.mjs --check",
+    "engineering:sync-overrides": "node scripts/check-engineering-mode.mjs --sync-overrides",
+    "perf:report": "node scripts/perf-report.mjs",
+    "perf:check": "node scripts/perf-report.mjs --check"
   },
   "dependencies": {
     "@mediapipe/camera_utils": "^0.3.1675466862",

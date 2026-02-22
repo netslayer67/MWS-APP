@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchMentorAssignments, fetchMtssStudents } from "@/services/mtssService";
 import {
+    buildStaffGreeting,
+    formatStaffDisplayName,
+    resolveStaffGender,
+} from "@/utils/staffIdentity";
+import {
     buildStatCards,
     buildGradeQueryValues,
     buildClassQueryValues,
@@ -10,30 +15,33 @@ import {
     mergeRosterWithAssignments,
 } from "../utils/teacherDashboardUtils";
 
-const SALUTATION_MAP = {
-    male: "Mr.",
-    female: "Ms.",
-};
-
-const getSalutation = (gender) => SALUTATION_MAP[gender?.toLowerCase?.()] || "";
-
-const buildGreeting = (name) => {
-    const templates = [
-        "Hey %NAME%, let's light up today's boosts.",
-        "Morning %NAME%, ready to spark joyful wins?",
-        "%NAME%, today's plan is set—let's uplift every student.",
-        "Cheers %NAME%, another day to glow-up kids' progress.",
-        "Let's dive in %NAME%, the boost studio is humming.",
-    ];
-    const today = new Date();
-    const index = (today.getDate() + today.getMonth()) % templates.length;
-    return templates[index].replace("%NAME%", name);
-};
+const buildGreeting = (name) =>
+    buildStaffGreeting(name, {
+        morning: [
+            "Good morning %NAME%, ready to spark joyful wins?",
+            "Morning %NAME%, let's light up today's boosts.",
+            "%NAME%, today's plan is set. Let's uplift every student.",
+        ],
+        afternoon: [
+            "Good afternoon %NAME%, ready to keep the momentum strong?",
+            "%NAME%, let's keep this afternoon focused and joyful.",
+            "Afternoon %NAME%, your boost studio is in full flow.",
+        ],
+        evening: [
+            "Good evening %NAME%, let's close today with strong progress.",
+            "Evening %NAME%, time for a calm and focused MTSS wrap-up.",
+            "%NAME%, this evening is perfect for one last student win.",
+        ],
+    });
 
 const normalizeHeroBadge = (user) => {
-    const baseName = user?.username || user?.name || "MTSS Mentor";
-    const salutation = getSalutation(user?.gender);
-    const nameWithTitle = salutation ? `${salutation} ${baseName}` : baseName;
+    const nameWithTitle = formatStaffDisplayName({
+        nickname: user?.nickname,
+        username: user?.username,
+        name: user?.name,
+        gender: resolveStaffGender(user),
+        fallback: "MTSS Mentor",
+    });
     return {
         teacher: nameWithTitle,
         school: user?.jobPosition || user?.unit || "Millennia21 Schools",
@@ -81,13 +89,16 @@ const useTeacherDashboardData = () => {
 
             const assignments = assignmentPayload.assignments || assignmentPayload || [];
             const cards = buildStatCards(assignments);
-            const primaryName = storedUser?.username || storedUser?.name || baseHero.teacher;
-            const primaryGender = storedUser?.gender;
+            const primaryGender = resolveStaffGender(storedUser);
+            const primaryName = storedUser?.nickname || storedUser?.username || storedUser?.name || baseHero.teacher;
             const assignmentSummary = mapAssignmentsToStudents(assignments, primaryName);
             const rosterStudents = rosterPayload?.students || [];
             const mergedStudents = mergeRosterWithAssignments(rosterStudents, assignmentSummary.students, segments);
-            const salutation = getSalutation(primaryGender);
-            const teacherWithTitle = salutation ? `${salutation} ${primaryName}` : primaryName;
+            const teacherWithTitle = formatStaffDisplayName({
+                name: primaryName,
+                gender: primaryGender,
+                fallback: baseHero.teacher || "MTSS Mentor",
+            });
 
             setStatCards(cards);
             const finalStudents = mergedStudents.length ? mergedStudents : assignmentSummary.students;

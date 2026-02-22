@@ -67,8 +67,9 @@ if (violations.length) {
         for (const row of violations) {
             console.error(` - ${formatRelative(row.filePath)} (${row.lines})`);
         }
+        process.exit(1);
     }
-    process.exit(1);
+    process.exit(0);
 }
 
 if (!REPORT_MODE) {

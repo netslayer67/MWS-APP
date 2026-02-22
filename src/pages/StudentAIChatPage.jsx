@@ -1,19 +1,22 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Sparkles, Plus, Loader2, Volume2, VolumeX, Pencil, Check, X, PanelLeft, PanelLeftClose, History, Clock3 } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
-import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { useToast } from "@/components/ui/use-toast";
 import { useDispatch, useSelector } from 'react-redux';
-import { ASSISTANT_WIDGET_TYPES, isWidgetTypeSupported } from '@/features/assistant/runtime/widgetRegistry';
+import MessageStream from '@/features/assistant/chat/MessageStream';
+import useRafThrottle from '@/hooks/useRafThrottle';
 import {
     detectAssistantNavigationIntent,
+    detectAssistantThemeIntent,
     sanitizeAssistantNavigateAction
 } from '@/utils/studentAssistantNavigator';
+import {
+    applyThemePreference,
+    emitThemeSpell,
+    getStoredTheme,
+    persistTheme
+} from '@/lib/theme';
 import {
     sendMessage,
     loadConversations,
@@ -21,8 +24,9 @@ import {
     loadAssistantProfile,
     saveAssistantProfile,
     startNewConversation,
+    addAIMessage,
     addUserMessage,
-    setInputValue,
+    setTyping,
     setBuddyAnimation,
     resetBuddyToIdle,
     toggleSound,
@@ -30,7 +34,6 @@ import {
     selectSessionId,
     selectIsLoading,
     selectIsTyping,
-    selectInputValue,
     selectBuddyExpression,
     selectBuddyAnimation,
     selectSoundEnabled,
@@ -279,16 +282,34 @@ const ChatScopedStyles = () => (
 
         .chat-markdown table {
             width: 100%;
-            margin: 0.5rem 0;
-            border-collapse: collapse;
-            font-size: 0.95em;
+            margin: 0.65rem 0;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 0.92em;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(100, 116, 139, 0.28);
+            border-radius: 0.8rem;
+            overflow: hidden;
+        }
+
+        .dark .chat-markdown table {
+            background: rgba(15, 23, 42, 0.78);
+            border-color: rgba(100, 116, 139, 0.62);
         }
 
         .chat-markdown th,
         .chat-markdown td {
-            border: 1px solid rgba(148, 163, 184, 0.35);
-            padding: 0.35rem 0.45rem;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.34);
+            padding: 0.52rem 0.62rem;
             vertical-align: top;
+            color: rgb(30 41 59);
+            line-height: 1.45;
+        }
+
+        .dark .chat-markdown th,
+        .dark .chat-markdown td {
+            border-bottom-color: rgba(100, 116, 139, 0.55);
+            color: rgb(226 232 240);
         }
 
         .chat-markdown-user a {
@@ -322,22 +343,6 @@ const ChatScopedStyles = () => (
     `}</style>
 );
 
-const markdownSanitizeSchema = {
-    ...defaultSchema,
-    tagNames: [...(defaultSchema.tagNames || []), 'u', 'ins', 'mark'],
-    attributes: {
-        ...(defaultSchema.attributes || {}),
-        a: [...((defaultSchema.attributes && defaultSchema.attributes.a) || []), 'target', 'rel'],
-        code: [...((defaultSchema.attributes && defaultSchema.attributes.code) || []), 'className']
-    }
-};
-
-const preprocessMarkdownContent = (content = '') =>
-    String(content || '')
-        .replace(/\r\n/g, '\n')
-        // Custom underline shorthand: ++text++
-        .replace(/\+\+([^\n+][\s\S]*?)\+\+/g, '<u>$1</u>');
-
 const CHAT_COACH_STORAGE_KEY = 'student_ai_chat_coach_v1';
 const CHAT_COACH_IDLE_MS = 95 * 1000;
 const CHAT_COACH_COOLDOWN_MS = 20 * 60 * 1000;
@@ -345,8 +350,84 @@ const CHAT_COACH_SNOOZE_MS = 2 * 60 * 60 * 1000;
 const CHAT_COACH_DAILY_LIMIT = 4;
 const CHAT_COACH_SESSION_LIMIT = 2;
 const CONVERSATIONS_REFRESH_COOLDOWN_MS = 10000;
+const CHAT_MESSAGE_WINDOW_SIZE = 120;
+const CHAT_MESSAGE_WINDOW_STEP = 80;
+const THEME_COMMAND_TYPING_DELAY_MS = 420;
+const THEME_COMMAND_APPLY_DELAY_MS = 360;
 
 const getTodayKey = () => new Date().toISOString().slice(0, 10);
+const getCurrentTheme = () => {
+    if (typeof document !== 'undefined') {
+        return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    }
+    return getStoredTheme();
+};
+
+const hashSeed = (value = '') => {
+    let hash = 0;
+    const normalized = String(value || '');
+    for (let i = 0; i < normalized.length; i += 1) {
+        hash = ((hash << 5) - hash) + normalized.charCodeAt(i);
+        hash |= 0;
+    }
+    return Math.abs(hash);
+};
+
+const pickThemeReply = (seed, variants = []) => {
+    if (!Array.isArray(variants) || variants.length === 0) return '';
+    return variants[hashSeed(seed) % variants.length];
+};
+
+const buildThemeCommandReply = ({
+    themeIntent,
+    assistantName = 'Nova',
+    isStudentRole = true,
+    studentCallName = 'there',
+    seed = ''
+} = {}) => {
+    const targetTheme = themeIntent?.targetTheme === 'dark' ? 'dark' : 'light';
+    const incantation = String(themeIntent?.incantation || (targetTheme === 'dark' ? 'Nox' : 'Lumos Maxima'));
+
+    const studentOpeners = targetTheme === 'dark'
+        ? [
+            `Okay ${studentCallName}, let's shift your study room into Dark Mode.`,
+            `Great call ${studentCallName}, switching your view to Dark Mode now.`,
+            `Nice choice, I'm dimming the workspace into Dark Mode for better focus.`
+        ]
+        : [
+            `Perfect ${studentCallName}, let's brighten your study space with Light Mode.`,
+            `Great, bringing your workspace back to Light Mode now.`,
+            `Done, we're moving into Light Mode for a brighter session.`
+        ];
+
+    const staffOpeners = targetTheme === 'dark'
+        ? [
+            `Great choice, switching your workspace to Dark Mode now.`,
+            `Absolutely, applying Dark Mode so your dashboard feels calmer.`,
+            `On it, moving your workspace into Dark Mode.`
+        ]
+        : [
+            `Nice, switching your workspace to Light Mode now.`,
+            `Absolutely, bringing your dashboard back to Light Mode.`,
+            `Done, restoring Light Mode for a brighter workspace.`
+        ];
+
+    const noChangeLines = targetTheme === 'dark'
+        ? [
+            `You're already in Dark Mode, but I can refresh it for you.`,
+            `Dark Mode is already active. Recasting for style.`
+        ]
+        : [
+            `You're already in Light Mode, but I can refresh it for you.`,
+            `Light Mode is already active. Recasting for style.`
+        ];
+
+    const noChange = themeIntent?.previousTheme === targetTheme;
+    const openerVariants = noChange ? noChangeLines : (isStudentRole ? studentOpeners : staffOpeners);
+    const opener = pickThemeReply(`${seed}:${assistantName}:${targetTheme}:${themeIntent?.previousTheme || ''}`, openerVariants);
+
+    return `${opener}\n\n${incantation}.`;
+};
 
 const readCoachState = (userKey = 'student') => {
     if (typeof window === 'undefined') {
@@ -515,459 +596,6 @@ const AIBuddy = React.memo(({ expression, animation }) => {
 });
 AIBuddy.displayName = 'AIBuddy';
 
-const formatWidgetValue = (value) => {
-    if (value === null || value === undefined || value === '') return '-';
-    if (typeof value === 'number' && Number.isFinite(value)) return value.toString();
-    return String(value);
-};
-
-const ChartWidget = React.memo(({ widget }) => {
-    const data = Array.isArray(widget?.data) ? widget.data : [];
-    const xKey = widget?.xKey || 'label';
-    const yKey = widget?.yKey || 'value';
-    const yDomain = Array.isArray(widget?.yDomain) && widget.yDomain.length === 2 ? widget.yDomain : [0, 3];
-    const yTicks = Array.isArray(widget?.yTicks) && widget.yTicks.length > 0 ? widget.yTicks : undefined;
-    const gradientId = `chat-widget-gradient-${String(widget?.id || 'chart').replace(/[^a-zA-Z0-9_-]/g, '')}`;
-
-    if (data.length === 0) return null;
-
-    return (
-        <div className="rounded-2xl border border-cyan-200/55 dark:border-cyan-200/20 bg-gradient-to-br from-cyan-50/90 via-sky-50/85 to-violet-50/85 dark:from-cyan-500/10 dark:via-indigo-500/10 dark:to-pink-500/10 p-3 mt-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-700 dark:text-cyan-300">{widget.title || 'Chart'}</p>
-            {widget.subtitle && (
-                <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-1">{widget.subtitle}</p>
-            )}
-            <div className="h-56 mt-2">
-                <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={data} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
-                        <defs>
-                            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.95} />
-                                <stop offset="55%" stopColor="#8b5cf6" stopOpacity={0.9} />
-                                <stop offset="100%" stopColor="#f472b6" stopOpacity={0.85} />
-                            </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(100,116,139,0.25)" vertical={false} />
-                        <XAxis
-                            dataKey={xKey}
-                            tick={{ fontSize: 11, fill: '#334155' }}
-                            axisLine={{ stroke: 'rgba(100,116,139,0.28)' }}
-                            tickLine={false}
-                        />
-                        <YAxis
-                            domain={yDomain}
-                            ticks={yTicks}
-                            allowDecimals={false}
-                            tick={{ fontSize: 11, fill: '#334155' }}
-                            axisLine={{ stroke: 'rgba(100,116,139,0.28)' }}
-                            tickLine={false}
-                        />
-                        <Tooltip
-                            cursor={{ fill: 'rgba(148,163,184,0.12)' }}
-                            contentStyle={{
-                                borderRadius: '0.9rem',
-                                border: '1px solid rgba(148,163,184,0.35)',
-                                background: 'rgba(255,255,255,0.96)',
-                                fontSize: '12px'
-                            }}
-                        />
-                        <Bar dataKey={yKey} radius={[9, 9, 0, 0]} fill={`url(#${gradientId})`} />
-                    </BarChart>
-                </ResponsiveContainer>
-            </div>
-        </div>
-    );
-});
-ChartWidget.displayName = 'ChartWidget';
-
-const TableWidget = React.memo(({ widget }) => {
-    const columns = Array.isArray(widget?.columns) ? widget.columns : [];
-    const rows = Array.isArray(widget?.rows) ? widget.rows : [];
-    if (columns.length === 0 || rows.length === 0) return null;
-
-    return (
-        <div className="rounded-2xl border border-pink-200/55 dark:border-pink-200/25 bg-gradient-to-br from-white/90 via-pink-50/85 to-orange-50/85 dark:from-slate-900/45 dark:via-fuchsia-500/10 dark:to-amber-500/10 p-3 mt-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-pink-700 dark:text-pink-300">{widget.title || 'Table'}</p>
-            {widget.subtitle && (
-                <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-1">{widget.subtitle}</p>
-            )}
-            <div className="overflow-x-auto mt-2 rounded-xl border border-white/45 dark:border-white/10">
-                <table className="min-w-full text-xs sm:text-sm">
-                    <thead className="bg-white/75 dark:bg-white/6">
-                        <tr>
-                            {columns.map((column) => (
-                                <th key={column.key} className="px-2.5 py-2 text-left font-semibold text-slate-700 dark:text-slate-200 whitespace-nowrap">
-                                    {column.label || column.key}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rows.map((row, rowIndex) => (
-                            <tr
-                                key={`row-${rowIndex}`}
-                                className="border-t border-slate-200/70 dark:border-white/10 odd:bg-white/60 even:bg-cyan-50/45 dark:odd:bg-white/4 dark:even:bg-cyan-500/5"
-                            >
-                                {columns.map((column) => (
-                                    <td key={`${rowIndex}-${column.key}`} className="px-2.5 py-2 text-slate-700 dark:text-slate-200 align-top">
-                                        {formatWidgetValue(row?.[column.key])}
-                                    </td>
-                                ))}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    );
-});
-TableWidget.displayName = 'TableWidget';
-
-const StatsWidget = React.memo(({ widget }) => {
-    const items = Array.isArray(widget?.items) ? widget.items : [];
-    if (items.length === 0) return null;
-
-    return (
-        <div className="rounded-2xl border border-lime-200/65 dark:border-lime-200/25 bg-gradient-to-br from-lime-50/90 via-emerald-50/85 to-cyan-50/85 dark:from-lime-500/10 dark:via-emerald-500/10 dark:to-cyan-500/10 p-3 mt-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">{widget.title || 'Snapshot'}</p>
-            {widget.subtitle && (
-                <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-1">{widget.subtitle}</p>
-            )}
-            <div className="grid grid-cols-2 gap-2 mt-2">
-                {items.slice(0, 6).map((item, index) => (
-                    <div
-                        key={`${item.label || 'metric'}-${index}`}
-                        className="rounded-xl bg-white/80 dark:bg-white/8 border border-white/55 dark:border-white/12 px-2.5 py-2"
-                    >
-                        <p className="text-[11px] text-slate-500 dark:text-slate-300">{item.label || 'Metric'}</p>
-                        <p className="text-sm sm:text-base font-bold text-slate-800 dark:text-white">{formatWidgetValue(item.value)}</p>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-});
-StatsWidget.displayName = 'StatsWidget';
-
-const TimelineWidget = React.memo(({ widget }) => {
-    const items = Array.isArray(widget?.items) ? widget.items : [];
-    if (items.length === 0) return null;
-
-    return (
-        <div className="rounded-2xl border border-indigo-200/60 dark:border-indigo-200/20 bg-gradient-to-br from-indigo-50/90 via-cyan-50/85 to-pink-50/80 dark:from-indigo-500/10 dark:via-cyan-500/10 dark:to-pink-500/10 p-3 mt-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-300">{widget.title || 'Timeline'}</p>
-            {widget.subtitle && (
-                <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-1">{widget.subtitle}</p>
-            )}
-            <div className="mt-2 space-y-2">
-                {items.slice(0, 6).map((item, index) => (
-                    <div key={`${item.time || 'time'}-${index}`} className="flex gap-2.5">
-                        <div className="shrink-0 w-14 text-[11px] font-bold text-indigo-700 dark:text-indigo-200 pt-0.5">{formatWidgetValue(item.time)}</div>
-                        <div className="flex-1 rounded-xl px-2.5 py-2 bg-white/80 dark:bg-white/8 border border-white/60 dark:border-white/12">
-                            <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-white">{formatWidgetValue(item.title)}</p>
-                            <p className="text-[11px] sm:text-xs text-slate-600 dark:text-slate-300 mt-0.5">{formatWidgetValue(item.detail)}</p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-});
-TimelineWidget.displayName = 'TimelineWidget';
-
-const ChecklistWidget = React.memo(({ widget }) => {
-    const items = Array.isArray(widget?.items) ? widget.items : [];
-    if (items.length === 0) return null;
-
-    const priorityBadgeClass = (priority) => {
-        const value = String(priority || '').toLowerCase();
-        if (value === 'high') return 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-200';
-        if (value === 'medium') return 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200';
-        return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200';
-    };
-
-    return (
-        <div className="rounded-2xl border border-emerald-200/60 dark:border-emerald-200/20 bg-gradient-to-br from-emerald-50/90 via-lime-50/85 to-cyan-50/80 dark:from-emerald-500/10 dark:via-lime-500/10 dark:to-cyan-500/10 p-3 mt-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">{widget.title || 'Checklist'}</p>
-            <div className="mt-2 space-y-2">
-                {items.slice(0, 8).map((item, index) => (
-                    <div
-                        key={`${item.text || 'item'}-${index}`}
-                        className="rounded-xl px-2.5 py-2 bg-white/80 dark:bg-white/8 border border-white/60 dark:border-white/12 flex items-start gap-2"
-                    >
-                        <span className="mt-0.5 text-emerald-500">☑️</span>
-                        <div className="flex-1">
-                            <p className="text-xs sm:text-sm text-slate-800 dark:text-white">{formatWidgetValue(item.text)}</p>
-                            {item.priority && (
-                                <span className={`inline-flex mt-1 text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${priorityBadgeClass(item.priority)}`}>
-                                    {String(item.priority).toUpperCase()}
-                                </span>
-                            )}
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-});
-ChecklistWidget.displayName = 'ChecklistWidget';
-
-const CapabilitiesWidget = React.memo(({ widget }) => {
-    const items = Array.isArray(widget?.items) ? widget.items : [];
-    if (items.length === 0) return null;
-
-    return (
-        <div className="rounded-2xl border border-fuchsia-200/60 dark:border-fuchsia-200/20 bg-gradient-to-br from-fuchsia-50/90 via-rose-50/80 to-violet-50/85 dark:from-fuchsia-500/10 dark:via-rose-500/10 dark:to-violet-500/10 p-3 mt-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-fuchsia-700 dark:text-fuchsia-300">{widget.title || 'Capabilities'}</p>
-            {widget.subtitle && (
-                <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-1">{widget.subtitle}</p>
-            )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                {items.slice(0, 8).map((item, index) => (
-                    <div
-                        key={`${item.title || 'capability'}-${index}`}
-                        className="rounded-xl px-2.5 py-2 bg-white/80 dark:bg-white/8 border border-white/60 dark:border-white/12"
-                    >
-                        <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-white">
-                            <span className="mr-1">{item.icon || '✨'}</span>
-                            {formatWidgetValue(item.title)}
-                        </p>
-                        <p className="text-[11px] sm:text-xs text-slate-600 dark:text-slate-300 mt-1">{formatWidgetValue(item.description)}</p>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-});
-CapabilitiesWidget.displayName = 'CapabilitiesWidget';
-
-const ActionChipsWidget = React.memo(({ widget, onWidgetAction }) => {
-    const actions = Array.isArray(widget?.actions) ? widget.actions : [];
-    if (actions.length === 0) return null;
-
-    return (
-        <div className="rounded-2xl border border-cyan-200/60 dark:border-cyan-200/20 bg-gradient-to-br from-cyan-50/90 via-sky-50/80 to-indigo-50/85 dark:from-cyan-500/10 dark:via-sky-500/10 dark:to-indigo-500/10 p-3 mt-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-700 dark:text-cyan-300">{widget.title || 'Quick Actions'}</p>
-            <div className="flex flex-wrap gap-2 mt-2">
-                {actions.slice(0, 8).map((entry, index) => {
-                    const label = entry?.label || `Action ${index + 1}`;
-                    const actionPayload = entry?.action || null;
-                    return (
-                        <button
-                            key={`${label}-${index}`}
-                            type="button"
-                            onClick={() => onWidgetAction?.(actionPayload)}
-                            className="px-2.5 py-1.5 rounded-full text-xs font-semibold text-slate-800 dark:text-slate-100 bg-white/85 dark:bg-white/10 border border-white/70 dark:border-white/15 hover:brightness-105 transition-all"
-                        >
-                            {label}
-                        </button>
-                    );
-                })}
-            </div>
-        </div>
-    );
-});
-ActionChipsWidget.displayName = 'ActionChipsWidget';
-
-const SkillCardsWidget = React.memo(({ widget, onWidgetAction }) => {
-    const cards = Array.isArray(widget?.cards) ? widget.cards : [];
-    if (cards.length === 0) return null;
-
-    return (
-        <div className="rounded-2xl border border-violet-200/60 dark:border-violet-200/20 bg-gradient-to-br from-violet-50/90 via-fuchsia-50/80 to-cyan-50/85 dark:from-violet-500/10 dark:via-fuchsia-500/10 dark:to-cyan-500/10 p-3 mt-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300">{widget.title || 'Adaptive Skills'}</p>
-            {widget.subtitle && (
-                <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-1">{widget.subtitle}</p>
-            )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                {cards.slice(0, 6).map((card, index) => (
-                    <div
-                        key={card.id || `${card.title || 'skill'}-${index}`}
-                        className="rounded-xl bg-white/82 dark:bg-white/8 border border-white/65 dark:border-white/14 px-3 py-2"
-                    >
-                        <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100">
-                            <span className="mr-1">{card.icon || '🧩'}</span>
-                            {card.title || 'Skill'}
-                        </p>
-                        {card.description && (
-                            <p className="text-[11px] sm:text-xs text-slate-600 dark:text-slate-300 mt-1">{card.description}</p>
-                        )}
-                        {card.action && (
-                            <button
-                                type="button"
-                                onClick={() => onWidgetAction?.(card.action)}
-                                className="mt-2 inline-flex px-2.5 py-1.5 rounded-full text-[11px] font-semibold text-violet-700 dark:text-violet-200 bg-violet-100/85 dark:bg-violet-500/20 border border-violet-200/70 dark:border-violet-400/25 hover:brightness-105 transition-all"
-                            >
-                                Use skill
-                            </button>
-                        )}
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-});
-SkillCardsWidget.displayName = 'SkillCardsWidget';
-
-const AssistantWidgets = React.memo(({ widgets, isUser, onWidgetAction }) => {
-    const normalizedWidgets = useMemo(
-        () => (
-            Array.isArray(widgets)
-                ? widgets
-                    .filter((widget) => widget && typeof widget === 'object')
-                    .filter((widget) => isWidgetTypeSupported(widget.type))
-                    .slice(0, 6)
-                : []
-        ),
-        [widgets]
-    );
-
-    if (isUser || normalizedWidgets.length === 0) return null;
-
-    return (
-        <div className="space-y-2">
-            {normalizedWidgets.map((widget, index) => {
-                const key = widget.id || `${widget.type || 'widget'}-${index}`;
-                if (widget.type === ASSISTANT_WIDGET_TYPES.BAR_CHART) return <ChartWidget key={key} widget={widget} />;
-                if (widget.type === ASSISTANT_WIDGET_TYPES.TABLE) return <TableWidget key={key} widget={widget} />;
-                if (widget.type === ASSISTANT_WIDGET_TYPES.STATS) return <StatsWidget key={key} widget={widget} />;
-                if (widget.type === ASSISTANT_WIDGET_TYPES.TIMELINE) return <TimelineWidget key={key} widget={widget} />;
-                if (widget.type === ASSISTANT_WIDGET_TYPES.CHECKLIST) return <ChecklistWidget key={key} widget={widget} />;
-                if (widget.type === ASSISTANT_WIDGET_TYPES.CAPABILITIES) return <CapabilitiesWidget key={key} widget={widget} />;
-                if (widget.type === ASSISTANT_WIDGET_TYPES.ACTION_CHIPS) return <ActionChipsWidget key={key} widget={widget} onWidgetAction={onWidgetAction} />;
-                if (widget.type === ASSISTANT_WIDGET_TYPES.SKILL_CARDS) return <SkillCardsWidget key={key} widget={widget} onWidgetAction={onWidgetAction} />;
-                return null;
-            })}
-        </div>
-    );
-});
-AssistantWidgets.displayName = 'AssistantWidgets';
-
-// Message Bubble Component
-const MessageBubble = React.memo(({ message, isUser, onWidgetAction }) => {
-    const [showReactions, setShowReactions] = useState(false);
-    const [selectedReaction, setSelectedReaction] = useState(null);
-    const formattedContent = useMemo(
-        () => preprocessMarkdownContent(message.content),
-        [message.content]
-    );
-
-    const reactions = ['👍', '❤️', '😂', '🤔', '🎉'];
-
-    const handleReaction = useCallback((reaction) => {
-        setSelectedReaction(reaction);
-        setShowReactions(false);
-        // Could dispatch action to save reaction
-    }, []);
-
-    return (
-        <div className={`relative group`}>
-            <div
-                className={`message-bubble rounded-2xl sm:rounded-3xl px-4 py-3 sm:px-5 sm:py-4 ${isUser
-                        ? 'chat-gradient-border bg-[linear-gradient(130deg,_rgb(34_211_238)_0%,_rgb(139_92_246)_52%,_rgb(251_113_133)_100%)] text-white'
-                        : 'chat-soft-panel backdrop-blur-sm text-gray-800 dark:text-gray-100'
-                    }`}
-                onMouseEnter={() => !isUser && setShowReactions(true)}
-                onMouseLeave={() => setShowReactions(false)}
-            >
-                <div className={`chat-markdown ${isUser ? 'chat-markdown-user' : 'chat-markdown-assistant'} text-sm sm:text-base leading-relaxed`}>
-                    <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[
-                            rehypeRaw,
-                            [rehypeSanitize, markdownSanitizeSchema]
-                        ]}
-                        components={{
-                            p: ({ children, ...props }) => (
-                                <p className="my-1 whitespace-pre-wrap leading-relaxed" {...props}>{children}</p>
-                            ),
-                            strong: ({ children, ...props }) => (
-                                <strong className="font-bold" {...props}>{children}</strong>
-                            ),
-                            em: ({ children, ...props }) => (
-                                <em className="italic" {...props}>{children}</em>
-                            ),
-                            u: ({ children, ...props }) => (
-                                <u className="underline underline-offset-2" {...props}>{children}</u>
-                            ),
-                            ul: ({ children, ...props }) => (
-                                <ul className="list-disc pl-5 my-2 space-y-1" {...props}>{children}</ul>
-                            ),
-                            ol: ({ children, ...props }) => (
-                                <ol className="list-decimal pl-5 my-2 space-y-1" {...props}>{children}</ol>
-                            ),
-                            li: ({ children, ...props }) => (
-                                <li className="leading-relaxed" {...props}>{children}</li>
-                            ),
-                            blockquote: ({ children, ...props }) => (
-                                <blockquote
-                                    className={`my-2 pl-3 border-l-2 ${isUser ? 'border-white/60 text-white/95' : 'border-violet-300/50 text-gray-700 dark:text-gray-200'}`}
-                                    {...props}
-                                >
-                                    {children}
-                                </blockquote>
-                            ),
-                            h1: ({ children, ...props }) => (
-                                <h1 className="text-lg sm:text-xl font-bold mt-2 mb-1" {...props}>{children}</h1>
-                            ),
-                            h2: ({ children, ...props }) => (
-                                <h2 className="text-base sm:text-lg font-bold mt-2 mb-1" {...props}>{children}</h2>
-                            ),
-                            h3: ({ children, ...props }) => (
-                                <h3 className="text-sm sm:text-base font-semibold mt-2 mb-1" {...props}>{children}</h3>
-                            ),
-                            a: ({ href, children, ...props }) => (
-                                <a href={href} target="_blank" rel="noreferrer" {...props}>{children}</a>
-                            ),
-                            code: ({ inline, children, ...props }) => (
-                                inline ? (
-                                    <code className={`px-1 py-0.5 rounded ${isUser ? 'bg-white/20 text-white' : 'bg-black/10 dark:bg-white/10'}`} {...props}>
-                                        {children}
-                                    </code>
-                                ) : (
-                                    <code className={`block my-2 p-2.5 rounded-xl whitespace-pre-wrap ${isUser ? 'bg-white/18 text-white' : 'bg-black/10 dark:bg-white/8'}`} {...props}>
-                                        {children}
-                                    </code>
-                                )
-                            ),
-                            hr: () => (
-                                <hr className={`my-2 ${isUser ? 'border-white/35' : 'border-gray-300/60 dark:border-white/15'}`} />
-                            )
-                        }}
-                    >
-                        {formattedContent}
-                    </ReactMarkdown>
-                </div>
-                <AssistantWidgets widgets={message.widgets} isUser={isUser} onWidgetAction={onWidgetAction} />
-
-                {/* Quick reactions */}
-                {!isUser && showReactions && (
-                    <div className="absolute -bottom-8 left-0 flex gap-1 bg-white dark:bg-gray-800 rounded-full px-2 py-1 shadow-lg border border-gray-200/50 dark:border-white/10">
-                        {reactions.map((reaction, i) => (
-                            <button
-                                key={reaction}
-                                onClick={() => handleReaction(reaction)}
-                                className="reaction-button hover:scale-125 transition-transform text-lg"
-                                style={{ animationDelay: `${i * 0.05}s` }}
-                            >
-                                {reaction}
-                            </button>
-                        ))}
-                    </div>
-                )}
-
-                {/* Selected reaction */}
-                {selectedReaction && (
-                    <div className="absolute -top-3 -right-3 message-reaction text-2xl">
-                        {selectedReaction}
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-});
-MessageBubble.displayName = 'MessageBubble';
-
 // Main component
 export default function StudentAIChatPage() {
     const dispatch = useDispatch();
@@ -981,7 +609,6 @@ export default function StudentAIChatPage() {
     const sessionId = useSelector(selectSessionId);
     const isLoading = useSelector(selectIsLoading);
     const isTyping = useSelector(selectIsTyping);
-    const inputValue = useSelector(selectInputValue);
     const buddyExpression = useSelector(selectBuddyExpression);
     const buddyAnimation = useSelector(selectBuddyAnimation);
     const soundEnabled = useSelector(selectSoundEnabled);
@@ -1010,17 +637,21 @@ export default function StudentAIChatPage() {
     const [isNicknameEditorOpen, setIsNicknameEditorOpen] = useState(false);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [nicknameDraft, setNicknameDraft] = useState(assistantName);
+    const [inputValue, setLocalInputValue] = useState('');
     const [coachNudge, setCoachNudge] = useState(null);
     const [isCoachVisible, setIsCoachVisible] = useState(false);
+    const [manualVisibleCount, setManualVisibleCount] = useState(CHAT_MESSAGE_WINDOW_SIZE);
 
     const messagesScrollRef = useRef(null);
     const inputRef = useRef(null);
+    const sendButtonRef = useRef(null);
     const nicknameInputRef = useRef(null);
     const processedDockNonceRef = useRef(null);
     const lastInteractionAtRef = useRef(0);
     const sessionCoachCountRef = useRef(0);
     const lastConversationsRefreshAtRef = useRef(0);
     const refreshConversationsTimeoutRef = useRef(null);
+    const themeCommandTimeoutsRef = useRef([]);
     const displayedAssistantName = isNicknameEditorOpen ? (nicknameDraft.trim() || assistantName) : assistantName;
     const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
     const normalizedRole = useMemo(
@@ -1028,6 +659,10 @@ export default function StudentAIChatPage() {
         [authUser?.role]
     );
     const isStudentRole = normalizedRole === 'student';
+    const canExecuteAutomation = useMemo(
+        () => ['teacher', 'se_teacher', 'head_unit', 'principal', 'directorate', 'admin', 'superadmin'].includes(normalizedRole),
+        [normalizedRole]
+    );
     const studentCallName = useMemo(() => {
         const nickname = String(authUser?.nickname || '').trim();
         if (nickname) return nickname;
@@ -1055,6 +690,16 @@ export default function StudentAIChatPage() {
         { delay: 3, size: 'sm', type: 'cross', top: '55%', left: '75%' },
         { delay: 0.8, size: 'xs', type: 'diamond', top: '35%', left: '25%' }
     ], []);
+    const effectiveVisibleCount = autoScrollEnabled
+        ? CHAT_MESSAGE_WINDOW_SIZE
+        : Math.max(CHAT_MESSAGE_WINDOW_SIZE, manualVisibleCount);
+    const visibleStartIndex = Math.max(0, messages.length - effectiveVisibleCount);
+    const renderedMessages = useMemo(
+        () => messages.slice(visibleStartIndex),
+        [messages, visibleStartIndex]
+    );
+    const hiddenMessageCount = visibleStartIndex;
+    const canLoadOlderMessages = hiddenMessageCount > 0;
 
     useEffect(() => {
         lastInteractionAtRef.current = Date.now();
@@ -1095,6 +740,7 @@ export default function StudentAIChatPage() {
                         limit: 120
                     }));
                     setAutoScrollEnabled(true);
+                    setManualVisibleCount(CHAT_MESSAGE_WINDOW_SIZE);
                 }
             } catch {
                 // no-op, handled by slice error state
@@ -1128,6 +774,8 @@ export default function StudentAIChatPage() {
             clearTimeout(refreshConversationsTimeoutRef.current);
             refreshConversationsTimeoutRef.current = null;
         }
+        themeCommandTimeoutsRef.current.forEach((timerId) => window.clearTimeout(timerId));
+        themeCommandTimeoutsRef.current = [];
     }, []);
 
     useEffect(() => {
@@ -1135,6 +783,7 @@ export default function StudentAIChatPage() {
         setIsCoachVisible(false);
         setCoachNudge(null);
         sessionCoachCountRef.current = 0;
+        setManualVisibleCount(CHAT_MESSAGE_WINDOW_SIZE);
     }, [sessionId]);
 
     useEffect(() => {
@@ -1244,6 +893,7 @@ export default function StudentAIChatPage() {
             .unwrap()
             .then(() => {
                 setAutoScrollEnabled(true);
+                setManualVisibleCount(CHAT_MESSAGE_WINDOW_SIZE);
                 setIsHistoryOpen(false);
                 scheduleConversationsRefresh(true);
                 toast({
@@ -1285,6 +935,63 @@ export default function StudentAIChatPage() {
         });
         return true;
     }, [dispatch, isStudentRole, location.pathname, navigate, normalizedRole, toast]);
+
+    const resolveSingleSelectionFromPrompt = useCallback((label, options = [], fallbackPrompt = '') => {
+        if (typeof window === 'undefined') return null;
+        const list = Array.isArray(options) ? options : [];
+        if (list.length > 0) {
+            const listText = list
+                .slice(0, 20)
+                .map((option, index) => `${index + 1}. ${option.label || option.name || option.id || 'Option'} [${option.id}]`)
+                .join('\n');
+            const rawInput = window.prompt(`${label}\n${listText}`, '');
+            if (rawInput === null) return null;
+            const raw = String(rawInput || '').trim();
+            if (!raw) return null;
+            const selectedNumber = Number(raw);
+            if (Number.isFinite(selectedNumber) && selectedNumber >= 1 && selectedNumber <= list.length) {
+                return String(list[selectedNumber - 1]?.id || '').trim() || null;
+            }
+            return raw;
+        }
+
+        const fallbackInput = window.prompt(fallbackPrompt || label, '');
+        if (fallbackInput === null) return null;
+        const parsed = String(fallbackInput || '').trim();
+        return parsed || null;
+    }, []);
+
+    const resolveMultipleSelectionFromPrompt = useCallback((label, options = [], fallbackPrompt = '') => {
+        if (typeof window === 'undefined') return null;
+        const list = Array.isArray(options) ? options : [];
+        if (list.length > 0) {
+            const listText = list
+                .slice(0, 20)
+                .map((option, index) => `${index + 1}. ${option.label || option.name || option.id || 'Option'} [${option.id}]`)
+                .join('\n');
+            const rawInput = window.prompt(`${label}\n${listText}\nUse comma-separated numbers or IDs`, '');
+            if (rawInput === null) return null;
+            const raw = String(rawInput || '').trim();
+            if (!raw) return null;
+            const tokens = raw.split(',').map((token) => token.trim()).filter(Boolean);
+            const ids = tokens.map((token) => {
+                const selectedNumber = Number(token);
+                if (Number.isFinite(selectedNumber) && selectedNumber >= 1 && selectedNumber <= list.length) {
+                    return String(list[selectedNumber - 1]?.id || '').trim();
+                }
+                return token;
+            }).filter(Boolean);
+            return ids.length > 0 ? Array.from(new Set(ids)) : null;
+        }
+
+        const fallbackInput = window.prompt(fallbackPrompt || label, '');
+        if (fallbackInput === null) return null;
+        const ids = String(fallbackInput || '')
+            .split(',')
+            .map((token) => token.trim())
+            .filter(Boolean);
+        return ids.length > 0 ? Array.from(new Set(ids)) : null;
+    }, []);
 
     const buildCreateInterventionPayload = useCallback((seedPayload = {}) => {
         if (typeof window === 'undefined') return null;
@@ -1410,22 +1117,273 @@ export default function StudentAIChatPage() {
         return payload;
     }, []);
 
+    const buildAssignStudentsPayload = useCallback((seedPayload = {}) => {
+        if (typeof window === 'undefined') return null;
+        const payload = { ...(seedPayload || {}) };
+        const studentOptions = Array.isArray(payload.studentOptions) ? payload.studentOptions : [];
+        const mentorOptions = Array.isArray(payload.mentorOptions) ? payload.mentorOptions : [];
+        const assignmentOptions = Array.isArray(payload.assignmentOptions) ? payload.assignmentOptions : [];
+        delete payload.studentOptions;
+        delete payload.mentorOptions;
+        delete payload.assignmentOptions;
+
+        if (assignmentOptions.length > 0) {
+            const assignmentId = resolveSingleSelectionFromPrompt(
+                'Optional: choose existing assignment to update (leave blank to create new)',
+                assignmentOptions.map((assignment) => ({
+                    id: assignment.id,
+                    label: `${assignment.studentName || 'Student'} | ${assignment.tier || 'Tier'} | ${assignment.mentorName || 'Mentor'}`
+                })),
+                'Optional: enter existing assignment ID'
+            );
+            if (assignmentId) payload.assignmentId = assignmentId;
+        }
+
+        const mentorId = resolveSingleSelectionFromPrompt(
+            'Select mentor for assignment',
+            mentorOptions.map((mentor) => ({
+                id: mentor.id,
+                label: `${mentor.name || 'Mentor'}${mentor.role ? ` (${mentor.role})` : ''}`
+            })),
+            'Enter Mentor ID'
+        );
+        if (!mentorId) return null;
+        payload.mentorId = mentorId;
+
+        const studentIds = resolveMultipleSelectionFromPrompt(
+            'Select student(s) for MTSS assignment',
+            studentOptions.map((student) => ({
+                id: student.id,
+                label: `${student.name || 'Student'}${student.grade ? ` (${student.grade})` : ''}${student.className ? ` / ${student.className}` : ''}`
+            })),
+            'Enter comma-separated student IDs'
+        );
+        if (!studentIds || studentIds.length === 0) return null;
+        payload.studentIds = studentIds;
+
+        const tierInput = window.prompt('Tier (tier1/tier2/tier3):', String(payload.tier || 'tier2'));
+        if (tierInput === null) return null;
+        const normalizedTier = String(tierInput || 'tier2').toLowerCase().replace(/\s+/g, '');
+        payload.tier = normalizedTier.startsWith('tier') ? normalizedTier : `tier${normalizedTier || '2'}`;
+
+        const focusInput = window.prompt(
+            'Focus areas (comma separated):',
+            Array.isArray(payload.focusAreas) ? payload.focusAreas.join(', ') : String(payload.focusAreas || '')
+        );
+        if (focusInput === null) return null;
+        payload.focusAreas = String(focusInput || '')
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean);
+
+        const notesInput = window.prompt('Notes (optional):', String(payload.notes || ''));
+        if (notesInput === null) return null;
+        payload.notes = String(notesInput || '').trim();
+
+        return payload;
+    }, [resolveMultipleSelectionFromPrompt, resolveSingleSelectionFromPrompt]);
+
+    const buildAssignInterventionMentorPayload = useCallback((seedPayload = {}) => {
+        if (typeof window === 'undefined') return null;
+        const payload = { ...(seedPayload || {}) };
+        const studentOptions = Array.isArray(payload.studentOptions) ? payload.studentOptions : [];
+        const mentorOptions = Array.isArray(payload.mentorOptions) ? payload.mentorOptions : [];
+        delete payload.studentOptions;
+        delete payload.mentorOptions;
+
+        const mentorId = resolveSingleSelectionFromPrompt(
+            'Select mentor for intervention mapping',
+            mentorOptions.map((mentor) => ({
+                id: mentor.id,
+                label: `${mentor.name || 'Mentor'}${mentor.role ? ` (${mentor.role})` : ''}`
+            })),
+            'Enter Mentor ID'
+        );
+        if (!mentorId) return null;
+        payload.mentorId = mentorId;
+
+        const studentIds = resolveMultipleSelectionFromPrompt(
+            'Select student(s) to map intervention mentor',
+            studentOptions.map((student) => ({
+                id: student.id,
+                label: `${student.name || 'Student'}${student.grade ? ` (${student.grade})` : ''}`
+            })),
+            'Enter comma-separated student IDs'
+        );
+        if (!studentIds || studentIds.length === 0) return null;
+        payload.studentIds = studentIds;
+
+        const interventionType = window.prompt(
+            'Intervention type (SEL/ENGLISH/MATH/BEHAVIOR/ATTENDANCE):',
+            String(payload.interventionType || 'SEL')
+        );
+        if (interventionType === null) return null;
+        payload.interventionType = String(interventionType || 'SEL').trim().toUpperCase();
+
+        const tierInput = window.prompt('Optional tier override (tier1/tier2/tier3):', String(payload.tier || ''));
+        if (tierInput === null) return null;
+        if (String(tierInput || '').trim()) {
+            const normalizedTier = String(tierInput).toLowerCase().replace(/\s+/g, '');
+            payload.tier = normalizedTier.startsWith('tier') ? normalizedTier : `tier${normalizedTier}`;
+        }
+
+        const notesInput = window.prompt('Notes (optional):', String(payload.notes || ''));
+        if (notesInput === null) return null;
+        payload.notes = String(notesInput || '').trim();
+
+        return payload;
+    }, [resolveMultipleSelectionFromPrompt, resolveSingleSelectionFromPrompt]);
+
+    const buildReassignMentorPayload = useCallback((seedPayload = {}) => {
+        if (typeof window === 'undefined') return null;
+        const payload = { ...(seedPayload || {}) };
+        const assignmentOptions = Array.isArray(payload.assignmentOptions) ? payload.assignmentOptions : [];
+        const mentorOptions = Array.isArray(payload.mentorOptions) ? payload.mentorOptions : [];
+        delete payload.assignmentOptions;
+        delete payload.mentorOptions;
+
+        const assignmentId = resolveSingleSelectionFromPrompt(
+            'Select assignment to reassign',
+            assignmentOptions.map((assignment) => ({
+                id: assignment.id,
+                label: `${assignment.studentName || 'Student'} | ${assignment.tier || 'Tier'} | ${assignment.mentorName || 'Mentor'}`
+            })),
+            'Enter Assignment ID'
+        );
+        if (!assignmentId) return null;
+        payload.assignmentId = assignmentId;
+
+        const mentorId = resolveSingleSelectionFromPrompt(
+            'Select new mentor',
+            mentorOptions.map((mentor) => ({
+                id: mentor.id,
+                label: `${mentor.name || 'Mentor'}${mentor.role ? ` (${mentor.role})` : ''}`
+            })),
+            'Enter new Mentor ID'
+        );
+        if (!mentorId) return null;
+        payload.mentorId = mentorId;
+
+        const reasonInput = window.prompt('Reassignment reason (optional):', String(payload.reason || payload.notes || ''));
+        if (reasonInput === null) return null;
+        payload.reason = String(reasonInput || '').trim();
+
+        return payload;
+    }, [resolveSingleSelectionFromPrompt]);
+
+    const buildUpdateAssignmentStatusPayload = useCallback((seedPayload = {}) => {
+        if (typeof window === 'undefined') return null;
+        const payload = { ...(seedPayload || {}) };
+        const assignmentOptions = Array.isArray(payload.assignmentOptions) ? payload.assignmentOptions : [];
+        delete payload.assignmentOptions;
+
+        const assignmentId = resolveSingleSelectionFromPrompt(
+            'Select assignment to update status',
+            assignmentOptions.map((assignment) => ({
+                id: assignment.id,
+                label: `${assignment.studentName || 'Student'} | ${assignment.tier || 'Tier'} | ${assignment.status || 'active'}`
+            })),
+            'Enter Assignment ID'
+        );
+        if (!assignmentId) return null;
+        payload.assignmentId = assignmentId;
+
+        const statusInput = window.prompt('Status (active/paused/completed/closed):', String(payload.status || 'active'));
+        if (statusInput === null) return null;
+        payload.status = String(statusInput || 'active').trim().toLowerCase();
+
+        const notesInput = window.prompt('Notes (optional):', String(payload.notes || ''));
+        if (notesInput === null) return null;
+        payload.notes = String(notesInput || '').trim();
+
+        const summaryInput = window.prompt('Progress summary (optional):', String(payload.summary || ''));
+        if (summaryInput === null) return null;
+        payload.summary = String(summaryInput || '').trim();
+
+        return payload;
+    }, [resolveSingleSelectionFromPrompt]);
+
+    const buildUpdateGoalCompletionPayload = useCallback((seedPayload = {}) => {
+        if (typeof window === 'undefined') return null;
+        const payload = { ...(seedPayload || {}) };
+        const assignmentOptions = Array.isArray(payload.assignmentOptions) ? payload.assignmentOptions : [];
+        delete payload.assignmentOptions;
+
+        const assignmentId = resolveSingleSelectionFromPrompt(
+            'Select assignment to update goal completion',
+            assignmentOptions.map((assignment) => ({
+                id: assignment.id,
+                label: `${assignment.studentName || 'Student'} | ${assignment.tier || 'Tier'}`
+            })),
+            'Enter Assignment ID'
+        );
+        if (!assignmentId) return null;
+        payload.assignmentId = assignmentId;
+
+        const goalIndexInput = window.prompt('Goal index (optional, start from 0):', String(payload.goalIndex ?? ''));
+        if (goalIndexInput === null) return null;
+        const parsedGoalIndex = Number(String(goalIndexInput || '').trim());
+        if (Number.isInteger(parsedGoalIndex) && parsedGoalIndex >= 0) {
+            payload.goalIndex = parsedGoalIndex;
+        }
+
+        if (!Number.isInteger(payload.goalIndex)) {
+            const goalTextInput = window.prompt('Goal text (required if goal index is empty):', String(payload.goalText || payload.goal || ''));
+            if (goalTextInput === null) return null;
+            payload.goalText = String(goalTextInput || '').trim();
+            if (!payload.goalText) return null;
+        }
+
+        const completedInput = window.prompt('Mark as completed? (yes/no):', payload.completed === false ? 'no' : 'yes');
+        if (completedInput === null) return null;
+        payload.completed = !/^(no|n|false|0)$/i.test(String(completedInput || '').trim());
+
+        const summaryInput = window.prompt('Summary note (optional):', String(payload.summary || ''));
+        if (summaryInput === null) return null;
+        payload.summary = String(summaryInput || '').trim();
+
+        return payload;
+    }, [resolveSingleSelectionFromPrompt]);
+
     const handleExecuteOperation = useCallback(async (action = {}) => {
-        const operation = String(action.operation || '').trim();
+        const operation = String(action.operation || '').trim().toLowerCase();
         if (!operation) return;
+
+        if (!canExecuteAutomation) {
+            toast({
+                title: 'Automation unavailable',
+                description: 'This execute_operation is only available for authorized MTSS roles.',
+                variant: 'destructive'
+            });
+            return;
+        }
 
         if (action.requireConfirmation !== false) {
             const confirmed = window.confirm(String(action.confirmText || 'Run this automation now?'));
             if (!confirmed) return;
         }
 
-        let payload = { ...(action.payload || {}) };
-        if (operation === 'create_mtss_intervention') {
-            payload = buildCreateInterventionPayload(payload);
-        } else if (operation === 'append_mtss_progress_checkin') {
-            payload = buildProgressPayload(payload);
+        const payloadBuilders = {
+            create_mtss_intervention: buildCreateInterventionPayload,
+            append_mtss_progress_checkin: buildProgressPayload,
+            assign_students_to_mtss_mentor: buildAssignStudentsPayload,
+            assign_intervention_mentor: buildAssignInterventionMentorPayload,
+            reassign_mtss_assignment_mentor: buildReassignMentorPayload,
+            update_mtss_assignment_status: buildUpdateAssignmentStatusPayload,
+            update_mtss_goal_completion: buildUpdateGoalCompletionPayload
+        };
+
+        const builder = payloadBuilders[operation];
+        if (!builder) {
+            toast({
+                title: 'Unsupported automation',
+                description: `Operation "${operation}" is not supported on this client.`,
+                variant: 'destructive'
+            });
+            return;
         }
 
+        const payload = builder(action.payload || {});
         if (!payload) return;
 
         try {
@@ -1448,8 +1406,14 @@ export default function StudentAIChatPage() {
             });
         }
     }, [
+        buildAssignInterventionMentorPayload,
+        buildAssignStudentsPayload,
         buildCreateInterventionPayload,
         buildProgressPayload,
+        buildReassignMentorPayload,
+        buildUpdateAssignmentStatusPayload,
+        buildUpdateGoalCompletionPayload,
+        canExecuteAutomation,
         dispatch,
         scheduleConversationsRefresh,
         sessionId,
@@ -1471,7 +1435,7 @@ export default function StudentAIChatPage() {
         if (type === 'prefill') {
             const value = String(action.value || action.message || '').trim();
             if (!value) return;
-            dispatch(setInputValue(value));
+            setLocalInputValue(value);
             inputRef.current?.focus();
             return;
         }
@@ -1479,7 +1443,80 @@ export default function StudentAIChatPage() {
         if (type === 'execute_operation') {
             handleExecuteOperation(action);
         }
-    }, [dispatch, handleClientAction, handleExecuteOperation]);
+    }, [handleClientAction, handleExecuteOperation]);
+
+    const clearThemeCommandTimeouts = useCallback(() => {
+        themeCommandTimeoutsRef.current.forEach((timerId) => window.clearTimeout(timerId));
+        themeCommandTimeoutsRef.current = [];
+    }, []);
+
+    const queueThemeCommandTimeout = useCallback((callback, delayMs) => {
+        const timerId = window.setTimeout(() => {
+            themeCommandTimeoutsRef.current = themeCommandTimeoutsRef.current.filter((id) => id !== timerId);
+            callback();
+        }, delayMs);
+        themeCommandTimeoutsRef.current.push(timerId);
+        return timerId;
+    }, []);
+
+    const getThemeSpellOrigin = useCallback(() => {
+        const buttonEl = sendButtonRef.current;
+        if (buttonEl && typeof buttonEl.getBoundingClientRect === 'function') {
+            const rect = buttonEl.getBoundingClientRect();
+            return {
+                x: rect.left + (rect.width / 2),
+                y: rect.top + (rect.height / 2)
+            };
+        }
+        if (typeof window !== 'undefined') {
+            return {
+                x: window.innerWidth * 0.82,
+                y: window.innerHeight * 0.86
+            };
+        }
+        return { x: null, y: null };
+    }, []);
+
+    const handleThemeCommandIntent = useCallback((userMessage, themeIntent) => {
+        clearThemeCommandTimeouts();
+
+        const assistantReply = buildThemeCommandReply({
+            themeIntent,
+            assistantName,
+            isStudentRole,
+            studentCallName,
+            seed: userMessage
+        });
+
+        dispatch(setTyping(true));
+        dispatch(setBuddyAnimation('nod'));
+
+        queueThemeCommandTimeout(() => {
+            dispatch(addAIMessage({ content: assistantReply, widgets: [] }));
+            dispatch(setBuddyAnimation('wave'));
+
+            queueThemeCommandTimeout(() => {
+                applyThemePreference(themeIntent.targetTheme);
+                persistTheme(themeIntent.targetTheme);
+
+                const origin = getThemeSpellOrigin();
+                emitThemeSpell({
+                    theme: themeIntent.targetTheme,
+                    x: origin.x,
+                    y: origin.y,
+                    trigger: 'assistant-chat-theme-command'
+                });
+            }, THEME_COMMAND_APPLY_DELAY_MS);
+        }, THEME_COMMAND_TYPING_DELAY_MS);
+    }, [
+        assistantName,
+        clearThemeCommandTimeouts,
+        dispatch,
+        getThemeSpellOrigin,
+        isStudentRole,
+        queueThemeCommandTimeout,
+        studentCallName
+    ]);
 
     const dismissCoachNudge = useCallback((withSnooze = false) => {
         setIsCoachVisible(false);
@@ -1496,20 +1533,28 @@ export default function StudentAIChatPage() {
 
     const applyCoachNudge = useCallback(() => {
         if (!coachNudge?.suggestion) return;
-        dispatch(setInputValue(coachNudge.suggestion));
+        setLocalInputValue(coachNudge.suggestion);
         setIsCoachVisible(false);
         lastInteractionAtRef.current = Date.now();
         inputRef.current?.focus();
-    }, [coachNudge, dispatch]);
+    }, [coachNudge]);
 
     const dispatchChatMessage = useCallback((rawMessage) => {
         const userMessage = String(rawMessage || '').trim();
         if (!userMessage || isLoading) return;
 
         setAutoScrollEnabled(true);
+        setManualVisibleCount(CHAT_MESSAGE_WINDOW_SIZE);
         setIsCoachVisible(false);
         lastInteractionAtRef.current = Date.now();
+        setLocalInputValue('');
         dispatch(addUserMessage(userMessage));
+
+        const themeIntent = detectAssistantThemeIntent(userMessage, getCurrentTheme());
+        if (themeIntent?.autoApply) {
+            handleThemeCommandIntent(userMessage, themeIntent);
+            return;
+        }
 
         dispatch(sendMessage({ message: userMessage, sessionId }))
             .unwrap()
@@ -1525,7 +1570,15 @@ export default function StudentAIChatPage() {
                 }
             })
             .catch(() => { });
-    }, [dispatch, handleClientAction, isLoading, normalizedRole, scheduleConversationsRefresh, sessionId]);
+    }, [
+        dispatch,
+        handleClientAction,
+        handleThemeCommandIntent,
+        isLoading,
+        normalizedRole,
+        scheduleConversationsRefresh,
+        sessionId
+    ]);
 
     useEffect(() => {
         const routeState = location.state || {};
@@ -1542,7 +1595,7 @@ export default function StudentAIChatPage() {
             if (autoSendFromDock && !isLoading) {
                 dispatchChatMessage(prefillMessage);
             } else {
-                dispatch(setInputValue(prefillMessage));
+                setLocalInputValue(prefillMessage);
                 inputRef.current?.focus();
             }
         }
@@ -1553,7 +1606,7 @@ export default function StudentAIChatPage() {
         delete restState.dockNonce;
         const nextState = Object.keys(restState).length > 0 ? restState : null;
         navigate(location.pathname, { replace: true, state: nextState });
-    }, [dispatch, dispatchChatMessage, isLoading, location.pathname, location.state, navigate]);
+    }, [dispatchChatMessage, isLoading, location.pathname, location.state, navigate]);
 
     const handleSendMessage = useCallback((e) => {
         e.preventDefault();
@@ -1565,7 +1618,7 @@ export default function StudentAIChatPage() {
         if (isCoachVisible) {
             setIsCoachVisible(false);
         }
-        dispatch(setInputValue(e.target.value));
+        setLocalInputValue(e.target.value);
 
         // Trigger buddy animation on typing
         if (e.target.value && !buddyAnimation) {
@@ -1580,6 +1633,7 @@ export default function StudentAIChatPage() {
     const handleOpenConversation = useCallback((targetSessionId) => {
         if (!targetSessionId || historyLoading) return;
         setAutoScrollEnabled(true);
+        setManualVisibleCount(CHAT_MESSAGE_WINDOW_SIZE);
         setIsCoachVisible(false);
         setCoachNudge(null);
         lastInteractionAtRef.current = Date.now();
@@ -1588,12 +1642,41 @@ export default function StudentAIChatPage() {
         setIsHistoryOpen(false);
     }, [dispatch, historyLoading]);
 
+    const handleLoadOlderMessages = useCallback(() => {
+        const element = messagesScrollRef.current;
+        const previousScrollTop = element?.scrollTop || 0;
+        const previousScrollHeight = element?.scrollHeight || 0;
+
+        setAutoScrollEnabled(false);
+        setManualVisibleCount((prev) => prev + CHAT_MESSAGE_WINDOW_STEP);
+
+        requestAnimationFrame(() => {
+            const nextElement = messagesScrollRef.current;
+            if (!nextElement) return;
+            const scrollHeightDelta = nextElement.scrollHeight - previousScrollHeight;
+            nextElement.scrollTop = Math.max(0, previousScrollTop + scrollHeightDelta);
+        });
+    }, []);
+
     const handleMessagesScroll = useCallback(() => {
         const nearBottom = checkNearBottom();
-        if (nearBottom !== autoScrollEnabled) {
-            setAutoScrollEnabled(nearBottom);
+        setAutoScrollEnabled((prev) => (prev === nearBottom ? prev : nearBottom));
+        if (nearBottom) {
+            setManualVisibleCount((prev) => (prev === CHAT_MESSAGE_WINDOW_SIZE ? prev : CHAT_MESSAGE_WINDOW_SIZE));
         }
-    }, [autoScrollEnabled, checkNearBottom]);
+    }, [checkNearBottom]);
+
+    const rafMessagesScrollHandler = useRafThrottle(handleMessagesScroll);
+
+    useEffect(() => {
+        const element = messagesScrollRef.current;
+        if (!element) return;
+
+        element.addEventListener('scroll', rafMessagesScrollHandler, { passive: true });
+        return () => {
+            element.removeEventListener('scroll', rafMessagesScrollHandler);
+        };
+    }, [rafMessagesScrollHandler]);
 
     const formatConversationTime = useCallback((value) => {
         if (!value) return '';
@@ -1865,7 +1948,7 @@ export default function StudentAIChatPage() {
                                     <h1 className="text-xl sm:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 via-indigo-500 to-pink-500 dark:from-cyan-300 dark:via-indigo-200 dark:to-pink-300">
                                         AI Assistant
                                     </h1>
-                                    <p className="text-sm text-slate-600 dark:text-slate-300">
+                                    <p className="text-sm text-slate-700 dark:text-slate-200">
                                         {isTyping
                                             ? `${displayedAssistantName} is typing...`
                                             : historyLoading
@@ -1931,7 +2014,6 @@ export default function StudentAIChatPage() {
                 {/* Messages container */}
                 <div
                     ref={messagesScrollRef}
-                    onScroll={handleMessagesScroll}
                     className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-4"
                 >
                     <div className="max-w-3xl mx-auto space-y-4">
@@ -1970,7 +2052,10 @@ export default function StudentAIChatPage() {
                                     {quickSuggestions.map((suggestion, i) => (
                                         <motion.button
                                             key={i}
-                                            onClick={() => dispatch(setInputValue(suggestion))}
+                                            onClick={() => {
+                                                setLocalInputValue(suggestion);
+                                                inputRef.current?.focus();
+                                            }}
                                             className={`chat-action-chip px-3 py-2 sm:px-4 sm:py-2 rounded-full backdrop-blur-sm transition-all text-sm font-semibold ${quickSuggestionStyles[i % quickSuggestionStyles.length]} dark:text-slate-100`}
                                             whileHover={{ scale: 1.05 }}
                                             whileTap={{ scale: 0.95 }}
@@ -1982,41 +2067,16 @@ export default function StudentAIChatPage() {
                             </motion.div>
                         ) : (
                             // Messages list
-                            <>
-                                {messages.map((message, index) => (
-                                    <div
-                                        key={message.id || index}
-                                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} ${message.role === 'user' ? 'message-user' : 'message-assistant'}`}
-                                    >
-                                        <div className={`max-w-[85%] sm:max-w-[75%]`}>
-                                            <MessageBubble
-                                                message={message}
-                                                isUser={message.role === 'user'}
-                                                onWidgetAction={handleWidgetAction}
-                                            />
-                                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 px-2">
-                                                {new Date(message.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
-
-                                {/* Typing indicator */}
-                                {isTyping && (
-                                    <div className="flex justify-start message-assistant">
-                                        <div className="max-w-[85%] sm:max-w-[75%]">
-                                            <div className="rounded-2xl sm:rounded-3xl px-4 py-3 sm:px-5 sm:py-4 chat-soft-panel backdrop-blur-sm">
-                                                <div className="flex gap-1.5">
-                                                    <div className="w-2.5 h-2.5 bg-cyan-500 rounded-full typing-dot"></div>
-                                                    <div className="w-2.5 h-2.5 bg-violet-500 rounded-full typing-dot"></div>
-                                                    <div className="w-2.5 h-2.5 bg-pink-500 rounded-full typing-dot"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                            </>
+                            <MessageStream
+                                canLoadOlderMessages={canLoadOlderMessages}
+                                hiddenMessageCount={hiddenMessageCount}
+                                onLoadOlderMessages={handleLoadOlderMessages}
+                                messageWindowStep={CHAT_MESSAGE_WINDOW_STEP}
+                                renderedMessages={renderedMessages}
+                                visibleStartIndex={visibleStartIndex}
+                                isTyping={isTyping}
+                                onWidgetAction={handleWidgetAction}
+                            />
                         )}
                     </div>
                 </div>
@@ -2035,12 +2095,12 @@ export default function StudentAIChatPage() {
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="min-w-0">
                                             <p className="text-xs font-extrabold text-cyan-700 dark:text-cyan-300">{coachNudge.title}</p>
-                                            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-0.5">{coachNudge.text}</p>
+                                            <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-100 mt-0.5">{coachNudge.text}</p>
                                         </div>
                                         <button
                                             type="button"
                                             onClick={() => dismissCoachNudge(false)}
-                                            className="p-1 rounded-md text-slate-500 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                                            className="p-1 rounded-md text-slate-600 dark:text-slate-200 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                                             aria-label="Dismiss coach suggestion"
                                         >
                                             <X className="w-3.5 h-3.5" />
@@ -2057,7 +2117,7 @@ export default function StudentAIChatPage() {
                                         <button
                                             type="button"
                                             onClick={() => dismissCoachNudge(true)}
-                                            className="px-3 py-1.5 rounded-full text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white/85 dark:bg-white/10 border border-slate-200/70 dark:border-white/15 hover:brightness-105 transition-all"
+                                            className="px-3 py-1.5 rounded-full text-xs font-semibold text-slate-800 dark:text-slate-100 bg-white/95 dark:bg-slate-800/90 border border-slate-300/85 dark:border-slate-400/45 hover:brightness-105 transition-all"
                                         >
                                             Snooze
                                         </button>
@@ -2082,8 +2142,10 @@ export default function StudentAIChatPage() {
                                 className="flex-1 px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl sm:rounded-3xl bg-white/90 dark:bg-white/10 backdrop-blur-sm border border-cyan-200/50 dark:border-cyan-200/20 focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:focus:ring-cyan-300 disabled:opacity-50 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm sm:text-base transition-all"
                             />
                             <motion.button
+                                ref={sendButtonRef}
                                 type="submit"
                                 disabled={isLoading || !inputValue.trim()}
+                                data-ai-theme-spell-origin="chat-send"
                                 className="px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-cyan-500 via-indigo-500 to-pink-500 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg"
                                 whileHover={{ scale: !isLoading && inputValue.trim() ? 1.05 : 1 }}
                                 whileTap={{ scale: !isLoading && inputValue.trim() ? 0.95 : 1 }}

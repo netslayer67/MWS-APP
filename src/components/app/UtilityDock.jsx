@@ -1,16 +1,114 @@
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUpRight, BellRing, MessageCircle, Send, Sparkles, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import usePreferLowMotion from "@/hooks/usePreferLowMotion";
 import { loadAssistantProfile } from "@/store/slices/aiChatSlice";
+import { useToast } from "@/components/ui/use-toast";
+import {
+    detectAssistantNavigationIntent,
+    detectAssistantThemeIntent,
+    sanitizeAssistantNavigateAction
+} from "@/utils/studentAssistantNavigator";
+import * as aiChatService from "@/services/aiChatService";
+import { normalizeAssistantAction, normalizeAssistantWidgets } from "@/features/assistant/runtime/responseValidator";
+import {
+    buildDockCommandPack,
+    buildLiveDockInsightReply,
+    buildUtilityDockContextPayload,
+    composeDockContextMessage,
+    detectDockLiveInsightIntent
+} from "@/utils/utilityDockContext";
+import {
+    canExecuteAutomationRole,
+    buildOperationPayloadFromForm,
+    detectDockOperationIntent,
+    getDockOperationFormConfig,
+    getOperationLabel,
+    isOperationAllowedForRole,
+    normalizeRoleName
+} from "@/utils/utilityDockAutomation";
+import { applyThemePreference, emitThemeSpell, getStoredTheme, persistTheme } from "@/lib/theme";
+import UtilityDockWidgetPreview from "@/components/app/dock/UtilityDockWidgetPreview";
 
 const NUDGE_STORAGE_KEY = "ai_dock_nudge_v2";
 const NUDGE_DAILY_LIMIT = 3;
 const NUDGE_COOLDOWN_MS = 25 * 60 * 1000;
 const NUDGE_INITIAL_DELAY_MS = 15000;
 const NUDGE_SNOOZE_MS = 2 * 60 * 60 * 1000;
+const THEME_COMMAND_TYPING_DELAY_MS = 280;
+const THEME_COMMAND_APPLY_DELAY_MS = 320;
+const DOCK_MESSAGE_LIMIT = 18;
+const DOCK_WIDGET_LIMIT = 2;
+const DOCK_ACTION_LIMIT = 4;
+
+const safeList = (value) => (Array.isArray(value) ? value : []);
+const safeText = (value, max = 220) =>
+    String(value || "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, max);
+
+const describeOperation = (operation = "") =>
+    safeText(String(operation || "").replace(/_/g, " "), 72) || "automation";
+
+const getActionLabel = (action = {}) => {
+    const type = String(action?.type || "").toLowerCase();
+    if (type === "navigate") {
+        return safeText(action?.label || `Open ${action?.navigateTo || "page"}`, 78) || "Open";
+    }
+    if (type === "prefill") return "Use suggestion";
+    if (type === "execute_operation") {
+        return safeText(action?.label || `Run ${describeOperation(action?.operation)}`, 78) || "Run automation";
+    }
+    return "Run action";
+};
+
+const trimDockWidgets = (widgets = []) =>
+    normalizeAssistantWidgets(widgets)
+        .slice(0, DOCK_WIDGET_LIMIT)
+        .map((widget = {}) => {
+            const type = String(widget.type || "").toLowerCase();
+            if (type === "table") {
+                return {
+                    ...widget,
+                    columns: safeList(widget.columns).slice(0, 4),
+                    rows: safeList(widget.rows).slice(0, 4)
+                };
+            }
+            if (type === "checklist") {
+                return {
+                    ...widget,
+                    items: safeList(widget.items).slice(0, 6)
+                };
+            }
+            if (type === "action_chips") {
+                return {
+                    ...widget,
+                    actions: safeList(widget.actions).slice(0, 5)
+                };
+            }
+            if (type === "skill_cards") {
+                return {
+                    ...widget,
+                    cards: safeList(widget.cards).slice(0, 4)
+                };
+            }
+            if (type === "stats") {
+                return {
+                    ...widget,
+                    items: safeList(widget.items).slice(0, 3)
+                };
+            }
+            if (type === "bar_chart") {
+                return {
+                    ...widget,
+                    data: safeList(widget.data).slice(0, 5)
+                };
+            }
+            return widget;
+        });
 
 const getTodayKey = () => new Date().toISOString().slice(0, 10);
 
@@ -75,6 +173,34 @@ const getTimeGreeting = () => {
 const normalizeRole = (role = "") => String(role || "").trim().toLowerCase();
 const isStudentRole = (role = "") => normalizeRole(role) === "student";
 const getAssistantChatPath = (role = "") => (isStudentRole(role) ? "/student/ai-chat" : "/ai-assistant");
+const getCurrentTheme = () => {
+    if (typeof document !== "undefined") {
+        return document.documentElement.classList.contains("dark") ? "dark" : "light";
+    }
+    return getStoredTheme();
+};
+
+const buildDockThemeReply = ({
+    assistantName = "Jarvis",
+    studentCallName = "there",
+    isStudent = false,
+    targetTheme = "light",
+    isAlreadyActive = false,
+    incantation = "Lumos Maxima"
+} = {}) => {
+    const who = isStudent ? `${studentCallName}, ` : "";
+    if (targetTheme === "dark") {
+        if (isAlreadyActive) {
+            return `${assistantName}: Dark mode is already active. Recasting anyway. ${incantation}.`;
+        }
+        return `${assistantName}: ${who}switching to dark mode now. ${incantation}.`;
+    }
+
+    if (isAlreadyActive) {
+        return `${assistantName}: Light mode is already active. Recasting anyway. ${incantation}.`;
+    }
+    return `${assistantName}: ${who}switching to light mode now. ${incantation}.`;
+};
 
 const pickAdaptiveNudge = ({
     pathname = "",
@@ -233,25 +359,72 @@ const getQuickActions = (role = "student") => {
     ];
 };
 
+const normalizeDockActionEntries = (entries = []) =>
+    safeList(entries)
+        .map((entry = {}) => {
+            const rawAction = entry?.action || entry;
+            const action = normalizeAssistantAction(rawAction);
+            if (!action) return null;
+            return {
+                label: safeText(entry?.label || getActionLabel(action), 90) || getActionLabel(action),
+                action
+            };
+        })
+        .filter(Boolean)
+        .slice(0, DOCK_ACTION_LIMIT);
+
+const buildResponseActionEntries = (payload = {}) => {
+    const entries = [];
+    const clientAction = normalizeAssistantAction(payload?.clientAction || {});
+    if (clientAction) {
+        entries.push({
+            label: getActionLabel(clientAction),
+            action: clientAction
+        });
+    }
+    return normalizeDockActionEntries(entries);
+};
+
 const UtilityDock = memo(() => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const location = useLocation();
     const lowMotion = usePreferLowMotion();
+    const { toast } = useToast();
     const [isOpen, setIsOpen] = useState(false);
     const [quickMessage, setQuickMessage] = useState("");
+    const [dockMessages, setDockMessages] = useState([]);
+    const [dockSessionId, setDockSessionId] = useState(null);
+    const [isDockSending, setIsDockSending] = useState(false);
+    const [dockOperationForm, setDockOperationForm] = useState(null);
+    const [dockOperationValues, setDockOperationValues] = useState({});
+    const [dockOperationError, setDockOperationError] = useState("");
     const [activeNudge, setActiveNudge] = useState(null);
     const [isNudgeVisible, setIsNudgeVisible] = useState(false);
     const hasLoadedProfileRef = useRef(false);
+    const quickSendButtonRef = useRef(null);
+    const quickInputRef = useRef(null);
+    const dockViewportRef = useRef(null);
+    const commandTimeoutsRef = useRef([]);
+    const dockMessageIndexRef = useRef(0);
 
     const { user, isAuthenticated } = useSelector((state) => state.auth || {});
     const assistantProfile = useSelector((state) => state.aiChat?.assistantProfile);
+    const checkinHistory = useSelector((state) => state.checkin?.checkinHistory);
     const assistantName =
         assistantProfile?.assistant?.assistantName || "Jarvis";
-    const focusItems = assistantProfile?.assistant?.daily?.focusItems || [];
-    const quickActions = assistantProfile?.assistant?.daily?.quickActions || [];
+    const focusItems = useMemo(
+        () => assistantProfile?.assistant?.daily?.focusItems || [],
+        [assistantProfile?.assistant?.daily?.focusItems]
+    );
+    const quickActions = useMemo(
+        () => assistantProfile?.assistant?.daily?.quickActions || [],
+        [assistantProfile?.assistant?.daily?.quickActions]
+    );
 
     const normalizedRole = normalizeRole(user?.role);
+    const normalizedAutomationRole = normalizeRoleName(normalizedRole);
+    const canRunAutomation = canExecuteAutomationRole(normalizedAutomationRole);
     const assistantChatPath = getAssistantChatPath(normalizedRole);
     const isStudent = isStudentRole(normalizedRole);
     const quickActionItems = useMemo(
@@ -271,10 +444,76 @@ const UtilityDock = memo(() => {
         [assistantName]
     );
 
+    const appendDockMessage = useCallback((role, content, options = {}) => {
+        const text = String(content || "").trim();
+        const widgets = trimDockWidgets(options.widgets || []);
+        const actions = normalizeDockActionEntries(options.actions || []);
+        if (!text && widgets.length === 0 && actions.length === 0) return;
+        const id = `dock-${Date.now()}-${dockMessageIndexRef.current}`;
+        dockMessageIndexRef.current += 1;
+        const message = {
+            id,
+            role: role === "user" ? "user" : "assistant",
+            content: text,
+            createdAt: Date.now(),
+            skipHistory: Boolean(options.skipHistory),
+            widgets,
+            actions
+        };
+        setDockMessages((prev) => {
+            const next = [...prev, message];
+            return next.slice(-DOCK_MESSAGE_LIMIT);
+        });
+    }, []);
+
     useEffect(() => {
         if (!isOpen) return;
+        const viewport = dockViewportRef.current;
+        if (!viewport) return;
+        viewport.scrollTop = viewport.scrollHeight;
+    }, [dockMessages, isDockSending, isOpen]);
+
+    useEffect(() => {
         setIsOpen(false);
+        setIsNudgeVisible(false);
+        setDockOperationForm(null);
+        setDockOperationValues({});
+        setDockOperationError("");
     }, [location.pathname]);
+
+    const clearCommandTimeouts = useCallback(() => {
+        commandTimeoutsRef.current.forEach((timerId) => window.clearTimeout(timerId));
+        commandTimeoutsRef.current = [];
+    }, []);
+
+    const queueCommandTimeout = useCallback((callback, delayMs) => {
+        const timerId = window.setTimeout(() => {
+            commandTimeoutsRef.current = commandTimeoutsRef.current.filter((id) => id !== timerId);
+            callback();
+        }, delayMs);
+        commandTimeoutsRef.current.push(timerId);
+        return timerId;
+    }, []);
+
+    const getDockSpellOrigin = useCallback(() => {
+        const buttonEl = quickSendButtonRef.current;
+        if (buttonEl && typeof buttonEl.getBoundingClientRect === "function") {
+            const rect = buttonEl.getBoundingClientRect();
+            return {
+                x: rect.left + (rect.width / 2),
+                y: rect.top + (rect.height / 2)
+            };
+        }
+
+        if (typeof window !== "undefined") {
+            return {
+                x: window.innerWidth * 0.88,
+                y: window.innerHeight * 0.88
+            };
+        }
+
+        return { x: null, y: null };
+    }, []);
 
     useEffect(() => {
         if (!isAuthenticated) {
@@ -288,17 +527,9 @@ const UtilityDock = memo(() => {
         });
     }, [dispatch, isAuthenticated]);
 
-    const openAssistant = useCallback((message = "", autoSend = false) => {
-        const trimmed = String(message || "").trim();
-        navigate(assistantChatPath, {
-            state: {
-                fromUtilityDock: true,
-                prefillMessage: trimmed || undefined,
-                autoSendFromDock: Boolean(autoSend && trimmed),
-                dockNonce: Date.now()
-            }
-        });
-    }, [assistantChatPath, navigate]);
+    useEffect(() => () => {
+        clearCommandTimeouts();
+    }, [clearCommandTimeouts]);
 
     const handleQuickAction = useCallback((path) => {
         if (!path) return;
@@ -307,15 +538,344 @@ const UtilityDock = memo(() => {
         navigate(path);
     }, [navigate]);
 
-    const handleSendQuickMessage = useCallback((event) => {
+    const handleDockOperationFieldChange = useCallback((key, value) => {
+        if (!key) return;
+        setDockOperationValues((prev) => ({
+            ...prev,
+            [key]: value
+        }));
+    }, []);
+
+    const cancelDockOperationForm = useCallback(() => {
+        setDockOperationError("");
+        setDockOperationForm(null);
+        setDockOperationValues({});
+    }, []);
+
+    const prepareDockExecuteOperation = useCallback((action = {}) => {
+        const operation = String(action?.operation || "").trim().toLowerCase();
+        if (!operation) return false;
+
+        if (!canRunAutomation || !isOperationAllowedForRole(normalizedAutomationRole, operation)) {
+            appendDockMessage(
+                "assistant",
+                `${assistantName}: Operation "${describeOperation(operation)}" only tersedia untuk role MTSS yang diizinkan.`
+            );
+            return true;
+        }
+
+        const formConfig = getDockOperationFormConfig(operation, action.payload || {});
+        if (!formConfig) {
+            appendDockMessage("assistant", `${assistantName}: Form untuk operation ini belum tersedia.`);
+            return true;
+        }
+
+        setDockOperationError("");
+        setDockOperationForm({
+            ...action,
+            operation,
+            label: formConfig.label || getOperationLabel(operation),
+            description: formConfig.description || "Complete quick form below, then run operation.",
+            fields: Array.isArray(formConfig.fields) ? formConfig.fields : []
+        });
+        setDockOperationValues(formConfig.initialValues || {});
+        setIsOpen(true);
+        setIsNudgeVisible(false);
+        appendDockMessage(
+            "assistant",
+            `${assistantName}: Ready. Fill the mini form below to run ${formConfig.label || getOperationLabel(operation)}.`
+        );
+        return true;
+    }, [
+        appendDockMessage,
+        assistantName,
+        canRunAutomation,
+        normalizedAutomationRole
+    ]);
+
+    const submitDockOperationForm = useCallback(async (event) => {
+        event?.preventDefault?.();
+        if (!dockOperationForm || isDockSending) return;
+
+        const operation = String(dockOperationForm.operation || "").trim().toLowerCase();
+        if (!operation) return;
+
+        if (dockOperationForm.requireConfirmation !== false) {
+            const confirmed = window.confirm(String(dockOperationForm.confirmText || `Run "${getOperationLabel(operation)}" now?`));
+            if (!confirmed) {
+                appendDockMessage("assistant", `${assistantName}: Baik, operation dibatalkan dulu.`);
+                return;
+            }
+        }
+
+        const { payload, error } = buildOperationPayloadFromForm(operation, dockOperationValues, dockOperationForm.payload || {});
+        if (error || !payload) {
+            setDockOperationError(error || "Payload invalid. Please check your inputs.");
+            return;
+        }
+
+        setDockOperationError("");
+        setIsDockSending(true);
+        try {
+            const result = await aiChatService.executeAssistantOperation(operation, payload, dockSessionId);
+            const successText = safeText(dockOperationForm.successMessage || result?.message || "Operation selesai dijalankan.", 220);
+            appendDockMessage("assistant", `${assistantName}: ${successText}`);
+            toast({
+                title: "Automation completed",
+                description: successText
+            });
+            setDockOperationForm(null);
+            setDockOperationValues({});
+        } catch (runError) {
+            const fallback = safeText(
+                dockOperationForm.failureMessage
+                || runError?.response?.data?.message
+                || runError?.message
+                || "Automation gagal dijalankan.",
+                220
+            );
+            appendDockMessage("assistant", `${assistantName}: ${fallback}`);
+            toast({
+                title: "Automation failed",
+                description: fallback,
+                variant: "destructive"
+            });
+        } finally {
+            setIsDockSending(false);
+        }
+    }, [
+        appendDockMessage,
+        assistantName,
+        dockOperationForm,
+        dockOperationValues,
+        dockSessionId,
+        isDockSending,
+        toast
+    ]);
+
+    const handleDockAction = useCallback(async (rawAction = {}, options = {}) => {
+        const action = normalizeAssistantAction(rawAction);
+        if (!action) return false;
+
+        const type = String(action.type || "").toLowerCase();
+        if (type === "navigate") {
+            const safeAction = sanitizeAssistantNavigateAction(action, normalizedRole);
+            if (!safeAction?.navigateTo) {
+                appendDockMessage("assistant", `${assistantName}: Route tersebut tidak tersedia untuk role kamu.`);
+                return true;
+            }
+            navigate(safeAction.navigateTo);
+            return true;
+        }
+
+        if (type === "prefill") {
+            const value = safeText(action.value || action.message, 280);
+            if (!value) return false;
+            setQuickMessage(value);
+            quickInputRef.current?.focus?.();
+            return true;
+        }
+
+        if (type === "execute_operation") {
+            return prepareDockExecuteOperation(action, options);
+        }
+
+        return false;
+    }, [
+        appendDockMessage,
+        assistantName,
+        navigate,
+        normalizedRole,
+        prepareDockExecuteOperation
+    ]);
+
+    const handleLocalThemeCommand = useCallback((message) => {
+        const themeIntent = detectAssistantThemeIntent(message, getCurrentTheme());
+        if (!themeIntent?.autoApply) return false;
+
+        clearCommandTimeouts();
+
+        const targetTheme = themeIntent.targetTheme === "dark" ? "dark" : "light";
+        const previousTheme = themeIntent.previousTheme === "dark" ? "dark" : "light";
+        const isAlreadyActive = previousTheme === targetTheme;
+        const assistantReply = buildDockThemeReply({
+            assistantName,
+            studentCallName,
+            isStudent,
+            targetTheme,
+            isAlreadyActive,
+            incantation: themeIntent.incantation
+        });
+
+        setIsOpen(true);
+        setIsNudgeVisible(false);
+
+        queueCommandTimeout(() => {
+            appendDockMessage("assistant", assistantReply);
+
+            queueCommandTimeout(() => {
+                const commitTheme = () => {
+                    applyThemePreference(targetTheme);
+                    persistTheme(targetTheme);
+                };
+
+                const withViewTransition = !lowMotion
+                    && typeof document !== "undefined"
+                    && typeof document.startViewTransition === "function";
+
+                if (withViewTransition) {
+                    document.startViewTransition(() => {
+                        commitTheme();
+                    });
+                } else {
+                    commitTheme();
+                }
+
+                const origin = getDockSpellOrigin();
+                emitThemeSpell({
+                    theme: targetTheme,
+                    x: origin.x,
+                    y: origin.y,
+                    trigger: "utility-dock-theme-command"
+                });
+            }, THEME_COMMAND_APPLY_DELAY_MS);
+        }, THEME_COMMAND_TYPING_DELAY_MS);
+
+        return true;
+    }, [
+        assistantName,
+        appendDockMessage,
+        clearCommandTimeouts,
+        getDockSpellOrigin,
+        isStudent,
+        lowMotion,
+        queueCommandTimeout,
+        studentCallName
+    ]);
+
+    const sendDockMessage = useCallback(async (message, options = {}) => {
+        const trimmed = String(message || "").trim();
+        if (!trimmed) return;
+        if (isDockSending) return;
+
+        const addUserMessage = options.addUserMessage !== false;
+        setIsOpen(true);
+        setIsNudgeVisible(false);
+
+        if (addUserMessage) {
+            appendDockMessage("user", trimmed);
+        }
+
+        const contextPayload = buildUtilityDockContextPayload({
+            pathname: location.pathname,
+            role: normalizedRole,
+            user,
+            checkinHistory
+        });
+        const commandPack = buildDockCommandPack({
+            routeFamily: contextPayload.routeFamily,
+            role: normalizedRole
+        });
+
+        if (handleLocalThemeCommand(trimmed)) {
+            return;
+        }
+
+        const navigationIntent = detectAssistantNavigationIntent(trimmed, normalizedRole);
+        if (navigationIntent?.navigateTo && navigationIntent.autoNavigate) {
+            appendDockMessage(
+                "assistant",
+                `${assistantName}: opening ${navigationIntent.label || "requested page"} now.`
+            );
+            navigate(navigationIntent.navigateTo);
+            return;
+        }
+
+        const operationIntent = detectDockOperationIntent(trimmed, {
+            role: normalizedAutomationRole,
+            routeFamily: contextPayload.routeFamily
+        });
+        if (operationIntent) {
+            const handled = await handleDockAction(operationIntent, { source: "text_intent" });
+            if (handled) return;
+        }
+
+        const liveIntent = detectDockLiveInsightIntent(trimmed, location.pathname);
+        if (liveIntent) {
+            const liveReply = buildLiveDockInsightReply({
+                intent: liveIntent,
+                context: contextPayload,
+                assistantName,
+                studentCallName
+            });
+            if (liveReply) {
+                appendDockMessage("assistant", liveReply);
+                return;
+            }
+        }
+
+        setIsDockSending(true);
+        try {
+            const apiMessage = composeDockContextMessage({
+                message: trimmed,
+                context: contextPayload,
+                commandPack
+            }) || trimmed;
+            const response = await aiChatService.sendChatMessage(apiMessage, dockSessionId);
+            const payload = response?.data || {};
+            const nextSessionId = String(payload?.sessionId || "").trim();
+            if (nextSessionId) {
+                setDockSessionId(nextSessionId);
+            }
+            const assistantReply = String(payload?.message || "").trim();
+            const assistantWidgets = trimDockWidgets(payload?.uiWidgets || []);
+            const assistantActions = buildResponseActionEntries(payload);
+
+            if (response?.success && (assistantReply || assistantWidgets.length > 0 || assistantActions.length > 0)) {
+                appendDockMessage("assistant", assistantReply, {
+                    widgets: assistantWidgets,
+                    actions: assistantActions
+                });
+            } else {
+                appendDockMessage(
+                    "assistant",
+                    `${assistantName}: I could not process that yet. Please retry once more.`
+                );
+            }
+        } catch (error) {
+            const fallbackMessage = String(error?.response?.data?.message || error?.message || "").trim();
+            appendDockMessage(
+                "assistant",
+                fallbackMessage
+                    ? `${assistantName}: ${fallbackMessage}`
+                    : `${assistantName}: I hit a temporary issue. Try again in a few seconds.`
+            );
+        } finally {
+            setIsDockSending(false);
+        }
+    }, [
+        appendDockMessage,
+        assistantName,
+        checkinHistory,
+        dockSessionId,
+        handleDockAction,
+        handleLocalThemeCommand,
+        isDockSending,
+        location.pathname,
+        navigate,
+        normalizedAutomationRole,
+        normalizedRole,
+        studentCallName,
+        user
+    ]);
+
+    const handleSendQuickMessage = useCallback(async (event) => {
         event.preventDefault();
         const trimmed = String(quickMessage || "").trim();
         if (!trimmed) return;
         setQuickMessage("");
-        setIsOpen(false);
-        setIsNudgeVisible(false);
-        openAssistant(trimmed, true);
-    }, [openAssistant, quickMessage]);
+        await sendDockMessage(trimmed, { addUserMessage: true });
+    }, [quickMessage, sendDockMessage]);
 
     const handleNudgePrimaryAction = useCallback((action) => {
         if (!action || typeof action !== "object") return;
@@ -331,8 +891,10 @@ const UtilityDock = memo(() => {
         }
 
         const message = String(action.message || "").trim();
-        openAssistant(message, false);
-    }, [navigate, openAssistant]);
+        if (!message) return;
+        setIsOpen(true);
+        void sendDockMessage(message, { addUserMessage: false });
+    }, [navigate, sendDockMessage]);
 
     const dismissNudge = useCallback((snooze = false) => {
         setIsNudgeVisible(false);
@@ -407,12 +969,12 @@ const UtilityDock = memo(() => {
                             </div>
                             <div className="min-w-0 flex-1">
                                 <p className="text-xs font-bold text-violet-700 dark:text-violet-200">{activeNudge.title}</p>
-                                <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">{activeNudge.text}</p>
+                                <p className="text-[11px] text-slate-700 dark:text-slate-100 mt-0.5">{activeNudge.text}</p>
                             </div>
                             <button
                                 type="button"
                                 onClick={() => dismissNudge(false)}
-                                className="p-1 rounded-md text-slate-500 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                                className="p-1 rounded-md text-slate-600 dark:text-slate-200 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                                 aria-label="Dismiss assistant nudge"
                             >
                                 <X className="w-3.5 h-3.5" />
@@ -430,7 +992,7 @@ const UtilityDock = memo(() => {
                                 <button
                                     type="button"
                                     onClick={() => handleNudgePrimaryAction(activeNudge.secondaryAction)}
-                                    className="px-2.5 py-1.5 rounded-full text-[11px] font-semibold text-slate-700 dark:text-slate-200 bg-white/85 dark:bg-white/12 border border-slate-200/80 dark:border-white/15 hover:brightness-105 transition-all"
+                                    className="px-2.5 py-1.5 rounded-full text-[11px] font-semibold text-slate-800 dark:text-slate-100 bg-white/95 dark:bg-slate-800/90 border border-slate-300/85 dark:border-slate-400/45 hover:brightness-105 transition-all"
                                 >
                                     {activeNudge.secondaryAction.label}
                                 </button>
@@ -438,7 +1000,7 @@ const UtilityDock = memo(() => {
                             <button
                                 type="button"
                                 onClick={() => dismissNudge(true)}
-                                className="px-2 py-1.5 rounded-full text-[10px] font-semibold text-slate-500 dark:text-slate-300 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                                className="px-2 py-1.5 rounded-full text-[10px] font-semibold text-slate-600 dark:text-slate-200 hover:text-slate-800 dark:hover:text-slate-100 transition-colors"
                             >
                                 Snooze
                             </button>
@@ -463,7 +1025,7 @@ const UtilityDock = memo(() => {
                                     <Sparkles className="w-4 h-4" />
                                     {buttonLabel}
                                 </p>
-                                <p className="text-[11px] mt-0.5 text-slate-500 dark:text-slate-300">
+                                <p className="text-[11px] mt-0.5 text-slate-600 dark:text-slate-200">
                                     {isStudent ? "Personal helper on every student page." : "Personal helper across your workspace."}
                                 </p>
                             </div>
@@ -471,7 +1033,7 @@ const UtilityDock = memo(() => {
                                 type="button"
                                 onClick={() => setIsOpen(false)}
                                 aria-label="Close assistant dock"
-                                className="p-1.5 rounded-lg bg-white/70 dark:bg-white/10 border border-cyan-200/45 dark:border-cyan-200/20 text-slate-700 dark:text-slate-200 hover:brightness-105 transition-all"
+                                className="p-1.5 rounded-lg bg-white/88 dark:bg-slate-800/85 border border-cyan-200/55 dark:border-cyan-300/30 text-slate-800 dark:text-slate-100 hover:brightness-105 transition-all"
                             >
                                 <X className="w-4 h-4" />
                             </button>
@@ -483,29 +1045,195 @@ const UtilityDock = memo(() => {
                                     key={entry.label}
                                     type="button"
                                     onClick={() => handleQuickAction(entry.navigateTo)}
-                                    className="w-full rounded-2xl px-3 py-2 text-left bg-white/78 dark:bg-white/8 border border-cyan-100/70 dark:border-cyan-200/15 hover:bg-cyan-50/90 dark:hover:bg-cyan-400/12 transition-all"
+                                    className="w-full rounded-2xl px-3 py-2 text-left bg-white/88 dark:bg-slate-800/75 border border-cyan-100/80 dark:border-cyan-300/25 hover:bg-cyan-50/95 dark:hover:bg-cyan-400/12 transition-all"
                                 >
                                     <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 flex items-center justify-between gap-2">
                                         <span>{entry.label}</span>
                                         <ArrowUpRight className="w-3.5 h-3.5 text-cyan-500" />
                                     </p>
-                                    <p className="text-[11px] text-slate-500 dark:text-slate-300 mt-0.5">{entry.description}</p>
+                                    <p className="text-[11px] text-slate-600 dark:text-slate-200 mt-0.5">{entry.description}</p>
                                 </button>
                             ))}
                         </div>
 
+                        <div className="mt-3 rounded-2xl border border-cyan-200/55 dark:border-cyan-300/20 bg-white/78 dark:bg-slate-950/42 backdrop-blur-sm">
+                            <div
+                                ref={dockViewportRef}
+                                className="max-h-44 overflow-y-auto px-2.5 py-2 space-y-1.5"
+                            >
+                                {/* {dockMessages.length === 0 && !isDockSending && (
+                                    <p className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-300 px-1">
+                                        Ask anything from this page. I can respond in-place without moving you to another screen.
+                                    </p>
+                                )} */}
+                                {dockMessages.map((message) => (
+                                    <div
+                                        key={message.id}
+                                        className={`max-w-[92%] rounded-2xl px-2.5 py-1.5 text-[11px] leading-relaxed ${message.role === "user"
+                                                ? "ml-auto bg-gradient-to-r from-cyan-500 via-indigo-500 to-pink-500 text-white shadow-sm"
+                                                : "mr-auto bg-white/90 dark:bg-slate-900/70 border border-cyan-200/55 dark:border-cyan-300/22 text-slate-800 dark:text-slate-100"
+                                            }`}
+                                    >
+                                        {message.content}
+                                        {message.role === "assistant" && safeList(message.widgets).length > 0 && (
+                                            <UtilityDockWidgetPreview
+                                                widgets={message.widgets}
+                                                onAction={(action) => {
+                                                    void handleDockAction(action, { source: "widget" });
+                                                }}
+                                            />
+                                        )}
+                                        {message.role === "assistant" && safeList(message.actions).length > 0 && (
+                                            <div className="mt-1.5 flex flex-wrap gap-1.5">
+                                                {message.actions.map((entry, index) => (
+                                                    <button
+                                                        key={`${entry.label}-${index}`}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            void handleDockAction(entry.action, { source: "message_action" });
+                                                        }}
+                                                        className="rounded-full border border-cyan-300/65 dark:border-cyan-300/35 bg-white/95 dark:bg-slate-900/70 px-2 py-1 text-[10px] font-semibold text-cyan-700 dark:text-cyan-200 hover:bg-cyan-50/95 dark:hover:bg-cyan-400/15 transition-colors"
+                                                    >
+                                                        {entry.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                                {isDockSending && (
+                                    <div className="mr-auto inline-flex items-center gap-1 rounded-2xl border border-cyan-200/55 dark:border-cyan-300/22 bg-white/90 dark:bg-slate-900/70 px-2.5 py-1.5 text-[11px] text-slate-700 dark:text-slate-200">
+                                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-cyan-500 animate-pulse" />
+                                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse [animation-delay:120ms]" />
+                                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-pink-500 animate-pulse [animation-delay:240ms]" />
+                                        <span className="ml-1">{assistantName} is thinking...</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {dockOperationForm && (
+                            <form
+                                onSubmit={submitDockOperationForm}
+                                className="mt-2 rounded-2xl border border-cyan-300/55 dark:border-cyan-300/25 bg-white/82 dark:bg-slate-950/52 p-2.5 space-y-2"
+                            >
+                                <div className="flex items-start justify-between gap-2">
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] font-bold text-cyan-700 dark:text-cyan-200">
+                                            {dockOperationForm.label || "Execute Operation"}
+                                        </p>
+                                        {dockOperationForm.description && (
+                                            <p className="text-[10px] mt-0.5 text-slate-600 dark:text-slate-300">
+                                                {dockOperationForm.description}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={cancelDockOperationForm}
+                                        className="rounded-md border border-cyan-300/60 dark:border-cyan-300/30 bg-white/85 dark:bg-slate-900/65 px-1.5 py-1 text-[10px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-cyan-50/90 dark:hover:bg-cyan-500/15 transition-colors"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+
+                                <div className="max-h-44 overflow-y-auto space-y-1.5 pr-1">
+                                    {safeList(dockOperationForm.fields).map((field) => {
+                                        const key = String(field?.key || "").trim();
+                                        if (!key) return null;
+                                        const fieldType = String(field?.type || "text").toLowerCase();
+                                        const label = String(field?.label || key);
+                                        const value = dockOperationValues?.[key] ?? "";
+                                        const required = Boolean(field?.required);
+                                        const placeholder = String(field?.placeholder || "");
+                                        const inputClass = "w-full rounded-lg border border-cyan-300/55 dark:border-cyan-300/30 bg-white/96 dark:bg-slate-900/72 px-2 py-1.5 text-[11px] text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-cyan-500/70";
+
+                                        return (
+                                            <label key={key} className="block">
+                                                <span className="mb-0.5 block text-[10px] font-semibold text-slate-700 dark:text-slate-200">
+                                                    {label}{required ? " *" : ""}
+                                                </span>
+                                                {fieldType === "textarea" && (
+                                                    <textarea
+                                                        rows={2}
+                                                        value={String(value)}
+                                                        onChange={(event) => handleDockOperationFieldChange(key, event.target.value)}
+                                                        placeholder={placeholder}
+                                                        className={inputClass}
+                                                    />
+                                                )}
+                                                {fieldType === "select" && (
+                                                    <select
+                                                        value={String(value)}
+                                                        onChange={(event) => handleDockOperationFieldChange(key, event.target.value)}
+                                                        className={inputClass}
+                                                    >
+                                                        {safeList(field?.options).map((option) => {
+                                                            const optionValue = String(option);
+                                                            return (
+                                                                <option key={`${key}-${optionValue}`} value={optionValue}>
+                                                                    {optionValue}
+                                                                </option>
+                                                            );
+                                                        })}
+                                                    </select>
+                                                )}
+                                                {fieldType !== "textarea" && fieldType !== "select" && (
+                                                    <input
+                                                        type={fieldType === "number" ? "number" : "text"}
+                                                        value={String(value)}
+                                                        onChange={(event) => handleDockOperationFieldChange(key, event.target.value)}
+                                                        placeholder={placeholder}
+                                                        className={inputClass}
+                                                    />
+                                                )}
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+
+                                {dockOperationError && (
+                                    <p className="text-[10px] text-rose-600 dark:text-rose-300">{dockOperationError}</p>
+                                )}
+
+                                <div className="flex items-center justify-end gap-1.5">
+                                    <button
+                                        type="button"
+                                        onClick={cancelDockOperationForm}
+                                        className="rounded-full border border-cyan-300/65 dark:border-cyan-300/35 bg-white/90 dark:bg-slate-900/70 px-2.5 py-1 text-[10px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-cyan-50/90 dark:hover:bg-cyan-500/15 transition-colors"
+                                        disabled={isDockSending}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="rounded-full bg-gradient-to-r from-cyan-500 via-indigo-500 to-pink-500 px-2.5 py-1 text-[10px] font-bold text-white hover:brightness-105 transition-all disabled:opacity-60"
+                                        disabled={isDockSending}
+                                    >
+                                        {isDockSending ? "Running..." : "Run Operation"}
+                                    </button>
+                                </div>
+                            </form>
+                        )}
+
                         <form onSubmit={handleSendQuickMessage} className="mt-3 flex gap-2">
                             <input
+                                ref={quickInputRef}
                                 type="text"
                                 value={quickMessage}
                                 onChange={(event) => setQuickMessage(event.target.value)}
+                                onKeyDown={(event) => {
+                                    if (event.key === "Enter" && event.shiftKey) return;
+                                }}
                                 placeholder={`Message ${assistantName}...`}
-                                className="flex-1 px-3 py-2 rounded-xl bg-white/88 dark:bg-white/8 border border-cyan-200/45 dark:border-cyan-200/20 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/70"
+                                className="flex-1 px-3 py-2.5 rounded-xl !bg-white !text-slate-900 !placeholder:text-slate-500 dark:!bg-slate-900 dark:!text-slate-100 dark:!placeholder:text-slate-400 border border-cyan-300/55 dark:border-cyan-200/45 text-sm caret-cyan-700 dark:caret-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/75 dark:focus:ring-cyan-300/70 shadow-[inset_0_1px_2px_rgba(15,23,42,0.08)] dark:shadow-[inset_0_1px_2px_rgba(15,23,42,0.42)]"
+                                style={{ WebkitTextFillColor: "currentColor" }}
                             />
                             <button
+                                ref={quickSendButtonRef}
                                 type="submit"
                                 className="px-3 py-2 rounded-xl bg-gradient-to-r from-cyan-500 via-indigo-500 to-pink-500 text-white hover:brightness-105 transition-all disabled:opacity-50"
-                                disabled={!quickMessage.trim()}
+                                disabled={!quickMessage.trim() || isDockSending}
                                 aria-label="Send quick message to assistant"
                             >
                                 <Send className="w-4 h-4" />

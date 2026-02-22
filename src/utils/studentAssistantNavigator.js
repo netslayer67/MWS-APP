@@ -1,3 +1,5 @@
+import { normalizeAssistantIntentText } from './assistantIntentNormalizer';
+
 const COMMON_ALLOWED_ROUTES = new Set([
     '/profile',
     '/profile/personal-stats',
@@ -28,6 +30,12 @@ const WORKFORCE_BASE_ROUTES = new Set([
 
 const NAVIGATION_CUE_REGEX = /(bawa(kan)?|antar(kan)?|mau ke|ingin ke|ke halaman|pindah(kan)?|arahin|arahkan|redirect|go to|open|navigate|buka(\s+halaman)?|masuk ke|take me|bring me|visit|show me)/i;
 const HELP_CUE_REGEX = /(bantu(in)?|tolong|help me|could you|can you|please|dong|donk|plz)/i;
+const QUERY_CONTEXT_REGEX = /(\?|bagaimana|gimana|status|what|how|why|siapa|who|berapa|kapan|where|mana|jelaskan|explain|ringkas|summary|summari[sz]e|draft|buatkan|analisis|analyze|laporan|report)/i;
+const THEME_ACTION_CUE_REGEX = /(ubah(in)?|ganti(in)?|switch|set|jadikan|turn|toggle|apply|change|pindah(kan)?|aktifkan|enable|pakai|ubah tampilan)/i;
+const THEME_CONTEXT_REGEX = /(theme|tema|mode|appearance|tampilan)/i;
+const THEME_TARGET_DARK_REGEX = /(dark(\s*mode)?|mode\s*gelap|tema\s*gelap|night\s*mode|ke\s*dark|jadi\s*dark|jadikan\s*gelap)/i;
+const THEME_TARGET_LIGHT_REGEX = /(light(\s*mode)?|mode\s*terang|mode\s*cerah|tema\s*terang|day\s*mode|ke\s*light|jadi\s*light|jadikan\s*terang)/i;
+const THEME_TOGGLE_REGEX = /(toggle\s*(theme|mode)|switch\s*(theme|mode)|change\s*(theme|mode)|ganti\s*(theme|tema|mode)|ubah\s*(theme|tema|mode))/i;
 
 const COMMON_ROUTE_INTENTS = [
     {
@@ -161,6 +169,8 @@ const WORKFORCE_ROUTE_INTENTS = [
 const normalizeText = (value = '') => String(value || '').toLowerCase().replace(/\s+/g, ' ').trim();
 
 const normalizeRole = (role = '') => String(role || '').trim().toLowerCase();
+const normalizeTheme = (theme = '') => (String(theme || '').trim().toLowerCase() === 'dark' ? 'dark' : 'light');
+const getThemeIncantation = (theme = 'light') => (normalizeTheme(theme) === 'dark' ? 'Nox' : 'Lumos Maxima');
 
 const isStudentRole = (role = '') => normalizeRole(role) === 'student';
 
@@ -170,12 +180,12 @@ export const getAssistantAllowedRoutes = (role = 'student') => {
     const normalizedRole = normalizeRole(role);
     const routes = new Set([...WORKFORCE_BASE_ROUTES]);
 
-    if (['teacher', 'se_teacher', 'head_unit', 'directorate', 'admin', 'superadmin'].includes(normalizedRole)) {
+    if (['teacher', 'se_teacher', 'head_unit', 'principal', 'directorate', 'admin', 'superadmin'].includes(normalizedRole)) {
         routes.add('/emotional-checkin/teacher-dashboard');
         routes.add('/mtss/teacher');
     }
 
-    if (['head_unit', 'directorate', 'admin', 'superadmin'].includes(normalizedRole)) {
+    if (['head_unit', 'principal', 'directorate', 'admin', 'superadmin'].includes(normalizedRole)) {
         routes.add('/emotional-checkin/dashboard');
     }
 
@@ -214,30 +224,47 @@ const getRoleIntents = (role = 'student') => (
 );
 
 export const detectAssistantNavigationIntent = (message = '', role = 'student') => {
-    const text = normalizeText(message);
-    if (!text) return null;
-
-    const hasCue = NAVIGATION_CUE_REGEX.test(text) || HELP_CUE_REGEX.test(text);
-    const directRouteMention = /\/(?:student|profile|mtss|support|emotional-checkin|ai-assistant|user-management)\//i.test(text);
-    if (!hasCue && !directRouteMention) return null;
-
+    const rawText = normalizeText(message);
+    if (!rawText) return null;
+    const text = normalizeAssistantIntentText(rawText, {
+        userKey: normalizeRole(role) || 'global'
+    });
     const intents = getRoleIntents(role);
-    for (const routeIntent of intents) {
-        const matched = routeIntent.patterns.some((pattern) => pattern.test(text));
-        if (!matched) continue;
+    const isStudent = isStudentRole(role);
 
+    const hasNavigationCue = NAVIGATION_CUE_REGEX.test(text);
+    const hasHelpCue = HELP_CUE_REGEX.test(text);
+    const isQueryLike = QUERY_CONTEXT_REGEX.test(text);
+    const directRouteMention = /\/(?:student|profile|mtss|support|emotional-checkin|ai-assistant|user-management)\//i.test(rawText);
+    const maxDirectIntentWords = 8;
+    let routeIntentMatch = intents.find((routeIntent) => routeIntent.patterns.some((pattern) => pattern.test(text)));
+    if (!isStudent && /(mtss|mentor assignment|intervention|intervensi|portal mtss)/i.test(text)) {
+        const prioritizedMtssIntent = intents.find(
+            (routeIntent) =>
+                routeIntent.intent === 'open_mtss_teacher_dashboard'
+                && routeIntent.patterns.some((pattern) => pattern.test(text))
+        );
+        if (prioritizedMtssIntent) {
+            routeIntentMatch = prioritizedMtssIntent;
+        }
+    }
+    if (routeIntentMatch) {
+        const isShortDirectCommand = text.split(/\s+/).filter(Boolean).length <= maxDirectIntentWords;
         const safeAction = sanitizeAssistantNavigateAction({
             type: 'navigate',
-            intent: routeIntent.intent,
-            navigateTo: routeIntent.navigateTo,
-            label: routeIntent.label,
+            intent: routeIntentMatch.intent,
+            navigateTo: routeIntentMatch.navigateTo,
+            label: routeIntentMatch.label,
             autoNavigate: true,
             confidence: 0.9
         }, role);
-        if (safeAction) return safeAction;
+        const allowShortIntent = isShortDirectCommand && !isQueryLike && !hasHelpCue;
+        if (safeAction && (hasNavigationCue || directRouteMention || allowShortIntent)) return safeAction;
     }
 
-    const directRouteMatch = text.match(/\/[a-z0-9/_-]+/i);
+    if (!hasNavigationCue && !directRouteMention) return null;
+
+    const directRouteMatch = rawText.match(/\/[a-z0-9/_-]+/i);
     if (directRouteMatch) {
         const navigateTo = String(directRouteMatch[0] || '').trim();
         return sanitizeAssistantNavigateAction({
@@ -251,6 +278,47 @@ export const detectAssistantNavigationIntent = (message = '', role = 'student') 
     }
 
     return null;
+};
+
+export const detectAssistantThemeIntent = (message = '', currentTheme = 'light') => {
+    const rawText = normalizeText(message);
+    if (!rawText) return null;
+    const text = normalizeAssistantIntentText(rawText, {
+        userKey: 'theme'
+    });
+
+    const asksDark = THEME_TARGET_DARK_REGEX.test(text);
+    const asksLight = THEME_TARGET_LIGHT_REGEX.test(text);
+    const asksToggle = THEME_TOGGLE_REGEX.test(text);
+    const hasThemeContext = THEME_CONTEXT_REGEX.test(text) || asksDark || asksLight || asksToggle;
+    if (!hasThemeContext) return null;
+
+    const hasActionCue = THEME_ACTION_CUE_REGEX.test(text) || HELP_CUE_REGEX.test(text);
+    if (!hasActionCue && !asksToggle) return null;
+
+    const previousTheme = normalizeTheme(currentTheme);
+    let targetTheme = previousTheme;
+
+    if (asksToggle || (asksDark && asksLight)) {
+        targetTheme = previousTheme === 'dark' ? 'light' : 'dark';
+    } else if (asksDark) {
+        targetTheme = 'dark';
+    } else if (asksLight) {
+        targetTheme = 'light';
+    } else {
+        return null;
+    }
+
+    return {
+        type: 'set_theme',
+        intent: targetTheme === 'dark' ? 'set_theme_dark' : 'set_theme_light',
+        label: targetTheme === 'dark' ? 'Dark Mode' : 'Light Mode',
+        previousTheme,
+        targetTheme,
+        incantation: getThemeIncantation(targetTheme),
+        autoApply: true,
+        confidence: 0.96
+    };
 };
 
 // Backward compatibility wrappers

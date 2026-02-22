@@ -1,7 +1,12 @@
 const MAX_WIDGETS = 8;
 const ALLOWED_EXECUTE_OPERATIONS = new Set([
     'create_mtss_intervention',
-    'append_mtss_progress_checkin'
+    'append_mtss_progress_checkin',
+    'assign_students_to_mtss_mentor',
+    'assign_intervention_mentor',
+    'reassign_mtss_assignment_mentor',
+    'update_mtss_assignment_status',
+    'update_mtss_goal_completion'
 ]);
 
 const ALLOWED_TYPES = new Set([
@@ -45,7 +50,29 @@ const toText = (value, max = 220) => String(value || '')
     .trim()
     .slice(0, max);
 
+const toMultilineText = (value, max = 280) => String(value || '')
+    .replace(/&lt;br\s*\/?&gt;/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/\r\n/g, '\n')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+    .slice(0, max);
+
 const toList = (value) => (Array.isArray(value) ? value : []);
+
+const toNumericLike = (value) => {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string') {
+        const normalized = value.replace(/,/g, '').trim();
+        const match = normalized.match(/-?\d+(?:\.\d+)?/);
+        if (match) {
+            const parsed = Number(match[0]);
+            if (Number.isFinite(parsed)) return parsed;
+        }
+    }
+    return null;
+};
 
 const normalizeOperationPayload = (payload = {}, depth = 0) => {
     if (depth > 3) return undefined;
@@ -135,6 +162,81 @@ const normalizeSkillCardsWidget = (widget = {}) => ({
         .filter((card) => card.title)
 });
 
+const normalizeTableWidget = (widget = {}) => {
+    const columns = toList(widget.columns)
+        .slice(0, 8)
+        .map((column = {}) => ({
+            key: toText(column.key, 40),
+            label: toText(column.label || column.key, 90)
+        }))
+        .filter((column) => column.key);
+
+    const rows = toList(widget.rows)
+        .slice(0, 10)
+        .map((row = {}) => {
+            const next = {};
+            columns.forEach((column) => {
+                next[column.key] = toMultilineText(row[column.key], 280);
+            });
+            return next;
+        });
+
+    return {
+        ...widget,
+        columns,
+        rows
+    };
+};
+
+const normalizeTimelineWidget = (widget = {}) => ({
+    ...widget,
+    items: toList(widget.items)
+        .slice(0, 10)
+        .map((item = {}) => ({
+            time: toText(item.time, 24),
+            title: toText(item.title, 120),
+            detail: toMultilineText(item.detail, 260)
+        }))
+});
+
+const normalizeBarChartWidget = (widget = {}) => {
+    const xKey = toText(widget.xKey || 'label', 60) || 'label';
+    const yKey = toText(widget.yKey || 'value', 60) || 'value';
+    const data = toList(widget.data)
+        .slice(0, 20)
+        .map((entry = {}) => {
+            const labelSource = entry[xKey] || entry.label || entry.tierLabel || entry.name;
+            const valueSource = entry[yKey] || entry.value || entry.tierValue || entry.count || entry.total;
+            const numericValue = toNumericLike(valueSource);
+            if (numericValue === null) return null;
+            const label = toText(labelSource, 90) || '-';
+            return {
+                ...entry,
+                [xKey]: label,
+                [yKey]: numericValue,
+                label: toText(entry.label || label, 90),
+                tierLabel: toText(entry.tierLabel || label, 90),
+                value: numericValue,
+                tierValue: numericValue
+            };
+        })
+        .filter(Boolean);
+    const maxValue = data.length > 0
+        ? Math.max(...data.map((entry) => Number(entry?.[yKey] || 0)), 1)
+        : 1;
+    const yDomain = Array.isArray(widget.yDomain) && widget.yDomain.length === 2
+        ? [Number(widget.yDomain[0]) || 0, Number(widget.yDomain[1]) || maxValue]
+        : [0, maxValue];
+
+    return {
+        ...widget,
+        xKey,
+        yKey,
+        yDomain,
+        data
+    };
+};
+
 const normalizeByType = (widget = {}) => {
     const type = toText(widget.type, 40).toLowerCase();
     if (!ALLOWED_TYPES.has(type)) return null;
@@ -149,6 +251,9 @@ const normalizeByType = (widget = {}) => {
 
     if (type === 'action_chips') return normalizeActionWidget(base);
     if (type === 'skill_cards') return normalizeSkillCardsWidget(base);
+    if (type === 'bar_chart') return normalizeBarChartWidget(base);
+    if (type === 'table') return normalizeTableWidget(base);
+    if (type === 'timeline') return normalizeTimelineWidget(base);
     return base;
 };
 

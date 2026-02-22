@@ -69,14 +69,14 @@ const StudentsTableDesktopRow = memo(
                         <span className="font-semibold text-sm text-slate-800 dark:text-white group-hover/name:text-indigo-600 dark:group-hover/name:text-indigo-400 transition-colors">
                             {student.name}
                         </span>
-                        <span className="block text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">{student.grade}</span>
+                        <span className="block text-[11px] text-slate-500 dark:text-slate-300 mt-0.5">{student.grade}</span>
                     </button>
                 </td>
 
                 {/* Class / Mentor */}
                 <td className="py-4">
                     <span className="block text-sm font-medium text-slate-700 dark:text-slate-200">{classLabel}</span>
-                    <span className="block text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Mentor: {mentorLabel}</span>
+                    <span className="block text-[11px] text-slate-500 dark:text-slate-300 mt-0.5">Mentor: {mentorLabel}</span>
                 </td>
 
                 {/* Focus Area */}
@@ -92,7 +92,7 @@ const StudentsTableDesktopRow = memo(
                             <div className="flex flex-col">
                                 <span className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">{criticalInfo.label}</span>
                                 {criticalInfo.strategy && (
-                                    <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate max-w-[110px]">{criticalInfo.strategy}</span>
+                                    <span className="text-[10px] text-slate-500 dark:text-slate-300 truncate max-w-[110px]">{criticalInfo.strategy}</span>
                                 )}
                             </div>
                         </div>
@@ -112,7 +112,7 @@ const StudentsTableDesktopRow = memo(
                 </td>
 
                 {/* Next Update */}
-                <td className="py-4 text-[12px] text-slate-500 dark:text-slate-400 font-medium">{student.nextUpdate}</td>
+                <td className="py-4 text-[12px] text-slate-600 dark:text-slate-300 font-medium">{student.nextUpdate}</td>
 
                 {/* Actions */}
                 {showActions && (

@@ -1,12 +1,12 @@
-import React, { memo, useMemo, useState } from "react";
+import React, { memo, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
 import { normalizeTierCode } from "../utils/teacherMappingHelpers";
 
 const baseField =
-    "px-4 py-3 rounded-2xl bg-white/80 dark:bg-white/10 border border-primary/20 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all w-full";
+    "w-full px-4 py-3 rounded-2xl bg-white/80 dark:bg-white/10 border border-primary/20 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all";
 const readonlyField =
-    "px-4 py-3 rounded-2xl bg-white/70 dark:bg-white/10 border border-primary/10 text-sm text-muted-foreground";
+    "px-4 py-3 rounded-2xl bg-white/70 dark:bg-white/10 border border-primary/10 text-sm text-muted-foreground min-h-[46px] flex items-center";
 const hasValue = (value) => value !== null && value !== undefined && value !== "";
 
 const resolveGoalValue = (option) => {
@@ -87,6 +87,9 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
         badge: "🎉 Progress Party",
         assignmentId: defaultAssignmentId,
     });
+    const [isMobileSheet, setIsMobileSheet] = useState(() =>
+        typeof window !== "undefined" ? window.matchMedia("(max-width: 639px)").matches : false,
+    );
 
     const selectedOption = assignmentOptions.find((opt) => opt.assignmentId === formState.assignmentId);
     const lockedUnit = selectedOption?.metricLabel || formState.scoreUnit || "score";
@@ -95,12 +98,35 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
     const durationDetail = selectedOption?.duration || "Ongoing";
     const monitoringDetail = buildMonitoringLabel(selectedOption);
     const baselineTargetDetail = buildBaselineTargetLabel(selectedOption);
+    const gradeLabel = student?.grade || student?.currentGrade || "Grade";
+    const tierLabel = student?.tier || student?.primaryIntervention?.tier || "Tier 1";
+    const gradeTierLabel = `${gradeLabel} - ${tierLabel}`;
+
+    useEffect(() => {
+        if (typeof window === "undefined") return undefined;
+        const mediaQuery = window.matchMedia("(max-width: 639px)");
+        const onChange = (event) => setIsMobileSheet(event.matches);
+        setIsMobileSheet(mediaQuery.matches);
+
+        if (mediaQuery.addEventListener) {
+            mediaQuery.addEventListener("change", onChange);
+            return () => mediaQuery.removeEventListener("change", onChange);
+        }
+
+        mediaQuery.addListener(onChange);
+        return () => mediaQuery.removeListener(onChange);
+    }, []);
+
+    useEffect(() => {
+        if (!student) return undefined;
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [student]);
 
     if (!student) return null;
-
-    const gradeLabel = student.grade || student.currentGrade || "Grade";
-    const tierLabel = student.tier || student.primaryIntervention?.tier || "Tier 1";
-    const gradeTierLabel = `${gradeLabel} - ${tierLabel}`;
 
     const handleChange = (field, value) => {
         if (field === "assignmentId") {
@@ -117,171 +143,191 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
     };
 
     return (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center px-4 mtss-theme">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+        <div className="fixed inset-0 z-[90] mtss-theme">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+            <div className="relative z-10 flex min-h-[100dvh] w-full items-end justify-center p-0 sm:items-center sm:p-4">
             <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative w-full max-w-2xl rounded-[28px] overflow-hidden border border-white/40 bg-white/95 dark:bg-slate-900/90 shadow-[0_25px_80px_rgba(15,23,42,0.35)]"
+                initial={isMobileSheet ? { opacity: 0, y: 36 } : { opacity: 0, scale: 0.95, y: 20 }}
+                animate={isMobileSheet ? { opacity: 1, y: 0 } : { opacity: 1, scale: 1, y: 0 }}
+                exit={isMobileSheet ? { opacity: 0, y: 36 } : { opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Quick update modal"
+                className="relative flex w-full max-w-4xl max-h-[94dvh] sm:max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-t-[30px] rounded-b-none sm:rounded-3xl border border-white/40 bg-white/95 dark:bg-slate-900/90 shadow-[0_25px_80px_rgba(15,23,42,0.35)]"
             >
-                <div className="bg-gradient-to-r from-[#34d399]/80 via-[#22d3ee]/80 to-[#60a5fa]/80 text-white p-6 flex items-center justify-between">
-                    <div>
-                        <p className="uppercase text-xs tracking-[0.4em] opacity-80">Quick Update</p>
-                        <h3 className="text-2xl font-bold">{student.name}</h3>
-                        <p className="text-sm opacity-90">Share today's check-in and celebrations</p>
+                <div className="sm:hidden shrink-0 bg-white/95 dark:bg-slate-900/95 pt-2 pb-1 flex justify-center">
+                    <span className="h-1.5 w-14 rounded-full bg-slate-300/80 dark:bg-slate-600/80" aria-hidden="true" />
+                </div>
+                <div className="shrink-0 bg-gradient-to-r from-[#34d399]/85 via-[#22d3ee]/85 to-[#60a5fa]/85 text-white px-4 py-4 sm:px-6 sm:py-5 flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                        <p className="uppercase text-[10px] sm:text-xs tracking-[0.28em] sm:tracking-[0.4em] opacity-80">Quick Update</p>
+                        <h3 className="text-xl sm:text-2xl font-bold truncate">{student.name}</h3>
+                        <p className="text-xs sm:text-sm opacity-90">Share today's check-in and celebrations</p>
                     </div>
                     <button
                         onClick={onClose}
                         aria-label="Close"
-                        className="p-2 bg-white/30 rounded-full hover:bg-white/50 transition"
+                        className="shrink-0 p-2 bg-white/30 rounded-full hover:bg-white/50 transition"
                         disabled={submitting}
                     >
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
-                <div className="px-6 py-4 border-b border-white/40 bg-white/80 dark:bg-white/5">
-                    <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">Intervention Details</p>
-                    <div className="grid sm:grid-cols-2 gap-3 mt-3">
-                        <div className="flex flex-col gap-2">
-                            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                                Strategy
-                            </label>
-                            <div className={readonlyField}>{strategyDetail}</div>
-                        </div>
-                        <div className="flex flex-col gap-2 sm:col-span-2">
-                            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                                Goal
-                            </label>
-                            <div className={readonlyField}>{goalDetail}</div>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                                Duration
-                            </label>
-                            <div className={readonlyField}>{durationDetail}</div>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                                Monitoring Method / Frequency
-                            </label>
-                            <div className={readonlyField}>{monitoringDetail}</div>
-                        </div>
-                        <div className="flex flex-col gap-2 sm:col-span-2">
-                            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                                Baseline to Target
-                            </label>
-                            <div className={readonlyField}>{baselineTargetDetail}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <form className="p-6 space-y-4" onSubmit={handleSubmit}>
-                    <div className="grid md:grid-cols-2 gap-4">
-                        <div className="flex flex-col gap-2">
-                            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                                Student Name
-                            </label>
-                            <div className={readonlyField}>{student.name}</div>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                                Grade / Tier
-                            </label>
-                            <div className={readonlyField}>{gradeTierLabel}</div>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                            Focus Subject (Tier 2/3)
-                        </label>
-                        <select
-                            className={baseField}
-                            value={formState.assignmentId}
-                            onChange={(event) => handleChange("assignmentId", event.target.value)}
-                            disabled={!assignmentOptions.length}
-                        >
-                            {assignmentOptions.length ? (
-                                assignmentOptions.map((option) => (
-                                    <option key={option.assignmentId} value={option.assignmentId}>
-                                        {formatSubjectLabel(option)}
-                                    </option>
-                                ))
-                            ) : (
-                                <option value="">No Tier 2/3 subjects available</option>
-                            )}
-                        </select>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-4">
-                        <div className="flex flex-col gap-2">
-                            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">Date</label>
-                            <input
-                                type="date"
-                                className={baseField}
-                                value={formState.date}
-                                onChange={(event) => handleChange("date", event.target.value)}
-                            />
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                                Intervention Performed?
-                            </label>
-                            <select
-                                className={baseField}
-                                value={formState.performed}
-                                onChange={(event) => handleChange("performed", event.target.value)}
-                            >
-                                <option value="yes">Yes</option>
-                                <option value="no">No</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-4">
-                        <div className="flex flex-col gap-2">
-                            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">Status or Score</label>
-                            <div className="flex gap-2">
-                                <input
-                                    type="number"
-                                    className={`${baseField} flex-1`}
-                                    placeholder="e.g. 78"
-                                    value={formState.scoreValue}
-                                    onChange={(event) => handleChange("scoreValue", event.target.value)}
-                                />
-                                <div className={`${readonlyField} w-28 flex items-center`}>{lockedUnit}</div>
+                <form className="flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit}>
+                    <div
+                        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5 space-y-5 bg-white/80 dark:bg-white/5"
+                        style={{ WebkitOverflowScrolling: "touch" }}
+                    >
+                        <section className="rounded-2xl border border-primary/15 bg-white/70 dark:bg-slate-900/40 p-4 sm:p-5 space-y-3">
+                            <p className="text-xs font-semibold uppercase tracking-[0.22em] sm:tracking-[0.3em] text-muted-foreground">Intervention Details</p>
+                            <div className="grid sm:grid-cols-2 gap-3">
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">
+                                        Strategy
+                                    </label>
+                                    <div className={readonlyField}>{strategyDetail}</div>
+                                </div>
+                                <div className="flex flex-col gap-2 sm:col-span-2">
+                                    <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">
+                                        Goal
+                                    </label>
+                                    <div className={readonlyField}>{goalDetail}</div>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">
+                                        Duration
+                                    </label>
+                                    <div className={readonlyField}>{durationDetail}</div>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">
+                                        Monitoring Method / Frequency
+                                    </label>
+                                    <div className={readonlyField}>{monitoringDetail}</div>
+                                </div>
+                                <div className="flex flex-col gap-2 sm:col-span-2">
+                                    <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">
+                                        Baseline to Target
+                                    </label>
+                                    <div className={readonlyField}>{baselineTargetDetail}</div>
+                                </div>
                             </div>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">Celebration Emoji</label>
-                            <select
-                                className={baseField}
-                                value={formState.badge}
-                                onChange={(event) => handleChange("badge", event.target.value)}
-                            >
-                                <option value="🎉 Progress Party">🎉 Progress Party</option>
-                                <option value="✨ Stellar Boost">✨ Stellar Boost</option>
-                                <option value="🌈 Focus Mode">🌈 Focus Mode</option>
-                            </select>
-                        </div>
+                        </section>
+
+                        <section className="rounded-2xl border border-primary/15 bg-white/70 dark:bg-slate-900/40 p-4 sm:p-5 space-y-4">
+                            <p className="text-xs font-semibold uppercase tracking-[0.22em] sm:tracking-[0.3em] text-muted-foreground">Student Snapshot</p>
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">
+                                        Student Name
+                                    </label>
+                                    <div className={readonlyField}>{student.name}</div>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">
+                                        Grade / Tier
+                                    </label>
+                                    <div className={readonlyField}>{gradeTierLabel}</div>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">
+                                    Focus Subject (Tier 2/3)
+                                </label>
+                                <select
+                                    className={baseField}
+                                    value={formState.assignmentId}
+                                    onChange={(event) => handleChange("assignmentId", event.target.value)}
+                                    disabled={!assignmentOptions.length}
+                                >
+                                    {assignmentOptions.length ? (
+                                        assignmentOptions.map((option) => (
+                                            <option key={option.assignmentId} value={option.assignmentId}>
+                                                {formatSubjectLabel(option)}
+                                            </option>
+                                        ))
+                                    ) : (
+                                        <option value="">No Tier 2/3 subjects available</option>
+                                    )}
+                                </select>
+                            </div>
+                        </section>
+
+                        <section className="rounded-2xl border border-primary/15 bg-white/70 dark:bg-slate-900/40 p-4 sm:p-5 space-y-4">
+                            <p className="text-xs font-semibold uppercase tracking-[0.22em] sm:tracking-[0.3em] text-muted-foreground">Today Update</p>
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">Date</label>
+                                    <input
+                                        type="date"
+                                        className={baseField}
+                                        value={formState.date}
+                                        onChange={(event) => handleChange("date", event.target.value)}
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">
+                                        Intervention Performed?
+                                    </label>
+                                    <select
+                                        className={baseField}
+                                        value={formState.performed}
+                                        onChange={(event) => handleChange("performed", event.target.value)}
+                                    >
+                                        <option value="yes">Yes</option>
+                                        <option value="no">No</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">Status or Score</label>
+                                    <div className="grid grid-cols-[1fr_auto] gap-2">
+                                        <input
+                                            type="number"
+                                            className={baseField}
+                                            placeholder="e.g. 78"
+                                            value={formState.scoreValue}
+                                            onChange={(event) => handleChange("scoreValue", event.target.value)}
+                                        />
+                                        <div className={`${readonlyField} min-w-[94px] justify-center`}>{lockedUnit}</div>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">Celebration Emoji</label>
+                                    <select
+                                        className={baseField}
+                                        value={formState.badge}
+                                        onChange={(event) => handleChange("badge", event.target.value)}
+                                    >
+                                        <option value="🎉 Progress Party">🎉 Progress Party</option>
+                                        <option value="✨ Stellar Boost">✨ Stellar Boost</option>
+                                        <option value="🌈 Focus Mode">🌈 Focus Mode</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">Notes & Observations</label>
+                                <textarea
+                                    className={`${baseField} min-h-[132px] resize-y`}
+                                    placeholder="Describe the student's progress, challenges, or celebrations..."
+                                    value={formState.notes}
+                                    onChange={(event) => handleChange("notes", event.target.value)}
+                                />
+                            </div>
+                        </section>
                     </div>
 
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">Notes & Observations</label>
-                        <textarea
-                            className={`${baseField} min-h-[120px]`}
-                            placeholder="Describe the student's progress, challenges, or celebrations..."
-                            value={formState.notes}
-                            onChange={(event) => handleChange("notes", event.target.value)}
-                        />
-                    </div>
-
-                    <div className="flex flex-wrap gap-3 pt-2">
+                    <div className="shrink-0 border-t border-white/40 bg-white/90 dark:bg-slate-900/85 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] sm:px-6 sm:py-4">
+                        <div className="flex flex-col-reverse sm:flex-row sm:flex-wrap gap-2 sm:gap-3">
                         <motion.button
                             type="submit"
-                            className="px-5 py-3 rounded-full bg-gradient-to-r from-[#ff58c2] to-[#ffb347] text-white font-semibold shadow-[0_15px_40px_rgba(255,88,194,0.25)] disabled:opacity-60"
+                            className="w-full sm:w-auto px-5 py-3 rounded-full bg-gradient-to-r from-[#ff58c2] to-[#ffb347] text-white font-semibold shadow-[0_15px_40px_rgba(255,88,194,0.25)] disabled:opacity-60"
                             whileHover={{ scale: submitting ? 1 : 1.03 }}
                             whileTap={{ scale: submitting ? 1 : 0.97 }}
                             disabled={submitting}
@@ -291,14 +337,16 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-5 py-3 rounded-full bg-white/80 dark:bg-white/10 text-foreground font-semibold border border-border/60 disabled:opacity-60"
+                            className="w-full sm:w-auto px-5 py-3 rounded-full bg-white/80 dark:bg-white/10 text-foreground font-semibold border border-border/60 disabled:opacity-60"
                             disabled={submitting}
                         >
                             Cancel
                         </button>
+                        </div>
                     </div>
                 </form>
             </motion.div>
+            </div>
         </div>
     );
 });

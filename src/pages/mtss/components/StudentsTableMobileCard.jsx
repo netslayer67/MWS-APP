@@ -56,7 +56,7 @@ const StudentsTableMobileCard = memo(
                                     {student.name}
                                 </span>
                             </button>
-                            <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 block">
+                            <span className="text-[11px] text-slate-500 dark:text-slate-300 mt-0.5 block">
                                 {student.grade} · {student.className || "\u2014"}
                             </span>
                         </div>
@@ -84,7 +84,7 @@ const StudentsTableMobileCard = memo(
                                 Universal
                             </span>
                         ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/40 text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/40 text-[10px] font-semibold text-slate-700 dark:text-slate-200">
                                 <span className="text-sm">{icon}</span>
                                 {criticalInfo.label}
                             </span>
@@ -94,7 +94,7 @@ const StudentsTableMobileCard = memo(
 
                     {/* Bottom row: date + actions */}
                     <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800/60">
-                        <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">{student.nextUpdate}</span>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-300 font-medium">{student.nextUpdate}</span>
 
                         {showActions && (
                             <div className="flex items-center gap-1.5">

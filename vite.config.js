@@ -99,6 +99,92 @@ export default defineConfig({
             }
         })
     ],
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks(id) {
+                    if (!id.includes('node_modules')) return null
+
+                    if (
+                        id.includes('/react/') ||
+                        id.includes('react-dom') ||
+                        id.includes('scheduler') ||
+                        id.includes('use-sync-external-store')
+                    ) {
+                        return 'vendor-react'
+                    }
+
+                    if (
+                        id.includes('@reduxjs') ||
+                        id.includes('redux') ||
+                        id.includes('immer') ||
+                        id.includes('reselect')
+                    ) {
+                        return 'vendor-state'
+                    }
+
+                    if (
+                        id.includes('framer-motion') ||
+                        id.includes('lucide-react') ||
+                        id.includes('@radix-ui')
+                    ) {
+                        return 'vendor-ui'
+                    }
+
+                    if (
+                        id.includes('recharts') ||
+                        id.includes('victory') ||
+                        id.includes('/d3-')
+                    ) {
+                        return 'vendor-charts'
+                    }
+
+                    if (
+                        id.includes('react-markdown') ||
+                        id.includes('/remark') ||
+                        id.includes('/rehype') ||
+                        id.includes('/unified') ||
+                        id.includes('/micromark') ||
+                        id.includes('/mdast') ||
+                        id.includes('/hast')
+                    ) {
+                        return 'vendor-markdown'
+                    }
+
+                    if (
+                        id.includes('@mediapipe') ||
+                        id.includes('face_mesh')
+                    ) {
+                        return 'vendor-vision'
+                    }
+
+                    if (
+                        id.includes('axios') ||
+                        id.includes('socket.io-client')
+                    ) {
+                        return 'vendor-network'
+                    }
+
+                    return undefined
+                }
+            }
+        }
+    },
+    server: {
+        proxy: {
+            '/api': {
+                target: 'http://localhost:3003',
+                changeOrigin: true,
+                secure: false
+            },
+            '/socket.io': {
+                target: 'http://localhost:3003',
+                changeOrigin: true,
+                secure: false,
+                ws: true
+            }
+        }
+    },
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src'),

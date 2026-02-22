@@ -45,6 +45,7 @@ import {
     hasDelegatedDashboardAccess,
     getDelegatedDashboardDetails
 } from "@/utils/accessControl";
+import useThrottledCallback from "@/hooks/useThrottledCallback";
 
 /* ---------------------- Helpers ---------------------- */
 const fmtShort = (v) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(v || 0);
@@ -854,16 +855,16 @@ const ProfilePage = memo(function ProfilePage() {
         }
     }, [dispatch, currentUser]);
 
+    const handleViewportResize = useThrottledCallback(() => {
+        setIsCompact(window.innerWidth < 640);
+    }, 150);
+
     // Check for mobile compact mode
     useEffect(() => {
-        const checkMobile = () => {
-            setIsCompact(window.innerWidth < 640);
-        };
-
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
-    }, []);
+        handleViewportResize();
+        window.addEventListener('resize', handleViewportResize);
+        return () => window.removeEventListener('resize', handleViewportResize);
+    }, [handleViewportResize]);
 
     // Processed user data
     const user = useMemo(() => {

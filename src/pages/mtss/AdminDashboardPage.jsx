@@ -5,6 +5,11 @@ import { adminTabs, heroCard, overviewIcons } from "./data/adminDashboardContent
 import useAdminDashboardData from "./hooks/useAdminDashboardData";
 import { useAdminDashboardState } from "./hooks/useAdminDashboardState";
 import AdminHeroSection from "./admin/AdminHeroSection";
+import {
+    buildStaffGreeting,
+    formatStaffDisplayName,
+    resolveStaffGender
+} from "@/utils/staffIdentity";
 
 const AdminOverviewPanel = lazy(() => import("./admin/AdminOverviewPanel"));
 const AdminStudentsPanel = lazy(() => import("./admin/AdminStudentsPanel"));
@@ -17,8 +22,6 @@ const PanelFallback = () => (
 
 const AdminDashboardPage = memo(() => {
     const { user } = useSelector((state) => state.auth);
-    const SALUTATION_MAP = { male: "Mr.", female: "Ms." };
-    const getSalutation = (gender) => SALUTATION_MAP[gender?.toLowerCase?.()] || "";
 
     const {
         students,
@@ -56,16 +59,27 @@ const AdminDashboardPage = memo(() => {
     } = useAdminDashboardState(students);
 
     const adminHeroCard = useMemo(() => {
-        const displayName = user?.username || user?.name || "MTSS Admin";
-        const title = getSalutation(user?.gender);
-        const nameWithTitle = title ? `${title} ${displayName}` : displayName;
-        const headings = [
-            `Cheers ${nameWithTitle}, let's guide today's MTSS glow.`,
-            `${nameWithTitle}, keep the joyful momentum alive today.`,
-            `${nameWithTitle}, another day to uplift every grade.`,
-        ];
-        const today = new Date();
-        const heading = headings[(today.getDate() + today.getMonth()) % headings.length];
+        const nameWithTitle = formatStaffDisplayName({
+            nickname: user?.nickname,
+            username: user?.username,
+            name: user?.name,
+            gender: resolveStaffGender(user),
+            fallback: "MTSS Admin",
+        });
+        const heading = buildStaffGreeting(nameWithTitle, {
+            morning: [
+                "Good morning %NAME%, let's guide today's MTSS glow.",
+                "Morning %NAME%, time to uplift every grade.",
+            ],
+            afternoon: [
+                "Good afternoon %NAME%, keep the joyful momentum alive.",
+                "%NAME%, your afternoon command center is ready.",
+            ],
+            evening: [
+                "Good evening %NAME%, let's close the day with clarity.",
+                "Evening %NAME%, time for a focused MTSS wrap-up.",
+            ],
+        });
         const roleLabel = user?.jobPosition || user?.unit || heroCard.badgeCaption || "Principal dashboard";
         return {
             ...heroCard,
