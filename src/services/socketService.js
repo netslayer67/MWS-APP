@@ -124,11 +124,17 @@ class SocketService {
     leaveMtssAdmin() { this.emit('leave-mtss-admin'); }
     joinMtssMentor(mentorId) { if (mentorId) this.emit('join-mtss-mentor', mentorId); }
     leaveMtssMentor(mentorId) { if (mentorId) this.emit('leave-mtss-mentor', mentorId); }
+    joinDevTopology() { this.emit('join-dev-topology'); }
+    leaveDevTopology() { this.emit('leave-dev-topology'); }
 
     onMtssStudentsChanged(callback) { this.on('mtss:students:changed', callback); }
     offMtssStudentsChanged(callback) { this.off('mtss:students:changed', callback); }
     onMtssAssignment(callback) { this.on('mtss:assignment', callback); }
     offMtssAssignment(callback) { this.off('mtss:assignment', callback); }
+    onDevTopologyUpdate(callback) { this.on('dev-topology:update', callback); }
+    offDevTopologyUpdate(callback) { this.off('dev-topology:update', callback); }
+    onDevTopologySnapshot(callback) { this.on('dev-topology:snapshot', callback); }
+    offDevTopologySnapshot(callback) { this.off('dev-topology:snapshot', callback); }
 
     onNotificationNew(callback) { this.on('notification:new', callback); }
     offNotificationNew(callback) { this.off('notification:new', callback); }
