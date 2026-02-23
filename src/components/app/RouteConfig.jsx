@@ -38,6 +38,7 @@ const StudentFaceScanPage = lazy(() => import(/* webpackPrefetch: true */ '@/pag
 const StudentManualCheckinPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/StudentManualCheckinPage'));
 const StudentAICheckinPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/StudentAICheckinPage'));
 const StudentAIChatPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/StudentAIChatPage')); // Phase 2 AI MTSS
+const AINetworkTopologyPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/AINetworkTopologyPage'));
 const NotFound = lazy(() => import(/* webpackPrefetch: true */ '@/pages/NotFound'));
 
 // Keep PageTransition memoized for perf if you want
@@ -173,6 +174,7 @@ const publicRoutes = [
     <Route key="student-manual-checkin" path="/student/emotional-checkin/manual" element={<ProtectedRoute allowedRoles={['student']}><MemoizedPageTransition><StudentManualCheckinPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="student-ai-checkin" path="/student/emotional-checkin/ai" element={<ProtectedRoute allowedRoles={['student']}><MemoizedPageTransition><StudentAICheckinPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="student-ai-chat" path="/student/ai-chat" element={<ProtectedRoute allowedRoles={['student']}><MemoizedPageTransition><StudentAIChatPage /></MemoizedPageTransition></ProtectedRoute>} />, // Phase 2 AI MTSS
+    <Route key="ai-network-topology" path="/dev/ai-topology" element={<ProtectedRoute allowedRoles={['admin', 'superadmin', 'directorate', 'head_unit']}><AINetworkTopologyPage /></ProtectedRoute>} />,
 ];
 
 
