@@ -5,11 +5,11 @@
 import {
     normalizeGradeLabel,
     normalizeClassLabel,
-    shouldStrictClassFilter,
     KINDERGARTEN_CLASSES,
-    KINDERGARTEN_GRADES,
 } from "./teacherGradeUtils";
 import { FALLBACK_GRADE_MAP, UNIT_GRADE_MAP } from "./teacherSegmentConstants";
+
+const JH_GRADE_WIDE_EXCEPTION_USERS = new Set(["himawan", "hasan"]);
 
 const collectClassNames = (user = {}) => {
     const classes = new Set();
@@ -97,6 +97,21 @@ export const deriveTeacherSegments = (user = {}) => {
     }
 
     let allowedGrades = Array.from(new Set(candidates.map(normalizeGradeLabel).filter(Boolean)));
+    const lowerUsername = (user?.username || "").toLowerCase().trim();
+    const lowerName = (user?.name || "").toLowerCase().trim();
+    const lowerUnit = (user?.unit || "").toLowerCase();
+    const isJhWideException =
+        lowerUnit === "junior high" &&
+        (JH_GRADE_WIDE_EXCEPTION_USERS.has(lowerUsername) ||
+            JH_GRADE_WIDE_EXCEPTION_USERS.has(lowerName) ||
+            lowerName.includes("himawan") ||
+            lowerName.includes("hasan"));
+
+    if (isJhWideException && UNIT_GRADE_MAP["Junior High"]?.length) {
+        allowedGrades = UNIT_GRADE_MAP["Junior High"].slice();
+        source = "jh-exception";
+    }
+
     const hasSpecificGrade = allowedGrades.some(
         (grade) => /^grade\s*\d+/i.test(grade) || grade.toLowerCase().startsWith("kindergarten") || grade.toLowerCase().startsWith("kindy")
     );
@@ -106,7 +121,6 @@ export const deriveTeacherSegments = (user = {}) => {
     }
 
     const classNameSet = new Set(collectClassNames(user));
-    const lowerUnit = (user?.unit || "").toLowerCase();
 
     if ((lowerUnit === "kindergarten" || lowerUnit === "pelangi") && !allowedGrades.some((grade) => grade.toLowerCase() === "kindergarten")) {
         allowedGrades.push("Kindergarten");
@@ -116,10 +130,11 @@ export const deriveTeacherSegments = (user = {}) => {
         KINDERGARTEN_CLASSES.forEach((className) => classNameSet.add(className));
     }
 
-    const allowedClasses = Array.from(classNameSet);
-    const strictClassFilter = shouldStrictClassFilter(user?.unit || "", allowedGrades);
-    const normalizedClasses = strictClassFilter ? allowedClasses : [];
-    const shouldFilterServer = Boolean(normalizedClasses.length) || Boolean(allowedGrades.length && (source === "classes" || source === "job"));
+    // Teacher dashboard roster uses grade-wide visibility for all teaching roles
+    // (homeroom-like access). Subject ownership is enforced on intervention rules.
+    const strictClassFilter = false;
+    const normalizedClasses = [];
+    const shouldFilterServer = Boolean(allowedGrades.length);
 
     return {
         allowedGrades,
