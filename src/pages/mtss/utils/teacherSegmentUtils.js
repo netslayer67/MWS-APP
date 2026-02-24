@@ -10,6 +10,7 @@ import {
 import { FALLBACK_GRADE_MAP, UNIT_GRADE_MAP } from "./teacherSegmentConstants";
 
 const JH_GRADE_WIDE_EXCEPTION_USERS = new Set(["himawan", "hasan"]);
+const CLASS_SCOPED_UNITS = new Set(["elementary", "kindergarten", "pelangi"]);
 
 const collectClassNames = (user = {}) => {
     const classes = new Set();
@@ -121,6 +122,15 @@ export const deriveTeacherSegments = (user = {}) => {
     }
 
     const classNameSet = new Set(collectClassNames(user));
+    const lowerJobPosition = (user?.jobPosition || "").toLowerCase();
+    const classScopedByRole =
+        lowerJobPosition.includes("homeroom") ||
+        lowerJobPosition.includes("special education") ||
+        (user?.classes || []).some((cls) => {
+            const role = (cls?.role || "").toLowerCase();
+            return role.includes("homeroom") || role.includes("special education");
+        });
+    const shouldUseClassScopedRoster = CLASS_SCOPED_UNITS.has(lowerUnit) && classScopedByRole;
 
     if ((lowerUnit === "kindergarten" || lowerUnit === "pelangi") && !allowedGrades.some((grade) => grade.toLowerCase() === "kindergarten")) {
         allowedGrades.push("Kindergarten");
@@ -131,10 +141,10 @@ export const deriveTeacherSegments = (user = {}) => {
     }
 
     // Teacher dashboard roster uses grade-wide visibility for all teaching roles
-    // (homeroom-like access). Subject ownership is enforced on intervention rules.
-    const strictClassFilter = false;
-    const normalizedClasses = [];
-    const shouldFilterServer = Boolean(allowedGrades.length);
+    // in JH, while Elementary/Kindy homeroom + SE teachers are class-scoped.
+    const strictClassFilter = shouldUseClassScopedRoster && classNameSet.size > 0;
+    const normalizedClasses = strictClassFilter ? Array.from(classNameSet) : [];
+    const shouldFilterServer = Boolean(allowedGrades.length) || Boolean(normalizedClasses.length);
 
     return {
         allowedGrades,
