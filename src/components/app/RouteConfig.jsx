@@ -38,7 +38,7 @@ const StudentFaceScanPage = lazy(() => import(/* webpackPrefetch: true */ '@/pag
 const StudentManualCheckinPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/StudentManualCheckinPage'));
 const StudentAICheckinPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/StudentAICheckinPage'));
 const StudentAIChatPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/StudentAIChatPage')); // Phase 2 AI MTSS
-const AINetworkTopologyPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/AINetworkTopologyPage'));
+const AINetworkTopologyPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/AINetworkTopology'));
 const NotFound = lazy(() => import(/* webpackPrefetch: true */ '@/pages/NotFound'));
 
 // Keep PageTransition memoized for perf if you want

@@ -385,6 +385,22 @@ const buildResponseActionEntries = (payload = {}) => {
     return normalizeDockActionEntries(entries);
 };
 
+const DOCK_POS_KEY = "ai_dock_position_v1";
+
+const readDockPosition = () => {
+    try {
+        const raw = window.localStorage?.getItem(DOCK_POS_KEY);
+        if (!raw) return null;
+        const p = JSON.parse(raw);
+        if (typeof p?.x === "number" && typeof p?.y === "number") return p;
+    } catch { /* ignore */ }
+    return null;
+};
+
+const writeDockPosition = (pos) => {
+    try { window.localStorage?.setItem(DOCK_POS_KEY, JSON.stringify(pos)); } catch { /* ignore */ }
+};
+
 const UtilityDock = memo(() => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
@@ -407,6 +423,71 @@ const UtilityDock = memo(() => {
     const dockViewportRef = useRef(null);
     const commandTimeoutsRef = useRef([]);
     const dockMessageIndexRef = useRef(0);
+
+    /* ─── draggable dock position ─── */
+    const [dockPos, setDockPos] = useState(() => readDockPosition());
+    const dragRef = useRef(null);
+    const dragStartRef = useRef(null);
+    const wasDragRef = useRef(false);
+
+    const handleDragStart = useCallback((e) => {
+        const touch = e.touches ? e.touches[0] : e;
+        dragStartRef.current = {
+            x: touch.clientX,
+            y: touch.clientY,
+            startX: dockPos?.x ?? null,
+            startY: dockPos?.y ?? null,
+            moved: false,
+        };
+        wasDragRef.current = false;
+    }, [dockPos]);
+
+    const handleDragMove = useCallback((e) => {
+        if (!dragStartRef.current) return;
+        const touch = e.touches ? e.touches[0] : e;
+        const dx = touch.clientX - dragStartRef.current.x;
+        const dy = touch.clientY - dragStartRef.current.y;
+        if (!dragStartRef.current.moved && Math.abs(dx) + Math.abs(dy) < 6) return;
+        dragStartRef.current.moved = true;
+        wasDragRef.current = true;
+        e.preventDefault();
+
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const baseRight = 20;
+        const baseBottom = 64;
+        let newX = (dragStartRef.current.startX ?? 0) + dx;
+        let newY = (dragStartRef.current.startY ?? 0) + dy;
+        const minX = -(vw - baseRight - 70);
+        const maxX = baseRight;
+        const minY = -(vh - baseBottom - 70);
+        const maxY = baseBottom;
+        newX = Math.max(minX, Math.min(maxX, newX));
+        newY = Math.max(minY, Math.min(maxY, newY));
+        setDockPos({ x: newX, y: newY });
+    }, []);
+
+    const handleDragEnd = useCallback(() => {
+        if (dragStartRef.current?.moved) {
+            writeDockPosition(dockPos);
+        }
+        dragStartRef.current = null;
+    }, [dockPos]);
+
+    useEffect(() => {
+        const onMove = (e) => handleDragMove(e);
+        const onEnd = () => handleDragEnd();
+        window.addEventListener("mousemove", onMove);
+        window.addEventListener("mouseup", onEnd);
+        window.addEventListener("touchmove", onMove, { passive: false });
+        window.addEventListener("touchend", onEnd);
+        return () => {
+            window.removeEventListener("mousemove", onMove);
+            window.removeEventListener("mouseup", onEnd);
+            window.removeEventListener("touchmove", onMove);
+            window.removeEventListener("touchend", onEnd);
+        };
+    }, [handleDragMove, handleDragEnd]);
 
     const { user, isAuthenticated } = useSelector((state) => state.auth || {});
     const assistantProfile = useSelector((state) => state.aiChat?.assistantProfile);
@@ -952,7 +1033,14 @@ const UtilityDock = memo(() => {
     }
 
     return (
-        <div className="utility-dock fixed bottom-16 right-5 z-50 flex items-end gap-2 transition-all duration-300">
+        <div
+            className="utility-dock fixed z-50 flex items-end gap-2"
+            style={{
+                bottom: dockPos ? `calc(4rem + ${-(dockPos.y || 0)}px)` : '4rem',
+                right: dockPos ? `calc(1.25rem + ${-(dockPos.x || 0)}px)` : '1.25rem',
+                transition: dragStartRef.current ? 'none' : 'bottom 0.3s, right 0.3s',
+            }}
+        >
             <AnimatePresence>
                 {isNudgeVisible && !isOpen && activeNudge && (
                     <motion.div
@@ -1244,18 +1332,22 @@ const UtilityDock = memo(() => {
             </AnimatePresence>
 
             <motion.button
+                ref={dragRef}
                 type="button"
                 aria-label={isOpen ? "Close AI Assistant launcher" : "Open AI Assistant launcher"}
                 aria-expanded={isOpen}
                 onClick={() => {
+                    if (wasDragRef.current) { wasDragRef.current = false; return; }
                     setIsOpen((prev) => !prev);
                     setIsNudgeVisible(false);
                 }}
+                onMouseDown={handleDragStart}
+                onTouchStart={handleDragStart}
                 whileTap={lowMotion ? {} : { scale: 0.94 }}
                 whileHover={lowMotion ? {} : { scale: 1.05 }}
                 animate={lowMotion ? {} : { y: [0, -2, 0] }}
                 transition={lowMotion ? { duration: 0.12 } : { duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
-                className="relative h-14 w-14 rounded-full border border-cyan-200/60 dark:border-cyan-200/25 bg-[linear-gradient(145deg,rgba(255,255,255,0.96),rgba(230,247,255,0.88),rgba(253,236,252,0.86))] dark:bg-[linear-gradient(145deg,rgba(11,26,48,0.94),rgba(20,38,66,0.92),rgba(44,22,52,0.9))] shadow-[0_18px_40px_rgba(6,182,212,0.24)] text-cyan-700 dark:text-cyan-200 backdrop-blur-xl"
+                className="relative h-14 w-14 rounded-full border border-cyan-200/60 dark:border-cyan-200/25 bg-[linear-gradient(145deg,rgba(255,255,255,0.96),rgba(230,247,255,0.88),rgba(253,236,252,0.86))] dark:bg-[linear-gradient(145deg,rgba(11,26,48,0.94),rgba(20,38,66,0.92),rgba(44,22,52,0.9))] shadow-[0_18px_40px_rgba(6,182,212,0.24)] text-cyan-700 dark:text-cyan-200 backdrop-blur-xl cursor-grab active:cursor-grabbing"
             >
                 <motion.span
                     className="pointer-events-none absolute -inset-1 rounded-full border border-cyan-300/50 dark:border-cyan-300/35"
