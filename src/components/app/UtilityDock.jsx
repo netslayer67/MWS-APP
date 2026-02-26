@@ -42,6 +42,7 @@ const THEME_COMMAND_APPLY_DELAY_MS = 320;
 const DOCK_MESSAGE_LIMIT = 18;
 const DOCK_WIDGET_LIMIT = 2;
 const DOCK_ACTION_LIMIT = 4;
+const DOCK_API_MESSAGE_MAX_LENGTH = 2000;
 
 const safeList = (value) => (Array.isArray(value) ? value : []);
 const safeText = (value, max = 220) =>
@@ -49,6 +50,8 @@ const safeText = (value, max = 220) =>
         .replace(/\s+/g, " ")
         .trim()
         .slice(0, max);
+
+const isLengthLimitError = (value = "") => /message too long/i.test(String(value || ""));
 
 const describeOperation = (operation = "") =>
     safeText(String(operation || "").replace(/_/g, " "), 72) || "automation";
@@ -897,11 +900,38 @@ const UtilityDock = memo(() => {
 
         setIsDockSending(true);
         try {
-            const apiMessage = composeDockContextMessage({
+            if (trimmed.length > DOCK_API_MESSAGE_MAX_LENGTH) {
+                appendDockMessage(
+                    "assistant",
+                    `${assistantName}: Please shorten your message and try again.`
+                );
+                return;
+            }
+
+            const fullApiMessage = composeDockContextMessage({
                 message: trimmed,
                 context: contextPayload,
                 commandPack
             }) || trimmed;
+
+            let apiMessage = fullApiMessage;
+            if (apiMessage.length > DOCK_API_MESSAGE_MAX_LENGTH) {
+                const compactApiMessage = [
+                    "[DOCK_RUNTIME_CONTEXT]",
+                    contextPayload?.route ? `route: ${String(contextPayload.route).trim()}` : "",
+                    contextPayload?.routeFamily ? `route_family: ${String(contextPayload.routeFamily).trim()}` : "",
+                    contextPayload?.role ? `role: ${String(contextPayload.role).trim()}` : "",
+                    contextPayload?.userName ? `user_name: ${String(contextPayload.userName).trim()}` : "",
+                    "instruction: Use the current route and user role as live context. Answer directly and concisely.",
+                    "[/DOCK_RUNTIME_CONTEXT]",
+                    `User message: ${trimmed}`
+                ].filter(Boolean).join("\n");
+
+                apiMessage = compactApiMessage.length <= DOCK_API_MESSAGE_MAX_LENGTH
+                    ? compactApiMessage
+                    : trimmed;
+            }
+
             const response = await aiChatService.sendChatMessage(apiMessage, dockSessionId);
             const payload = response?.data || {};
             const nextSessionId = String(payload?.sessionId || "").trim();
@@ -927,7 +957,9 @@ const UtilityDock = memo(() => {
             const fallbackMessage = String(error?.response?.data?.message || error?.message || "").trim();
             appendDockMessage(
                 "assistant",
-                fallbackMessage
+                isLengthLimitError(fallbackMessage)
+                    ? `${assistantName}: I could not send the full page context for that request. Please try again.`
+                    : fallbackMessage
                     ? `${assistantName}: ${fallbackMessage}`
                     : `${assistantName}: I hit a temporary issue. Try again in a few seconds.`
             );
