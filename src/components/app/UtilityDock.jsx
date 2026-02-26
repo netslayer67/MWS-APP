@@ -31,6 +31,7 @@ import {
 } from "@/utils/utilityDockAutomation";
 import { applyThemePreference, emitThemeSpell, getStoredTheme, persistTheme } from "@/lib/theme";
 import UtilityDockWidgetPreview from "@/components/app/dock/UtilityDockWidgetPreview";
+import MarkdownRenderer from "@/features/assistant/chat/widgets/MarkdownRenderer";
 
 const NUDGE_STORAGE_KEY = "ai_dock_nudge_v2";
 const NUDGE_DAILY_LIMIT = 3;
@@ -50,6 +51,13 @@ const safeText = (value, max = 220) =>
         .replace(/\s+/g, " ")
         .trim()
         .slice(0, max);
+
+const preprocessDockMarkdown = (content = "") =>
+    String(content || "")
+        .replace(/&lt;br\s*\/?&gt;/gi, "\n")
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/\r\n/g, "\n")
+        .replace(/\+\+([^\n+][\s\S]*?)\+\+/g, "<u>$1</u>");
 
 const isLengthLimitError = (value = "") => /message too long/i.test(String(value || ""));
 const QUERY_LIKE_DOCK_PROMPT_REGEX = /(\?|^who\b|^what\b|^which\b|^how\b|^why\b|^when\b|^where\b|\bsiapa\b|\bberapa\b|\bmana\b|\blist\b|\btier\s*[123]\b)/i;
@@ -1228,7 +1236,16 @@ const UtilityDock = memo(() => {
                                                 : "mr-auto bg-white/90 dark:bg-slate-900/70 border border-cyan-200/55 dark:border-cyan-300/22 text-slate-800 dark:text-slate-100"
                                             }`}
                                     >
-                                        {message.content}
+                                        {message.role === "assistant" ? (
+                                            <div className="dock-markdown [&_p]:my-0.5 [&_ul]:my-1 [&_ol]:my-1 [&_blockquote]:my-1 [&_table]:my-1.5 [&_h1]:!text-[13px] [&_h2]:!text-[12px] [&_h3]:!text-[12px] [&_code]:!text-[10px] [&_code]:leading-relaxed">
+                                                <MarkdownRenderer
+                                                    content={preprocessDockMarkdown(message.content)}
+                                                    isUser={false}
+                                                />
+                                            </div>
+                                        ) : (
+                                            message.content
+                                        )}
                                         {message.role === "assistant" && safeList(message.widgets).length > 0 && (
                                             <UtilityDockWidgetPreview
                                                 widgets={message.widgets}
