@@ -52,6 +52,7 @@ const safeText = (value, max = 220) =>
         .slice(0, max);
 
 const isLengthLimitError = (value = "") => /message too long/i.test(String(value || ""));
+const QUERY_LIKE_DOCK_PROMPT_REGEX = /(\?|^who\b|^what\b|^which\b|^how\b|^why\b|^when\b|^where\b|\bsiapa\b|\bberapa\b|\bmana\b|\blist\b|\btier\s*[123]\b)/i;
 
 const describeOperation = (operation = "") =>
     safeText(String(operation || "").replace(/_/g, " "), 72) || "automation";
@@ -916,13 +917,40 @@ const UtilityDock = memo(() => {
 
             let apiMessage = fullApiMessage;
             if (apiMessage.length > DOCK_API_MESSAGE_MAX_LENGTH) {
+                const compactMtss = contextPayload?.mtss
+                    ? JSON.stringify({
+                        metrics: safeList(contextPayload.mtss.metrics).slice(0, 4),
+                        quickActions: safeList(contextPayload.mtss.quickActions).slice(0, 4),
+                        table: safeList(contextPayload.mtss.table).slice(0, 1).map((table = {}) => ({
+                            headers: safeList(table.headers).slice(0, 5),
+                            rows: safeList(table.rows).slice(0, 3).map((row = []) =>
+                                safeList(row).slice(0, 5).map((cell) => safeText(cell, 80))
+                            )
+                        }))
+                    })
+                    : "";
+                const compactPageSnapshot = contextPayload?.pageSnapshot
+                    ? JSON.stringify({
+                        headings: safeList(contextPayload.pageSnapshot.headings).slice(0, 5),
+                        metricHighlights: safeList(contextPayload.pageSnapshot.metricHighlights).slice(0, 4),
+                        quickActions: safeList(contextPayload.pageSnapshot.quickActions).slice(0, 5),
+                        lines: safeList(contextPayload.pageSnapshot.lines).slice(0, 8)
+                    })
+                    : "";
+                const isQueryLikePrompt = QUERY_LIKE_DOCK_PROMPT_REGEX.test(trimmed);
+
                 const compactApiMessage = [
                     "[DOCK_RUNTIME_CONTEXT]",
                     contextPayload?.route ? `route: ${String(contextPayload.route).trim()}` : "",
                     contextPayload?.routeFamily ? `route_family: ${String(contextPayload.routeFamily).trim()}` : "",
                     contextPayload?.role ? `role: ${String(contextPayload.role).trim()}` : "",
                     contextPayload?.userName ? `user_name: ${String(contextPayload.userName).trim()}` : "",
-                    "instruction: Use the current route and user role as live context. Answer directly and concisely.",
+                    compactMtss ? `mtss_snapshot: ${compactMtss.slice(0, 900)}` : "",
+                    compactPageSnapshot ? `page_snapshot_compact: ${compactPageSnapshot.slice(0, 700)}` : "",
+                    "instruction: Use the current route and provided runtime context as trusted live page data. Answer directly and concisely.",
+                    isQueryLikePrompt
+                        ? "instruction_2: The user is asking a data/question prompt. Answer the question directly from the context. Do not switch pages unless explicitly asked to open a page."
+                        : "",
                     "[/DOCK_RUNTIME_CONTEXT]",
                     `User message: ${trimmed}`
                 ].filter(Boolean).join("\n");
