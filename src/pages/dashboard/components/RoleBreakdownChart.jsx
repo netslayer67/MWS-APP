@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from "react";
+import { memo, useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const COLORS = {
@@ -10,10 +10,31 @@ const COLORS = {
     superadmin: '#ff0000'
 };
 
+const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+        const data = payload[0].payload;
+        return (
+            <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
+                <p className="font-medium text-foreground">{label}</p>
+                <p className="text-sm text-muted-foreground">
+                    Submitted: {data.submitted}/{data.total} ({data.submissionRate}%)
+                </p>
+                <p className="text-sm text-muted-foreground">
+                    Avg Presence: {data.avgPresence}/10
+                </p>
+                <p className="text-sm text-muted-foreground">
+                    Avg Capacity: {data.avgCapacity}/10
+                </p>
+            </div>
+        );
+    }
+    return null;
+};
+
 const RoleBreakdownChart = memo(({ roleBreakdown = [], viewMode = 'bar' }) => {
-    if (!roleBreakdown || roleBreakdown.length === 0) return null;
     const chartData = useMemo(() => {
-        return roleBreakdown.map(role => ({
+        const source = Array.isArray(roleBreakdown) ? roleBreakdown : [];
+        return source.map(role => ({
             name: role.role.charAt(0).toUpperCase() + role.role.slice(1),
             submitted: role.submitted,
             total: role.total,
@@ -24,33 +45,15 @@ const RoleBreakdownChart = memo(({ roleBreakdown = [], viewMode = 'bar' }) => {
     }, [roleBreakdown]);
 
     const pieData = useMemo(() => {
-        return roleBreakdown.map(role => ({
+        const source = Array.isArray(roleBreakdown) ? roleBreakdown : [];
+        return source.map(role => ({
             name: role.role.charAt(0).toUpperCase() + role.role.slice(1),
             value: role.submitted,
             total: role.total
         }));
     }, [roleBreakdown]);
 
-    const CustomTooltip = ({ active, payload, label }) => {
-        if (active && payload && payload.length) {
-            const data = payload[0].payload;
-            return (
-                <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
-                    <p className="font-medium text-foreground">{label}</p>
-                    <p className="text-sm text-muted-foreground">
-                        Submitted: {data.submitted}/{data.total} ({data.submissionRate}%)
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                        Avg Presence: {data.avgPresence}/10
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                        Avg Capacity: {data.avgCapacity}/10
-                    </p>
-                </div>
-            );
-        }
-        return null;
-    };
+    if (chartData.length === 0) return null;
 
     if (viewMode === 'pie') {
         return (
