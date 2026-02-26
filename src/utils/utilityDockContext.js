@@ -34,6 +34,16 @@ const dedupeList = (list = []) => {
     });
 };
 
+const readTableCellText = (cell) => {
+    const raw = String(cell?.innerText || cell?.textContent || '').replace(/\u00a0/g, ' ');
+    const parts = raw
+        .split('\n')
+        .map((line) => line.replace(/\s+/g, ' ').trim())
+        .filter(Boolean);
+    if (parts.length === 0) return '';
+    return clampText(dedupeList(parts).join(' / '), 160);
+};
+
 const isEmotionalPatternsRoute = (pathname = '') => /\/profile\/emotional-patterns/i.test(String(pathname || '').trim());
 const isEmotionalHistoryRoute = (pathname = '') => /\/profile\/emotional-history/i.test(String(pathname || '').trim());
 const isSupportHubRoute = (pathname = '') => /\/(?:student\/support-hub|support-hub)\b/i.test(String(pathname || '').trim());
@@ -183,7 +193,6 @@ const EMOTIONAL_PATTERN_ANALYSIS_REGEX = /(penilaian|nilai|analisis|analysis|ins
 const EMOTIONAL_HISTORY_SUBJECT_REGEX = /(history|riwayat|trend|timeline|refleksi|reflection|history check|histori)/i;
 const PAGE_SUMMARY_REGEX = /(ringkas|summary|status|apa yang terjadi|what.*(page|halaman)|overview|insight|review|assessment|jelaskan halaman|analyze this page)/i;
 const NEXT_ACTION_REGEX = /(next action|langkah|prioritas|what should i do|apa yang harus|rencana|plan|to do|todo|kerjakan)/i;
-const MTSS_SUBJECT_REGEX = /(mtss|assignment|intervention|mentor|tier|progress|caseload|student roster|goal|check[\s-]?in)/i;
 
 export const detectDockLiveInsightIntent = (message = '', pathname = '') => {
     const text = normalizeText(message);
@@ -205,7 +214,7 @@ export const detectDockLiveInsightIntent = (message = '', pathname = '') => {
         return 'support_hub_guidance';
     }
 
-    if (routeFamily === 'mtss' && (MTSS_SUBJECT_REGEX.test(text) || asksSummary || asksNextAction)) {
+    if (routeFamily === 'mtss' && (asksSummary || asksNextAction)) {
         return 'mtss_dashboard_summary';
     }
 
@@ -285,17 +294,25 @@ const collectTableSnapshot = (maxTables = 2) => {
     return tables.map((table, index) => {
         const headers = dedupeList(
             Array.from(table.querySelectorAll('thead th, th'))
-                .map((cell) => String(cell?.textContent || '').replace(/\s+/g, ' ').trim())
+                .map((cell) => readTableCellText(cell))
                 .filter(Boolean)
         ).slice(0, 7);
 
-        const bodyRows = Array.from(table.querySelectorAll('tbody tr, tr')).slice(0, 5);
+        const bodyRows = (
+            table.tBodies?.length
+                ? Array.from(table.tBodies).flatMap((section) => Array.from(section.rows || []))
+                : Array.from(table.querySelectorAll('tr')).filter((row) => !row.closest('thead'))
+        ).slice(0, 6);
         const rows = bodyRows.map((row) =>
             Array.from(row.querySelectorAll('td, th'))
-                .map((cell) => String(cell?.textContent || '').replace(/\s+/g, ' ').trim())
+                .map((cell) => readTableCellText(cell))
                 .filter(Boolean)
                 .slice(0, 7)
-        ).filter((cells) => cells.length > 0);
+        ).filter((cells) => {
+            if (cells.length === 0) return false;
+            if (headers.length === 0) return true;
+            return normalizeText(cells.join(' | ')) !== normalizeText(headers.join(' | '));
+        });
 
         return {
             tableIndex: index,
@@ -606,14 +623,21 @@ const buildMtssReply = ({ context = {}, assistantName = 'Milo', studentCallName 
     const metrics = toArray(mtss.metrics).slice(0, 4);
     const actions = toArray(mtss.quickActions).slice(0, 4);
     const table = toArray(mtss.table)[0];
+    const headers = table ? toArray(table.headers).slice(0, 5) : [];
     const tablePreview = table
-        ? toArray(table.rows).slice(0, 2).map((row) => `  - ${toArray(row).join(' | ')}`).join('\n')
+        ? toArray(table.rows).slice(0, 2).map((row) => {
+            const cells = toArray(row).slice(0, 5).map((cell) => clampText(cell, 80));
+            if (headers.length > 0) {
+                return `  - ${cells.map((cell, index) => `${headers[index] || `Col ${index + 1}`}: ${cell}`).join(' • ')}`;
+            }
+            return `  - ${cells.join(' | ')}`;
+        }).join('\n')
         : '';
 
     const lines = [
         `${assistantName}: Okay ${studentCallName}, here is a live MTSS snapshot from your current page.`,
         ...metrics.map((entry = {}) => `• ${entry.label}: ${entry.value}`),
-        table && toArray(table.headers).length > 0 ? `• Table columns: ${toArray(table.headers).slice(0, 5).join(', ')}` : null,
+        headers.length > 0 ? `• Table columns: ${headers.join(', ')}` : null,
         tablePreview ? `• Sample rows:\n${tablePreview}` : null,
         actions.length > 0 ? `• Detected quick actions: ${actions.join(' | ')}` : null,
         '• For real-time actions, send a specific command (example: "draft progress check-in for student X", "summarize overdue assignments", "prepare today follow-up checklist").'
