@@ -638,16 +638,16 @@ const UtilityDock = memo(() => {
         if (!operation) return false;
 
         if (!canRunAutomation || !isOperationAllowedForRole(normalizedAutomationRole, operation)) {
-            appendDockMessage(
-                "assistant",
-                `${assistantName}: Operation "${describeOperation(operation)}" only tersedia untuk role MTSS yang diizinkan.`
-            );
+                appendDockMessage(
+                    "assistant",
+                    `${assistantName}: Operation "${describeOperation(operation)}" is only available for allowed MTSS roles.`
+                );
             return true;
         }
 
         const formConfig = getDockOperationFormConfig(operation, action.payload || {});
         if (!formConfig) {
-            appendDockMessage("assistant", `${assistantName}: Form untuk operation ini belum tersedia.`);
+            appendDockMessage("assistant", `${assistantName}: A form for this operation is not available yet.`);
             return true;
         }
 
@@ -684,7 +684,7 @@ const UtilityDock = memo(() => {
         if (dockOperationForm.requireConfirmation !== false) {
             const confirmed = window.confirm(String(dockOperationForm.confirmText || `Run "${getOperationLabel(operation)}" now?`));
             if (!confirmed) {
-                appendDockMessage("assistant", `${assistantName}: Baik, operation dibatalkan dulu.`);
+                appendDockMessage("assistant", `${assistantName}: Okay, I canceled the operation for now.`);
                 return;
             }
         }
