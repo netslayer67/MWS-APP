@@ -559,7 +559,7 @@ const formatDateCompact = (isoValue) => {
     try {
         const date = new Date(isoValue);
         if (!Number.isFinite(date.getTime())) return null;
-        return new Intl.DateTimeFormat('id-ID', {
+        return new Intl.DateTimeFormat('en-GB', {
             day: '2-digit',
             month: 'short',
             year: 'numeric'
@@ -579,10 +579,10 @@ const buildPageSummaryReply = ({ context = {}, assistantName = 'Milo', studentCa
     const tableLine = table ? `• Table detected: ${toArray(table.headers).slice(0, 4).join(', ')}` : null;
 
     const lines = [
-        `${assistantName}: Siap ${studentCallName}, ini ringkasan live dari halaman ${heading}.`,
+        `${assistantName}: Got it ${studentCallName}, here is a live summary of ${heading}.`,
         ...metrics,
         tableLine,
-        actions.length > 0 ? `• Quick actions tersedia: ${actions.join(' | ')}` : null
+        actions.length > 0 ? `• Available quick actions: ${actions.join(' | ')}` : null
     ].filter(Boolean);
 
     return lines.join('\n');
@@ -593,10 +593,10 @@ const buildSupportHubReply = ({ context = {}, assistantName = 'Milo', studentCal
     const options = toArray(support.options).slice(0, 5);
     const highlights = toArray(support.highlights).slice(0, 3);
     const lines = [
-        `${assistantName}: Siap ${studentCallName}, aku baca Support Hub kamu secara live.`,
-        highlights.length > 0 ? `• Fokus halaman: ${highlights.join(' | ')}` : null,
-        options.length > 0 ? `• Opsi cepat yang bisa kamu jalankan sekarang: ${options.join(' | ')}` : null,
-        '• Saran next step: pilih 1 prioritas utama dulu, lalu kirim perintah detail untuk aku pecahkan jadi langkah praktis.'
+        `${assistantName}: Got it ${studentCallName}, I can read your Support Hub live.`,
+        highlights.length > 0 ? `• Page focus: ${highlights.join(' | ')}` : null,
+        options.length > 0 ? `• Quick options you can run now: ${options.join(' | ')}` : null,
+        '• Suggested next step: pick 1 main priority first, then send a more specific command so I can break it into practical steps.'
     ].filter(Boolean);
     return lines.join('\n');
 };
@@ -611,12 +611,12 @@ const buildMtssReply = ({ context = {}, assistantName = 'Milo', studentCallName 
         : '';
 
     const lines = [
-        `${assistantName}: Oke ${studentCallName}, ini snapshot live MTSS dari halaman aktif kamu.`,
+        `${assistantName}: Okay ${studentCallName}, here is a live MTSS snapshot from your current page.`,
         ...metrics.map((entry = {}) => `• ${entry.label}: ${entry.value}`),
         table && toArray(table.headers).length > 0 ? `• Table columns: ${toArray(table.headers).slice(0, 5).join(', ')}` : null,
         tablePreview ? `• Sample rows:\n${tablePreview}` : null,
-        actions.length > 0 ? `• Aksi cepat terdeteksi: ${actions.join(' | ')}` : null,
-        '• Untuk aksi real-time, kirim perintah spesifik (contoh: "draft progress check-in siswa X", "ringkas overdue assignments", "siapkan checklist tindak lanjut hari ini").'
+        actions.length > 0 ? `• Detected quick actions: ${actions.join(' | ')}` : null,
+        '• For real-time actions, send a specific command (example: "draft progress check-in for student X", "summarize overdue assignments", "prepare today follow-up checklist").'
     ].filter(Boolean);
 
     return lines.join('\n');
@@ -625,7 +625,7 @@ const buildMtssReply = ({ context = {}, assistantName = 'Milo', studentCallName 
 const buildEmotionalHistoryReply = ({ context = {}, assistantName = 'Milo', studentCallName = 'there' } = {}) => {
     const history = context?.emotionalHistory;
     if (!history || !history.totalReflections) {
-        return `${assistantName}: Aku belum menemukan data Emotional History yang cukup di halaman ini.`;
+        return `${assistantName}: I cannot find enough Emotional History data on this page yet.`;
     }
 
     const topMoodLabels = toArray(history.topMoods)
@@ -634,12 +634,12 @@ const buildEmotionalHistoryReply = ({ context = {}, assistantName = 'Milo', stud
         .join(', ');
 
     const lines = [
-        `${assistantName}: Siap ${studentCallName}, ini ringkasan live dari Emotional History kamu.`,
+        `${assistantName}: Got it ${studentCallName}, here is a live summary of your Emotional History.`,
         formatMetric('Total reflections', history.totalReflections),
-        formatMetric('Rata-rata Presence', history.averagePresence, '/10'),
-        formatMetric('Rata-rata Capacity', history.averageCapacity, '/10'),
-        topMoodLabels ? `• Mood dominan: ${topMoodLabels}` : null,
-        history.latestReflectionAt ? `• Reflection terbaru: ${formatDateCompact(history.latestReflectionAt)}` : null
+        formatMetric('Average Presence', history.averagePresence, '/10'),
+        formatMetric('Average Capacity', history.averageCapacity, '/10'),
+        topMoodLabels ? `• Dominant moods: ${topMoodLabels}` : null,
+        history.latestReflectionAt ? `• Latest reflection: ${formatDateCompact(history.latestReflectionAt)}` : null
     ].filter(Boolean);
 
     return lines.join('\n');
@@ -648,7 +648,7 @@ const buildEmotionalHistoryReply = ({ context = {}, assistantName = 'Milo', stud
 const buildEmotionalPatternsReply = ({ context = {}, assistantName = 'Milo', studentCallName = 'there' } = {}) => {
     const snapshot = context?.emotionalPatterns;
     if (!snapshot || !snapshot.totalCheckins) {
-        return `${assistantName}: Aku belum menemukan data Emotional Patterns yang cukup di halaman ini. Coba refresh data check-in dulu, lalu minta analisis lagi.`;
+        return `${assistantName}: I cannot find enough Emotional Patterns data on this page yet. Try refreshing the check-in data, then ask again.`;
     }
 
     const topWeather = Array.isArray(snapshot.topWeather) ? snapshot.topWeather[0] : null;
@@ -657,21 +657,21 @@ const buildEmotionalPatternsReply = ({ context = {}, assistantName = 'Milo', stu
         : '';
 
     const riskScore = Number(snapshot.lowPresenceDays || 0) + Number(snapshot.lowCapacityDays || 0);
-    const riskLabel = riskScore >= 10 ? 'butuh perhatian tinggi' : riskScore >= 4 ? 'perlu perhatian moderat' : 'stabil';
+    const riskLabel = riskScore >= 10 ? 'needs high attention' : riskScore >= 4 ? 'needs moderate attention' : 'stable';
     const latestCheckin = formatDateCompact(snapshot.latestCheckinAt);
 
     const lines = [
-        `${assistantName}: Siap ${studentCallName}, ini penilaian live dari halaman Emotional Patterns kamu.`,
+        `${assistantName}: Got it ${studentCallName}, here is a live assessment from your Emotional Patterns page.`,
         formatMetric('Total check-in', snapshot.totalCheckins),
         topWeather
-            ? `• Cuaca emosi dominan: ${topWeather.label} (${topWeather.percentage}%)`
+            ? `• Dominant emotional weather: ${topWeather.label} (${topWeather.percentage}%)`
             : null,
-        topMoodLabels ? `• Mood teratas: ${topMoodLabels}` : null,
-        formatMetric('Rata-rata Presence', snapshot.averagePresence, '/10'),
-        formatMetric('Rata-rata Capacity', snapshot.averageCapacity, '/10'),
-        `• Status tren saat ini: ${riskLabel}`,
-        latestCheckin ? `• Check-in terbaru: ${latestCheckin}` : null,
-        '• Rekomendasi cepat: lanjutkan check-in harian dan follow-up saat Presence/Capacity turun di bawah 5.'
+        topMoodLabels ? `• Top moods: ${topMoodLabels}` : null,
+        formatMetric('Average Presence', snapshot.averagePresence, '/10'),
+        formatMetric('Average Capacity', snapshot.averageCapacity, '/10'),
+        `• Current trend status: ${riskLabel}`,
+        latestCheckin ? `• Latest check-in: ${latestCheckin}` : null,
+        '• Quick recommendation: continue daily check-ins and follow up when Presence/Capacity drops below 5.'
     ].filter(Boolean);
 
     return lines.join('\n');
