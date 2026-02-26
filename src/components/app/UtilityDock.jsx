@@ -1032,7 +1032,9 @@ const UtilityDock = memo(() => {
         return null;
     }
 
-    const shouldHideQuickLinks = String(quickMessage || "").trim().length > 0;
+    const hasQuickDraft = String(quickMessage || "").trim().length > 0;
+    const hasDockConversation = dockMessages.length > 0;
+    const shouldHideQuickLinks = hasQuickDraft || hasDockConversation || isDockSending;
 
     return (
         <div
