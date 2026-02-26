@@ -154,7 +154,7 @@ jobs:
     steps:
       - name: Trigger Komodo Redeploy
         run: |
-          BODY='{"ref":"refs/heads/main","repository":{"name":"mws-app-fe"}}'
+          BODY='{"ref":"${{ github.ref }}","repository":{"name":"mws-app-fe"}}'
           SIGNATURE=$(echo -n "$BODY" | openssl dgst -sha256 -hmac "${{ secrets.KOMODO_WEBHOOK_SECRET }}" | awk '{print "sha256="$2}')
           curl -s -X POST \
             -H "Content-Type: application/json" \
