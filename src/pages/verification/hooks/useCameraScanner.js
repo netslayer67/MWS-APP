@@ -1,5 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import emotionAnalysisService from "@/services/emotionAnalysisService";
+
+let emotionAnalysisServicePromise = null;
+const loadEmotionAnalysisService = async () => {
+    if (!emotionAnalysisServicePromise) {
+        emotionAnalysisServicePromise = import("@/services/emotionAnalysisService")
+            .then((mod) => mod.default)
+            .catch((error) => {
+                emotionAnalysisServicePromise = null;
+                throw error;
+            });
+    }
+    return emotionAnalysisServicePromise;
+};
 
 const DEFAULT_STAGE = "intro";
 
@@ -75,8 +87,14 @@ export const useCameraScanner = ({
         }
     }, [autoStart, initialStage, stream, toast]);
 
-    const resetScan = useCallback(() => {
-        emotionAnalysisService.stopAnalysis();
+    const resetScan = useCallback(async () => {
+        try {
+            const emotionAnalysisService = await loadEmotionAnalysisService();
+            emotionAnalysisService.stopAnalysis();
+        } catch {
+            // Service may never be needed in this session.
+        }
+
         if (scanIntervalRef.current) {
             clearInterval(scanIntervalRef.current);
             scanIntervalRef.current = null;
@@ -109,7 +127,14 @@ export const useCameraScanner = ({
 
     useEffect(() => {
         return () => {
-            emotionAnalysisService.dispose();
+            loadEmotionAnalysisService()
+                .then((emotionAnalysisService) => {
+                    emotionAnalysisService.dispose();
+                })
+                .catch(() => {
+                    // Never loaded, nothing to dispose.
+                });
+
             if (stream) {
                 stream.getTracks().forEach((track) => track.stop());
             }

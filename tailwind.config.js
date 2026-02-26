@@ -124,10 +124,9 @@ module.exports = {
         },
     },
     plugins: [
-        // recommended utilities for forms & typographic content + animations
+        // recommended utilities for forms + animations
         require('@tailwindcss/forms'),
-        require('@tailwindcss/typography'),
-        // If you installed tailwindcss-animate, keep it; otherwise remove this line
+        // typography plugin removed to reduce global CSS on initial route
         require('tailwindcss-animate'),
     ],
 };

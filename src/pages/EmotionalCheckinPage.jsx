@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import checkinService from "@/services/checkinService";
+import { prefetchStaffFaceScanOnIntent } from "@/utils/faceScanPrefetch";
 
 /* --- Mood options --- */
 const weatherOptions = [
@@ -816,6 +817,9 @@ const EmotionalCheckinPage = memo(function EmotionalCheckinPage() {
                                 <div className="space-y-2">
                                     <Button
                                         type="button"
+                                        onMouseEnter={prefetchStaffFaceScanOnIntent}
+                                        onFocus={prefetchStaffFaceScanOnIntent}
+                                        onTouchStart={prefetchStaffFaceScanOnIntent}
                                         onClick={() => navigate('/emotional-checkin/face-scan')}
                                         disabled={checkinStatus && checkinStatus.hasAICheckin}
                                         className="w-full justify-center rounded-full bg-gradient-to-r from-[#22d3ee] via-[#3b82f6] to-[#a855f7] text-white font-semibold shadow-[0_18px_45px_rgba(59,130,246,0.25)] transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed"

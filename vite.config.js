@@ -40,7 +40,26 @@ export default defineConfig({
             },
             workbox: {
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
+                // Keep very heavy AI/vision chunks out of install-time precache.
+                // They should download only when users enter face-scan / AI flows.
+                globIgnores: [
+                    '**/assets/vendor-tfjs-*.js',
+                    '**/assets/vendor-mediapipe-*.js'
+                ],
                 runtimeCaching: [
+                    {
+                        urlPattern: ({ request, url }) =>
+                            request.destination === 'script' &&
+                            /\/assets\/vendor-(tfjs|mediapipe)-.*\.js$/.test(url.pathname),
+                        handler: 'CacheFirst',
+                        options: {
+                            cacheName: 'ai-vision-vendors',
+                            expiration: {
+                                maxEntries: 8,
+                                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+                            }
+                        }
+                    },
                     {
                         urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
                         handler: 'CacheFirst',
@@ -94,7 +113,7 @@ export default defineConfig({
                 clientsClaim: true
             },
             devOptions: {
-                enabled: true,
+                enabled: false,
                 type: 'module'
             }
         })
@@ -123,12 +142,37 @@ export default defineConfig({
                         return 'vendor-state'
                     }
 
+                    if (id.includes('framer-motion')) {
+                        return 'vendor-motion'
+                    }
+
+                    if (id.includes('lucide-react')) {
+                        return 'vendor-icons'
+                    }
+
+                    if (id.includes('@radix-ui')) {
+                        return 'vendor-radix'
+                    }
+
                     if (
-                        id.includes('framer-motion') ||
-                        id.includes('lucide-react') ||
-                        id.includes('@radix-ui')
+                        id.includes('class-variance-authority') ||
+                        id.includes('tailwind-merge') ||
+                        id.includes('/clsx/')
                     ) {
-                        return 'vendor-ui'
+                        return 'vendor-ui-utils'
+                    }
+
+                    if (
+                        id.includes('@tensorflow/') ||
+                        id.includes('tfjs')
+                    ) {
+                        return 'vendor-tfjs'
+                    }
+
+                    if (
+                        id.includes('@mediapipe/')
+                    ) {
+                        return 'vendor-mediapipe'
                     }
 
                     if (
@@ -152,7 +196,6 @@ export default defineConfig({
                     }
 
                     if (
-                        id.includes('@mediapipe') ||
                         id.includes('face_mesh')
                     ) {
                         return 'vendor-vision'

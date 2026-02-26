@@ -7,7 +7,7 @@ import { useSystemTheme } from './hooks/useSystemTheme';
 import { useTelemetry } from './hooks/useTelemetry';
 import TopologyCanvas from './components/TopologyCanvas';
 import EcosystemTopology from './components/EcosystemTopology';
-import CanvasCursor from './components/CanvasCursor';
+import NeuralModelFabricPanel from './components/NeuralModelFabricPanel';
 import {
   DetailPanel, EventLog, SystemStatsBar,
   LayerLegend,
@@ -37,6 +37,7 @@ export default function AINetworkTopologyPage() {
   const handleNodeClick = useCallback((id) => setSelectedNode(p => p === id ? null : id), []);
   const handleCloseDetail = useCallback(() => setSelectedNode(null), []);
   const toggleView = useCallback(() => setActiveTab(p => p === 'topology' ? 'ecosystem' : 'topology'), []);
+  const showNeuralDeck = activeTab === 'topology' && !selectedNode;
 
   return (
     <div ref={containerRef} style={{
@@ -48,6 +49,12 @@ export default function AINetworkTopologyPage() {
         @keyframes topo-pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
         @keyframes topo-fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
         @keyframes topo-glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.3)} }
+        @keyframes neural-bar-slide { from { transform: translateX(-96px); } to { transform: translateX(360px); } }
+        @keyframes neural-signal-bar {
+          0%, 100% { transform: scaleY(.34); opacity: .34; }
+          35% { transform: scaleY(1); opacity: 1; }
+          65% { transform: scaleY(.62); opacity: .7; }
+        }
         .topology-svg { width:100%; height:100%; display:block }
         .topo-panel {
           position: relative;
@@ -95,13 +102,64 @@ export default function AINetworkTopologyPage() {
             inset 0 1px 0 rgba(255,255,255,0.10),
             inset 0 -20px 36px rgba(124,58,237,0.045);
         }
+        .neural-fabric-panel::before {
+          opacity: ${isDark ? 0.09 : 0.07};
+          background-size:
+            auto,
+            auto,
+            184px 184px !important;
+          background-position:
+            0 0,
+            0 0,
+            28px 16px;
+        }
+        .neural-fabric-panel::after {
+          opacity: ${isDark ? 0.9 : 0.55};
+          background:
+            linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03) 22%, rgba(255,255,255,0) 55%),
+            radial-gradient(260px 110px at 10% 0%, rgba(56,189,248,0.10), transparent 76%),
+            radial-gradient(260px 120px at 88% 0%, rgba(167,139,250,0.11), transparent 78%);
+        }
+        .neural-fabric-panel::-webkit-scrollbar { width: 4px; }
+        .neural-fabric-panel::-webkit-scrollbar-thumb { background: ${T.scrollThumb}; border-radius: 999px; }
+        .neural-fabric-card {
+          position: relative;
+          isolation: isolate;
+          --mx: 50%;
+          --my: 50%;
+        }
+        .neural-fabric-card::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          border-radius: inherit;
+          opacity: 0;
+          transition: opacity .26s ease;
+          background:
+            linear-gradient(115deg, rgba(255,255,255,0.06), rgba(255,255,255,0.015) 28%, rgba(255,255,255,0) 52%),
+            radial-gradient(120px 60px at 85% 0%, rgba(167,139,250,0.10), transparent 72%);
+        }
+        .neural-fabric-card::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          border-radius: inherit;
+          opacity: 0;
+          transition: opacity .22s ease;
+          background:
+            radial-gradient(140px 90px at var(--mx) var(--my), rgba(125,211,252,0.12), rgba(167,139,250,0.07) 42%, transparent 78%);
+          mix-blend-mode: screen;
+        }
+        .neural-fabric-card:hover::before,
+        .neural-fabric-card:hover::after {
+          opacity: 1;
+        }
         ::-webkit-scrollbar{width:4px}
         ::-webkit-scrollbar-track{background:transparent}
         ::-webkit-scrollbar-thumb{background:${T.scrollThumb};border-radius:4px}
       `}</style>
-
-      {/* Canvas cursor effect */}
-      <CanvasCursor />
 
       {/* Background layers */}
       <div style={{
@@ -161,24 +219,50 @@ export default function AINetworkTopologyPage() {
           <div style={{
             position: 'absolute', inset: 0, zIndex: 10,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '42px 208px 72px 208px',
+            padding: '44px 208px 78px 208px',
             animation: 'topo-fadeIn .4s ease-out',
           }}>
-            <div style={{ width: '100%', maxWidth: 920, aspectRatio: '1/1' }}>
-              <TopologyCanvas
-                positions={positions}
-                activeNodes={telemetry.displayActiveNodes}
-                activeEdges={telemetry.displayActiveEdges}
-                edgeHotness={telemetry.displayEdgeHotness}
-                nodeStatuses={telemetry.displayNodeStatuses}
-                selectedNode={selectedNode}
-                onNodeClick={handleNodeClick}
-                hoveredNode={hoveredNode}
-                onNodeHover={handleNodeHover}
-                onNodeLeave={handleNodeLeave}
-                cx={CX} cy={CY}
-                layerColors={layerColors} T={T}
-              />
+            <div style={{
+              width: '100%',
+              maxWidth: showNeuralDeck ? 1354 : 980,
+              display: 'grid',
+              gridTemplateColumns: showNeuralDeck ? 'minmax(0, 1fr) 426px' : 'minmax(0, 1fr)',
+              alignItems: 'start',
+              gap: showNeuralDeck ? 12 : 0,
+            }}>
+              <div style={{ width: '100%', maxWidth: showNeuralDeck ? 904 : 980, aspectRatio: '1/1', justifySelf: 'center' }}>
+                <TopologyCanvas
+                  positions={positions}
+                  activeNodes={telemetry.displayActiveNodes}
+                  activeEdges={telemetry.displayActiveEdges}
+                  edgeHotness={telemetry.displayEdgeHotness}
+                  nodeStatuses={telemetry.displayNodeStatuses}
+                  selectedNode={selectedNode}
+                  onNodeClick={handleNodeClick}
+                  hoveredNode={hoveredNode}
+                  onNodeHover={handleNodeHover}
+                  onNodeLeave={handleNodeLeave}
+                  cx={CX} cy={CY}
+                  layerColors={layerColors} T={T}
+                />
+              </div>
+
+              {showNeuralDeck && (
+                <NeuralModelFabricPanel
+                  modelStats={telemetry.displayModelStats}
+                  events={telemetry.displayEvents}
+                  context={telemetry.displayContext}
+                  activeNodes={telemetry.displayActiveNodes}
+                  nodeStatuses={telemetry.displayNodeStatuses}
+                  hoveredNode={hoveredNode}
+                  selectedNode={selectedNode}
+                  onHoverModel={handleNodeHover}
+                  onLeaveModel={handleNodeLeave}
+                  onClickModel={handleNodeClick}
+                  dataSource={telemetry.dataSource}
+                  T={T}
+                />
+              )}
             </div>
           </div>
 

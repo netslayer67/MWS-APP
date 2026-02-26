@@ -23,6 +23,8 @@ const loadVisionStack = async () => {
     return visionStackPromise;
 };
 
+export const preloadVisionStack = () => loadVisionStack();
+
 class FaceDetectionService {
     constructor() {
         this.faceMesh = null;

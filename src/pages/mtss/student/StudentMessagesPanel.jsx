@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { MessageCircleHeart, Sparkles } from "lucide-react";
 import { buildStudentProfileView } from "../utils/studentProfileUtils";
 import { formatMentorDisplay } from "../utils/mentorNameUtils";
@@ -10,23 +10,11 @@ const toTimestamp = (value) => {
 };
 
 const StudentMessagesPanel = ({ student, isLoading = false }) => {
-    if (isLoading) {
-        return (
-            <div className="rounded-[30px] border border-white/70 bg-white/82 p-8 text-center text-sm text-slate-600 shadow-sm dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
-                Loading mentor updates...
-            </div>
-        );
-    }
+    const sortedInterventions = useMemo(() => {
+        if (!student) return [];
+        return buildStudentProfileView(student).sortedInterventions || [];
+    }, [student]);
 
-    if (!student) {
-        return (
-            <div className="rounded-[30px] border border-white/70 bg-white/82 p-8 text-center text-sm text-slate-600 shadow-sm dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
-                No communication data available.
-            </div>
-        );
-    }
-
-    const { sortedInterventions } = buildStudentProfileView(student);
     const interventions = useMemo(() => {
         const withRealData = sortedInterventions.filter((item) => item.hasRealData);
         return withRealData.length ? withRealData : sortedInterventions;
@@ -91,6 +79,22 @@ const StudentMessagesPanel = ({ student, isLoading = false }) => {
         () => (selectedSubject === "all" ? feed : feed.filter((entry) => entry.subjectType === selectedSubject)),
         [feed, selectedSubject],
     );
+
+    if (isLoading) {
+        return (
+            <div className="rounded-[30px] border border-white/70 bg-white/82 p-8 text-center text-sm text-slate-600 shadow-sm dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
+                Loading mentor updates...
+            </div>
+        );
+    }
+
+    if (!student) {
+        return (
+            <div className="rounded-[30px] border border-white/70 bg-white/82 p-8 text-center text-sm text-slate-600 shadow-sm dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
+                No communication data available.
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-5">

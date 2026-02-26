@@ -9,6 +9,7 @@ import {
     hasDelegatedDashboardAccess,
     getDelegatedDashboardDetails
 } from "@/utils/accessControl";
+import { prefetchStaffFaceScanOnIntent } from "@/utils/faceScanPrefetch";
 
 /* ==================== DECORATIVE ELEMENTS ==================== */
 const Blob = memo(({ className, delay = 0 }) => (
@@ -42,8 +43,11 @@ const Grid = memo(() => (
 ));
 
 /* ==================== METHOD CARD ==================== */
-const MethodCard = memo(({ icon: Icon, title, desc, features, isPremium, onClick }) => (
+const MethodCard = memo(({ icon: Icon, title, desc, features, isPremium, onClick, onIntent }) => (
     <motion.button
+        onMouseEnter={onIntent}
+        onFocus={onIntent}
+        onTouchStart={onIntent}
         onClick={onClick}
         className="group relative w-full text-left glass glass--frosted p-4 md:p-5 rounded-xl md:rounded-2xl transition-all duration-300"
         whileHover={{ scale: 1.008, y: -2 }}
@@ -266,6 +270,7 @@ const RoleSelection = memo(() => {
                                 "Detects concealed emotions accurately"
                             ]}
                             isPremium={true}
+                            onIntent={prefetchStaffFaceScanOnIntent}
                             onClick={() => selectMethod('ai')}
                         />
 

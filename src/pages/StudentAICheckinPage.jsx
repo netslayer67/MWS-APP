@@ -6,6 +6,7 @@ import { Brain, Camera, Sparkles, ArrowLeft, Check, Shield, Zap, Eye } from "luc
 import { Button } from "@/components/ui/button";
 import AnimatedPage from "@/components/AnimatedPage";
 import checkinService from "@/services/checkinService";
+import { prefetchStudentFaceScanOnIntent } from "@/utils/faceScanPrefetch";
 
 /* ── CSS-only animations ── */
 const ScopedStyles = memo(() => (
@@ -265,6 +266,9 @@ const StudentAICheckinPage = memo(function StudentAICheckinPage() {
                     >
                         <Button
                             type="button"
+                            onMouseEnter={prefetchStudentFaceScanOnIntent}
+                            onFocus={prefetchStudentFaceScanOnIntent}
+                            onTouchStart={prefetchStudentFaceScanOnIntent}
                             onClick={() => navigate('/student/emotional-checkin/face-scan')}
                             disabled={isAlreadyDone}
                             className="w-full rounded-xl bg-gradient-to-r from-sky-500 via-blue-500 to-violet-500 hover:from-sky-600 hover:via-blue-600 hover:to-violet-600 text-white font-extrabold shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 py-3"

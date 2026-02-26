@@ -4,6 +4,34 @@ import { NODE_META } from '../constants/nodes';
 import { SIM_FLOWS } from '../constants/simFlows';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '/api/v1';
+const ALLOWED_TELEMETRY_ROLES = new Set(['admin', 'superadmin', 'directorate', 'head_unit']);
+
+function getStoredAuthToken() {
+  return (
+    localStorage.getItem('auth_token')
+    || localStorage.getItem('token')
+    || sessionStorage.getItem('auth_token')
+    || sessionStorage.getItem('token')
+    || null
+  );
+}
+
+function getStoredAuthRole() {
+  const raw = (
+    localStorage.getItem('auth_user')
+    || localStorage.getItem('user')
+    || sessionStorage.getItem('auth_user')
+    || sessionStorage.getItem('user')
+    || null
+  );
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return String(parsed?.role || '').toLowerCase() || null;
+  } catch {
+    return null;
+  }
+}
 
 export function useTelemetry() {
   const [dataSource, setDataSource] = useState('connecting');
@@ -29,7 +57,12 @@ export function useTelemetry() {
     let cancelled = false;
     (async () => {
       try {
-        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        const token = getStoredAuthToken();
+        const role = getStoredAuthRole();
+        if (!token || (role && !ALLOWED_TELEMETRY_ROLES.has(role))) {
+          if (!cancelled) setDataSource('simulator');
+          return;
+        }
         const res = await fetch(`${API_BASE}/dev/topology/snapshot`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
@@ -49,6 +82,12 @@ export function useTelemetry() {
 
   /* Socket subscription */
   useEffect(() => {
+    const token = getStoredAuthToken();
+    const role = getStoredAuthRole();
+    if (!token || (role && !ALLOWED_TELEMETRY_ROLES.has(role))) {
+      return undefined;
+    }
+
     socketService.connect();
     socketService.joinDevTopology();
     const handle = (payload) => {

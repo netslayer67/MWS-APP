@@ -1,20 +1,8 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
-import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ASSISTANT_WIDGET_TYPES, isWidgetTypeSupported } from '@/features/assistant/runtime/widgetRegistry';
 
-const markdownSanitizeSchema = {
-    ...defaultSchema,
-    tagNames: [...(defaultSchema.tagNames || []), 'u', 'ins', 'mark'],
-    attributes: {
-        ...(defaultSchema.attributes || {}),
-        a: [...((defaultSchema.attributes && defaultSchema.attributes.a) || []), 'target', 'rel'],
-        code: [...((defaultSchema.attributes && defaultSchema.attributes.code) || []), 'className']
-    }
-};
+const LazyChatBarChartWidget = lazy(() => import('@/features/assistant/chat/widgets/ChatBarChartWidget'));
+const LazyMarkdownRenderer = lazy(() => import('@/features/assistant/chat/widgets/MarkdownRenderer'));
 
 const preprocessMarkdownContent = (content = '') =>
     String(content || '')
@@ -45,128 +33,24 @@ const formatWidgetValue = (value) => {
     return normalizeRichText(value);
 };
 
-const toNumericWidgetValue = (value) => {
-    if (typeof value === 'number' && Number.isFinite(value)) return value;
-    if (typeof value === 'string') {
-        const normalized = value.replace(/,/g, '').trim();
-        const match = normalized.match(/-?\d+(?:\.\d+)?/);
-        if (match) {
-            const parsed = Number(match[0]);
-            if (Number.isFinite(parsed)) return parsed;
-        }
-    }
-    return null;
-};
+const ChartWidgetFallback = React.memo(({ widget }) => (
+    <div className="rounded-2xl border border-cyan-200/55 dark:border-cyan-300/20 bg-gradient-to-br from-cyan-50/80 via-sky-50/70 to-indigo-50/70 dark:from-cyan-500/8 dark:via-sky-500/6 dark:to-indigo-500/8 p-3 mt-3 animate-pulse">
+        <p className="text-xs font-semibold uppercase tracking-wide text-cyan-800 dark:text-cyan-200">
+            {widget?.title || 'Chart'}
+        </p>
+        {widget?.subtitle && (
+            <p className="text-[11px] text-slate-700 dark:text-slate-300 mt-1 line-clamp-1">{widget.subtitle}</p>
+        )}
+        <div className="h-40 mt-2 rounded-xl border border-white/60 dark:border-white/10 bg-white/60 dark:bg-slate-900/25" />
+    </div>
+));
+ChartWidgetFallback.displayName = 'ChartWidgetFallback';
 
-const ChartWidget = React.memo(({ widget }) => {
-    const data = Array.isArray(widget?.data) ? widget.data : [];
-    const xKey = widget?.xKey || 'label';
-    const yKey = widget?.yKey || 'value';
-    const numericData = data
-        .map((entry = {}) => ({
-            ...entry,
-            [xKey]: formatWidgetValue(entry?.[xKey] || entry?.label || entry?.tierLabel || entry?.name || '-'),
-            [yKey]: toNumericWidgetValue(entry?.[yKey] ?? entry?.value ?? entry?.tierValue ?? entry?.count ?? entry?.total)
-        }))
-        .filter((entry) => Number.isFinite(entry?.[yKey]));
-    const hasSinglePoint = numericData.length === 1;
-    const computedMax = numericData.length > 0
-        ? Math.max(...numericData.map((entry) => Number(entry?.[yKey] || 0)), 1)
-        : 1;
-    const yDomain = Array.isArray(widget?.yDomain) && widget.yDomain.length === 2
-        ? widget.yDomain
-        : [0, computedMax];
-    const yTicks = Array.isArray(widget?.yTicks) && widget.yTicks.length > 0 ? widget.yTicks : undefined;
-    const gradientId = `chat-widget-gradient-${String(widget?.id || 'chart').replace(/[^a-zA-Z0-9_-]/g, '')}`;
-
-    if (numericData.length === 0) {
-        return (
-            <div className="rounded-2xl border border-cyan-200/65 dark:border-cyan-300/25 bg-gradient-to-br from-cyan-50/95 via-sky-50/90 to-indigo-50/90 dark:from-cyan-500/12 dark:via-sky-500/10 dark:to-indigo-500/14 p-3 mt-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-cyan-800 dark:text-cyan-200">{widget.title || 'Chart'}</p>
-                {widget.subtitle && (
-                    <p className="text-[11px] text-slate-700 dark:text-slate-300 mt-1">{widget.subtitle}</p>
-                )}
-                <div className="mt-2 rounded-xl border border-dashed border-slate-300/80 dark:border-slate-500/45 bg-white/78 dark:bg-slate-900/45 px-3 py-2.5">
-                    <p className="text-xs text-slate-600 dark:text-slate-300">No numeric data available yet for chart rendering.</p>
-                </div>
-            </div>
-        );
-    }
-
-    if (hasSinglePoint) {
-        const single = numericData[0];
-        const maxValue = Math.max(Number(yDomain?.[1] || computedMax || 1), 1);
-        const ratio = Math.min(100, Math.max(0, (Number(single?.[yKey] || 0) / maxValue) * 100));
-
-        return (
-            <div className="rounded-2xl border border-cyan-200/65 dark:border-cyan-300/25 bg-gradient-to-br from-cyan-50/95 via-sky-50/90 to-indigo-50/90 dark:from-cyan-500/12 dark:via-sky-500/10 dark:to-indigo-500/14 p-3 mt-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-cyan-800 dark:text-cyan-200">{widget.title || 'Chart'}</p>
-                {widget.subtitle && (
-                    <p className="text-[11px] text-slate-700 dark:text-slate-300 mt-1">{widget.subtitle}</p>
-                )}
-                <div className="mt-3 rounded-xl border border-white/70 dark:border-white/15 bg-white/85 dark:bg-slate-900/40 px-3 py-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">{formatWidgetValue(single?.[xKey])}</p>
-                        <p className="text-lg font-bold text-slate-900 dark:text-white">{formatWidgetValue(single?.[yKey])}</p>
-                    </div>
-                    <div className="mt-2 h-2 rounded-full bg-slate-200/80 dark:bg-slate-700/70 overflow-hidden">
-                        <div
-                            className="h-full rounded-full bg-[linear-gradient(90deg,#06b6d4_0%,#8b5cf6_55%,#f472b6_100%)]"
-                            style={{ width: `${ratio}%` }}
-                        />
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="rounded-2xl border border-cyan-200/65 dark:border-cyan-300/25 bg-gradient-to-br from-cyan-50/95 via-sky-50/90 to-indigo-50/90 dark:from-cyan-500/12 dark:via-sky-500/10 dark:to-indigo-500/14 p-3 mt-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-800 dark:text-cyan-200">{widget.title || 'Chart'}</p>
-            {widget.subtitle && (
-                <p className="text-[11px] text-slate-700 dark:text-slate-300 mt-1">{widget.subtitle}</p>
-            )}
-            <div className="h-56 mt-2">
-                <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={numericData} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
-                        <defs>
-                            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.95} />
-                                <stop offset="55%" stopColor="#8b5cf6" stopOpacity={0.9} />
-                                <stop offset="100%" stopColor="#f472b6" stopOpacity={0.85} />
-                            </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(100,116,139,0.25)" vertical={false} />
-                        <XAxis
-                            dataKey={xKey}
-                            tick={{ fontSize: 11, fill: '#334155' }}
-                            axisLine={{ stroke: 'rgba(100,116,139,0.28)' }}
-                            tickLine={false}
-                        />
-                        <YAxis
-                            domain={yDomain}
-                            ticks={yTicks}
-                            allowDecimals={false}
-                            tick={{ fontSize: 11, fill: '#334155' }}
-                            axisLine={{ stroke: 'rgba(100,116,139,0.28)' }}
-                            tickLine={false}
-                        />
-                        <Tooltip
-                            cursor={{ fill: 'rgba(148,163,184,0.12)' }}
-                            contentStyle={{
-                                borderRadius: '0.9rem',
-                                border: '1px solid rgba(148,163,184,0.35)',
-                                background: 'rgba(255,255,255,0.96)',
-                                fontSize: '12px'
-                            }}
-                        />
-                        <Bar dataKey={yKey} radius={[8, 8, 0, 0]} fill={`url(#${gradientId})`} />
-                    </BarChart>
-                </ResponsiveContainer>
-            </div>
-        </div>
-    );
-});
+const ChartWidget = React.memo(({ widget }) => (
+    <Suspense fallback={<ChartWidgetFallback widget={widget} />}>
+        <LazyChatBarChartWidget widget={widget} />
+    </Suspense>
+));
 ChartWidget.displayName = 'ChartWidget';
 
 const splitFocusTokens = (value = '') =>
@@ -538,7 +422,7 @@ const SkillCardsWidget = React.memo(({ widget, onWidgetAction }) => {
 });
 SkillCardsWidget.displayName = 'SkillCardsWidget';
 
-const AssistantWidgets = React.memo(({ widgets, isUser, onWidgetAction }) => {
+const AssistantWidgets = React.memo(({ widgets, isUser, onWidgetAction, canHydrateRichWidgets }) => {
     const normalizedWidgets = useMemo(
         () => (
             Array.isArray(widgets)
@@ -557,7 +441,10 @@ const AssistantWidgets = React.memo(({ widgets, isUser, onWidgetAction }) => {
         <div className="space-y-2">
             {normalizedWidgets.map((widget, index) => {
                 const key = widget.id || `${widget.type || 'widget'}-${index}`;
-                if (widget.type === ASSISTANT_WIDGET_TYPES.BAR_CHART) return <ChartWidget key={key} widget={widget} />;
+                if (widget.type === ASSISTANT_WIDGET_TYPES.BAR_CHART) {
+                    if (!canHydrateRichWidgets) return <ChartWidgetFallback key={key} widget={widget} />;
+                    return <ChartWidget key={key} widget={widget} />;
+                }
                 if (widget.type === ASSISTANT_WIDGET_TYPES.TABLE) return <TableWidget key={key} widget={widget} />;
                 if (widget.type === ASSISTANT_WIDGET_TYPES.STATS) return <StatsWidget key={key} widget={widget} />;
                 if (widget.type === ASSISTANT_WIDGET_TYPES.TIMELINE) return <TimelineWidget key={key} widget={widget} />;
@@ -575,6 +462,8 @@ AssistantWidgets.displayName = 'AssistantWidgets';
 const MessageBubble = React.memo(({ message, isUser, onWidgetAction }) => {
     const [showReactions, setShowReactions] = useState(false);
     const [selectedReaction, setSelectedReaction] = useState(null);
+    const [canHydrateRichContent, setCanHydrateRichContent] = useState(isUser);
+    const bubbleRef = useRef(null);
     const formattedContent = useMemo(
         () => preprocessMarkdownContent(message.content),
         [message.content]
@@ -587,8 +476,30 @@ const MessageBubble = React.memo(({ message, isUser, onWidgetAction }) => {
         setShowReactions(false);
     }, []);
 
+    useEffect(() => {
+        if (isUser || canHydrateRichContent) return;
+        const node = bubbleRef.current;
+        if (!node || typeof window === 'undefined' || !('IntersectionObserver' in window)) {
+            setCanHydrateRichContent(true);
+            return;
+        }
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries.some((entry) => entry.isIntersecting)) {
+                    setCanHydrateRichContent(true);
+                    observer.disconnect();
+                }
+            },
+            { rootMargin: '240px 0px' }
+        );
+
+        observer.observe(node);
+        return () => observer.disconnect();
+    }, [canHydrateRichContent, isUser]);
+
     return (
-        <div className="relative group">
+        <div className="relative group" ref={bubbleRef}>
             <div
                 className={`message-bubble rounded-2xl sm:rounded-3xl px-4 py-3 sm:px-5 sm:py-4 ${isUser
                     ? 'chat-gradient-border bg-[linear-gradient(130deg,_rgb(34_211_238)_0%,_rgb(139_92_246)_52%,_rgb(251_113_133)_100%)] text-white'
@@ -598,100 +509,20 @@ const MessageBubble = React.memo(({ message, isUser, onWidgetAction }) => {
                 onMouseLeave={() => setShowReactions(false)}
             >
                 <div className={`chat-markdown ${isUser ? 'chat-markdown-user' : 'chat-markdown-assistant'} text-sm sm:text-base leading-relaxed`}>
-                    <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[
-                            rehypeRaw,
-                            [rehypeSanitize, markdownSanitizeSchema]
-                        ]}
-                        components={{
-                            p: ({ children, ...props }) => (
-                                <p className="my-1 whitespace-pre-wrap leading-relaxed" {...props}>{children}</p>
-                            ),
-                            strong: ({ children, ...props }) => (
-                                <strong className="font-bold" {...props}>{children}</strong>
-                            ),
-                            em: ({ children, ...props }) => (
-                                <em className="italic" {...props}>{children}</em>
-                            ),
-                            u: ({ children, ...props }) => (
-                                <u className="underline underline-offset-2" {...props}>{children}</u>
-                            ),
-                            table: ({ children, ...props }) => (
-                                <div className={`my-3 overflow-x-auto rounded-xl border ${isUser ? 'border-white/35 bg-white/12' : 'border-slate-200/80 dark:border-white/12 bg-white/70 dark:bg-slate-900/35'}`}>
-                                    <table className="min-w-full border-separate border-spacing-0 text-[12px] sm:text-sm leading-relaxed" {...props}>
-                                        {children}
-                                    </table>
-                                </div>
-                            ),
-                            thead: ({ children, ...props }) => (
-                                <thead className={isUser ? 'bg-white/20' : 'bg-slate-100/90 dark:bg-slate-800/80'} {...props}>{children}</thead>
-                            ),
-                            tbody: ({ children, ...props }) => (
-                                <tbody className={isUser ? 'bg-transparent' : 'bg-white/75 dark:bg-slate-900/20'} {...props}>{children}</tbody>
-                            ),
-                            tr: ({ children, ...props }) => (
-                                <tr className={isUser ? 'border-b border-white/20' : 'border-b border-slate-200/70 dark:border-white/10 odd:bg-white/60 dark:odd:bg-white/[0.03]'} {...props}>{children}</tr>
-                            ),
-                            th: ({ children, ...props }) => (
-                                <th className={`px-3 py-2 text-left font-semibold align-top border-b ${isUser ? 'text-white border-white/25' : 'text-slate-800 dark:text-slate-100 border-slate-200/80 dark:border-white/12'}`} {...props}>
-                                    {children}
-                                </th>
-                            ),
-                            td: ({ children, ...props }) => (
-                                <td className={`px-3 py-2 align-top whitespace-pre-line break-words border-b ${isUser ? 'text-white/95 border-white/15' : 'text-slate-800 dark:text-slate-100 border-slate-200/70 dark:border-white/10'}`} {...props}>
-                                    {children}
-                                </td>
-                            ),
-                            ul: ({ children, ...props }) => (
-                                <ul className="list-disc pl-5 my-2 space-y-1" {...props}>{children}</ul>
-                            ),
-                            ol: ({ children, ...props }) => (
-                                <ol className="list-decimal pl-5 my-2 space-y-1" {...props}>{children}</ol>
-                            ),
-                            li: ({ children, ...props }) => (
-                                <li className="leading-relaxed" {...props}>{children}</li>
-                            ),
-                            blockquote: ({ children, ...props }) => (
-                                <blockquote
-                                    className={`my-2 pl-3 border-l-2 ${isUser ? 'border-white/60 text-white/95' : 'border-violet-300/50 text-gray-700 dark:text-gray-200'}`}
-                                    {...props}
-                                >
-                                    {children}
-                                </blockquote>
-                            ),
-                            h1: ({ children, ...props }) => (
-                                <h1 className="text-lg sm:text-xl font-bold mt-2 mb-1" {...props}>{children}</h1>
-                            ),
-                            h2: ({ children, ...props }) => (
-                                <h2 className="text-base sm:text-lg font-bold mt-2 mb-1" {...props}>{children}</h2>
-                            ),
-                            h3: ({ children, ...props }) => (
-                                <h3 className="text-sm sm:text-base font-semibold mt-2 mb-1" {...props}>{children}</h3>
-                            ),
-                            a: ({ href, children, ...props }) => (
-                                <a href={href} target="_blank" rel="noreferrer" {...props}>{children}</a>
-                            ),
-                            code: ({ inline, children, ...props }) => (
-                                inline ? (
-                                    <code className={`px-1 py-0.5 rounded ${isUser ? 'bg-white/20 text-white' : 'bg-black/10 dark:bg-white/10'}`} {...props}>
-                                        {children}
-                                    </code>
-                                ) : (
-                                    <code className={`block my-2 p-2.5 rounded-xl whitespace-pre-wrap text-[12px] sm:text-[13px] leading-relaxed ${isUser ? 'bg-white/18 text-white' : 'bg-black/10 dark:bg-white/8'}`} {...props}>
-                                        {children}
-                                    </code>
-                                )
-                            ),
-                            hr: () => (
-                                <hr className={`my-2 ${isUser ? 'border-white/35' : 'border-gray-300/60 dark:border-white/15'}`} />
-                            )
-                        }}
-                    >
-                        {formattedContent}
-                    </ReactMarkdown>
+                    {canHydrateRichContent ? (
+                        <Suspense fallback={<p className="my-1 whitespace-pre-wrap leading-relaxed">{formattedContent}</p>}>
+                            <LazyMarkdownRenderer content={formattedContent} isUser={isUser} />
+                        </Suspense>
+                    ) : (
+                        <p className="my-1 whitespace-pre-wrap leading-relaxed">{formattedContent}</p>
+                    )}
                 </div>
-                <AssistantWidgets widgets={message.widgets} isUser={isUser} onWidgetAction={onWidgetAction} />
+                <AssistantWidgets
+                    widgets={message.widgets}
+                    isUser={isUser}
+                    onWidgetAction={onWidgetAction}
+                    canHydrateRichWidgets={canHydrateRichContent}
+                />
 
                 {!isUser && showReactions && (
                     <div className="absolute -bottom-8 left-0 flex gap-1 bg-white dark:bg-gray-800 rounded-full px-2 py-1 shadow-lg border border-gray-200/50 dark:border-white/10">
