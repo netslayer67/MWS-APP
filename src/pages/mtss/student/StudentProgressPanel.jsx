@@ -39,21 +39,18 @@ const resolveInterventionGoal = (intervention, fallback) => {
 };
 
 const StudentProgressPanel = ({ student, isLoading = false }) => {
-    if (isLoading) {
-        return (
-            <div className="rounded-[30px] border border-white/70 bg-white/82 p-8 text-center text-sm text-slate-600 shadow-sm dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
-                Loading latest MTSS progress...
-            </div>
-        );
-    }
-
-    if (!student) {
-        return (
-            <div className="rounded-[30px] border border-white/70 bg-white/82 p-8 text-center text-sm text-slate-600 shadow-sm dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
-                Student profile data is not available yet.
-            </div>
-        );
-    }
+    const studentProfileView = useMemo(() => {
+        if (!student) {
+            return {
+                profile: null,
+                currentIntervention: null,
+                sortedInterventions: [],
+                strategyLabel: "",
+                goalLabel: "",
+            };
+        }
+        return buildStudentProfileView(student);
+    }, [student]);
 
     const {
         profile,
@@ -61,7 +58,7 @@ const StudentProgressPanel = ({ student, isLoading = false }) => {
         sortedInterventions,
         strategyLabel,
         goalLabel,
-    } = buildStudentProfileView(student);
+    } = studentProfileView;
 
     const subjectInterventions = sortedInterventions.filter((entry) => entry.hasRealData);
     const visibleSubjects = subjectInterventions.length > 0 ? subjectInterventions : sortedInterventions;
@@ -85,12 +82,28 @@ const StudentProgressPanel = ({ student, isLoading = false }) => {
         return visibleSubjects.find((item) => item.type === activeSubjectType) || currentIntervention || visibleSubjects[0];
     }, [activeSubjectType, currentIntervention, visibleSubjects]);
 
+    if (isLoading) {
+        return (
+            <div className="rounded-[30px] border border-white/70 bg-white/82 p-8 text-center text-sm text-slate-600 shadow-sm dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
+                Loading latest MTSS progress...
+            </div>
+        );
+    }
+
+    if (!student) {
+        return (
+            <div className="rounded-[30px] border border-white/70 bg-white/82 p-8 text-center text-sm text-slate-600 shadow-sm dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
+                Student profile data is not available yet.
+            </div>
+        );
+    }
+
     const unitLabel = activeIntervention?.progressUnit || profile?.progressUnit || "pts";
     const baseline = activeIntervention?.baseline ?? profile?.baseline;
     const current = activeIntervention?.current ?? profile?.current;
     const target = activeIntervention?.target ?? profile?.target;
     const progressPercent = activeIntervention?.progress ?? toProgressPercent(current, target);
-    const nextReviewLabel = formatReviewDate(activeIntervention?.endDate, student.nextUpdate || "Awaiting schedule");
+    const nextReviewLabel = formatReviewDate(activeIntervention?.endDate, student?.nextUpdate || "Awaiting schedule");
 
     const chart = Array.isArray(activeIntervention?.chart) && activeIntervention.chart.length
         ? activeIntervention.chart

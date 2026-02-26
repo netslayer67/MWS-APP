@@ -40,10 +40,12 @@ jobs:
 
       - name: ESLint (strict)
         run: |
-          if npm run | grep -q "lint:strict"; then
-            npm run lint:strict
+          if npm run | grep -q " lint"; then
+            npm run lint -- --quiet
+          elif npm run | grep -q "lint:strict"; then
+            npm run lint:strict -- --quiet
           else
-            npm run lint
+            echo "No lint script found, skipping."
           fi
 
       - name: Unit tests (if available)

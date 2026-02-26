@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from "react";
+import { memo, useMemo } from "react";
 import { CalendarHeart, Clock3, Layers3, Target } from "lucide-react";
 import { buildStudentProfileView } from "../utils/studentProfileUtils";
 import { formatMentorDisplay } from "../utils/mentorNameUtils";
@@ -36,23 +36,11 @@ const formatReviewDate = (value, fallback = "Awaiting schedule") => {
 };
 
 const StudentSchedulePanel = ({ student, isLoading = false }) => {
-    if (isLoading) {
-        return (
-            <div className="rounded-[30px] border border-white/70 bg-white/82 p-8 text-center text-sm text-slate-600 shadow-sm dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
-                Loading intervention schedule...
-            </div>
-        );
-    }
+    const sortedInterventions = useMemo(() => {
+        if (!student) return [];
+        return buildStudentProfileView(student).sortedInterventions || [];
+    }, [student]);
 
-    if (!student) {
-        return (
-            <div className="rounded-[30px] border border-white/70 bg-white/82 p-8 text-center text-sm text-slate-600 shadow-sm dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
-                No schedule data available.
-            </div>
-        );
-    }
-
-    const { sortedInterventions } = buildStudentProfileView(student);
     const interventions = useMemo(() => {
         const withRealData = sortedInterventions.filter((item) => item.hasRealData);
         return withRealData.length ? withRealData : sortedInterventions;
@@ -92,6 +80,22 @@ const StudentSchedulePanel = ({ student, isLoading = false }) => {
         [interventions],
     );
 
+    if (isLoading) {
+        return (
+            <div className="rounded-[30px] border border-white/70 bg-white/82 p-8 text-center text-sm text-slate-600 shadow-sm dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
+                Loading intervention schedule...
+            </div>
+        );
+    }
+
+    if (!student) {
+        return (
+            <div className="rounded-[30px] border border-white/70 bg-white/82 p-8 text-center text-sm text-slate-600 shadow-sm dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
+                No schedule data available.
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-5">
             <div className="rounded-[34px] border border-white/70 bg-white/82 p-5 shadow-[0_14px_36px_rgba(14,165,233,0.08)] backdrop-blur-xl dark:border-white/15 dark:bg-slate-900/55 space-y-4">
@@ -127,7 +131,7 @@ const StudentSchedulePanel = ({ student, isLoading = false }) => {
                         gender: intervention.mentorGender,
                     });
                     const scheduleCards = [
-                        { key: "next", label: "Next Review", value: formatReviewDate(intervention.endDate, student.nextUpdate || "Awaiting schedule"), tone: "from-rose-100 to-pink-100 dark:from-rose-500/20 dark:to-pink-500/12" },
+                        { key: "next", label: "Next Review", value: formatReviewDate(intervention.endDate, student?.nextUpdate || "Awaiting schedule"), tone: "from-rose-100 to-pink-100 dark:from-rose-500/20 dark:to-pink-500/12" },
                         { key: "monitoring", label: "Monitoring", value: intervention.monitoringFrequency || intervention.monitoringMethod || "Weekly review", tone: "from-sky-100 to-cyan-100 dark:from-sky-500/20 dark:to-cyan-500/12" },
                         { key: "mentor", label: "Mentor", value: mentorLabel || "MTSS Mentor", tone: "from-violet-100 to-fuchsia-100 dark:from-violet-500/20 dark:to-fuchsia-500/12" },
                         { key: "duration", label: "Duration", value: intervention.duration || "Ongoing", tone: "from-amber-100 to-orange-100 dark:from-amber-500/20 dark:to-orange-500/12" },

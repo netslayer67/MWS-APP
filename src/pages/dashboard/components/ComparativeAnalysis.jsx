@@ -1,6 +1,6 @@
 import React, { memo, useMemo, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, ComposedChart } from 'recharts';
-import { TrendingUp, TrendingDown, Minus, Calendar, ChevronDown } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Calendar, ChevronDown, AlertTriangle } from "lucide-react";
 
 const ComparativeAnalysis = memo(({ data = {}, currentPeriod = 'today' }) => {
     const [comparisonPeriod, setComparisonPeriod] = useState('week');

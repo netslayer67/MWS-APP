@@ -48,7 +48,7 @@ const SelectedDescription = memo(({ selectedOption }) => (
                     const raw = String(selectedOption.desc || '');
                     // Use English-only part before the bilingual separator
                     const english = raw.includes(' / ') ? raw.split(' / ')[0] : raw;
-                    return english.replace(/^\s*[?️⭐️🌧️🌫️🌪️🌈🔥☀️⛅]*\s*/, '');
+                    return english.replace(/^\s*[^A-Za-z]+\s*/, '');
                 })()}
             </p>
         </div>
