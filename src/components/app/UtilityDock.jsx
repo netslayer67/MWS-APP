@@ -31,6 +31,7 @@ import {
 } from "@/utils/utilityDockAutomation";
 import { applyThemePreference, emitThemeSpell, getStoredTheme, persistTheme } from "@/lib/theme";
 import UtilityDockWidgetPreview from "@/components/app/dock/UtilityDockWidgetPreview";
+import MarkdownRenderer from "@/features/assistant/chat/widgets/MarkdownRenderer";
 
 const NUDGE_STORAGE_KEY = "ai_dock_nudge_v2";
 const NUDGE_DAILY_LIMIT = 3;
@@ -42,6 +43,7 @@ const THEME_COMMAND_APPLY_DELAY_MS = 320;
 const DOCK_MESSAGE_LIMIT = 18;
 const DOCK_WIDGET_LIMIT = 2;
 const DOCK_ACTION_LIMIT = 4;
+const DOCK_API_MESSAGE_MAX_LENGTH = 2000;
 
 const safeList = (value) => (Array.isArray(value) ? value : []);
 const safeText = (value, max = 220) =>
@@ -49,6 +51,16 @@ const safeText = (value, max = 220) =>
         .replace(/\s+/g, " ")
         .trim()
         .slice(0, max);
+
+const preprocessDockMarkdown = (content = "") =>
+    String(content || "")
+        .replace(/&lt;br\s*\/?&gt;/gi, "\n")
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/\r\n/g, "\n")
+        .replace(/\+\+([^\n+][\s\S]*?)\+\+/g, "<u>$1</u>");
+
+const isLengthLimitError = (value = "") => /message too long/i.test(String(value || ""));
+const QUERY_LIKE_DOCK_PROMPT_REGEX = /(\?|^who\b|^what\b|^which\b|^how\b|^why\b|^when\b|^where\b|\bsiapa\b|\bberapa\b|\bmana\b|\blist\b|\btier\s*[123]\b)/i;
 
 const describeOperation = (operation = "") =>
     safeText(String(operation || "").replace(/_/g, " "), 72) || "automation";
@@ -638,16 +650,16 @@ const UtilityDock = memo(() => {
         if (!operation) return false;
 
         if (!canRunAutomation || !isOperationAllowedForRole(normalizedAutomationRole, operation)) {
-            appendDockMessage(
-                "assistant",
-                `${assistantName}: Operation "${describeOperation(operation)}" only tersedia untuk role MTSS yang diizinkan.`
-            );
+                appendDockMessage(
+                    "assistant",
+                    `${assistantName}: Operation "${describeOperation(operation)}" is only available for allowed MTSS roles.`
+                );
             return true;
         }
 
         const formConfig = getDockOperationFormConfig(operation, action.payload || {});
         if (!formConfig) {
-            appendDockMessage("assistant", `${assistantName}: Form untuk operation ini belum tersedia.`);
+            appendDockMessage("assistant", `${assistantName}: A form for this operation is not available yet.`);
             return true;
         }
 
@@ -684,7 +696,7 @@ const UtilityDock = memo(() => {
         if (dockOperationForm.requireConfirmation !== false) {
             const confirmed = window.confirm(String(dockOperationForm.confirmText || `Run "${getOperationLabel(operation)}" now?`));
             if (!confirmed) {
-                appendDockMessage("assistant", `${assistantName}: Baik, operation dibatalkan dulu.`);
+                appendDockMessage("assistant", `${assistantName}: Okay, I canceled the operation for now.`);
                 return;
             }
         }
@@ -699,7 +711,7 @@ const UtilityDock = memo(() => {
         setIsDockSending(true);
         try {
             const result = await aiChatService.executeAssistantOperation(operation, payload, dockSessionId);
-            const successText = safeText(dockOperationForm.successMessage || result?.message || "Operation selesai dijalankan.", 220);
+            const successText = safeText(dockOperationForm.successMessage || result?.message || "Operation completed.", 220);
             appendDockMessage("assistant", `${assistantName}: ${successText}`);
             toast({
                 title: "Automation completed",
@@ -712,7 +724,7 @@ const UtilityDock = memo(() => {
                 dockOperationForm.failureMessage
                 || runError?.response?.data?.message
                 || runError?.message
-                || "Automation gagal dijalankan.",
+                || "Automation could not be completed.",
                 220
             );
             appendDockMessage("assistant", `${assistantName}: ${fallback}`);
@@ -742,7 +754,7 @@ const UtilityDock = memo(() => {
         if (type === "navigate") {
             const safeAction = sanitizeAssistantNavigateAction(action, normalizedRole);
             if (!safeAction?.navigateTo) {
-                appendDockMessage("assistant", `${assistantName}: Route tersebut tidak tersedia untuk role kamu.`);
+                appendDockMessage("assistant", `${assistantName}: That route is not available for your role.`);
                 return true;
             }
             navigate(safeAction.navigateTo);
@@ -897,11 +909,65 @@ const UtilityDock = memo(() => {
 
         setIsDockSending(true);
         try {
-            const apiMessage = composeDockContextMessage({
+            if (trimmed.length > DOCK_API_MESSAGE_MAX_LENGTH) {
+                appendDockMessage(
+                    "assistant",
+                    `${assistantName}: Please shorten your message and try again.`
+                );
+                return;
+            }
+
+            const fullApiMessage = composeDockContextMessage({
                 message: trimmed,
                 context: contextPayload,
                 commandPack
             }) || trimmed;
+
+            let apiMessage = fullApiMessage;
+            if (apiMessage.length > DOCK_API_MESSAGE_MAX_LENGTH) {
+                const compactMtss = contextPayload?.mtss
+                    ? JSON.stringify({
+                        metrics: safeList(contextPayload.mtss.metrics).slice(0, 4),
+                        quickActions: safeList(contextPayload.mtss.quickActions).slice(0, 4),
+                        table: safeList(contextPayload.mtss.table).slice(0, 1).map((table = {}) => ({
+                            headers: safeList(table.headers).slice(0, 5),
+                            rows: safeList(table.rows).slice(0, 3).map((row = []) =>
+                                safeList(row).slice(0, 5).map((cell) => safeText(cell, 80))
+                            )
+                        }))
+                    })
+                    : "";
+                const compactPageSnapshot = contextPayload?.pageSnapshot
+                    ? JSON.stringify({
+                        headings: safeList(contextPayload.pageSnapshot.headings).slice(0, 5),
+                        metricHighlights: safeList(contextPayload.pageSnapshot.metricHighlights).slice(0, 4),
+                        quickActions: safeList(contextPayload.pageSnapshot.quickActions).slice(0, 5),
+                        lines: safeList(contextPayload.pageSnapshot.lines).slice(0, 8)
+                    })
+                    : "";
+                const isQueryLikePrompt = QUERY_LIKE_DOCK_PROMPT_REGEX.test(trimmed);
+
+                const compactApiMessage = [
+                    "[DOCK_RUNTIME_CONTEXT]",
+                    contextPayload?.route ? `route: ${String(contextPayload.route).trim()}` : "",
+                    contextPayload?.routeFamily ? `route_family: ${String(contextPayload.routeFamily).trim()}` : "",
+                    contextPayload?.role ? `role: ${String(contextPayload.role).trim()}` : "",
+                    contextPayload?.userName ? `user_name: ${String(contextPayload.userName).trim()}` : "",
+                    compactMtss ? `mtss_snapshot: ${compactMtss.slice(0, 900)}` : "",
+                    compactPageSnapshot ? `page_snapshot_compact: ${compactPageSnapshot.slice(0, 700)}` : "",
+                    "instruction: Use the current route and provided runtime context as trusted live page data. Answer directly and concisely.",
+                    isQueryLikePrompt
+                        ? "instruction_2: The user is asking a data/question prompt. Answer the question directly from the context. Do not switch pages unless explicitly asked to open a page."
+                        : "",
+                    "[/DOCK_RUNTIME_CONTEXT]",
+                    `User message: ${trimmed}`
+                ].filter(Boolean).join("\n");
+
+                apiMessage = compactApiMessage.length <= DOCK_API_MESSAGE_MAX_LENGTH
+                    ? compactApiMessage
+                    : trimmed;
+            }
+
             const response = await aiChatService.sendChatMessage(apiMessage, dockSessionId);
             const payload = response?.data || {};
             const nextSessionId = String(payload?.sessionId || "").trim();
@@ -927,7 +993,9 @@ const UtilityDock = memo(() => {
             const fallbackMessage = String(error?.response?.data?.message || error?.message || "").trim();
             appendDockMessage(
                 "assistant",
-                fallbackMessage
+                isLengthLimitError(fallbackMessage)
+                    ? `${assistantName}: I could not send the full page context for that request. Please try again.`
+                    : fallbackMessage
                     ? `${assistantName}: ${fallbackMessage}`
                     : `${assistantName}: I hit a temporary issue. Try again in a few seconds.`
             );
@@ -1032,6 +1100,10 @@ const UtilityDock = memo(() => {
         return null;
     }
 
+    const hasQuickDraft = String(quickMessage || "").trim().length > 0;
+    const hasDockConversation = dockMessages.length > 0;
+    const shouldHideQuickLinks = hasQuickDraft || hasDockConversation || isDockSending;
+
     return (
         <div
             className="utility-dock fixed z-50 flex items-end gap-2"
@@ -1127,22 +1199,24 @@ const UtilityDock = memo(() => {
                             </button>
                         </div>
 
-                        <div className="mt-2.5 space-y-2">
-                            {quickActionItems.map((entry) => (
-                                <button
-                                    key={entry.label}
-                                    type="button"
-                                    onClick={() => handleQuickAction(entry.navigateTo)}
-                                    className="w-full rounded-2xl px-3 py-2 text-left bg-white/88 dark:bg-slate-800/75 border border-cyan-100/80 dark:border-cyan-300/25 hover:bg-cyan-50/95 dark:hover:bg-cyan-400/12 transition-all"
-                                >
-                                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 flex items-center justify-between gap-2">
-                                        <span>{entry.label}</span>
-                                        <ArrowUpRight className="w-3.5 h-3.5 text-cyan-500" />
-                                    </p>
-                                    <p className="text-[11px] text-slate-600 dark:text-slate-200 mt-0.5">{entry.description}</p>
-                                </button>
-                            ))}
-                        </div>
+                        {!shouldHideQuickLinks && (
+                            <div className="mt-2.5 space-y-2">
+                                {quickActionItems.map((entry) => (
+                                    <button
+                                        key={entry.label}
+                                        type="button"
+                                        onClick={() => handleQuickAction(entry.navigateTo)}
+                                        className="w-full rounded-2xl px-3 py-2 text-left bg-white/88 dark:bg-slate-800/75 border border-cyan-100/80 dark:border-cyan-300/25 hover:bg-cyan-50/95 dark:hover:bg-cyan-400/12 transition-all"
+                                    >
+                                        <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 flex items-center justify-between gap-2">
+                                            <span>{entry.label}</span>
+                                            <ArrowUpRight className="w-3.5 h-3.5 text-cyan-500" />
+                                        </p>
+                                        <p className="text-[11px] text-slate-600 dark:text-slate-200 mt-0.5">{entry.description}</p>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
 
                         <div className="mt-3 rounded-2xl border border-cyan-200/55 dark:border-cyan-300/20 bg-white/78 dark:bg-slate-950/42 backdrop-blur-sm">
                             <div
@@ -1162,7 +1236,16 @@ const UtilityDock = memo(() => {
                                                 : "mr-auto bg-white/90 dark:bg-slate-900/70 border border-cyan-200/55 dark:border-cyan-300/22 text-slate-800 dark:text-slate-100"
                                             }`}
                                     >
-                                        {message.content}
+                                        {message.role === "assistant" ? (
+                                            <div className="dock-markdown [&_p]:my-0.5 [&_ul]:my-1 [&_ol]:my-1 [&_blockquote]:my-1 [&_table]:my-1.5 [&_h1]:!text-[13px] [&_h2]:!text-[12px] [&_h3]:!text-[12px] [&_code]:!text-[10px] [&_code]:leading-relaxed">
+                                                <MarkdownRenderer
+                                                    content={preprocessDockMarkdown(message.content)}
+                                                    isUser={false}
+                                                />
+                                            </div>
+                                        ) : (
+                                            message.content
+                                        )}
                                         {message.role === "assistant" && safeList(message.widgets).length > 0 && (
                                             <UtilityDockWidgetPreview
                                                 widgets={message.widgets}

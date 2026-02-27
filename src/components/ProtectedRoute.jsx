@@ -3,7 +3,13 @@ import { Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { hasEmotionalDashboardAccess } from '@/utils/accessControl';
 
-const ProtectedRoute = ({ children, allowedRoles = [], allowedDepartments = [], requireDirectorateAcademic = false }) => {
+const ProtectedRoute = ({
+    children,
+    allowedRoles = [],
+    allowedDepartments = [],
+    requireDirectorateAcademic = false,
+    accessMatch = 'all',
+}) => {
     const { user, isAuthenticated, loading } = useSelector((state) => state.auth);
 
     // Role-aware fallback: students go to student hub, others to staff hub
@@ -30,12 +36,23 @@ const ProtectedRoute = ({ children, allowedRoles = [], allowedDepartments = [], 
         }
     }
 
-    if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
-        return <Navigate to={fallbackPath} replace />;
-    }
+    const hasRoleRule = allowedRoles.length > 0;
+    const hasDepartmentRule = allowedDepartments.length > 0;
+    const roleAllowed = !hasRoleRule || allowedRoles.includes(user?.role);
+    const departmentAllowed = !hasDepartmentRule || allowedDepartments.includes(user?.department);
 
-    if (allowedDepartments.length > 0 && !allowedDepartments.includes(user?.department)) {
-        return <Navigate to={fallbackPath} replace />;
+    if (accessMatch === 'any' && (hasRoleRule || hasDepartmentRule)) {
+        const passesAnyRule =
+            (hasRoleRule && roleAllowed) ||
+            (hasDepartmentRule && departmentAllowed);
+
+        if (!passesAnyRule) {
+            return <Navigate to={fallbackPath} replace />;
+        }
+    } else {
+        if (!roleAllowed || !departmentAllowed) {
+            return <Navigate to={fallbackPath} replace />;
+        }
     }
 
     return children;

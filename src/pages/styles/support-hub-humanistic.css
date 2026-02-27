@@ -1,0 +1,460 @@
+.shp-photo-layer {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.shp-photo-bg {
+    position: absolute;
+    inset: -4%;
+    background-size: cover;
+    background-position: center;
+    opacity: 1;
+    filter: saturate(0.98) contrast(0.92) blur(1.4px);
+    transform: scale(1.04);
+    will-change: transform, opacity;
+}
+
+.shp-photo-veil {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(920px circle at 18% 24%, rgba(255, 255, 255, 0.14), transparent 62%),
+        radial-gradient(900px circle at 82% 16%, rgba(214, 229, 255, 0.22), transparent 58%),
+        linear-gradient(180deg, rgba(241, 238, 252, 0.68) 0%, rgba(237, 243, 255, 0.76) 48%, rgba(242, 248, 255, 0.8) 100%);
+}
+
+html.dark .shp-photo-veil {
+    background:
+        radial-gradient(920px circle at 18% 24%, rgba(255, 255, 255, 0.08), transparent 62%),
+        radial-gradient(900px circle at 82% 16%, rgba(112, 149, 255, 0.16), transparent 58%),
+        linear-gradient(180deg, rgba(10, 18, 36, 0.76) 0%, rgba(11, 21, 41, 0.82) 48%, rgba(12, 23, 44, 0.86) 100%);
+}
+
+.shp-photo-accent {
+    position: absolute;
+    border-radius: 999px;
+    opacity: var(--shp-accent-opacity, 0.5);
+    filter: blur(0.7px);
+    will-change: transform, opacity;
+    transform-origin: center;
+    backface-visibility: hidden;
+}
+
+.shp-photo-accent::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 1px dashed rgba(123, 97, 177, 0.22);
+    opacity: 0.56;
+}
+
+.shp-photo-accent--a {
+    --shp-accent-opacity: 0.46;
+    width: clamp(112px, 8vw, 154px);
+    height: clamp(112px, 8vw, 154px);
+    left: clamp(98px, 10vw, 184px);
+    top: clamp(88px, 10vh, 150px);
+    background: radial-gradient(circle at 34% 32%, rgba(252, 171, 218, 0.58), rgba(168, 130, 255, 0.18) 62%, transparent 82%);
+}
+
+.shp-photo-accent--b {
+    --shp-accent-opacity: 0.44;
+    width: clamp(86px, 7vw, 124px);
+    height: clamp(86px, 7vw, 124px);
+    right: clamp(208px, 16vw, 286px);
+    top: clamp(244px, 28vh, 330px);
+    background: radial-gradient(circle at 36% 34%, rgba(145, 213, 255, 0.56), rgba(118, 146, 255, 0.2) 64%, transparent 80%);
+}
+
+.shp-photo-accent--c {
+    --shp-accent-opacity: 0.42;
+    width: clamp(94px, 7vw, 134px);
+    height: clamp(94px, 7vw, 134px);
+    right: clamp(110px, 8vw, 172px);
+    bottom: clamp(126px, 14vh, 210px);
+    background: radial-gradient(circle at 30% 30%, rgba(255, 219, 144, 0.52), rgba(251, 146, 173, 0.18) 64%, transparent 84%);
+}
+
+.shp-photo-accent--d {
+    --shp-accent-opacity: 0.38;
+    width: clamp(104px, 8vw, 146px);
+    height: clamp(104px, 8vw, 146px);
+    left: clamp(276px, 24vw, 384px);
+    bottom: clamp(44px, 5vh, 92px);
+    background: radial-gradient(circle at 36% 32%, rgba(190, 227, 168, 0.56), rgba(122, 217, 190, 0.18) 60%, transparent 80%);
+}
+
+.shp-photo-cutout {
+    position: absolute;
+    background-size: cover;
+    background-repeat: no-repeat;
+    opacity: var(--shp-cutout-opacity, 0.76);
+    border: 3px solid rgba(255, 255, 255, 0.86);
+    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.2);
+    overflow: hidden;
+    isolation: isolate;
+    will-change: transform, opacity;
+    transform: var(--shp-rest-transform, translate3d(0, 0, 0));
+    transform-origin: center;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+}
+
+.shp-photo-cutout::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(156deg, rgba(255, 255, 255, 0.28) 0%, transparent 44%, rgba(89, 92, 202, 0.12) 100%);
+    pointer-events: none;
+}
+
+.shp-frame--stamp {
+    border-radius: 28px;
+    outline: 1.5px dashed rgba(128, 108, 170, 0.42);
+    outline-offset: -8px;
+}
+
+.shp-frame--arch {
+    border-radius: 32px 32px 78px 78px;
+}
+
+.shp-frame--pill {
+    border-radius: 999px;
+    clip-path: inset(0 12% 0 0);
+}
+
+.shp-frame--ticket {
+    border-radius: 22px;
+    clip-path: polygon(0 0, 100% 0, 100% 75%, 86% 75%, 86% 100%, 0 100%);
+}
+
+.shp-frame--hex {
+    border-radius: 16px;
+    clip-path: polygon(26% 6%, 74% 6%, 94% 50%, 74% 94%, 26% 94%, 6% 50%);
+}
+
+.shp-frame--ribbon {
+    border-radius: 86px;
+    clip-path: inset(0 18% 0 0);
+}
+
+.shp-frame--wave {
+    border-radius: 46% 54% 56% 44% / 42% 48% 52% 58%;
+}
+
+.shp-photo-cutout--stamp-left {
+    --shp-cutout-opacity: 0.78;
+    --shp-rest-transform: rotate(-11deg);
+    width: clamp(168px, 12vw, 232px);
+    height: clamp(212px, 16vw, 292px);
+    left: clamp(24px, 3vw, 78px);
+    top: clamp(118px, 15vh, 194px);
+}
+
+.shp-photo-cutout--arch-right {
+    --shp-cutout-opacity: 0.76;
+    width: clamp(148px, 11vw, 210px);
+    height: clamp(204px, 24vh, 284px);
+    right: clamp(30px, 4vw, 92px);
+    top: clamp(94px, 11vh, 158px);
+}
+
+.shp-photo-cutout--pill-left {
+    --shp-cutout-opacity: 0.72;
+    width: clamp(118px, 9vw, 164px);
+    height: clamp(228px, 27vh, 312px);
+    left: clamp(-24px, -1.8vw, -8px);
+    top: clamp(338px, 40vh, 460px);
+}
+
+.shp-photo-cutout--ticket-right {
+    --shp-cutout-opacity: 0.74;
+    --shp-rest-transform: rotate(8deg);
+    width: clamp(164px, 12vw, 224px);
+    height: clamp(120px, 9vw, 166px);
+    right: clamp(12px, 2vw, 56px);
+    top: clamp(410px, 48vh, 546px);
+}
+
+.shp-photo-cutout--hex-bottom {
+    --shp-cutout-opacity: 0.7;
+    width: clamp(140px, 10vw, 190px);
+    height: clamp(140px, 10vw, 190px);
+    right: clamp(178px, 14vw, 254px);
+    bottom: clamp(24px, 3vh, 72px);
+}
+
+.shp-photo-cutout--ribbon-top {
+    --shp-cutout-opacity: 0.74;
+    --shp-rest-transform: rotate(4deg);
+    width: clamp(130px, 10vw, 182px);
+    height: clamp(198px, 23vh, 274px);
+    right: clamp(-20px, -0.8vw, 16px);
+    top: clamp(228px, 26vh, 320px);
+}
+
+.shp-photo-cutout--wave-bottom-left {
+    --shp-cutout-opacity: 0.72;
+    --shp-rest-transform: rotate(-8deg);
+    width: clamp(148px, 11vw, 198px);
+    height: clamp(124px, 9vw, 170px);
+    left: clamp(92px, 9vw, 170px);
+    bottom: clamp(18px, 2vh, 54px);
+}
+
+[data-aos^="shp-"] {
+    transition-property: transform, opacity, filter, clip-path;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-aos="shp-tilt-pop"] {
+    opacity: 0;
+    transform: translate3d(-30px, 30px, 0) rotate(-16deg) scale(0.78);
+    filter: blur(2.4px);
+}
+
+[data-aos="shp-tilt-pop"].aos-animate {
+    opacity: var(--shp-cutout-opacity, 0.76);
+    transform: var(--shp-rest-transform, translate3d(0, 0, 0));
+    filter: blur(0);
+}
+
+[data-aos="shp-arc-rise"] {
+    opacity: 0;
+    transform: translate3d(10px, 34px, 0) scale(0.74);
+    filter: blur(2px);
+}
+
+[data-aos="shp-arc-rise"].aos-animate {
+    opacity: var(--shp-cutout-opacity, 0.76);
+    transform: var(--shp-rest-transform, translate3d(0, 0, 0));
+    filter: blur(0);
+}
+
+[data-aos="shp-slide-grow"] {
+    opacity: 0;
+    transform: translate3d(-30px, 10px, 0) scale(0.82);
+    clip-path: inset(8% 34% 6% 0);
+    filter: blur(2px);
+}
+
+[data-aos="shp-slide-grow"].aos-animate {
+    opacity: var(--shp-cutout-opacity, 0.72);
+    transform: var(--shp-rest-transform, translate3d(0, 0, 0));
+    clip-path: inset(0 12% 0 0);
+    filter: blur(0);
+}
+
+[data-aos="shp-ticket-swing"] {
+    opacity: 0;
+    transform: perspective(1000px) translate3d(24px, 24px, 0) rotate(16deg) scale(0.8);
+    filter: blur(2px);
+}
+
+[data-aos="shp-ticket-swing"].aos-animate {
+    opacity: var(--shp-cutout-opacity, 0.74);
+    transform: var(--shp-rest-transform, translate3d(0, 0, 0));
+    filter: blur(0);
+}
+
+[data-aos="shp-hex-pop"] {
+    opacity: 0;
+    transform: translate3d(0, 24px, 0) scale(0.56);
+    filter: blur(2px);
+}
+
+[data-aos="shp-hex-pop"].aos-animate {
+    opacity: var(--shp-cutout-opacity, 0.7);
+    transform: var(--shp-rest-transform, translate3d(0, 0, 0));
+    filter: blur(0);
+}
+
+[data-aos="shp-slice-drop"] {
+    opacity: 0;
+    transform: translate3d(28px, -20px, 0) scale(0.82);
+    clip-path: inset(16% 30% 24% 0);
+    filter: blur(2px);
+}
+
+[data-aos="shp-slice-drop"].aos-animate {
+    opacity: var(--shp-cutout-opacity, 0.74);
+    transform: var(--shp-rest-transform, translate3d(0, 0, 0));
+    clip-path: inset(0 18% 0 0);
+    filter: blur(0);
+}
+
+[data-aos="shp-orb-rise"] {
+    opacity: 0;
+    transform: translate3d(-14px, 24px, 0) scale(0.72);
+    filter: blur(2px);
+}
+
+[data-aos="shp-orb-rise"].aos-animate {
+    opacity: var(--shp-cutout-opacity, 0.72);
+    transform: var(--shp-rest-transform, translate3d(0, 0, 0));
+    filter: blur(0);
+}
+
+[data-aos="shp-orb-pop"] {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0) scale(0.42);
+    filter: blur(8px);
+}
+
+[data-aos="shp-orb-pop"].aos-animate {
+    opacity: var(--shp-accent-opacity, 0.5);
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0.7px);
+}
+
+html.dark .shp-photo-cutout {
+    border-color: rgba(255, 255, 255, 0.54);
+    box-shadow: 0 16px 34px rgba(2, 6, 23, 0.54);
+}
+
+@media (max-width: 1280px) {
+    .shp-photo-cutout--hex-bottom {
+        right: clamp(142px, 12vw, 214px);
+    }
+}
+
+@media (max-width: 1024px) {
+
+    .shp-photo-cutout--ticket-right,
+    .shp-photo-cutout--wave-bottom-left,
+    .shp-photo-accent--d {
+        display: none;
+    }
+
+    .shp-photo-cutout--stamp-left {
+        width: 144px;
+        height: 196px;
+        top: 128px;
+        left: 18px;
+    }
+
+    .shp-photo-cutout--arch-right {
+        width: 122px;
+        height: 176px;
+        right: 10px;
+        top: 108px;
+    }
+
+    .shp-photo-cutout--pill-left {
+        width: 96px;
+        height: 198px;
+        top: 292px;
+        left: -16px;
+    }
+
+    .shp-photo-cutout--ribbon-top {
+        width: 106px;
+        height: 166px;
+        right: -14px;
+        top: 208px;
+    }
+
+    .shp-photo-cutout--hex-bottom {
+        width: 118px;
+        height: 118px;
+        right: 78px;
+        bottom: 74px;
+    }
+}
+
+@media (max-width: 767px) {
+    .shp-photo-bg {
+        opacity: 0.52;
+        filter: saturate(0.98) contrast(0.94) blur(1.1px);
+    }
+
+    .shp-photo-veil {
+        background:
+            radial-gradient(740px circle at 18% 24%, rgba(255, 255, 255, 0.12), transparent 62%),
+            radial-gradient(760px circle at 82% 16%, rgba(214, 229, 255, 0.16), transparent 58%),
+            linear-gradient(180deg, rgba(241, 238, 252, 0.6) 0%, rgba(237, 243, 255, 0.7) 48%, rgba(242, 248, 255, 0.76) 100%);
+    }
+
+    .shp-photo-cutout--pill-left {
+        width: 78px;
+        height: 154px;
+        left: -12px;
+        top: 264px;
+        border-width: 2.5px;
+    }
+
+    .shp-photo-cutout--stamp-left {
+        width: 118px;
+        height: 164px;
+        left: 10px;
+        top: 142px;
+        border-width: 2.5px;
+    }
+
+    .shp-photo-cutout--arch-right {
+        width: 98px;
+        height: 144px;
+        right: 10px;
+        top: 114px;
+        border-width: 2.5px;
+    }
+
+    .shp-photo-cutout--ribbon-top {
+        width: 86px;
+        height: 134px;
+        right: -8px;
+        top: 206px;
+        border-width: 2.5px;
+    }
+
+    .shp-photo-cutout--hex-bottom {
+        width: 106px;
+        height: 106px;
+        right: 28px;
+        bottom: 92px;
+        border-width: 2.5px;
+    }
+
+    .shp-photo-accent--a,
+    .shp-photo-accent--b,
+    .shp-photo-accent--c {
+        --shp-accent-opacity: 0.34;
+    }
+
+    .shp-photo-accent--b {
+        right: 84px;
+        top: 46%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .shp-photo-bg,
+    .shp-photo-cutout,
+    .shp-photo-accent {
+        animation: none !important;
+        transform: none !important;
+    }
+
+    .shp-photo-cutout[data-aos^="shp-"] {
+        opacity: var(--shp-cutout-opacity, 0.76) !important;
+        filter: none !important;
+    }
+
+    .shp-photo-accent[data-aos="shp-orb-pop"] {
+        opacity: var(--shp-accent-opacity, 0.5) !important;
+        filter: blur(0.7px) !important;
+    }
+
+    .shp-photo-cutout--pill-left {
+        clip-path: inset(0 12% 0 0) !important;
+    }
+
+    .shp-photo-cutout--ribbon-top {
+        clip-path: inset(0 18% 0 0) !important;
+    }
+}

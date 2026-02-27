@@ -1,6 +1,4 @@
 import { memo } from "react";
-import { motion } from "framer-motion";
-import usePreferLowMotion from "@/hooks/usePreferLowMotion";
 
 const DecorativeBlob = memo(({ variant = "primary", className = "", size = "lg" }) => {
     const sizeMap = {
@@ -15,20 +13,15 @@ const DecorativeBlob = memo(({ variant = "primary", className = "", size = "lg" 
         emerald: "bg-emerald/15"
     };
 
-    const lowMotion = usePreferLowMotion();
+    const dur = variant === "primary" ? '10s' : variant === "gold" ? '12s' : '14s';
+
     return (
-        <motion.div
+        <div
             className={`absolute rounded-full blur-3xl ${sizeMap[size]} ${variantMap[variant]} ${className}`}
-            animate={lowMotion ? { opacity: 0.24 } : { scale: [1, 1.08, 1], opacity: [0.2, 0.35, 0.2] }}
-            transition={lowMotion ? {} : {
-                duration: variant === "primary" ? 10 : variant === "gold" ? 12 : 14,
-                repeat: Infinity,
-                ease: "easeInOut"
-            }}
+            style={{ animation: `blob-breathe ${dur} ease-in-out infinite`, willChange: 'transform, opacity' }}
         />
     );
 });
 
 DecorativeBlob.displayName = 'DecorativeBlob';
-
 export default DecorativeBlob;

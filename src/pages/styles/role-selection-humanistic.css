@@ -1,0 +1,590 @@
+.rs-humanistic-shell {
+    background: linear-gradient(180deg, #fff8f1 0%, #fff5ec 48%, #fffaf4 100%);
+}
+
+html.dark .rs-humanistic-shell {
+    background: linear-gradient(180deg, #0b1120 0%, #0f182f 48%, #101a34 100%);
+}
+
+.rs-photo-layer {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.rs-grid-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+        linear-gradient(to right, rgba(17, 24, 39, 0.08) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(17, 24, 39, 0.08) 1px, transparent 1px);
+    background-size: 3rem 3rem;
+    opacity: 0.34;
+    mix-blend-mode: multiply;
+}
+
+html.dark .rs-grid-overlay {
+    background-image:
+        linear-gradient(to right, rgba(255, 255, 255, 0.12) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+    opacity: 0.3;
+    mix-blend-mode: screen;
+}
+
+.rs-photo-bg {
+    position: absolute;
+    inset: -5%;
+    background-size: cover;
+    background-position: center;
+    opacity: 1;
+    filter: saturate(0.96) contrast(0.94) blur(1.1px);
+    transform: scale(1.05);
+    will-change: transform, opacity;
+}
+
+.rs-photo-veil {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(980px circle at 24% 32%, rgba(255, 255, 255, 0.11), transparent 62%),
+        linear-gradient(180deg, rgba(255, 247, 236, 0.56) 0%, rgba(255, 244, 232, 0.66) 44%, rgba(255, 248, 239, 0.74) 100%);
+}
+
+html.dark .rs-photo-veil {
+    background:
+        radial-gradient(980px circle at 24% 32%, rgba(255, 255, 255, 0.05), transparent 62%),
+        linear-gradient(180deg, rgba(7, 14, 33, 0.68) 0%, rgba(10, 17, 36, 0.78) 44%, rgba(11, 18, 38, 0.84) 100%);
+}
+
+.rs-photo-accent {
+    position: absolute;
+    border-radius: 999px;
+    opacity: var(--rs-accent-opacity, 0.52);
+    filter: blur(0.6px);
+    will-change: transform, opacity;
+    transform-origin: center;
+    backface-visibility: hidden;
+}
+
+.rs-photo-accent::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 1px dashed rgba(131, 86, 45, 0.28);
+    opacity: 0.45;
+}
+
+.rs-photo-accent--a {
+    --rs-accent-opacity: 0.52;
+    width: clamp(122px, 9vw, 168px);
+    height: clamp(122px, 9vw, 168px);
+    left: clamp(72px, 8vw, 138px);
+    top: clamp(112px, 14vh, 176px);
+    background: radial-gradient(circle at 32% 28%, rgba(255, 208, 148, 0.58), rgba(255, 167, 106, 0.22) 62%, transparent 80%);
+}
+
+.rs-photo-accent--b {
+    --rs-accent-opacity: 0.52;
+    width: clamp(106px, 8vw, 146px);
+    height: clamp(106px, 8vw, 146px);
+    right: clamp(152px, 13vw, 238px);
+    top: clamp(330px, 42vh, 476px);
+    background: radial-gradient(circle at 36% 32%, rgba(255, 196, 124, 0.52), rgba(245, 148, 104, 0.2) 64%, transparent 80%);
+}
+
+.rs-photo-accent--c {
+    --rs-accent-opacity: 0.52;
+    width: clamp(94px, 7vw, 128px);
+    height: clamp(94px, 7vw, 128px);
+    right: clamp(446px, 32vw, 620px);
+    bottom: clamp(60px, 8vh, 124px);
+    background: radial-gradient(circle at 30% 30%, rgba(255, 233, 169, 0.56), rgba(255, 175, 117, 0.2) 62%, transparent 82%);
+}
+
+.rs-photo-accent--d {
+    --rs-accent-opacity: 0.42;
+    width: clamp(108px, 8vw, 142px);
+    height: clamp(108px, 8vw, 142px);
+    left: clamp(214px, 22vw, 336px);
+    bottom: clamp(74px, 9vh, 146px);
+    background: radial-gradient(circle at 36% 34%, rgba(255, 221, 158, 0.44), rgba(244, 164, 118, 0.18) 64%, transparent 82%);
+}
+
+.rs-photo-accent--e {
+    --rs-accent-opacity: 0.44;
+    width: clamp(96px, 8vw, 132px);
+    height: clamp(96px, 8vw, 132px);
+    right: clamp(332px, 26vw, 478px);
+    top: clamp(136px, 17vh, 228px);
+    background: radial-gradient(circle at 36% 32%, rgba(255, 208, 152, 0.48), rgba(247, 155, 108, 0.2) 62%, transparent 82%);
+}
+
+.rs-photo-cutout {
+    position: absolute;
+    background-size: cover;
+    background-repeat: no-repeat;
+    opacity: var(--rs-cutout-opacity, 0.78);
+    border: 4px solid rgba(255, 255, 255, 0.78);
+    box-shadow: 0 16px 36px rgba(17, 24, 39, 0.22);
+    overflow: hidden;
+    isolation: isolate;
+    will-change: transform, opacity;
+    transform-origin: center;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+}
+
+.rs-photo-cutout::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(160deg, rgba(255, 252, 246, 0.24) 0%, transparent 44%, rgba(154, 102, 52, 0.16) 100%);
+    pointer-events: none;
+}
+
+.rs-photo-cutout--northwest-card {
+    --rs-cutout-opacity: 0.78;
+    width: clamp(156px, 13vw, 228px);
+    height: clamp(204px, 17vw, 286px);
+    left: clamp(40px, 6vw, 112px);
+    top: clamp(126px, 16vh, 210px);
+    border-radius: 22px;
+    transform: rotate(-8deg);
+}
+
+.rs-photo-cutout--east-strip {
+    --rs-cutout-opacity: 0.86;
+    width: clamp(126px, 10vw, 174px);
+    height: clamp(276px, 32vh, 364px);
+    right: clamp(-34px, -1.8vw, -10px);
+    top: clamp(170px, 20vh, 264px);
+    border-radius: 82px;
+    clip-path: inset(0 0 0 18%);
+}
+
+.rs-photo-cutout--south-circle {
+    --rs-cutout-opacity: 0.74;
+    width: clamp(142px, 12vw, 194px);
+    height: clamp(142px, 12vw, 194px);
+    left: clamp(122px, 12vw, 210px);
+    bottom: clamp(26px, 4vh, 72px);
+    border-radius: 999px;
+}
+
+.rs-photo-cutout--top-circle {
+    --rs-cutout-opacity: 0.76;
+    width: clamp(112px, 9vw, 156px);
+    height: clamp(112px, 9vw, 156px);
+    right: clamp(228px, 18vw, 314px);
+    top: clamp(74px, 9vh, 132px);
+    border-radius: 999px;
+}
+
+.rs-photo-cutout--upper-ribbon {
+    --rs-cutout-opacity: 0.76;
+    width: clamp(134px, 10vw, 188px);
+    height: clamp(186px, 21vh, 258px);
+    right: clamp(12px, 2vw, 44px);
+    top: clamp(90px, 11vh, 162px);
+    border-radius: 86px;
+    clip-path: inset(0 18% 0 0);
+}
+
+.rs-photo-cutout--center-ticket {
+    --rs-cutout-opacity: 0.7;
+    width: clamp(152px, 12vw, 214px);
+    height: clamp(110px, 9vw, 154px);
+    right: clamp(10px, 2vw, 36px);
+    top: clamp(292px, 37vh, 420px);
+    border-radius: 18px;
+    transform: rotate(7deg);
+}
+
+.rs-photo-cutout--left-chip {
+    --rs-cutout-opacity: 0.72;
+    width: clamp(98px, 8vw, 142px);
+    height: clamp(196px, 23vh, 266px);
+    left: clamp(-24px, -1.4vw, -8px);
+    top: clamp(292px, 36vh, 418px);
+    border-radius: 60px;
+    clip-path: inset(0 22% 0 0);
+}
+
+.rs-photo-cutout--lower-arch {
+    --rs-cutout-opacity: 0.68;
+    width: clamp(106px, 9vw, 148px);
+    height: clamp(178px, 21vh, 246px);
+    left: clamp(18px, 4vw, 72px);
+    bottom: clamp(148px, 18vh, 220px);
+    border-radius: 74px;
+    clip-path: inset(0 18% 0 8%);
+}
+
+.rs-photo-cutout--bottom-bubble {
+    --rs-cutout-opacity: 0.66;
+    width: clamp(112px, 9vw, 154px);
+    height: clamp(112px, 9vw, 154px);
+    right: clamp(132px, 12vw, 204px);
+    bottom: clamp(38px, 4vh, 92px);
+    border-radius: 999px;
+}
+
+.rs-photo-cutout--middle-left-orb {
+    --rs-cutout-opacity: 0.68;
+    width: clamp(118px, 10vw, 168px);
+    height: clamp(118px, 10vw, 168px);
+    left: clamp(-26px, -1.6vw, -8px);
+    top: clamp(476px, 56vh, 646px);
+    border-radius: 999px;
+}
+
+.rs-photo-cutout--southeast-chip {
+    --rs-cutout-opacity: 0.7;
+    width: clamp(130px, 10vw, 180px);
+    height: clamp(96px, 8vw, 138px);
+    right: clamp(22px, 3vw, 76px);
+    bottom: clamp(170px, 20vh, 254px);
+    border-radius: 20px;
+    transform: rotate(-8deg);
+}
+
+[data-aos^="rs-"] {
+    transition-property: transform, opacity, filter, clip-path;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    transform-style: preserve-3d;
+}
+
+[data-aos="rs-pop-tilt"] {
+    opacity: 0;
+    transform: translate3d(-28px, 24px, 0) rotate(-16deg) scale(0.82);
+    filter: blur(2.4px) saturate(0.84);
+}
+
+[data-aos="rs-pop-tilt"].aos-animate {
+    opacity: var(--rs-cutout-opacity, 0.78);
+    transform: translate3d(0, 0, 0) rotate(-8deg) scale(1);
+    filter: blur(0);
+}
+
+[data-aos="rs-slice-rise"] {
+    opacity: 0;
+    transform: translate3d(30px, 34px, 0) rotate(3deg) scale(0.88);
+    clip-path: inset(18% 0 22% 24%);
+    filter: blur(2px);
+}
+
+[data-aos="rs-slice-rise"].aos-animate {
+    opacity: var(--rs-cutout-opacity, 0.86);
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+    clip-path: inset(0 0 0 18%);
+    filter: blur(0);
+}
+
+[data-aos="rs-bubble-bounce"] {
+    opacity: 0;
+    transform: translate3d(-6px, 30px, 0) scale(0.64);
+    filter: blur(2px);
+}
+
+[data-aos="rs-bubble-bounce"].aos-animate {
+    opacity: var(--rs-cutout-opacity, 0.74);
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+}
+
+[data-aos="rs-orb-drop"] {
+    opacity: 0;
+    transform: translate3d(0, -26px, 0) scale(0.72);
+    filter: blur(2px);
+}
+
+[data-aos="rs-orb-drop"].aos-animate {
+    opacity: var(--rs-cutout-opacity, 0.76);
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+}
+
+[data-aos="rs-ticket-spin"] {
+    opacity: 0;
+    transform: perspective(1000px) translate3d(20px, 24px, 0) rotate(-11deg) scale(0.72);
+    filter: blur(2px);
+}
+
+[data-aos="rs-ticket-spin"].aos-animate {
+    opacity: var(--rs-cutout-opacity, 0.7);
+    transform: perspective(1000px) translate3d(0, 0, 0) rotate(7deg) scale(1);
+    filter: blur(0);
+}
+
+[data-aos="rs-side-glide"] {
+    opacity: 0;
+    transform: translate3d(-32px, 8px, 0) rotate(-5deg) scale(0.86);
+    clip-path: inset(0 34% 0 0);
+    filter: blur(2px);
+}
+
+[data-aos="rs-side-glide"].aos-animate {
+    opacity: var(--rs-cutout-opacity, 0.72);
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+    clip-path: inset(0 22% 0 0);
+    filter: blur(0);
+}
+
+[data-aos="rs-orb-pop"] {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0) scale(0.46);
+    filter: blur(8px);
+}
+
+[data-aos="rs-orb-pop"].aos-animate {
+    opacity: var(--rs-accent-opacity, 0.52);
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0.6px);
+}
+
+html.dark .rs-photo-cutout {
+    border-color: rgba(255, 255, 255, 0.52);
+    box-shadow: 0 16px 36px rgba(2, 6, 23, 0.48);
+}
+
+@media (max-width: 1280px) {
+    .rs-photo-cutout--top-circle {
+        right: clamp(176px, 16vw, 244px);
+    }
+
+    .rs-photo-cutout--upper-ribbon {
+        right: clamp(-6px, 0vw, 20px);
+    }
+}
+
+@media (max-width: 1024px) {
+
+    .rs-photo-cutout--center-ticket,
+    .rs-photo-cutout--southeast-chip,
+    .rs-photo-accent--c,
+    .rs-photo-accent--e {
+        display: none;
+    }
+
+    .rs-photo-cutout--northwest-card {
+        width: 146px;
+        height: 194px;
+        left: 16px;
+        top: 156px;
+        --rs-cutout-opacity: 0.68;
+    }
+
+    .rs-photo-cutout--east-strip {
+        width: 110px;
+        right: -24px;
+        top: 186px;
+        height: 262px;
+        --rs-cutout-opacity: 0.8;
+    }
+
+    .rs-photo-cutout--south-circle {
+        width: 118px;
+        height: 118px;
+        left: 34px;
+        bottom: 64px;
+    }
+
+    .rs-photo-cutout--top-circle {
+        width: 100px;
+        height: 100px;
+        right: 26px;
+        top: 100px;
+    }
+
+    .rs-photo-cutout--upper-ribbon {
+        width: 104px;
+        height: 186px;
+        right: -18px;
+        top: 132px;
+    }
+
+    .rs-photo-cutout--left-chip {
+        width: 84px;
+        height: 164px;
+        left: -16px;
+        top: 286px;
+    }
+
+    .rs-photo-cutout--lower-arch {
+        left: -10px;
+        bottom: 178px;
+        width: 88px;
+        height: 154px;
+    }
+
+    .rs-photo-cutout--bottom-bubble {
+        width: 96px;
+        height: 96px;
+        right: 92px;
+        bottom: 98px;
+    }
+
+    .rs-photo-cutout--middle-left-orb {
+        width: 96px;
+        height: 96px;
+        left: -20px;
+        top: 58%;
+    }
+
+    .rs-photo-accent--d {
+        left: 34%;
+        bottom: 108px;
+    }
+}
+
+@media (max-width: 767px) {
+    .rs-photo-bg {
+        opacity: 0.5;
+        filter: saturate(0.95) contrast(0.94) blur(1px);
+    }
+
+    .rs-photo-veil {
+        background:
+            radial-gradient(760px circle at 26% 30%, rgba(255, 255, 255, 0.1), transparent 62%),
+            linear-gradient(180deg, rgba(255, 247, 236, 0.5) 0%, rgba(255, 244, 232, 0.6) 46%, rgba(255, 248, 239, 0.68) 100%);
+    }
+
+    .rs-photo-cutout--northwest-card,
+    .rs-photo-cutout--middle-left-orb {
+        display: none;
+    }
+
+    .rs-photo-cutout--top-circle {
+        width: 96px;
+        height: 96px;
+        right: auto;
+        left: 18px;
+        top: 116px;
+        border-width: 3px;
+        --rs-cutout-opacity: 0.66;
+    }
+
+    .rs-photo-cutout--upper-ribbon {
+        width: 84px;
+        height: 168px;
+        right: -14px;
+        top: 158px;
+        border-width: 3px;
+        --rs-cutout-opacity: 0.68;
+    }
+
+    .rs-photo-cutout--center-ticket {
+        display: block;
+        width: 134px;
+        height: 98px;
+        right: 58px;
+        top: 56%;
+        border-width: 3px;
+        --rs-cutout-opacity: 0.64;
+    }
+
+    .rs-photo-cutout--east-strip {
+        width: 92px;
+        height: 220px;
+        top: 140px;
+        right: -20px;
+        border-width: 3px;
+        --rs-cutout-opacity: 0.68;
+    }
+
+    .rs-photo-cutout--south-circle {
+        width: 112px;
+        height: 112px;
+        left: 12px;
+        bottom: 88px;
+        --rs-cutout-opacity: 0.62;
+    }
+
+    .rs-photo-cutout--left-chip {
+        width: 78px;
+        height: 152px;
+        left: -12px;
+        top: 248px;
+        border-width: 3px;
+        --rs-cutout-opacity: 0.62;
+    }
+
+    .rs-photo-cutout--lower-arch {
+        width: 78px;
+        height: 138px;
+        left: -12px;
+        bottom: 210px;
+        border-width: 3px;
+        --rs-cutout-opacity: 0.62;
+    }
+
+    .rs-photo-cutout--bottom-bubble {
+        width: 90px;
+        height: 90px;
+        right: 88px;
+        bottom: 116px;
+        border-width: 3px;
+        --rs-cutout-opacity: 0.58;
+    }
+
+    .rs-photo-cutout--southeast-chip {
+        width: 110px;
+        height: 80px;
+        right: 16px;
+        bottom: 200px;
+        border-width: 3px;
+        --rs-cutout-opacity: 0.58;
+    }
+
+    .rs-photo-accent--a,
+    .rs-photo-accent--b,
+    .rs-photo-accent--d {
+        --rs-accent-opacity: 0.34;
+    }
+
+    .rs-photo-accent--e {
+        display: none;
+    }
+
+    .rs-photo-accent--b {
+        right: 20px;
+        top: 56%;
+    }
+
+    .rs-photo-accent--d {
+        left: 38%;
+        bottom: 154px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .rs-photo-bg,
+    .rs-photo-cutout,
+    .rs-photo-accent {
+        animation: none !important;
+        transform: none !important;
+    }
+
+    .rs-photo-cutout[data-aos^="rs-"] {
+        opacity: var(--rs-cutout-opacity, 0.78) !important;
+        filter: none !important;
+    }
+
+    .rs-photo-accent[data-aos="rs-orb-pop"] {
+        opacity: var(--rs-accent-opacity, 0.52) !important;
+        filter: blur(0.6px) !important;
+    }
+
+    .rs-photo-cutout--east-strip {
+        clip-path: inset(0 0 0 18%) !important;
+    }
+
+    .rs-photo-cutout--left-chip {
+        clip-path: inset(0 22% 0 0) !important;
+    }
+}

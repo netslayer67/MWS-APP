@@ -9,7 +9,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 // Lazy pages (kept as you had them)
 const LandingPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/LandingPage'));
 const AuthCallback = lazy(() => import(/* webpackPrefetch: true */ '@/pages/AuthCallback'));
-const EmotionalCheckinFaceScanPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/VerificationPage'));
+const EmotionalCheckinFaceScanPage = lazy(() => import('@/pages/VerificationPage'));
 const ProfilePage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/ProfilePage'));
 const NotificationPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/NotificationPage'));
 const NotificationSettingsPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/NotificationSettingsPage'));
@@ -34,7 +34,7 @@ const MTSSStudentPortalPage = lazy(() => import(/* webpackPrefetch: true */ '@/p
 const MTSSStudentProfilePage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/mtss/StudentProfilePage'));
 const StudentSupportHubPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/StudentSupportHubPage'));
 const StudentEmotionalCheckinPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/StudentEmotionalCheckinPage'));
-const StudentFaceScanPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/StudentFaceScanPage'));
+const StudentFaceScanPage = lazy(() => import('@/pages/StudentFaceScanPage'));
 const StudentManualCheckinPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/StudentManualCheckinPage'));
 const StudentAICheckinPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/StudentAICheckinPage'));
 const StudentAIChatPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/StudentAIChatPage')); // Phase 2 AI MTSS
@@ -174,7 +174,7 @@ const publicRoutes = [
     <Route key="student-manual-checkin" path="/student/emotional-checkin/manual" element={<ProtectedRoute allowedRoles={['student']}><MemoizedPageTransition><StudentManualCheckinPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="student-ai-checkin" path="/student/emotional-checkin/ai" element={<ProtectedRoute allowedRoles={['student']}><MemoizedPageTransition><StudentAICheckinPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="student-ai-chat" path="/student/ai-chat" element={<ProtectedRoute allowedRoles={['student']}><MemoizedPageTransition><StudentAIChatPage /></MemoizedPageTransition></ProtectedRoute>} />, // Phase 2 AI MTSS
-    <Route key="ai-network-topology" path="/dev/ai-topology" element={<ProtectedRoute allowedRoles={['admin', 'superadmin', 'directorate', 'head_unit']}><AINetworkTopologyPage /></ProtectedRoute>} />,
+    <Route key="ai-network-topology" path="/dev/ai-topology" element={<ProtectedRoute allowedRoles={['admin', 'superadmin', 'directorate', 'head_unit']} allowedDepartments={['MAD Lab']} accessMatch="any"><AINetworkTopologyPage /></ProtectedRoute>} />,
 ];
 
 
