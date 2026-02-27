@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useEffect, useState } from "react";
+import { memo, useMemo, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchSupportContacts } from "../../store/slices/supportSlice";
 import {
@@ -31,8 +31,6 @@ const SupportSelector = memo(({ supportContact, onSupportChange }) => {
     const { contacts, loading } = useSelector((state) => state.support);
     const { isAuthenticated } = useSelector((state) => state.auth);
 
-    const [internalSelection, setInternalSelection] = useState(supportContact || "");
-
     useEffect(() => {
         if (contacts.length === 0 && isAuthenticated && !loading) {
             const timer = setTimeout(() => {
@@ -47,15 +45,12 @@ const SupportSelector = memo(({ supportContact, onSupportChange }) => {
         [contacts]
     );
 
-    useEffect(() => {
-        if (!supportContact) {
-            setInternalSelection("");
-            return;
-        }
+    const internalSelection = useMemo(() => {
+        if (!supportContact) return "";
         const match = supportContacts.find(
             (c) => c.name === supportContact || c.value === supportContact
         );
-        setInternalSelection(match ? match.value : supportContact);
+        return match ? match.value : supportContact;
     }, [supportContact, supportContacts]);
 
     const selectedPerson = useMemo(() => {
@@ -67,29 +62,32 @@ const SupportSelector = memo(({ supportContact, onSupportChange }) => {
     const isNoNeed = isNoNeedSelection(internalSelection);
 
     const handleInternalChange = (value) => {
-        setInternalSelection(value);
         onSupportChange?.(value);
     };
 
     return (
-        <div className="bg-gradient-to-br from-white via-gray-50 to-blue-50 dark:from-gray-800/50 dark:via-gray-800/30 dark:to-blue-900/20 border-2 border-gray-200 dark:border-gray-700 rounded-3xl p-6 sm:p-5 space-y-5 sm:space-y-4 shadow-xl">
-            <SupportHeader />
+        <div className="glass glass-card hover-lift transition-all duration-300">
+            <div className="glass__refract" />
+            <div className="glass__noise" />
+            <div className="relative z-10 p-5 md:p-6 space-y-5 md:space-y-4">
+                <SupportHeader />
 
-            <SupportSelect
-                value={internalSelection}
-                onChange={handleInternalChange}
-                hasSelection={hasSelection}
-                supportContacts={supportContacts}
-                loading={loading}
-            />
+                <SupportSelect
+                    value={internalSelection}
+                    onChange={handleInternalChange}
+                    hasSelection={hasSelection}
+                    supportContacts={supportContacts}
+                    loading={loading}
+                />
 
-            {hasSelection && !isNoNeed && selectedPerson?.id !== "no-need" && (
-                <SelectedSupportPersonCard selectedPerson={selectedPerson} />
-            )}
+                {hasSelection && !isNoNeed && selectedPerson?.id !== "no-need" && (
+                    <SelectedSupportPersonCard selectedPerson={selectedPerson} />
+                )}
 
-            {isNoNeed && <NoNeedSupportCard />}
-            {!hasSelection && <SupportEmptyState />}
-            <TeamAvailableBadge />
+                {isNoNeed && <NoNeedSupportCard />}
+                {!hasSelection && <SupportEmptyState />}
+                <TeamAvailableBadge />
+            </div>
         </div>
     );
 });
