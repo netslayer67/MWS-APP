@@ -72,7 +72,9 @@ export default function PostJobPage() {
                     e.preventDefault();
                     toast({ title: "Invalid content", description: "Links/scripts are blocked." });
                 }
-            } catch { }
+            } catch {
+                // Ignore clipboard access errors in unsupported browsers.
+            }
         },
         [toast]
     );
@@ -359,4 +361,3 @@ const ToggleButtonCompact = React.memo(({ active, onClick, icon, label }) => (
         <span>{label}</span>
     </button>
 ));
-

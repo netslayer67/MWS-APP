@@ -106,8 +106,8 @@ const collapseStudentRows = (columns = [], rows = []) => {
 const TableWidget = React.memo(({ widget }) => {
     const columns = Array.isArray(widget?.columns) ? widget.columns : [];
     const rows = Array.isArray(widget?.rows) ? widget.rows : [];
-    if (columns.length === 0 || rows.length === 0) return null;
     const collapsedRows = useMemo(() => collapseStudentRows(columns, rows), [columns, rows]);
+    if (columns.length === 0 || rows.length === 0) return null;
     const renderedRows = collapsedRows.length > 0 ? collapsedRows : rows;
     const isCollapsed = renderedRows.length < rows.length;
 

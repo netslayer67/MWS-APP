@@ -1,6 +1,6 @@
 import React, { memo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Save, User, Mail, Building, Briefcase, Calendar } from "lucide-react";
+import { X, Save, User, Mail, Building, Briefcase, Calendar, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
