@@ -5,8 +5,15 @@ import { Brain, Handshake, ArrowRight, Sparkles, Shield, Users } from "lucide-re
 import Logo from "../../components/ui/Millennia.webp";
 import gsap from "gsap";
 import kidsGroupPhoto from "@/assets/landing/kids-group.jpg";
-import kidsCutoutNatural2 from "@/assets/landing/kids-cutout-natural-2.svg";
 import "@/pages/styles/support-hub-humanistic.css";
+
+/* Cloudinary base with auto-format & quality */
+const CLD = "https://res.cloudinary.com/deldcwiji/image/upload";
+const cld = (id, w = 320) => `${CLD}/c_scale,w_${w},f_auto,q_auto/${id}.png`;
+const cldJpg = (id, w = 260) => `${CLD}/c_fill,w_${w},h_${Math.round(w * 1.25)},g_face,f_auto,q_auto/${id}.jpg`;
+const SHP_ENABLE_FRAMED_CARDS = true;
+const SHP_DEFAULT_COLLAGE_VARIANT = "gallery-grid";
+const SHP_COLLAGE_VARIANTS_KEYS = ["gallery-grid", "story-arc", "split-columns"];
 
 const supportsFinePointer = () => {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
@@ -23,100 +30,139 @@ const resolveDepth = (value) => {
   return Number.isFinite(parsed) ? parsed : 12;
 };
 
-const SHP_COLLAGE_CUTOUTS = [
-  {
-    id: "stamp-left",
-    className: "shp-photo-cutout--stamp-left shp-frame--stamp",
-    position: "26% 40%",
-    depth: 14,
-    aos: "shp-tilt-pop",
-    delay: 60,
-    duration: 760
-  },
-  {
-    id: "pill-left",
-    className: "shp-photo-cutout--pill-left shp-frame--pill",
-    position: "20% 67%",
-    depth: 11,
-    aos: "shp-slide-grow",
-    delay: 120,
-    duration: 760
-  },
-  {
-    id: "ticket-right",
-    className: "shp-photo-cutout--ticket-right shp-frame--ticket",
-    position: "74% 58%",
-    depth: 12,
-    aos: "shp-ticket-swing",
-    delay: 170,
-    duration: 820
-  },
-  {
-    id: "ribbon-top",
-    className: "shp-photo-cutout--ribbon-top shp-frame--ribbon",
-    position: "66% 22%",
-    depth: 10,
-    aos: "shp-slice-drop",
-    delay: 230,
-    duration: 790
-  },
-  {
-    id: "wave-bottom-right",
-    className: "shp-photo-cutout--wave-bottom-right shp-frame--wave",
-    position: "58% 83%",
-    depth: 9,
-    aos: "shp-orb-rise",
-    delay: 290,
-    duration: 760
-  },
-];
+const resolveSupportHubCollageVariant = () => {
+  if (typeof window === "undefined") return SHP_DEFAULT_COLLAGE_VARIANT;
+  const queryVariant = new URLSearchParams(window.location.search).get("collage");
+  if (queryVariant && SHP_COLLAGE_VARIANTS_KEYS.includes(queryVariant)) return queryVariant;
+  return SHP_DEFAULT_COLLAGE_VARIANT;
+};
 
-const SHP_NATURAL_CUTOUTS = [
-  {
-    id: "natural-left",
-    className: "shp-natural-cutout--left",
-    src: kidsCutoutNatural2,
-    depth: 15,
-    aos: "shp-natural-rise",
-    delay: 80,
-    duration: 820
-  },
-  {
-    id: "natural-right-top",
-    className: "shp-natural-cutout--right-top",
-    src: kidsCutoutNatural2,
-    depth: 13,
-    aos: "shp-natural-drift",
-    delay: 140,
-    duration: 860
-  },
-  {
-    id: "natural-right-bottom",
-    className: "shp-natural-cutout--right-bottom",
-    src: kidsCutoutNatural2,
-    depth: 10,
-    aos: "shp-natural-rise",
-    delay: 220,
-    duration: 860
-  },
-];
+const toSlotStyleVars = (slot) => ({
+  "--shp-slot-left": slot.left ?? "auto",
+  "--shp-slot-right": slot.right ?? "auto",
+  "--shp-slot-top": slot.top ?? "auto",
+  "--shp-slot-bottom": slot.bottom ?? "auto",
+  "--shp-slot-width": slot.width ?? "auto",
+  "--shp-slot-height": slot.height ?? "auto",
+  "--shp-slot-rotate": slot.rotate ?? "0deg",
+  "--shp-slot-opacity": slot.opacity ?? 0.72
+});
 
-const SHP_COLLAGE_ACCENTS = [
-  { id: "a", className: "shp-photo-accent--a", depth: 8, aos: "shp-orb-pop", delay: 80, duration: 690 },
-  { id: "b", className: "shp-photo-accent--b", depth: 7, aos: "shp-orb-pop", delay: 140, duration: 720 },
-  { id: "c", className: "shp-photo-accent--c", depth: 6, aos: "shp-orb-pop", delay: 210, duration: 700 },
-  { id: "d", className: "shp-photo-accent--d", depth: 7, aos: "shp-orb-pop", delay: 260, duration: 740 },
-];
+const slotVisibilityClasses = (slot) => (
+  `${slot.hideTablet ? " shp-hide-tablet" : ""}${slot.hideMobile ? " shp-hide-mobile" : ""}`
+);
 
-const SupportHubPhotoLayer = memo(() => (
-  <div className="shp-photo-layer" aria-hidden="true">
+const SHP_COLLAGE_VARIANTS = {
+  "gallery-grid": {
+    bodyCutouts: [
+      { id: "b1", src: cld("FOTO_BG_REMOVE_13_rcunr0", 290), left: "-2.8%", top: "9%", width: "clamp(150px, 12vw, 224px)", height: "clamp(224px, 18vw, 330px)", rotate: "-4deg", opacity: 0.84, depth: 14, aos: "shp-natural-rise", delay: 70, duration: 840, hideMobile: true },
+      { id: "b2", src: cld("FOTO_BG_REMOVE_12_yf67be", 255), left: "-2.4%", bottom: "8%", width: "clamp(136px, 11vw, 204px)", height: "clamp(204px, 16vw, 296px)", rotate: "-2deg", opacity: 0.8, depth: 12, aos: "shp-natural-rise", delay: 140, duration: 820, hideMobile: true },
+      { id: "b3", src: cld("FOTO_BG_REMOVE_16_jkk3az", 300), right: "-2.8%", top: "9%", width: "clamp(154px, 12vw, 228px)", height: "clamp(228px, 18vw, 336px)", rotate: "3deg", opacity: 0.84, depth: 14, aos: "shp-natural-drift", delay: 100, duration: 860, hideMobile: true },
+      { id: "b4", src: cld("FOTO_BG_REMOVE_14_z4vqhb", 250), right: "-2.2%", bottom: "9%", width: "clamp(130px, 10.5vw, 196px)", height: "clamp(196px, 15vw, 286px)", rotate: "2deg", opacity: 0.78, depth: 11, aos: "shp-natural-drift", delay: 180, duration: 820, hideMobile: true },
+      { id: "b5", src: cld("FOTO_BG_REMOVE_3_dddiho", 210), left: "calc(50% - 72px)", top: "-1.5%", width: "clamp(110px, 9vw, 152px)", height: "clamp(110px, 9vw, 152px)", rotate: "-1deg", opacity: 0.74, depth: 10, aos: "shp-natural-rise", delay: 120, duration: 780, hideTablet: true, hideMobile: true },
+      { id: "b6", src: cld("Group_fqb7b0", 560), left: "calc(50% - 190px)", bottom: "-3.5%", width: "clamp(280px, 28vw, 420px)", height: "clamp(176px, 14vw, 260px)", rotate: "0deg", opacity: 0.72, depth: 8, aos: "shp-natural-rise", delay: 260, duration: 800, hideMobile: true },
+    ],
+    photoCards: [
+      { id: "c1", src: cldJpg("DSC00003_tvepts", 190), left: "2.4%", top: "10%", width: "clamp(88px, 6.8vw, 128px)", height: "clamp(112px, 8.6vw, 168px)", rotate: "-6deg", opacity: 0.74, frameClass: "shp-frame-soft", depth: 10, aos: "shp-card-left", delay: 90, duration: 710 },
+      { id: "c2", src: cldJpg("_DSC2984_mxs3ek", 180), left: "2.8%", top: "27%", width: "clamp(86px, 6.6vw, 124px)", height: "clamp(108px, 8.2vw, 162px)", rotate: "4deg", opacity: 0.7, frameClass: "shp-frame-arch", depth: 9, aos: "shp-card-left", delay: 140, duration: 730 },
+      { id: "c3", src: cldJpg("DSC02960_vxhqyf", 184), left: "3.3%", top: "45%", width: "clamp(86px, 6.6vw, 124px)", height: "clamp(108px, 8.2vw, 162px)", rotate: "-4deg", opacity: 0.68, frameClass: "shp-frame-post", depth: 10, aos: "shp-card-left", delay: 190, duration: 740 },
+      { id: "c4", src: cldJpg("DSC02742_hydsle", 174), left: "4.2%", top: "63%", width: "clamp(82px, 6.2vw, 118px)", height: "clamp(102px, 7.7vw, 150px)", rotate: "3deg", opacity: 0.66, frameClass: "shp-frame-pill", depth: 8, aos: "shp-card-up", delay: 230, duration: 700, hideTablet: true },
+      { id: "c5", src: cldJpg("_DSC2191_e25zxe", 188), right: "2.4%", top: "10%", width: "clamp(88px, 6.8vw, 128px)", height: "clamp(112px, 8.6vw, 168px)", rotate: "6deg", opacity: 0.74, frameClass: "shp-frame-soft", depth: 10, aos: "shp-card-right", delay: 90, duration: 710 },
+      { id: "c6", src: cldJpg("_DSC0771_r2qevu", 176), right: "2.8%", top: "28%", width: "clamp(84px, 6.4vw, 120px)", height: "clamp(106px, 8vw, 156px)", rotate: "-4deg", opacity: 0.68, frameClass: "shp-frame-arch", depth: 9, aos: "shp-card-right", delay: 150, duration: 740 },
+      { id: "c7", src: cldJpg("DSC02918_zzyukf", 182), right: "3.2%", top: "47%", width: "clamp(86px, 6.6vw, 124px)", height: "clamp(108px, 8.2vw, 162px)", rotate: "5deg", opacity: 0.7, frameClass: "shp-frame-post", depth: 10, aos: "shp-card-right", delay: 210, duration: 750 },
+      { id: "c8", src: cldJpg("_DSC6357_ualwee", 170), right: "4.2%", top: "65%", width: "clamp(80px, 6vw, 114px)", height: "clamp(100px, 7.4vw, 146px)", rotate: "-2deg", opacity: 0.64, frameClass: "shp-frame-pill", depth: 8, aos: "shp-card-up", delay: 260, duration: 700, hideTablet: true },
+      { id: "c9", src: cldJpg("_DSC2637_hx6sl5", 178), left: "14%", top: "3%", width: "clamp(84px, 6.4vw, 120px)", height: "clamp(106px, 8vw, 156px)", rotate: "-3deg", opacity: 0.66, frameClass: "shp-frame-post", depth: 8, aos: "shp-card-left", delay: 180, duration: 720, hideMobile: true },
+      { id: "c10", src: cldJpg("_DSC3194_j38tid", 178), right: "14%", top: "4%", width: "clamp(84px, 6.4vw, 120px)", height: "clamp(106px, 8vw, 156px)", rotate: "3deg", opacity: 0.66, frameClass: "shp-frame-post", depth: 8, aos: "shp-card-right", delay: 180, duration: 720, hideMobile: true },
+      { id: "c11", src: cldJpg("_DSC5112_yfimk2", 186), left: "16%", bottom: "2%", width: "clamp(88px, 6.8vw, 126px)", height: "clamp(110px, 8.4vw, 164px)", rotate: "3deg", opacity: 0.68, frameClass: "shp-frame-soft", depth: 9, aos: "shp-card-up", delay: 250, duration: 730, hideMobile: true },
+      { id: "c12", src: cldJpg("_DSC6037_ghubii", 186), right: "16%", bottom: "2.5%", width: "clamp(88px, 6.8vw, 126px)", height: "clamp(110px, 8.4vw, 164px)", rotate: "-3deg", opacity: 0.68, frameClass: "shp-frame-soft", depth: 9, aos: "shp-card-up", delay: 250, duration: 730, hideMobile: true },
+      { id: "c13", src: cldJpg("_DSC5228_kpezcs", 168), left: "34%", top: "2.2%", width: "clamp(78px, 6vw, 112px)", height: "clamp(98px, 7.4vw, 144px)", rotate: "-2deg", opacity: 0.62, frameClass: "shp-frame-pill", depth: 7, aos: "shp-card-left", delay: 300, duration: 690, hideTablet: true },
+      { id: "c14", src: cldJpg("DSC02235_1_ez6vbw", 168), right: "34%", top: "2.6%", width: "clamp(78px, 6vw, 112px)", height: "clamp(98px, 7.4vw, 144px)", rotate: "2deg", opacity: 0.62, frameClass: "shp-frame-pill", depth: 7, aos: "shp-card-right", delay: 300, duration: 690, hideTablet: true },
+    ],
+    accents: [
+      { id: "a1", accentClass: "shp-accent-lilac", left: "19%", top: "26%", width: "clamp(96px, 7vw, 136px)", height: "clamp(96px, 7vw, 136px)", opacity: 0.4, depth: 7, aos: "shp-orb-pop", delay: 120, duration: 700 },
+      { id: "a2", accentClass: "shp-accent-sky", right: "20%", top: "31%", width: "clamp(104px, 8vw, 144px)", height: "clamp(104px, 8vw, 144px)", opacity: 0.38, depth: 6, aos: "shp-orb-pop", delay: 170, duration: 720 },
+      { id: "a3", accentClass: "shp-accent-gold", left: "24%", bottom: "17%", width: "clamp(92px, 7vw, 132px)", height: "clamp(92px, 7vw, 132px)", opacity: 0.34, depth: 6, aos: "shp-orb-pop", delay: 220, duration: 710 },
+      { id: "a4", accentClass: "shp-accent-mint", right: "24%", bottom: "14%", width: "clamp(90px, 7vw, 126px)", height: "clamp(90px, 7vw, 126px)", opacity: 0.32, depth: 6, aos: "shp-orb-pop", delay: 260, duration: 740 },
+    ]
+  },
+  "story-arc": {
+    bodyCutouts: [
+      { id: "b1", src: cld("FOTO_BG_REMOVE_13_rcunr0", 280), left: "-3.2%", top: "14%", width: "clamp(144px, 11.4vw, 214px)", height: "clamp(214px, 17vw, 314px)", rotate: "-5deg", opacity: 0.82, depth: 14, aos: "shp-natural-rise", delay: 70, duration: 830, hideMobile: true },
+      { id: "b2", src: cld("FOTO_POTRAIT_1_eom2a8", 246), left: "-2.6%", bottom: "12%", width: "clamp(128px, 10.5vw, 190px)", height: "clamp(190px, 15vw, 278px)", rotate: "-3deg", opacity: 0.76, depth: 11, aos: "shp-natural-rise", delay: 150, duration: 800, hideMobile: true },
+      { id: "b3", src: cld("FOTO_BG_REMOVE_16_jkk3az", 292), right: "-3.2%", top: "14%", width: "clamp(146px, 11.8vw, 220px)", height: "clamp(220px, 17.4vw, 324px)", rotate: "4deg", opacity: 0.82, depth: 14, aos: "shp-natural-drift", delay: 90, duration: 850, hideMobile: true },
+      { id: "b4", src: cld("FOTO_POTRAIT_krwzwv", 248), right: "-2.4%", bottom: "12%", width: "clamp(128px, 10.3vw, 190px)", height: "clamp(190px, 15vw, 278px)", rotate: "3deg", opacity: 0.76, depth: 11, aos: "shp-natural-drift", delay: 170, duration: 820, hideMobile: true },
+      { id: "b5", src: cld("FOTO_BG_REMOVE_3_dddiho", 210), left: "calc(50% - 70px)", top: "-1.2%", width: "clamp(104px, 8.8vw, 146px)", height: "clamp(104px, 8.8vw, 146px)", rotate: "-1deg", opacity: 0.72, depth: 9, aos: "shp-natural-rise", delay: 110, duration: 760, hideTablet: true, hideMobile: true },
+      { id: "b6", src: cld("Group_fqb7b0", 520), left: "calc(50% - 176px)", bottom: "-2.8%", width: "clamp(264px, 26vw, 396px)", height: "clamp(168px, 13vw, 244px)", rotate: "0deg", opacity: 0.68, depth: 8, aos: "shp-natural-rise", delay: 250, duration: 780, hideMobile: true },
+    ],
+    photoCards: [
+      { id: "c1", src: cldJpg("DSC01089_dyjmdl", 186), left: "6%", top: "11%", width: "clamp(86px, 6.6vw, 124px)", height: "clamp(108px, 8.2vw, 160px)", rotate: "-7deg", opacity: 0.74, frameClass: "shp-frame-soft", depth: 10, aos: "shp-card-left", delay: 90, duration: 720 },
+      { id: "c2", src: cldJpg("DSC01077_uj06xl", 184), left: "20%", top: "6.3%", width: "clamp(84px, 6.4vw, 122px)", height: "clamp(106px, 8vw, 156px)", rotate: "-4deg", opacity: 0.7, frameClass: "shp-frame-arch", depth: 9, aos: "shp-card-left", delay: 130, duration: 730 },
+      { id: "c3", src: cldJpg("_DSC5101_ytaseb", 176), left: "34%", top: "4.1%", width: "clamp(80px, 6vw, 116px)", height: "clamp(100px, 7.6vw, 146px)", rotate: "-2deg", opacity: 0.64, frameClass: "shp-frame-pill", depth: 8, aos: "shp-card-up", delay: 170, duration: 700, hideTablet: true },
+      { id: "c4", src: cldJpg("DSC02824_f4lypu", 176), right: "34%", top: "4.1%", width: "clamp(80px, 6vw, 116px)", height: "clamp(100px, 7.6vw, 146px)", rotate: "2deg", opacity: 0.64, frameClass: "shp-frame-pill", depth: 8, aos: "shp-card-up", delay: 170, duration: 700, hideTablet: true },
+      { id: "c5", src: cldJpg("_DSC5004_exu8ls", 184), right: "20%", top: "6.3%", width: "clamp(84px, 6.4vw, 122px)", height: "clamp(106px, 8vw, 156px)", rotate: "4deg", opacity: 0.7, frameClass: "shp-frame-arch", depth: 9, aos: "shp-card-right", delay: 130, duration: 730 },
+      { id: "c6", src: cldJpg("_DSC0930_god7hb", 186), right: "6%", top: "11%", width: "clamp(86px, 6.6vw, 124px)", height: "clamp(108px, 8.2vw, 160px)", rotate: "7deg", opacity: 0.74, frameClass: "shp-frame-soft", depth: 10, aos: "shp-card-right", delay: 90, duration: 720 },
+      { id: "c7", src: cldJpg("DSC00809_zo3pu3", 186), left: "8%", bottom: "10.4%", width: "clamp(86px, 6.6vw, 124px)", height: "clamp(108px, 8.2vw, 160px)", rotate: "6deg", opacity: 0.7, frameClass: "shp-frame-soft", depth: 9, aos: "shp-card-left", delay: 210, duration: 730 },
+      { id: "c8", src: cldJpg("_DSC9108_bahiwx", 182), left: "22%", bottom: "6.1%", width: "clamp(84px, 6.3vw, 120px)", height: "clamp(104px, 7.8vw, 154px)", rotate: "3deg", opacity: 0.66, frameClass: "shp-frame-post", depth: 8, aos: "shp-card-up", delay: 250, duration: 710 },
+      { id: "c9", src: cldJpg("_DSC2703_axyuui", 172), left: "36%", bottom: "3.8%", width: "clamp(78px, 5.8vw, 112px)", height: "clamp(98px, 7.2vw, 142px)", rotate: "1deg", opacity: 0.6, frameClass: "shp-frame-pill", depth: 7, aos: "shp-card-up", delay: 290, duration: 690, hideTablet: true },
+      { id: "c10", src: cldJpg("_DSC5047_u4ap4y", 172), right: "36%", bottom: "3.8%", width: "clamp(78px, 5.8vw, 112px)", height: "clamp(98px, 7.2vw, 142px)", rotate: "-1deg", opacity: 0.6, frameClass: "shp-frame-pill", depth: 7, aos: "shp-card-up", delay: 290, duration: 690, hideTablet: true },
+      { id: "c11", src: cldJpg("DSC02836_i6uxxk", 182), right: "22%", bottom: "6.1%", width: "clamp(84px, 6.3vw, 120px)", height: "clamp(104px, 7.8vw, 154px)", rotate: "-3deg", opacity: 0.66, frameClass: "shp-frame-post", depth: 8, aos: "shp-card-up", delay: 250, duration: 710 },
+      { id: "c12", src: cldJpg("DSC00827_j61n5u", 186), right: "8%", bottom: "10.4%", width: "clamp(86px, 6.6vw, 124px)", height: "clamp(108px, 8.2vw, 160px)", rotate: "-6deg", opacity: 0.7, frameClass: "shp-frame-soft", depth: 9, aos: "shp-card-right", delay: 210, duration: 730 },
+    ],
+    accents: [
+      { id: "a1", accentClass: "shp-accent-lilac", left: "28%", top: "20%", width: "clamp(96px, 7.2vw, 140px)", height: "clamp(96px, 7.2vw, 140px)", opacity: 0.34, depth: 6, aos: "shp-orb-pop", delay: 150, duration: 700 },
+      { id: "a2", accentClass: "shp-accent-sky", right: "28%", top: "22%", width: "clamp(98px, 7.4vw, 142px)", height: "clamp(98px, 7.4vw, 142px)", opacity: 0.34, depth: 6, aos: "shp-orb-pop", delay: 190, duration: 720 },
+      { id: "a3", accentClass: "shp-accent-gold", left: "30%", bottom: "15%", width: "clamp(92px, 6.8vw, 130px)", height: "clamp(92px, 6.8vw, 130px)", opacity: 0.3, depth: 5, aos: "shp-orb-pop", delay: 220, duration: 710 },
+      { id: "a4", accentClass: "shp-accent-mint", right: "30%", bottom: "14%", width: "clamp(90px, 6.6vw, 126px)", height: "clamp(90px, 6.6vw, 126px)", opacity: 0.3, depth: 5, aos: "shp-orb-pop", delay: 260, duration: 740 },
+    ]
+  },
+  "split-columns": {
+    bodyCutouts: [
+      { id: "b1", src: cld("FOTO_BG_REMOVE_13_rcunr0", 280), left: "-3%", top: "8%", width: "clamp(146px, 11.8vw, 220px)", height: "clamp(220px, 17.8vw, 322px)", rotate: "-3deg", opacity: 0.82, depth: 13, aos: "shp-natural-rise", delay: 70, duration: 830, hideMobile: true },
+      { id: "b2", src: cld("FOTO_BG_REMOVE_12_yf67be", 250), left: "-2.2%", bottom: "10%", width: "clamp(130px, 10.4vw, 194px)", height: "clamp(194px, 15.4vw, 286px)", rotate: "-2deg", opacity: 0.78, depth: 11, aos: "shp-natural-rise", delay: 150, duration: 810, hideMobile: true },
+      { id: "b3", src: cld("FOTO_BG_REMOVE_16_jkk3az", 296), right: "-3%", top: "8%", width: "clamp(148px, 12vw, 224px)", height: "clamp(224px, 18vw, 330px)", rotate: "3deg", opacity: 0.82, depth: 13, aos: "shp-natural-drift", delay: 90, duration: 850, hideMobile: true },
+      { id: "b4", src: cld("FOTO_BG_REMOVE_14_z4vqhb", 248), right: "-2.1%", bottom: "10%", width: "clamp(128px, 10.2vw, 190px)", height: "clamp(190px, 15vw, 278px)", rotate: "2deg", opacity: 0.78, depth: 11, aos: "shp-natural-drift", delay: 170, duration: 820, hideMobile: true },
+      { id: "b5", src: cld("FOTO_POTRAIT_krwzwv", 218), left: "calc(50% - 72px)", top: "-1.2%", width: "clamp(108px, 8.8vw, 150px)", height: "clamp(150px, 12vw, 220px)", rotate: "-1deg", opacity: 0.72, depth: 9, aos: "shp-natural-rise", delay: 120, duration: 780, hideTablet: true, hideMobile: true },
+      { id: "b6", src: cld("Group_fqb7b0", 520), left: "calc(50% - 176px)", bottom: "-3%", width: "clamp(268px, 26.5vw, 404px)", height: "clamp(170px, 13.5vw, 248px)", rotate: "0deg", opacity: 0.68, depth: 8, aos: "shp-natural-rise", delay: 250, duration: 790, hideMobile: true },
+    ],
+    photoCards: [
+      { id: "c1", src: cldJpg("DSC02438_xmrpss", 188), left: "4.8%", top: "13%", width: "clamp(88px, 6.7vw, 126px)", height: "clamp(110px, 8.4vw, 164px)", rotate: "-4deg", opacity: 0.72, frameClass: "shp-frame-soft", depth: 10, aos: "shp-card-left", delay: 90, duration: 720 },
+      { id: "c2", src: cldJpg("DSC02591_zhj4wl", 186), left: "4.8%", top: "27%", width: "clamp(86px, 6.5vw, 124px)", height: "clamp(108px, 8.2vw, 160px)", rotate: "3deg", opacity: 0.7, frameClass: "shp-frame-post", depth: 9, aos: "shp-card-left", delay: 130, duration: 730 },
+      { id: "c3", src: cldJpg("DSC02885_tp5c20", 184), left: "4.8%", top: "41%", width: "clamp(84px, 6.4vw, 122px)", height: "clamp(106px, 8vw, 156px)", rotate: "-3deg", opacity: 0.68, frameClass: "shp-frame-arch", depth: 9, aos: "shp-card-left", delay: 170, duration: 740 },
+      { id: "c4", src: cldJpg("_DSC0946_gkrc6j", 182), left: "4.8%", top: "55%", width: "clamp(82px, 6.2vw, 118px)", height: "clamp(104px, 7.8vw, 152px)", rotate: "2deg", opacity: 0.66, frameClass: "shp-frame-soft", depth: 8, aos: "shp-card-left", delay: 210, duration: 730 },
+      { id: "c5", src: cldJpg("_DSC0866_bug4yo", 178), left: "4.8%", top: "69%", width: "clamp(80px, 6vw, 114px)", height: "clamp(100px, 7.4vw, 146px)", rotate: "-2deg", opacity: 0.64, frameClass: "shp-frame-pill", depth: 8, aos: "shp-card-left", delay: 250, duration: 710, hideTablet: true },
+      { id: "c6", src: cldJpg("_DSC6223_hyxdhc", 188), right: "4.8%", top: "13%", width: "clamp(88px, 6.7vw, 126px)", height: "clamp(110px, 8.4vw, 164px)", rotate: "4deg", opacity: 0.72, frameClass: "shp-frame-soft", depth: 10, aos: "shp-card-right", delay: 90, duration: 720 },
+      { id: "c7", src: cldJpg("_DSC3895_nh1xco", 186), right: "4.8%", top: "27%", width: "clamp(86px, 6.5vw, 124px)", height: "clamp(108px, 8.2vw, 160px)", rotate: "-3deg", opacity: 0.7, frameClass: "shp-frame-post", depth: 9, aos: "shp-card-right", delay: 130, duration: 730 },
+      { id: "c8", src: cldJpg("_DSC1918_oesznt", 184), right: "4.8%", top: "41%", width: "clamp(84px, 6.4vw, 122px)", height: "clamp(106px, 8vw, 156px)", rotate: "3deg", opacity: 0.68, frameClass: "shp-frame-arch", depth: 9, aos: "shp-card-right", delay: 170, duration: 740 },
+      { id: "c9", src: cldJpg("_DSC1004_aq9sh4", 182), right: "4.8%", top: "55%", width: "clamp(82px, 6.2vw, 118px)", height: "clamp(104px, 7.8vw, 152px)", rotate: "-2deg", opacity: 0.66, frameClass: "shp-frame-soft", depth: 8, aos: "shp-card-right", delay: 210, duration: 730 },
+      { id: "c10", src: cldJpg("_DSC2188_zsxqpn", 178), right: "4.8%", top: "69%", width: "clamp(80px, 6vw, 114px)", height: "clamp(100px, 7.4vw, 146px)", rotate: "2deg", opacity: 0.64, frameClass: "shp-frame-pill", depth: 8, aos: "shp-card-right", delay: 250, duration: 710, hideTablet: true },
+      { id: "c11", src: cldJpg("_DSC2186_v7wled", 176), left: "17%", top: "4%", width: "clamp(80px, 6.1vw, 116px)", height: "clamp(100px, 7.6vw, 148px)", rotate: "-3deg", opacity: 0.64, frameClass: "shp-frame-pill", depth: 8, aos: "shp-card-up", delay: 200, duration: 700, hideMobile: true },
+      { id: "c12", src: cldJpg("_DSC6547_q6tmgx", 176), right: "17%", top: "4%", width: "clamp(80px, 6.1vw, 116px)", height: "clamp(100px, 7.6vw, 148px)", rotate: "3deg", opacity: 0.64, frameClass: "shp-frame-pill", depth: 8, aos: "shp-card-up", delay: 200, duration: 700, hideMobile: true },
+      { id: "c13", src: cldJpg("DSC03249_pzpri4", 176), left: "17%", bottom: "3.2%", width: "clamp(80px, 6.1vw, 116px)", height: "clamp(100px, 7.6vw, 148px)", rotate: "3deg", opacity: 0.64, frameClass: "shp-frame-pill", depth: 8, aos: "shp-card-up", delay: 250, duration: 710, hideMobile: true },
+      { id: "c14", src: cldJpg("_DSC2102_thdsq3", 176), right: "17%", bottom: "3.2%", width: "clamp(80px, 6.1vw, 116px)", height: "clamp(100px, 7.6vw, 148px)", rotate: "-3deg", opacity: 0.64, frameClass: "shp-frame-pill", depth: 8, aos: "shp-card-up", delay: 250, duration: 710, hideMobile: true },
+    ],
+    accents: [
+      { id: "a1", accentClass: "shp-accent-lilac", left: "24%", top: "28%", width: "clamp(96px, 7vw, 136px)", height: "clamp(96px, 7vw, 136px)", opacity: 0.34, depth: 6, aos: "shp-orb-pop", delay: 150, duration: 700 },
+      { id: "a2", accentClass: "shp-accent-sky", right: "24%", top: "28%", width: "clamp(98px, 7.2vw, 140px)", height: "clamp(98px, 7.2vw, 140px)", opacity: 0.34, depth: 6, aos: "shp-orb-pop", delay: 190, duration: 720 },
+      { id: "a3", accentClass: "shp-accent-gold", left: "26%", bottom: "17%", width: "clamp(90px, 6.8vw, 128px)", height: "clamp(90px, 6.8vw, 128px)", opacity: 0.3, depth: 5, aos: "shp-orb-pop", delay: 230, duration: 710 },
+      { id: "a4", accentClass: "shp-accent-mint", right: "26%", bottom: "16%", width: "clamp(90px, 6.8vw, 128px)", height: "clamp(90px, 6.8vw, 128px)", opacity: 0.3, depth: 5, aos: "shp-orb-pop", delay: 270, duration: 740 },
+    ]
+  }
+};
+
+const SupportHubPhotoLayer = memo(() => {
+  const collageVariant = resolveSupportHubCollageVariant();
+  const collage = SHP_COLLAGE_VARIANTS[collageVariant] || SHP_COLLAGE_VARIANTS[SHP_DEFAULT_COLLAGE_VARIANT];
+
+  return (
+  <div className={`shp-photo-layer shp-collage--${collageVariant}`} aria-hidden="true">
     <div className="shp-photo-bg" style={{ backgroundImage: `url(${kidsGroupPhoto})` }} />
     <div className="shp-photo-veil" />
 
-    {SHP_NATURAL_CUTOUTS.map((item) => (
+    {collage.bodyCutouts.map((item) => (
       <div
         key={item.id}
-        className={`shp-natural-cutout ${item.className}`}
+        className={`shp-body-cutout shp-body-slot${slotVisibilityClasses(item)}`}
+        style={toSlotStyleVars(item)}
         data-shp-depth={item.depth}
         data-aos={item.aos}
         data-aos-delay={item.delay}
@@ -126,31 +172,40 @@ const SupportHubPhotoLayer = memo(() => (
         <img
           src={item.src}
           alt=""
-          className="shp-natural-cutout-image"
+          className="shp-body-cutout-img"
           loading="lazy"
           decoding="async"
         />
       </div>
     ))}
 
-    {SHP_COLLAGE_ACCENTS.map((item) => (
+    {SHP_ENABLE_FRAMED_CARDS && collage.photoCards.map((item) => (
       <div
         key={item.id}
-        className={`shp-photo-accent ${item.className}`}
+        className={`shp-photo-card shp-photo-card-slot ${item.frameClass || "shp-frame-soft"}${slotVisibilityClasses(item)}`}
+        style={toSlotStyleVars(item)}
         data-shp-depth={item.depth}
         data-aos={item.aos}
         data-aos-delay={item.delay}
         data-aos-duration={item.duration}
         data-aos-easing="ease-out-cubic"
-      />
+      >
+        <img
+          src={item.src}
+          alt=""
+          className="shp-photo-card-img"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
     ))}
 
-    {SHP_COLLAGE_CUTOUTS.map((item) => (
+    {collage.accents.map((item) => (
       <div
         key={item.id}
-        className={`shp-photo-cutout ${item.className}`}
+        className={`shp-photo-accent shp-photo-accent-slot ${item.accentClass || "shp-accent-lilac"}${slotVisibilityClasses(item)}`}
+        style={toSlotStyleVars(item)}
         data-shp-depth={item.depth}
-        style={{ backgroundImage: `url(${kidsGroupPhoto})`, backgroundPosition: item.position }}
         data-aos={item.aos}
         data-aos-delay={item.delay}
         data-aos-duration={item.duration}
@@ -158,7 +213,8 @@ const SupportHubPhotoLayer = memo(() => (
       />
     ))}
   </div>
-));
+  );
+});
 SupportHubPhotoLayer.displayName = "SupportHubPhotoLayer";
 
 /* ── Card config ────────────────────────────────────────── */
@@ -296,21 +352,40 @@ const SupportModeSelectionPage = memo(() => {
         ease: "sine.inOut"
       });
 
-      const cutouts = gsap.utils.toArray(".shp-photo-cutout");
-      const animatedCutouts = isCompactViewport ? cutouts.slice(0, 4) : cutouts;
+      const bodyCutouts = gsap.utils.toArray(".shp-body-cutout");
+      const animatedBody = isCompactViewport ? bodyCutouts.slice(0, 4) : bodyCutouts;
 
-      animatedCutouts.forEach((node, index) => {
+      animatedBody.forEach((node, index) => {
         gsap.to(node, {
-          y: index % 2 === 0 ? -7 : -5,
-          x: index % 2 === 0 ? 4 : -3,
-          duration: 6 + index * 0.45,
-          delay: ambientEntryDelay + 0.12 + index * 0.07,
+          y: index % 2 === 0 ? -8 : -6,
+          x: index % 2 === 0 ? 4 : -4,
+          duration: 6.5 + index * 0.5,
+          delay: ambientEntryDelay + 0.12 + index * 0.08,
           repeat: -1,
           yoyo: true,
           ease: "sine.inOut",
           force3D: true
         });
       });
+
+      if (SHP_ENABLE_FRAMED_CARDS) {
+        const photoCards = gsap.utils.toArray(".shp-photo-card");
+        const animatedCards = isCompactViewport ? photoCards.slice(0, 4) : photoCards.slice(0, 8);
+
+        animatedCards.forEach((node, index) => {
+          gsap.to(node, {
+            y: index % 2 === 0 ? -5 : -4,
+            x: index % 2 === 0 ? 3 : -3,
+            rotation: index % 2 === 0 ? 1.5 : -1.5,
+            duration: 5.8 + index * 0.4,
+            delay: ambientEntryDelay + 0.2 + index * 0.06,
+            repeat: -1,
+            yoyo: true,
+            ease: "sine.inOut",
+            force3D: true
+          });
+        });
+      }
 
       const accents = gsap.utils.toArray(".shp-photo-accent");
       const animatedAccents = isCompactViewport ? accents.slice(0, 2) : accents;
@@ -321,22 +396,6 @@ const SupportModeSelectionPage = memo(() => {
           opacity: 0.78,
           duration: 5 + index * 0.35,
           delay: ambientEntryDelay + 0.2 + index * 0.05,
-          repeat: -1,
-          yoyo: true,
-          ease: "sine.inOut",
-          force3D: true
-        });
-      });
-
-      const naturalCutouts = gsap.utils.toArray(".shp-natural-cutout");
-      const animatedNatural = isCompactViewport ? naturalCutouts.slice(0, 2) : naturalCutouts;
-
-      animatedNatural.forEach((node, index) => {
-        gsap.to(node, {
-          y: index % 2 === 0 ? -8 : -6,
-          x: index % 2 === 0 ? 4 : -4,
-          duration: 7.2 + index * 0.6,
-          delay: ambientEntryDelay + 0.14 + index * 0.08,
           repeat: -1,
           yoyo: true,
           ease: "sine.inOut",

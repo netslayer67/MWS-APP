@@ -10,9 +10,13 @@ import {
 } from "@/utils/accessControl";
 import { prefetchStaffFaceScanOnIntent } from "@/utils/faceScanPrefetch";
 import gsap from "gsap";
-import kidsGroupPhoto from "@/assets/landing/kids-group.jpg";
-import kidsCutoutNatural2 from "@/assets/landing/kids-cutout-natural-2.svg";
 import "@/pages/styles/role-selection-humanistic.css";
+
+/* Cloudinary base with auto-format & quality */
+const CLD = "https://res.cloudinary.com/deldcwiji/image/upload";
+const cld = (id, w = 300) => `${CLD}/c_scale,w_${w},f_auto,q_auto/${id}.png`;
+const cldJpg = (id, w = 240) => `${CLD}/c_fill,w_${w},h_${Math.round(w * 1.25)},g_face,f_auto,q_auto/${id}.jpg`;
+const RS_ENABLE_FRAMED_CARDS = true;
 
 const supportsFinePointer = () => {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
@@ -29,100 +33,67 @@ const resolveDepth = (value) => {
   return Number.isFinite(parsed) ? parsed : 12;
 };
 
-const RS_PHOTO_CUTOUTS = [
+/* Natural body cutouts — all transparent PNGs from Cloudinary on white bg */
+const RS_BODY_CUTOUTS = [
   {
-    id: "northwest-card",
-    className: "rs-photo-cutout--northwest-card",
-    position: "24% 44%",
-    depth: 14,
-    aos: "rs-pop-tilt",
+    id: "body-left-top",
+    className: "rs-body--left-top",
+    src: cld("FOTO_POTRAIT_4_toxvjw", 260),
+    depth: 13,
+    aos: "rs-natural-rise",
     delay: 60,
-    duration: 760
+    duration: 860
   },
   {
-    id: "east-strip",
-    className: "rs-photo-cutout--east-strip",
-    position: "84% 48%",
-    depth: 16,
-    aos: "rs-slice-rise",
-    delay: 120,
-    duration: 780
+    id: "body-left-mid",
+    className: "rs-body--left-mid",
+    src: cld("FOTO_POTRAIT_3_faupks", 230),
+    depth: 11,
+    aos: "rs-natural-rise",
+    delay: 130,
+    duration: 820
   },
   {
-    id: "top-circle",
-    className: "rs-photo-cutout--top-circle",
-    position: "66% 22%",
-    depth: 12,
-    aos: "rs-orb-drop",
-    delay: 180,
-    duration: 760
+    id: "body-right-top",
+    className: "rs-body--right-top",
+    src: cld("FOTO_BG_REMOVE_17_dh98bg", 260),
+    depth: 13,
+    aos: "rs-natural-drift",
+    delay: 100,
+    duration: 840
   },
   {
-    id: "left-chip",
-    className: "rs-photo-cutout--left-chip",
-    position: "12% 60%",
-    depth: 9,
-    aos: "rs-side-glide",
-    delay: 220,
-    duration: 760
+    id: "body-top-accent",
+    className: "rs-body--top-accent",
+    src: cld("FOTO_BG_REMOVE_15_r6ncjw", 190),
+    depth: 10,
+    aos: "rs-natural-drift",
+    delay: 170,
+    duration: 800
   },
   {
-    id: "bottom-bubble",
-    className: "rs-photo-cutout--bottom-bubble",
-    position: "70% 80%",
+    id: "body-bottom-center",
+    className: "rs-body--bottom-center",
+    src: cld("FOTO_BG_REMOVE_1133_x_2000_px_73_jsv6a0", 460),
     depth: 8,
-    aos: "rs-bubble-bounce",
+    aos: "rs-natural-rise",
     delay: 260,
     duration: 780
   },
-  {
-    id: "southeast-chip",
-    className: "rs-photo-cutout--southeast-chip",
-    position: "72% 68%",
-    depth: 10,
-    aos: "rs-ticket-spin",
-    delay: 300,
-    duration: 820
-  },
-  {
-    id: "south-circle",
-    className: "rs-photo-cutout--south-circle",
-    position: "50% 72%",
-    depth: 8,
-    aos: "rs-bubble-bounce",
-    delay: 350,
-    duration: 820
-  },
 ];
 
-const RS_NATURAL_CUTOUTS = [
-  {
-    id: "natural-left",
-    className: "rs-natural-cutout--left",
-    src: kidsCutoutNatural2,
-    depth: 13,
-    aos: "rs-natural-rise",
-    delay: 90,
-    duration: 860
-  },
-  {
-    id: "natural-right",
-    className: "rs-natural-cutout--right",
-    src: kidsCutoutNatural2,
-    depth: 12,
-    aos: "rs-natural-drift",
-    delay: 160,
-    duration: 880
-  },
-  {
-    id: "natural-bottom",
-    className: "rs-natural-cutout--bottom",
-    src: kidsCutoutNatural2,
-    depth: 9,
-    aos: "rs-natural-rise",
-    delay: 240,
-    duration: 860
-  },
+/* Photo cards — JPG photos with borders as decorative elements */
+const RS_PHOTO_CARDS = [
+  { id: "pc-1", className: "rs-pc--1", src: cldJpg("DSC01543_epizl3", 160), depth: 10, aos: "rs-card-pop", delay: 100, duration: 720 },
+  { id: "pc-2", className: "rs-pc--2", src: cldJpg("_DSC8750_fdmetn", 150), depth: 8, aos: "rs-card-pop", delay: 170, duration: 740 },
+  { id: "pc-3", className: "rs-pc--3", src: cldJpg("DSC02677_zgyz6w", 170), depth: 11, aos: "rs-card-pop", delay: 220, duration: 760 },
+  { id: "pc-4", className: "rs-pc--4", src: cldJpg("_DSC6603_sonkrm", 140), depth: 7, aos: "rs-card-pop", delay: 270, duration: 720 },
+  { id: "pc-5", className: "rs-pc--5", src: cldJpg("DSC01621_nssiis", 160), depth: 9, aos: "rs-card-pop", delay: 140, duration: 700 },
+  { id: "pc-6", className: "rs-pc--6", src: cldJpg("_DSC5962_mym0e5", 150), depth: 10, aos: "rs-card-pop", delay: 300, duration: 740 },
+  { id: "pc-7", className: "rs-pc--7", src: cldJpg("DSC02730_k10pn3", 170), depth: 11, aos: "rs-card-pop", delay: 340, duration: 760 },
+  { id: "pc-8", className: "rs-pc--8", src: cldJpg("_DSC6346_rjpzcy", 145), depth: 8, aos: "rs-card-pop", delay: 210, duration: 720 },
+  { id: "pc-9", className: "rs-pc--9", src: cldJpg("DSC01079_tc6ttw", 155), depth: 9, aos: "rs-card-pop", delay: 260, duration: 730 },
+  { id: "pc-10", className: "rs-pc--10", src: cldJpg("_DSC5535_yuiqgh", 145), depth: 8, aos: "rs-card-pop", delay: 380, duration: 740 },
 ];
 
 const RS_PHOTO_ACCENTS = [
@@ -130,17 +101,16 @@ const RS_PHOTO_ACCENTS = [
   { id: "b", className: "rs-photo-accent--b", depth: 10, aos: "rs-orb-pop", delay: 140, duration: 700 },
   { id: "c", className: "rs-photo-accent--c", depth: 9, aos: "rs-orb-pop", delay: 200, duration: 720 },
   { id: "d", className: "rs-photo-accent--d", depth: 7, aos: "rs-orb-pop", delay: 260, duration: 730 },
-  { id: "e", className: "rs-photo-accent--e", depth: 6, aos: "rs-orb-pop", delay: 320, duration: 720 },
 ];
 
 const RoleSelectionPhotoLayer = memo(() => (
   <div className="rs-photo-layer" aria-hidden="true">
     <div className="rs-white-canvas" />
 
-    {RS_NATURAL_CUTOUTS.map((item) => (
+    {RS_BODY_CUTOUTS.map((item) => (
       <div
         key={item.id}
-        className={`rs-natural-cutout ${item.className}`}
+        className={`rs-body-cutout ${item.className}`}
         data-rs-depth={item.depth}
         data-aos={item.aos}
         data-aos-delay={item.delay}
@@ -150,7 +120,27 @@ const RoleSelectionPhotoLayer = memo(() => (
         <img
           src={item.src}
           alt=""
-          className="rs-natural-cutout-image"
+          className="rs-body-cutout-img"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+    ))}
+
+    {RS_ENABLE_FRAMED_CARDS && RS_PHOTO_CARDS.map((item) => (
+      <div
+        key={item.id}
+        className={`rs-photo-card ${item.className}`}
+        data-rs-depth={item.depth}
+        data-aos={item.aos}
+        data-aos-delay={item.delay}
+        data-aos-duration={item.duration}
+        data-aos-easing="ease-out-cubic"
+      >
+        <img
+          src={item.src}
+          alt=""
+          className="rs-photo-card-img"
           loading="lazy"
           decoding="async"
         />
@@ -165,19 +155,6 @@ const RoleSelectionPhotoLayer = memo(() => (
         data-aos={item.aos}
         data-aos-delay={item.delay}
         data-aos-duration={item.duration || 700}
-        data-aos-easing="ease-out-cubic"
-      />
-    ))}
-
-    {RS_PHOTO_CUTOUTS.map((item) => (
-      <div
-        key={item.id}
-        className={`rs-photo-cutout ${item.className}`}
-        data-rs-depth={item.depth}
-        style={{ backgroundImage: `url(${kidsGroupPhoto})`, backgroundPosition: item.position }}
-        data-aos={item.aos}
-        data-aos-delay={item.delay}
-        data-aos-duration={item.duration || 780}
         data-aos-easing="ease-out-cubic"
       />
     ))}
@@ -286,21 +263,40 @@ const RoleSelection = memo(() => {
         ease: "sine.inOut"
       });
 
-      const cutouts = gsap.utils.toArray(".rs-photo-cutout");
-      const animatedCutouts = isCompactViewport ? cutouts.slice(0, 4) : cutouts;
+      const bodyCutouts = gsap.utils.toArray(".rs-body-cutout");
+      const animatedBody = isCompactViewport ? bodyCutouts.slice(0, 3) : bodyCutouts;
 
-      animatedCutouts.forEach((node, index) => {
+      animatedBody.forEach((node, index) => {
         gsap.to(node, {
           y: index % 2 === 0 ? -7 : -5,
-          x: index % 2 === 0 ? 4 : -3,
-          duration: 5.4 + index * 0.45,
-          delay: ambientEntryDelay + 0.18 + index * 0.08,
+          x: index % 2 === 0 ? 4 : -4,
+          duration: 6.2 + index * 0.5,
+          delay: ambientEntryDelay + 0.14 + index * 0.08,
           repeat: -1,
           yoyo: true,
           ease: "sine.inOut",
           force3D: true
         });
       });
+
+      if (RS_ENABLE_FRAMED_CARDS) {
+        const photoCards = gsap.utils.toArray(".rs-photo-card");
+        const animatedCards = isCompactViewport ? photoCards.slice(0, 4) : photoCards.slice(0, 8);
+
+        animatedCards.forEach((node, index) => {
+          gsap.to(node, {
+            y: index % 2 === 0 ? -5 : -4,
+            x: index % 2 === 0 ? 3 : -3,
+            rotation: index % 2 === 0 ? 1.5 : -1.5,
+            duration: 5.6 + index * 0.4,
+            delay: ambientEntryDelay + 0.2 + index * 0.06,
+            repeat: -1,
+            yoyo: true,
+            ease: "sine.inOut",
+            force3D: true
+          });
+        });
+      }
 
       const accents = gsap.utils.toArray(".rs-photo-accent");
       const animatedAccents = isCompactViewport ? accents.slice(0, 2) : accents;
@@ -311,22 +307,6 @@ const RoleSelection = memo(() => {
           opacity: 0.72,
           duration: 4.8 + index * 0.4,
           delay: ambientEntryDelay + 0.26 + index * 0.06,
-          repeat: -1,
-          yoyo: true,
-          ease: "sine.inOut",
-          force3D: true
-        });
-      });
-
-      const naturalCutouts = gsap.utils.toArray(".rs-natural-cutout");
-      const animatedNatural = isCompactViewport ? naturalCutouts.slice(0, 2) : naturalCutouts;
-
-      animatedNatural.forEach((node, index) => {
-        gsap.to(node, {
-          y: index % 2 === 0 ? -7 : -5,
-          x: index % 2 === 0 ? 4 : -4,
-          duration: 7.1 + index * 0.6,
-          delay: ambientEntryDelay + 0.16 + index * 0.08,
           repeat: -1,
           yoyo: true,
           ease: "sine.inOut",
