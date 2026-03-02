@@ -5,6 +5,7 @@ import { Brain, Handshake, ArrowRight, Sparkles, Shield, Users } from "lucide-re
 import Logo from "../../components/ui/Millennia.webp";
 import gsap from "gsap";
 import kidsGroupPhoto from "@/assets/landing/kids-group.jpg";
+import kidsCutoutNatural2 from "@/assets/landing/kids-cutout-natural-2.svg";
 import "@/pages/styles/support-hub-humanistic.css";
 
 const supportsFinePointer = () => {
@@ -26,65 +27,77 @@ const SHP_COLLAGE_CUTOUTS = [
   {
     id: "stamp-left",
     className: "shp-photo-cutout--stamp-left shp-frame--stamp",
-    position: "24% 40%",
-    depth: 18,
+    position: "26% 40%",
+    depth: 14,
     aos: "shp-tilt-pop",
     delay: 60,
     duration: 760
   },
   {
-    id: "arch-right",
-    className: "shp-photo-cutout--arch-right shp-frame--arch",
-    position: "78% 30%",
-    depth: 16,
-    aos: "shp-arc-rise",
-    delay: 110,
-    duration: 820
-  },
-  {
     id: "pill-left",
     className: "shp-photo-cutout--pill-left shp-frame--pill",
-    position: "16% 66%",
-    depth: 13,
+    position: "20% 67%",
+    depth: 11,
     aos: "shp-slide-grow",
-    delay: 150,
+    delay: 120,
     duration: 760
   },
   {
     id: "ticket-right",
     className: "shp-photo-cutout--ticket-right shp-frame--ticket",
-    position: "72% 56%",
-    depth: 14,
+    position: "74% 58%",
+    depth: 12,
     aos: "shp-ticket-swing",
-    delay: 190,
+    delay: 170,
     duration: 820
-  },
-  {
-    id: "hex-bottom",
-    className: "shp-photo-cutout--hex-bottom shp-frame--hex",
-    position: "52% 84%",
-    depth: 11,
-    aos: "shp-hex-pop",
-    delay: 230,
-    duration: 760
   },
   {
     id: "ribbon-top",
     className: "shp-photo-cutout--ribbon-top shp-frame--ribbon",
-    position: "64% 20%",
-    depth: 12,
+    position: "66% 22%",
+    depth: 10,
     aos: "shp-slice-drop",
-    delay: 270,
+    delay: 230,
     duration: 790
   },
   {
-    id: "wave-bottom-left",
-    className: "shp-photo-cutout--wave-bottom-left shp-frame--wave",
-    position: "34% 82%",
-    depth: 10,
+    id: "wave-bottom-right",
+    className: "shp-photo-cutout--wave-bottom-right shp-frame--wave",
+    position: "58% 83%",
+    depth: 9,
     aos: "shp-orb-rise",
-    delay: 300,
+    delay: 290,
     duration: 760
+  },
+];
+
+const SHP_NATURAL_CUTOUTS = [
+  {
+    id: "natural-left",
+    className: "shp-natural-cutout--left",
+    src: kidsCutoutNatural2,
+    depth: 15,
+    aos: "shp-natural-rise",
+    delay: 80,
+    duration: 820
+  },
+  {
+    id: "natural-right-top",
+    className: "shp-natural-cutout--right-top",
+    src: kidsCutoutNatural2,
+    depth: 13,
+    aos: "shp-natural-drift",
+    delay: 140,
+    duration: 860
+  },
+  {
+    id: "natural-right-bottom",
+    className: "shp-natural-cutout--right-bottom",
+    src: kidsCutoutNatural2,
+    depth: 10,
+    aos: "shp-natural-rise",
+    delay: 220,
+    duration: 860
   },
 ];
 
@@ -99,6 +112,26 @@ const SupportHubPhotoLayer = memo(() => (
   <div className="shp-photo-layer" aria-hidden="true">
     <div className="shp-photo-bg" style={{ backgroundImage: `url(${kidsGroupPhoto})` }} />
     <div className="shp-photo-veil" />
+
+    {SHP_NATURAL_CUTOUTS.map((item) => (
+      <div
+        key={item.id}
+        className={`shp-natural-cutout ${item.className}`}
+        data-shp-depth={item.depth}
+        data-aos={item.aos}
+        data-aos-delay={item.delay}
+        data-aos-duration={item.duration}
+        data-aos-easing="ease-out-cubic"
+      >
+        <img
+          src={item.src}
+          alt=""
+          className="shp-natural-cutout-image"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+    ))}
 
     {SHP_COLLAGE_ACCENTS.map((item) => (
       <div
@@ -288,6 +321,22 @@ const SupportModeSelectionPage = memo(() => {
           opacity: 0.78,
           duration: 5 + index * 0.35,
           delay: ambientEntryDelay + 0.2 + index * 0.05,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+          force3D: true
+        });
+      });
+
+      const naturalCutouts = gsap.utils.toArray(".shp-natural-cutout");
+      const animatedNatural = isCompactViewport ? naturalCutouts.slice(0, 2) : naturalCutouts;
+
+      animatedNatural.forEach((node, index) => {
+        gsap.to(node, {
+          y: index % 2 === 0 ? -8 : -6,
+          x: index % 2 === 0 ? 4 : -4,
+          duration: 7.2 + index * 0.6,
+          delay: ambientEntryDelay + 0.14 + index * 0.08,
           repeat: -1,
           yoyo: true,
           ease: "sine.inOut",

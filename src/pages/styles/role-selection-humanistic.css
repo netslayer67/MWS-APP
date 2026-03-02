@@ -1,5 +1,9 @@
 .rs-humanistic-shell {
-    background: linear-gradient(180deg, #fff8f1 0%, #fff5ec 48%, #fffaf4 100%);
+    background: #fff;
+}
+
+.rs-humanistic-shell.rs-white-collage {
+    background: #fff;
 }
 
 html.dark .rs-humanistic-shell {
@@ -26,6 +30,14 @@ html.dark .rs-humanistic-shell {
     mix-blend-mode: multiply;
 }
 
+.rs-white-collage .rs-grid-overlay {
+    background-image:
+        linear-gradient(to right, rgba(53, 72, 98, 0.1) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(53, 72, 98, 0.1) 1px, transparent 1px);
+    background-size: 3.25rem 3.25rem;
+    opacity: 0.3;
+}
+
 html.dark .rs-grid-overlay {
     background-image:
         linear-gradient(to right, rgba(255, 255, 255, 0.12) 1px, transparent 1px),
@@ -43,6 +55,18 @@ html.dark .rs-grid-overlay {
     filter: saturate(0.96) contrast(0.94) blur(1.1px);
     transform: scale(1.05);
     will-change: transform, opacity;
+}
+
+.rs-white-canvas {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(760px circle at 20% 24%, rgba(252, 201, 157, 0.2), transparent 64%),
+        radial-gradient(820px circle at 82% 12%, rgba(180, 214, 255, 0.24), transparent 60%),
+        radial-gradient(880px circle at 50% 84%, rgba(255, 228, 188, 0.2), transparent 66%);
+    transform: scale(1);
+    transform-origin: center;
+    will-change: transform;
 }
 
 .rs-photo-veil {
@@ -138,6 +162,25 @@ html.dark .rs-photo-veil {
     transform-style: preserve-3d;
 }
 
+.rs-natural-cutout {
+    position: absolute;
+    opacity: var(--rs-natural-opacity, 0.82);
+    filter: drop-shadow(0 20px 34px rgba(27, 40, 56, 0.2));
+    will-change: transform, opacity;
+    transform: var(--rs-natural-transform, translate3d(0, 0, 0));
+    transform-origin: center;
+    backface-visibility: hidden;
+    pointer-events: none;
+}
+
+.rs-natural-cutout-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    transform: translateZ(0);
+}
+
 .rs-photo-cutout::before {
     content: "";
     position: absolute;
@@ -147,40 +190,40 @@ html.dark .rs-photo-veil {
 }
 
 .rs-photo-cutout--northwest-card {
-    --rs-cutout-opacity: 0.78;
+    --rs-cutout-opacity: 0.82;
     width: clamp(156px, 13vw, 228px);
     height: clamp(204px, 17vw, 286px);
-    left: clamp(40px, 6vw, 112px);
-    top: clamp(126px, 16vh, 210px);
+    left: clamp(-8px, 1.2vw, 34px);
+    top: clamp(148px, 18vh, 238px);
     border-radius: 22px;
     transform: rotate(-8deg);
 }
 
 .rs-photo-cutout--east-strip {
-    --rs-cutout-opacity: 0.86;
+    --rs-cutout-opacity: 0.84;
     width: clamp(126px, 10vw, 174px);
     height: clamp(276px, 32vh, 364px);
-    right: clamp(-34px, -1.8vw, -10px);
-    top: clamp(170px, 20vh, 264px);
+    right: clamp(-24px, -1.2vw, 2px);
+    top: clamp(188px, 23vh, 278px);
     border-radius: 82px;
     clip-path: inset(0 0 0 18%);
 }
 
 .rs-photo-cutout--south-circle {
-    --rs-cutout-opacity: 0.74;
+    --rs-cutout-opacity: 0.8;
     width: clamp(142px, 12vw, 194px);
     height: clamp(142px, 12vw, 194px);
-    left: clamp(122px, 12vw, 210px);
-    bottom: clamp(26px, 4vh, 72px);
+    left: clamp(28px, 5vw, 92px);
+    bottom: clamp(18px, 2vh, 52px);
     border-radius: 999px;
 }
 
 .rs-photo-cutout--top-circle {
-    --rs-cutout-opacity: 0.76;
+    --rs-cutout-opacity: 0.84;
     width: clamp(112px, 9vw, 156px);
     height: clamp(112px, 9vw, 156px);
-    right: clamp(228px, 18vw, 314px);
-    top: clamp(74px, 9vh, 132px);
+    right: clamp(76px, 8vw, 162px);
+    top: clamp(84px, 10vh, 146px);
     border-radius: 999px;
 }
 
@@ -205,11 +248,11 @@ html.dark .rs-photo-veil {
 }
 
 .rs-photo-cutout--left-chip {
-    --rs-cutout-opacity: 0.72;
+    --rs-cutout-opacity: 0.78;
     width: clamp(98px, 8vw, 142px);
     height: clamp(196px, 23vh, 266px);
-    left: clamp(-24px, -1.4vw, -8px);
-    top: clamp(292px, 36vh, 418px);
+    left: clamp(-14px, -0.8vw, 8px);
+    top: clamp(336px, 43vh, 492px);
     border-radius: 60px;
     clip-path: inset(0 22% 0 0);
 }
@@ -225,11 +268,11 @@ html.dark .rs-photo-veil {
 }
 
 .rs-photo-cutout--bottom-bubble {
-    --rs-cutout-opacity: 0.66;
+    --rs-cutout-opacity: 0.8;
     width: clamp(112px, 9vw, 154px);
     height: clamp(112px, 9vw, 154px);
-    right: clamp(132px, 12vw, 204px);
-    bottom: clamp(38px, 4vh, 92px);
+    right: clamp(84px, 9vw, 152px);
+    bottom: clamp(22px, 2vh, 54px);
     border-radius: 999px;
 }
 
@@ -243,13 +286,40 @@ html.dark .rs-photo-veil {
 }
 
 .rs-photo-cutout--southeast-chip {
-    --rs-cutout-opacity: 0.7;
+    --rs-cutout-opacity: 0.78;
     width: clamp(130px, 10vw, 180px);
     height: clamp(96px, 8vw, 138px);
-    right: clamp(22px, 3vw, 76px);
-    bottom: clamp(170px, 20vh, 254px);
+    right: clamp(16px, 2vw, 44px);
+    bottom: clamp(168px, 20vh, 248px);
     border-radius: 20px;
     transform: rotate(-8deg);
+}
+
+.rs-natural-cutout--left {
+    --rs-natural-opacity: 0.84;
+    --rs-natural-transform: translate3d(0, 0, 0) rotate(-4deg);
+    width: clamp(208px, 16vw, 286px);
+    height: clamp(252px, 19vw, 334px);
+    left: clamp(-62px, -3.8vw, -16px);
+    top: clamp(102px, 14vh, 182px);
+}
+
+.rs-natural-cutout--right {
+    --rs-natural-opacity: 0.82;
+    --rs-natural-transform: translate3d(0, 0, 0) rotate(3deg);
+    width: clamp(228px, 17vw, 314px);
+    height: clamp(274px, 20vw, 372px);
+    right: clamp(-56px, -3.4vw, -18px);
+    top: clamp(72px, 10vh, 140px);
+}
+
+.rs-natural-cutout--bottom {
+    --rs-natural-opacity: 0.76;
+    --rs-natural-transform: translate3d(0, 0, 0) rotate(-2deg);
+    width: clamp(178px, 13.5vw, 244px);
+    height: clamp(216px, 16vw, 292px);
+    left: clamp(8px, 2vw, 48px);
+    bottom: clamp(44px, 5vh, 112px);
 }
 
 [data-aos^="rs-"] {
@@ -346,9 +416,37 @@ html.dark .rs-photo-veil {
     filter: blur(0.6px);
 }
 
+[data-aos="rs-natural-rise"] {
+    opacity: 0;
+    transform: translate3d(-18px, 26px, 0) scale(0.88) rotate(-8deg);
+    filter: blur(2px);
+}
+
+[data-aos="rs-natural-rise"].aos-animate {
+    opacity: var(--rs-natural-opacity, 0.82);
+    transform: var(--rs-natural-transform, translate3d(0, 0, 0));
+    filter: blur(0);
+}
+
+[data-aos="rs-natural-drift"] {
+    opacity: 0;
+    transform: translate3d(16px, 20px, 0) scale(0.86) rotate(7deg);
+    filter: blur(2px);
+}
+
+[data-aos="rs-natural-drift"].aos-animate {
+    opacity: var(--rs-natural-opacity, 0.82);
+    transform: var(--rs-natural-transform, translate3d(0, 0, 0));
+    filter: blur(0);
+}
+
 html.dark .rs-photo-cutout {
     border-color: rgba(255, 255, 255, 0.52);
     box-shadow: 0 16px 36px rgba(2, 6, 23, 0.48);
+}
+
+html.dark .rs-natural-cutout {
+    filter: drop-shadow(0 18px 34px rgba(2, 6, 23, 0.52));
 }
 
 @media (max-width: 1280px) {
@@ -373,15 +471,15 @@ html.dark .rs-photo-cutout {
     .rs-photo-cutout--northwest-card {
         width: 146px;
         height: 194px;
-        left: 16px;
-        top: 156px;
+        left: -14px;
+        top: 172px;
         --rs-cutout-opacity: 0.68;
     }
 
     .rs-photo-cutout--east-strip {
         width: 110px;
-        right: -24px;
-        top: 186px;
+        right: -18px;
+        top: 204px;
         height: 262px;
         --rs-cutout-opacity: 0.8;
     }
@@ -389,14 +487,14 @@ html.dark .rs-photo-cutout {
     .rs-photo-cutout--south-circle {
         width: 118px;
         height: 118px;
-        left: 34px;
-        bottom: 64px;
+        left: 8px;
+        bottom: 58px;
     }
 
     .rs-photo-cutout--top-circle {
         width: 100px;
         height: 100px;
-        right: 26px;
+        right: 20px;
         top: 100px;
     }
 
@@ -411,7 +509,7 @@ html.dark .rs-photo-cutout {
         width: 84px;
         height: 164px;
         left: -16px;
-        top: 286px;
+        top: 322px;
     }
 
     .rs-photo-cutout--lower-arch {
@@ -424,8 +522,8 @@ html.dark .rs-photo-cutout {
     .rs-photo-cutout--bottom-bubble {
         width: 96px;
         height: 96px;
-        right: 92px;
-        bottom: 98px;
+        right: 76px;
+        bottom: 82px;
     }
 
     .rs-photo-cutout--middle-left-orb {
@@ -435,6 +533,27 @@ html.dark .rs-photo-cutout {
         top: 58%;
     }
 
+    .rs-natural-cutout--left {
+        width: 168px;
+        height: 202px;
+        left: -58px;
+        top: 122px;
+    }
+
+    .rs-natural-cutout--right {
+        width: 176px;
+        height: 216px;
+        right: -42px;
+        top: 84px;
+    }
+
+    .rs-natural-cutout--bottom {
+        width: 142px;
+        height: 174px;
+        left: -6px;
+        bottom: 98px;
+    }
+
     .rs-photo-accent--d {
         left: 34%;
         bottom: 108px;
@@ -442,15 +561,11 @@ html.dark .rs-photo-cutout {
 }
 
 @media (max-width: 767px) {
-    .rs-photo-bg {
-        opacity: 0.5;
-        filter: saturate(0.95) contrast(0.94) blur(1px);
-    }
-
-    .rs-photo-veil {
+    .rs-white-canvas {
         background:
-            radial-gradient(760px circle at 26% 30%, rgba(255, 255, 255, 0.1), transparent 62%),
-            linear-gradient(180deg, rgba(255, 247, 236, 0.5) 0%, rgba(255, 244, 232, 0.6) 46%, rgba(255, 248, 239, 0.68) 100%);
+            radial-gradient(620px circle at 20% 20%, rgba(252, 201, 157, 0.18), transparent 64%),
+            radial-gradient(680px circle at 84% 16%, rgba(180, 214, 255, 0.2), transparent 60%),
+            radial-gradient(700px circle at 52% 86%, rgba(255, 228, 188, 0.16), transparent 66%);
     }
 
     .rs-photo-cutout--northwest-card,
@@ -461,9 +576,9 @@ html.dark .rs-photo-cutout {
     .rs-photo-cutout--top-circle {
         width: 96px;
         height: 96px;
-        right: auto;
-        left: 18px;
-        top: 116px;
+        right: 16px;
+        left: auto;
+        top: 106px;
         border-width: 3px;
         --rs-cutout-opacity: 0.66;
     }
@@ -490,8 +605,8 @@ html.dark .rs-photo-cutout {
     .rs-photo-cutout--east-strip {
         width: 92px;
         height: 220px;
-        top: 140px;
-        right: -20px;
+        top: 148px;
+        right: -16px;
         border-width: 3px;
         --rs-cutout-opacity: 0.68;
     }
@@ -499,7 +614,7 @@ html.dark .rs-photo-cutout {
     .rs-photo-cutout--south-circle {
         width: 112px;
         height: 112px;
-        left: 12px;
+        left: 2px;
         bottom: 88px;
         --rs-cutout-opacity: 0.62;
     }
@@ -525,8 +640,8 @@ html.dark .rs-photo-cutout {
     .rs-photo-cutout--bottom-bubble {
         width: 90px;
         height: 90px;
-        right: 88px;
-        bottom: 116px;
+        right: 72px;
+        bottom: 108px;
         border-width: 3px;
         --rs-cutout-opacity: 0.58;
     }
@@ -559,12 +674,38 @@ html.dark .rs-photo-cutout {
         left: 38%;
         bottom: 154px;
     }
+
+    .rs-natural-cutout--left {
+        width: 132px;
+        height: 162px;
+        left: -58px;
+        top: 138px;
+        --rs-natural-opacity: 0.72;
+    }
+
+    .rs-natural-cutout--right {
+        width: 136px;
+        height: 170px;
+        right: -42px;
+        top: 112px;
+        --rs-natural-opacity: 0.7;
+    }
+
+    .rs-natural-cutout--bottom {
+        width: 110px;
+        height: 136px;
+        left: -12px;
+        bottom: 140px;
+        --rs-natural-opacity: 0.66;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
 
     .rs-photo-bg,
+    .rs-white-canvas,
     .rs-photo-cutout,
+    .rs-natural-cutout,
     .rs-photo-accent {
         animation: none !important;
         transform: none !important;

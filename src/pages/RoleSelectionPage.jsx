@@ -11,6 +11,7 @@ import {
 import { prefetchStaffFaceScanOnIntent } from "@/utils/faceScanPrefetch";
 import gsap from "gsap";
 import kidsGroupPhoto from "@/assets/landing/kids-group.jpg";
+import kidsCutoutNatural2 from "@/assets/landing/kids-cutout-natural-2.svg";
 import "@/pages/styles/role-selection-humanistic.css";
 
 const supportsFinePointer = () => {
@@ -33,7 +34,7 @@ const RS_PHOTO_CUTOUTS = [
     id: "northwest-card",
     className: "rs-photo-cutout--northwest-card",
     position: "24% 44%",
-    depth: 18,
+    depth: 14,
     aos: "rs-pop-tilt",
     delay: 60,
     duration: 760
@@ -42,63 +43,27 @@ const RS_PHOTO_CUTOUTS = [
     id: "east-strip",
     className: "rs-photo-cutout--east-strip",
     position: "84% 48%",
-    depth: 24,
+    depth: 16,
     aos: "rs-slice-rise",
     delay: 120,
     duration: 780
   },
   {
-    id: "south-circle",
-    className: "rs-photo-cutout--south-circle",
-    position: "52% 72%",
-    depth: 15,
-    aos: "rs-bubble-bounce",
-    delay: 180,
-    duration: 820
-  },
-  {
     id: "top-circle",
     className: "rs-photo-cutout--top-circle",
     position: "66% 22%",
-    depth: 13,
+    depth: 12,
     aos: "rs-orb-drop",
-    delay: 220,
+    delay: 180,
     duration: 760
-  },
-  {
-    id: "upper-ribbon",
-    className: "rs-photo-cutout--upper-ribbon",
-    position: "78% 28%",
-    depth: 17,
-    aos: "rs-slice-rise",
-    delay: 250,
-    duration: 800
-  },
-  {
-    id: "center-ticket",
-    className: "rs-photo-cutout--center-ticket",
-    position: "44% 56%",
-    depth: 14,
-    aos: "rs-ticket-spin",
-    delay: 260,
-    duration: 840
   },
   {
     id: "left-chip",
     className: "rs-photo-cutout--left-chip",
     position: "12% 60%",
-    depth: 10,
-    aos: "rs-side-glide",
-    delay: 300,
-    duration: 760
-  },
-  {
-    id: "lower-arch",
-    className: "rs-photo-cutout--lower-arch",
-    position: "20% 72%",
     depth: 9,
     aos: "rs-side-glide",
-    delay: 340,
+    delay: 220,
     duration: 760
   },
   {
@@ -107,26 +72,56 @@ const RS_PHOTO_CUTOUTS = [
     position: "70% 80%",
     depth: 8,
     aos: "rs-bubble-bounce",
-    delay: 380,
+    delay: 260,
     duration: 780
-  },
-  {
-    id: "middle-left-orb",
-    className: "rs-photo-cutout--middle-left-orb",
-    position: "26% 62%",
-    depth: 12,
-    aos: "rs-orb-drop",
-    delay: 420,
-    duration: 760
   },
   {
     id: "southeast-chip",
     className: "rs-photo-cutout--southeast-chip",
     position: "72% 68%",
-    depth: 11,
+    depth: 10,
     aos: "rs-ticket-spin",
-    delay: 460,
+    delay: 300,
     duration: 820
+  },
+  {
+    id: "south-circle",
+    className: "rs-photo-cutout--south-circle",
+    position: "50% 72%",
+    depth: 8,
+    aos: "rs-bubble-bounce",
+    delay: 350,
+    duration: 820
+  },
+];
+
+const RS_NATURAL_CUTOUTS = [
+  {
+    id: "natural-left",
+    className: "rs-natural-cutout--left",
+    src: kidsCutoutNatural2,
+    depth: 13,
+    aos: "rs-natural-rise",
+    delay: 90,
+    duration: 860
+  },
+  {
+    id: "natural-right",
+    className: "rs-natural-cutout--right",
+    src: kidsCutoutNatural2,
+    depth: 12,
+    aos: "rs-natural-drift",
+    delay: 160,
+    duration: 880
+  },
+  {
+    id: "natural-bottom",
+    className: "rs-natural-cutout--bottom",
+    src: kidsCutoutNatural2,
+    depth: 9,
+    aos: "rs-natural-rise",
+    delay: 240,
+    duration: 860
   },
 ];
 
@@ -140,8 +135,27 @@ const RS_PHOTO_ACCENTS = [
 
 const RoleSelectionPhotoLayer = memo(() => (
   <div className="rs-photo-layer" aria-hidden="true">
-    <div className="rs-photo-bg" style={{ backgroundImage: `url(${kidsGroupPhoto})` }} />
-    <div className="rs-photo-veil" />
+    <div className="rs-white-canvas" />
+
+    {RS_NATURAL_CUTOUTS.map((item) => (
+      <div
+        key={item.id}
+        className={`rs-natural-cutout ${item.className}`}
+        data-rs-depth={item.depth}
+        data-aos={item.aos}
+        data-aos-delay={item.delay}
+        data-aos-duration={item.duration}
+        data-aos-easing="ease-out-cubic"
+      >
+        <img
+          src={item.src}
+          alt=""
+          className="rs-natural-cutout-image"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+    ))}
 
     {RS_PHOTO_ACCENTS.map((item) => (
       <div
@@ -263,9 +277,9 @@ const RoleSelection = memo(() => {
     const ctx = gsap.context(() => {
       if (reduceMotion) return;
 
-      gsap.to(".rs-photo-bg", {
-        scale: 1.08,
-        duration: 9.6,
+      gsap.to(".rs-white-canvas", {
+        scale: 1.02,
+        duration: 10.4,
         delay: ambientEntryDelay,
         repeat: -1,
         yoyo: true,
@@ -297,6 +311,22 @@ const RoleSelection = memo(() => {
           opacity: 0.72,
           duration: 4.8 + index * 0.4,
           delay: ambientEntryDelay + 0.26 + index * 0.06,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+          force3D: true
+        });
+      });
+
+      const naturalCutouts = gsap.utils.toArray(".rs-natural-cutout");
+      const animatedNatural = isCompactViewport ? naturalCutouts.slice(0, 2) : naturalCutouts;
+
+      animatedNatural.forEach((node, index) => {
+        gsap.to(node, {
+          y: index % 2 === 0 ? -7 : -5,
+          x: index % 2 === 0 ? 4 : -4,
+          duration: 7.1 + index * 0.6,
+          delay: ambientEntryDelay + 0.16 + index * 0.08,
           repeat: -1,
           yoyo: true,
           ease: "sine.inOut",
@@ -392,7 +422,7 @@ const RoleSelection = memo(() => {
   };
 
   return (
-    <div ref={pageRef} className="rs-humanistic-shell relative min-h-screen text-foreground overflow-hidden">
+    <div ref={pageRef} className="rs-humanistic-shell rs-white-collage relative min-h-screen text-foreground overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none">
         <RoleSelectionPhotoLayer />

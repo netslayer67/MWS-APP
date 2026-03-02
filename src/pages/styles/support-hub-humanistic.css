@@ -104,6 +104,25 @@ html.dark .shp-photo-veil {
     transform-style: preserve-3d;
 }
 
+.shp-natural-cutout {
+    position: absolute;
+    opacity: var(--shp-natural-opacity, 0.82);
+    filter: drop-shadow(0 20px 36px rgba(15, 23, 42, 0.2));
+    will-change: transform, opacity;
+    transform: var(--shp-natural-transform, translate3d(0, 0, 0));
+    transform-origin: center;
+    backface-visibility: hidden;
+    pointer-events: none;
+}
+
+.shp-natural-cutout-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    transform: translateZ(0);
+}
+
 .shp-photo-cutout::before {
     content: "";
     position: absolute;
@@ -147,12 +166,12 @@ html.dark .shp-photo-veil {
 }
 
 .shp-photo-cutout--stamp-left {
-    --shp-cutout-opacity: 0.78;
+    --shp-cutout-opacity: 0.74;
     --shp-rest-transform: rotate(-11deg);
-    width: clamp(168px, 12vw, 232px);
-    height: clamp(212px, 16vw, 292px);
-    left: clamp(24px, 3vw, 78px);
-    top: clamp(118px, 15vh, 194px);
+    width: clamp(132px, 10vw, 184px);
+    height: clamp(168px, 13vw, 242px);
+    left: clamp(14px, 2vw, 56px);
+    top: clamp(136px, 16vh, 210px);
 }
 
 .shp-photo-cutout--arch-right {
@@ -164,20 +183,20 @@ html.dark .shp-photo-veil {
 }
 
 .shp-photo-cutout--pill-left {
-    --shp-cutout-opacity: 0.72;
-    width: clamp(118px, 9vw, 164px);
-    height: clamp(228px, 27vh, 312px);
-    left: clamp(-24px, -1.8vw, -8px);
-    top: clamp(338px, 40vh, 460px);
+    --shp-cutout-opacity: 0.7;
+    width: clamp(94px, 7.2vw, 136px);
+    height: clamp(176px, 21vh, 242px);
+    left: clamp(-14px, -1vw, 6px);
+    top: clamp(366px, 44vh, 520px);
 }
 
 .shp-photo-cutout--ticket-right {
-    --shp-cutout-opacity: 0.74;
+    --shp-cutout-opacity: 0.72;
     --shp-rest-transform: rotate(8deg);
-    width: clamp(164px, 12vw, 224px);
-    height: clamp(120px, 9vw, 166px);
-    right: clamp(12px, 2vw, 56px);
-    top: clamp(410px, 48vh, 546px);
+    width: clamp(136px, 10vw, 194px);
+    height: clamp(102px, 8vw, 142px);
+    right: clamp(6px, 1vw, 28px);
+    top: clamp(442px, 52vh, 604px);
 }
 
 .shp-photo-cutout--hex-bottom {
@@ -189,21 +208,48 @@ html.dark .shp-photo-veil {
 }
 
 .shp-photo-cutout--ribbon-top {
-    --shp-cutout-opacity: 0.74;
+    --shp-cutout-opacity: 0.72;
     --shp-rest-transform: rotate(4deg);
-    width: clamp(130px, 10vw, 182px);
-    height: clamp(198px, 23vh, 274px);
-    right: clamp(-20px, -0.8vw, 16px);
-    top: clamp(228px, 26vh, 320px);
+    width: clamp(108px, 8vw, 156px);
+    height: clamp(166px, 20vh, 224px);
+    right: clamp(-8px, 0vw, 20px);
+    top: clamp(172px, 22vh, 264px);
 }
 
-.shp-photo-cutout--wave-bottom-left {
-    --shp-cutout-opacity: 0.72;
+.shp-photo-cutout--wave-bottom-right {
+    --shp-cutout-opacity: 0.7;
     --shp-rest-transform: rotate(-8deg);
-    width: clamp(148px, 11vw, 198px);
-    height: clamp(124px, 9vw, 170px);
-    left: clamp(92px, 9vw, 170px);
-    bottom: clamp(18px, 2vh, 54px);
+    width: clamp(128px, 9.5vw, 182px);
+    height: clamp(108px, 8vw, 152px);
+    right: clamp(126px, 10vw, 178px);
+    bottom: clamp(16px, 2vh, 42px);
+}
+
+.shp-natural-cutout--left {
+    --shp-natural-opacity: 0.84;
+    --shp-natural-transform: translate3d(0, 0, 0) rotate(-4deg);
+    width: clamp(228px, 17vw, 318px);
+    height: clamp(258px, 20vw, 358px);
+    left: clamp(-68px, -4vw, -26px);
+    top: clamp(98px, 14vh, 170px);
+}
+
+.shp-natural-cutout--right-top {
+    --shp-natural-opacity: 0.8;
+    --shp-natural-transform: translate3d(0, 0, 0) rotate(4deg);
+    width: clamp(206px, 15vw, 284px);
+    height: clamp(252px, 19vw, 336px);
+    right: clamp(-42px, -2.4vw, -12px);
+    top: clamp(64px, 10vh, 130px);
+}
+
+.shp-natural-cutout--right-bottom {
+    --shp-natural-opacity: 0.74;
+    --shp-natural-transform: translate3d(0, 0, 0) rotate(-3deg);
+    width: clamp(176px, 13vw, 244px);
+    height: clamp(222px, 16vw, 298px);
+    right: clamp(-28px, -1.8vw, 8px);
+    bottom: clamp(26px, 4vh, 80px);
 }
 
 [data-aos^="shp-"] {
@@ -311,9 +357,37 @@ html.dark .shp-photo-veil {
     filter: blur(0.7px);
 }
 
+[data-aos="shp-natural-rise"] {
+    opacity: 0;
+    transform: translate3d(-18px, 28px, 0) scale(0.88) rotate(-8deg);
+    filter: blur(2px);
+}
+
+[data-aos="shp-natural-rise"].aos-animate {
+    opacity: var(--shp-natural-opacity, 0.82);
+    transform: var(--shp-natural-transform, translate3d(0, 0, 0));
+    filter: blur(0);
+}
+
+[data-aos="shp-natural-drift"] {
+    opacity: 0;
+    transform: translate3d(16px, 24px, 0) scale(0.84) rotate(8deg);
+    filter: blur(2px);
+}
+
+[data-aos="shp-natural-drift"].aos-animate {
+    opacity: var(--shp-natural-opacity, 0.8);
+    transform: var(--shp-natural-transform, translate3d(0, 0, 0));
+    filter: blur(0);
+}
+
 html.dark .shp-photo-cutout {
     border-color: rgba(255, 255, 255, 0.54);
     box-shadow: 0 16px 34px rgba(2, 6, 23, 0.54);
+}
+
+html.dark .shp-natural-cutout {
+    filter: drop-shadow(0 18px 34px rgba(2, 6, 23, 0.5));
 }
 
 @media (max-width: 1280px) {
@@ -325,7 +399,6 @@ html.dark .shp-photo-cutout {
 @media (max-width: 1024px) {
 
     .shp-photo-cutout--ticket-right,
-    .shp-photo-cutout--wave-bottom-left,
     .shp-photo-accent--d {
         display: none;
     }
@@ -358,11 +431,32 @@ html.dark .shp-photo-cutout {
         top: 208px;
     }
 
-    .shp-photo-cutout--hex-bottom {
-        width: 118px;
-        height: 118px;
-        right: 78px;
-        bottom: 74px;
+    .shp-photo-cutout--wave-bottom-right {
+        width: 108px;
+        height: 92px;
+        right: 54px;
+        bottom: 72px;
+    }
+
+    .shp-natural-cutout--left {
+        width: 188px;
+        height: 218px;
+        left: -56px;
+        top: 148px;
+    }
+
+    .shp-natural-cutout--right-top {
+        width: 162px;
+        height: 198px;
+        right: -24px;
+        top: 88px;
+    }
+
+    .shp-natural-cutout--right-bottom {
+        width: 146px;
+        height: 176px;
+        right: -18px;
+        bottom: 34px;
     }
 }
 
@@ -411,10 +505,10 @@ html.dark .shp-photo-cutout {
         border-width: 2.5px;
     }
 
-    .shp-photo-cutout--hex-bottom {
-        width: 106px;
-        height: 106px;
-        right: 28px;
+    .shp-photo-cutout--wave-bottom-right {
+        width: 94px;
+        height: 78px;
+        right: 20px;
         bottom: 92px;
         border-width: 2.5px;
     }
@@ -429,12 +523,37 @@ html.dark .shp-photo-cutout {
         right: 84px;
         top: 46%;
     }
+
+    .shp-natural-cutout--left {
+        width: 156px;
+        height: 188px;
+        left: -58px;
+        top: 154px;
+        --shp-natural-opacity: 0.76;
+    }
+
+    .shp-natural-cutout--right-top {
+        width: 128px;
+        height: 162px;
+        right: -22px;
+        top: 104px;
+        --shp-natural-opacity: 0.72;
+    }
+
+    .shp-natural-cutout--right-bottom {
+        width: 118px;
+        height: 148px;
+        right: -16px;
+        bottom: 126px;
+        --shp-natural-opacity: 0.68;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
 
     .shp-photo-bg,
     .shp-photo-cutout,
+    .shp-natural-cutout,
     .shp-photo-accent {
         animation: none !important;
         transform: none !important;
