@@ -8,6 +8,7 @@ export const INTERVENTION_TYPES = [
     { label: "Behavior", value: "behavior" },
     { label: "SEL", value: "sel" },
     { label: "Attendance", value: "attendance" },
+    { label: "Bahasa Indonesia", value: "indonesian" },
     { label: "Universal Supports", value: "universal" },
 ];
 
@@ -17,6 +18,7 @@ export const STRATEGY_TYPE_ALIASES = {
     behavior: ["behavior", "behaviour", "conduct", "regulation", "sel"],
     sel: ["sel", "social emotional", "social-emotional", "behavior", "wellness"],
     attendance: ["attendance", "present", "absent", "absences", "engagement"],
+    indonesian: ["indonesian", "bahasa indonesia", "bahasa", "bi", "indonesian language"],
     universal: ["universal", "schoolwide", "all", "tier 1"],
 };
 

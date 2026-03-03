@@ -1,4 +1,4 @@
-﻿import { Heart, BookOpen, Calculator, ShieldCheck, CalendarDays } from "lucide-react";
+﻿import { Heart, BookOpen, Calculator, ShieldCheck, CalendarDays, Languages } from "lucide-react";
 
 // Intervention type configurations with vibrant colors
 export const INTERVENTION_CONFIG = {
@@ -61,6 +61,18 @@ export const INTERVENTION_CONFIG = {
         ring: "ring-indigo-400/30",
         glow: "shadow-indigo-500/20",
         chartColor: "#6366f1"
+    },
+    INDONESIAN: {
+        icon: Languages,
+        emoji: "\uD83C\uDDEE\uD83C\uDDE9",
+        gradient: "from-rose-500 via-red-500 to-pink-500",
+        lightBg: "bg-gradient-to-br from-rose-50 to-red-50 dark:from-rose-950/40 dark:to-red-950/30",
+        cardBg: "bg-gradient-to-br from-rose-100/80 to-red-100/60 dark:from-rose-900/40 dark:to-red-900/30",
+        border: "border-rose-200/60 dark:border-rose-700/40",
+        text: "text-rose-700 dark:text-rose-300",
+        ring: "ring-rose-400/30",
+        glow: "shadow-rose-500/20",
+        chartColor: "#e11d48"
     }
 };
 

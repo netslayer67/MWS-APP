@@ -49,6 +49,13 @@ const MONITORING_TONES = {
         text: "text-indigo-700 dark:text-indigo-200",
         shadow: "shadow-[0_18px_50px_rgba(99,102,241,0.18)]",
     },
+    INDONESIAN: {
+        bar: "from-rose-500 via-red-500 to-pink-500",
+        icon: "from-rose-500 to-red-500",
+        bg: "from-rose-50 via-white to-red-50",
+        text: "text-rose-700 dark:text-rose-200",
+        shadow: "shadow-[0_18px_50px_rgba(225,29,72,0.18)]",
+    },
     DEFAULT: {
         bar: "from-cyan-500 via-sky-500 to-blue-500",
         icon: "from-cyan-500 to-blue-500",
