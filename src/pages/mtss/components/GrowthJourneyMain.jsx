@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { TrendingUp, Zap, Clock, BarChart3, Award, Target, ClipboardList, CalendarDays, FileText, ChevronRight } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, Line, ReferenceLine, Legend } from "recharts";
 import NotesBottomSheet from "./NotesBottomSheet";
+import InfoCardDetailSheet from "./InfoCardDetailSheet";
 
 const isMeaningfulValue = (value) => {
     if (value === null || value === undefined) return false;
@@ -57,8 +58,12 @@ const MONITORING_TONES = {
     },
 };
 
-const InfoCard = ({ icon: Icon, label, value, gradient, shortLabel }) => (
-    <div className="group relative overflow-hidden rounded-xl sm:rounded-2xl border border-white/60 dark:border-slate-700/40 bg-white/85 dark:bg-slate-900/50 p-2 sm:p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
+const InfoCard = ({ icon: Icon, label, value, gradient, shortLabel, onClick }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        className="group relative overflow-hidden rounded-xl sm:rounded-2xl border border-white/60 dark:border-slate-700/40 bg-white/85 dark:bg-slate-900/50 p-2 sm:p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg text-left w-full cursor-pointer active:scale-[0.97]"
+    >
         <div className="absolute inset-x-0 top-0 h-0.5 sm:h-1 bg-gradient-to-r opacity-90" style={{}} />
         <div className={`absolute inset-x-0 top-0 h-0.5 sm:h-1 bg-gradient-to-r ${gradient} opacity-90`} />
         <div className="flex items-center gap-1.5 sm:gap-2">
@@ -74,8 +79,9 @@ const InfoCard = ({ icon: Icon, label, value, gradient, shortLabel }) => (
                     {value}
                 </p>
             </div>
+            <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground/50 flex-shrink-0 group-hover:translate-x-0.5 transition-transform" />
         </div>
-    </div>
+    </button>
 );
 
 const GrowthJourneyMain = ({
@@ -104,6 +110,10 @@ const GrowthJourneyMain = ({
     const toneKey = intervention?.type?.toUpperCase?.() || "DEFAULT";
     const monitoringTone = MONITORING_TONES[toneKey] || MONITORING_TONES.DEFAULT;
     const [notesSheetOpen, setNotesSheetOpen] = useState(false);
+    const [detailSheet, setDetailSheet] = useState(null);
+
+    const openDetail = useCallback((key) => setDetailSheet(key), []);
+    const closeDetail = useCallback(() => setDetailSheet(null), []);
 
     return (
         <div className="flex-1 space-y-3 sm:space-y-5">
@@ -249,16 +259,16 @@ const GrowthJourneyMain = ({
                     {hasCompactRow && (
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 sm:gap-3">
                             {hasStrategy && (
-                                <InfoCard icon={Zap} label="Strategy" value={strategyLabel} gradient="from-sky-500 to-blue-500" />
+                                <InfoCard icon={Zap} label="Strategy" value={strategyLabel} gradient="from-sky-500 to-blue-500" onClick={() => openDetail("strategy")} />
                             )}
                             {hasDuration && (
-                                <InfoCard icon={Clock} label="Duration" shortLabel="Dur." value={durationLabel} gradient="from-amber-500 to-orange-500" />
+                                <InfoCard icon={Clock} label="Duration" shortLabel="Dur." value={durationLabel} gradient="from-amber-500 to-orange-500" onClick={() => openDetail("duration")} />
                             )}
                             {hasFrequency && (
-                                <InfoCard icon={BarChart3} label="Frequency" shortLabel="Freq." value={frequencyLabel} gradient="from-emerald-500 to-teal-500" />
+                                <InfoCard icon={BarChart3} label="Frequency" shortLabel="Freq." value={frequencyLabel} gradient="from-emerald-500 to-teal-500" onClick={() => openDetail("frequency")} />
                             )}
                             {hasMentor && (
-                                <InfoCard icon={Award} label="Mentor" value={mentorLabel} gradient="from-violet-500 to-fuchsia-500" />
+                                <InfoCard icon={Award} label="Mentor" value={mentorLabel} gradient="from-violet-500 to-fuchsia-500" onClick={() => openDetail("mentor")} />
                             )}
                         </div>
                     )}
@@ -267,36 +277,50 @@ const GrowthJourneyMain = ({
                     {(hasGoal || hasMonitoring) && (
                         <div className={`grid ${hasGoal && hasMonitoring ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'} gap-1.5 sm:gap-3`}>
                             {hasGoal && (
-                                <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-white/60 dark:border-slate-700/40 bg-white/85 dark:bg-slate-900/50 p-2.5 sm:p-4 shadow-sm">
+                                <button
+                                    type="button"
+                                    onClick={() => openDetail("goal")}
+                                    className="group relative overflow-hidden rounded-xl sm:rounded-2xl border border-white/60 dark:border-slate-700/40 bg-white/85 dark:bg-slate-900/50 p-2.5 sm:p-4 shadow-sm text-left w-full cursor-pointer active:scale-[0.98] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+                                >
                                     <div className="absolute inset-x-0 top-0 h-0.5 sm:h-1.5 bg-gradient-to-r from-rose-500 to-pink-500 opacity-90" />
-                                    <div className="flex items-center gap-1.5 sm:gap-2 text-[8px] sm:text-[10px] uppercase tracking-wider text-muted-foreground">
-                                        <span className="w-6 h-6 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center text-white shadow-md flex-shrink-0">
-                                            <Target className="w-3 h-3 sm:w-4 sm:h-4" />
-                                        </span>
-                                        Goal
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-1.5 sm:gap-2 text-[8px] sm:text-[10px] uppercase tracking-wider text-muted-foreground">
+                                            <span className="w-6 h-6 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center text-white shadow-md flex-shrink-0">
+                                                <Target className="w-3 h-3 sm:w-4 sm:h-4" />
+                                            </span>
+                                            Goal
+                                        </div>
+                                        <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground/50 flex-shrink-0 group-hover:translate-x-0.5 transition-transform" />
                                     </div>
-                                    <p className="mt-1.5 sm:mt-3 text-[11px] sm:text-sm font-semibold text-foreground dark:text-white break-words leading-snug sm:leading-relaxed">
+                                    <p className="mt-1.5 sm:mt-3 text-[11px] sm:text-sm font-semibold text-foreground dark:text-white line-clamp-2 leading-snug sm:leading-relaxed">
                                         {goalLabel}
                                     </p>
-                                </div>
+                                </button>
                             )}
 
                             {hasMonitoring && (
-                                <div className={`relative overflow-hidden rounded-xl sm:rounded-2xl border border-white/70 dark:border-slate-700/40 bg-gradient-to-br ${monitoringTone.bg} dark:from-slate-900/70 dark:via-slate-900/60 dark:to-slate-900/40 p-2.5 sm:p-5`}>
+                                <button
+                                    type="button"
+                                    onClick={() => openDetail("monitoring")}
+                                    className={`group relative overflow-hidden rounded-xl sm:rounded-2xl border border-white/70 dark:border-slate-700/40 bg-gradient-to-br ${monitoringTone.bg} dark:from-slate-900/70 dark:via-slate-900/60 dark:to-slate-900/40 p-2.5 sm:p-5 text-left w-full cursor-pointer active:scale-[0.98] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg`}
+                                >
                                     <div className={`absolute inset-x-0 top-0 h-1 sm:h-2.5 bg-gradient-to-r ${monitoringTone.bar}`} />
-                                    <div className="flex items-center gap-1.5 sm:gap-2">
-                                        <div className={`flex items-center gap-1.5 sm:gap-2 text-[8px] sm:text-[10px] uppercase tracking-wider ${monitoringTone.text}`}>
-                                            <span className={`w-6 h-6 sm:w-11 sm:h-11 rounded-lg sm:rounded-2xl bg-gradient-to-br ${monitoringTone.icon} flex items-center justify-center text-white shadow-md flex-shrink-0`}>
-                                                <ClipboardList className="w-3 h-3 sm:w-5 sm:h-5" />
-                                            </span>
-                                            <span className="sm:hidden">Monitor</span>
-                                            <span className="hidden sm:inline">Monitoring Method</span>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-1.5 sm:gap-2">
+                                            <div className={`flex items-center gap-1.5 sm:gap-2 text-[8px] sm:text-[10px] uppercase tracking-wider ${monitoringTone.text}`}>
+                                                <span className={`w-6 h-6 sm:w-11 sm:h-11 rounded-lg sm:rounded-2xl bg-gradient-to-br ${monitoringTone.icon} flex items-center justify-center text-white shadow-md flex-shrink-0`}>
+                                                    <ClipboardList className="w-3 h-3 sm:w-5 sm:h-5" />
+                                                </span>
+                                                <span className="sm:hidden">Monitor</span>
+                                                <span className="hidden sm:inline">Monitoring Method</span>
+                                            </div>
                                         </div>
+                                        <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground/50 flex-shrink-0 group-hover:translate-x-0.5 transition-transform" />
                                     </div>
-                                    <p className="mt-1.5 sm:mt-4 text-[11px] sm:text-base font-semibold text-slate-900 dark:text-white break-words leading-snug sm:leading-relaxed">
+                                    <p className="mt-1.5 sm:mt-4 text-[11px] sm:text-base font-semibold text-slate-900 dark:text-white line-clamp-2 leading-snug sm:leading-relaxed">
                                         {monitoringMethodLabel}
                                     </p>
-                                </div>
+                                </button>
                             )}
                         </div>
                     )}
@@ -305,7 +329,7 @@ const GrowthJourneyMain = ({
                     {(hasStartDate || hasNotes) && (
                         <div className="grid grid-cols-2 gap-1.5 sm:gap-3">
                             {hasStartDate && (
-                                <InfoCard icon={CalendarDays} label="Start Date" shortLabel="Start" value={startDateLabel} gradient="from-indigo-500 to-purple-500" />
+                                <InfoCard icon={CalendarDays} label="Start Date" shortLabel="Start" value={startDateLabel} gradient="from-indigo-500 to-purple-500" onClick={() => openDetail("startDate")} />
                             )}
                             {hasNotes && (
                                 <button
@@ -340,6 +364,71 @@ const GrowthJourneyMain = ({
                 notes={notesLabel}
                 interventionLabel={intervention?.label}
             />
+
+            {/* Detail Sheets for InfoCards */}
+            <InfoCardDetailSheet open={detailSheet === "strategy"} onOpenChange={closeDetail} icon={Zap} label="Strategy" gradient="from-sky-500 to-blue-500">
+                <p className="text-sm font-semibold text-foreground dark:text-white leading-relaxed break-words">
+                    {strategyLabel}
+                </p>
+            </InfoCardDetailSheet>
+
+            <InfoCardDetailSheet open={detailSheet === "duration"} onOpenChange={closeDetail} icon={Clock} label="Duration" gradient="from-amber-500 to-orange-500">
+                <p className="text-sm font-semibold text-foreground dark:text-white leading-relaxed">
+                    {durationLabel}
+                </p>
+            </InfoCardDetailSheet>
+
+            <InfoCardDetailSheet open={detailSheet === "frequency"} onOpenChange={closeDetail} icon={BarChart3} label="Frequency" gradient="from-emerald-500 to-teal-500">
+                <div className="space-y-3">
+                    <p className="text-sm font-semibold text-foreground dark:text-white">
+                        {intervention?.monitoringFrequency || frequencyLabel}
+                    </p>
+                    {intervention?.monitoringFrequency === "Custom" && Array.isArray(intervention?.customFrequencyDays) && intervention.customFrequencyDays.length > 0 && (
+                        <div className="space-y-2">
+                            <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Selected Days</p>
+                            <div className="flex flex-wrap gap-2">
+                                {intervention.customFrequencyDays.map((day) => (
+                                    <span key={day} className="px-3 py-1.5 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-xs font-semibold border border-emerald-200/60 dark:border-emerald-700/40">
+                                        {day}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    {intervention?.monitoringFrequency === "Custom" && intervention?.customFrequencyNote && (
+                        <div className="space-y-1">
+                            <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Note</p>
+                            <p className="text-sm text-foreground dark:text-slate-200 leading-relaxed bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-700/40">
+                                {intervention.customFrequencyNote}
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </InfoCardDetailSheet>
+
+            <InfoCardDetailSheet open={detailSheet === "mentor"} onOpenChange={closeDetail} icon={Award} label="Mentor" gradient="from-violet-500 to-fuchsia-500">
+                <p className="text-sm font-semibold text-foreground dark:text-white leading-relaxed">
+                    {mentorLabel}
+                </p>
+            </InfoCardDetailSheet>
+
+            <InfoCardDetailSheet open={detailSheet === "goal"} onOpenChange={closeDetail} icon={Target} label="Goal" gradient="from-rose-500 to-pink-500">
+                <p className="text-sm font-semibold text-foreground dark:text-white leading-relaxed break-words whitespace-pre-wrap">
+                    {goalLabel}
+                </p>
+            </InfoCardDetailSheet>
+
+            <InfoCardDetailSheet open={detailSheet === "monitoring"} onOpenChange={closeDetail} icon={ClipboardList} label="Monitoring Method" gradient={monitoringTone.icon}>
+                <p className="text-sm font-semibold text-foreground dark:text-white leading-relaxed break-words">
+                    {monitoringMethodLabel}
+                </p>
+            </InfoCardDetailSheet>
+
+            <InfoCardDetailSheet open={detailSheet === "startDate"} onOpenChange={closeDetail} icon={CalendarDays} label="Start Date" gradient="from-indigo-500 to-purple-500">
+                <p className="text-sm font-semibold text-foreground dark:text-white leading-relaxed">
+                    {startDateLabel}
+                </p>
+            </InfoCardDetailSheet>
         </div>
     );
 };
