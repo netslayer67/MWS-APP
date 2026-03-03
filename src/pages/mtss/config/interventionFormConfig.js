@@ -26,7 +26,7 @@ export const TIERS = [
     { label: "Tier 3", value: "tier3" },
 ];
 
-export const DURATIONS = ["4 weeks", "6 weeks", "8 weeks"];
+export const DURATIONS = ["4 weeks", "6 weeks", "8 weeks", "10 weeks", "12 weeks", "16 weeks", "20 weeks", "24 weeks"];
 
 export const FREQUENCIES = ["Daily", "Weekly", "Bi-weekly"];
 
