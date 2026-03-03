@@ -36,6 +36,14 @@ export const METHODS = [
     "Option 3 - Assessment Data",
 ];
 
+export const SKIP_REASONS = [
+    { label: "Teacher Rescheduled", value: "teacher_rescheduled" },
+    { label: "Student Didn't Come", value: "student_absent" },
+    { label: "School Holiday", value: "school_holiday" },
+    { label: "Schedule Conflict", value: "schedule_conflict" },
+    { label: "Other", value: "other" },
+];
+
 export const SCORE_UNITS = ["wpm", "%", "pts", "score"];
 
 export const filterStrategiesByType = (strategies, type) => {

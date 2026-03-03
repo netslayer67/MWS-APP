@@ -44,6 +44,8 @@ export const createDefaultProgressForm = () => ({
     studentName: "",
     date: "",
     performed: "yes",
+    skipReason: "",
+    skipReasonNote: "",
     scoreValue: "",
     scoreUnit: "score",
      badge: "🎉 Progress Party",

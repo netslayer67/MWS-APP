@@ -2,6 +2,7 @@ import React, { memo, useMemo } from "react";
 import { motion } from "framer-motion";
 import { ClipboardCheck, Loader2 } from "lucide-react";
 import { normalizeTierCode } from "../utils/teacherMappingHelpers";
+import { SKIP_REASONS } from "../config/interventionFormConfig";
 
 const readonlyField =
     "px-4 py-3 rounded-2xl bg-white/70 dark:bg-white/10 border border-primary/10 text-sm text-muted-foreground";
@@ -244,6 +245,41 @@ const ProgressFormPanel = memo(
                             </select>
                         </div>
                     </div>
+
+                    {formState.performed === "no" && (
+                        <div className="flex flex-col gap-3 p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-900/20 border border-amber-200/40 dark:border-amber-700/30">
+                            <div className="flex flex-col gap-2">
+                                <label className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-700 dark:text-amber-400">
+                                    Reason Not Performed
+                                </label>
+                                <select
+                                    className={baseFieldClass}
+                                    value={formState.skipReason}
+                                    onChange={(e) => onChange("skipReason", e.target.value)}
+                                >
+                                    <option value="">Select a reason...</option>
+                                    {SKIP_REASONS.map((reason) => (
+                                        <option key={reason.value} value={reason.value}>{reason.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            {formState.skipReason === "other" && (
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-700 dark:text-amber-400">
+                                        Please specify
+                                    </label>
+                                    <input
+                                        type="text"
+                                        className={baseFieldClass}
+                                        placeholder="Describe the reason..."
+                                        value={formState.skipReasonNote}
+                                        onChange={(e) => onChange("skipReasonNote", e.target.value)}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     <div className="grid md:grid-cols-2 gap-4">
                         <div className="flex flex-col gap-2">
                             <label className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">

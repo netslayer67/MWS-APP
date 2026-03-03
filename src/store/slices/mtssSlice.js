@@ -150,6 +150,8 @@ export const submitProgressUpdate = createAsyncThunk(
                     value: formData.scoreValue ? Number(formData.scoreValue) : undefined,
                     unit: formData.scoreUnit || 'score',
                     performed: formData.performed !== false,
+                    skipReason: formData.performed === false ? (formData.skipReason || undefined) : undefined,
+                    skipReasonNote: formData.performed === false && formData.skipReason === 'other' ? (formData.skipReasonNote || undefined) : undefined,
                     celebration: formData.celebration || undefined,
                 }],
             };

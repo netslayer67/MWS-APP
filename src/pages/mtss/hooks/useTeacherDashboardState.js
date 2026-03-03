@@ -126,6 +126,8 @@ export const useTeacherDashboardState = (tabs) => {
                         value: progressForm.scoreValue ? Number(progressForm.scoreValue) : undefined,
                         unit: progressForm.scoreUnit || "score",
                         performed: progressForm.performed === "yes" || progressForm.performed === true,
+                        skipReason: progressForm.performed === "no" ? (progressForm.skipReason || undefined) : undefined,
+                        skipReasonNote: progressForm.performed === "no" && progressForm.skipReason === "other" ? (progressForm.skipReasonNote || undefined) : undefined,
                         celebration: progressForm.badge || undefined,
                     }],
                 };

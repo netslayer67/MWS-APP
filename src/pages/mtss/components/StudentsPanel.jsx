@@ -74,6 +74,8 @@ const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh }) =>
                             value: Number.isFinite(parsedScoreValue) ? parsedScoreValue : undefined,
                             unit: formState.scoreUnit,
                             performed: formState.performed === "yes",
+                            skipReason: formState.performed !== "yes" ? (formState.skipReason || undefined) : undefined,
+                            skipReasonNote: formState.performed !== "yes" && formState.skipReason === "other" ? (formState.skipReasonNote || undefined) : undefined,
                             celebration: formState.badge,
                         },
                     ],

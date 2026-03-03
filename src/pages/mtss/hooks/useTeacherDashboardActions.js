@@ -53,6 +53,8 @@ const useTeacherDashboardActions = ({
                             value: Number.isFinite(parsedScoreValue) ? parsedScoreValue : undefined,
                             unit: progressForm.scoreUnit,
                             performed: progressForm.performed === "yes",
+                            skipReason: progressForm.performed !== "yes" ? (progressForm.skipReason || undefined) : undefined,
+                            skipReasonNote: progressForm.performed !== "yes" && progressForm.skipReason === "other" ? (progressForm.skipReasonNote || undefined) : undefined,
                         },
                     ],
                 });
@@ -99,6 +101,8 @@ const useTeacherDashboardActions = ({
                             value: Number.isFinite(parsedScoreValue) ? parsedScoreValue : undefined,
                             unit: formState.scoreUnit,
                             performed: formState.performed === "yes",
+                            skipReason: formState.performed !== "yes" ? (formState.skipReason || undefined) : undefined,
+                            skipReasonNote: formState.performed !== "yes" && formState.skipReason === "other" ? (formState.skipReasonNote || undefined) : undefined,
                             celebration: formState.badge,
                         },
                     ],

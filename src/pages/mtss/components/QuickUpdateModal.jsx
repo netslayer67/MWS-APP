@@ -2,6 +2,7 @@ import React, { memo, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
 import { normalizeTierCode } from "../utils/teacherMappingHelpers";
+import { SKIP_REASONS } from "../config/interventionFormConfig";
 
 const baseField =
     "w-full px-4 py-3 rounded-2xl bg-white/80 dark:bg-white/10 border border-primary/20 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all";
@@ -81,6 +82,8 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
     const [formState, setFormState] = useState({
         date: initialDate,
         performed: "yes",
+        skipReason: "",
+        skipReasonNote: "",
         scoreValue: "",
         scoreUnit: defaultOption?.metricLabel || "score",
         notes: "",
@@ -282,6 +285,40 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                                     </select>
                                 </div>
                             </div>
+
+                            {formState.performed === "no" && (
+                                <div className="flex flex-col gap-3 p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-900/20 border border-amber-200/40 dark:border-amber-700/30">
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-amber-700 dark:text-amber-400">
+                                            Reason Not Performed
+                                        </label>
+                                        <select
+                                            className={baseField}
+                                            value={formState.skipReason}
+                                            onChange={(event) => handleChange("skipReason", event.target.value)}
+                                        >
+                                            <option value="">Select a reason...</option>
+                                            {SKIP_REASONS.map((reason) => (
+                                                <option key={reason.value} value={reason.value}>{reason.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    {formState.skipReason === "other" && (
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-amber-700 dark:text-amber-400">
+                                                Please specify
+                                            </label>
+                                            <input
+                                                type="text"
+                                                className={baseField}
+                                                placeholder="Describe the reason..."
+                                                value={formState.skipReasonNote}
+                                                onChange={(event) => handleChange("skipReasonNote", event.target.value)}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             <div className="grid md:grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-2">
