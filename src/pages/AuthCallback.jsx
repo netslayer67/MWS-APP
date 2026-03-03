@@ -47,7 +47,7 @@ const AuthCallback = () => {
                 let target;
                 if (normalizedRole === 'student') {
                     target = '/student/support-hub';
-                } else if (['teacher', 'se_teacher', 'head_unit', 'admin', 'superadmin'].includes(normalizedRole)) {
+                } else if (['teacher', 'head_unit', 'admin', 'superadmin'].includes(normalizedRole)) {
                     target = safeRedirect || '/support-hub';
                 } else {
                     // staff, support_staff, nurse, etc. → redirect to /select-role

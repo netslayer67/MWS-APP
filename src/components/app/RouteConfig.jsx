@@ -77,7 +77,7 @@ const AdminProtectedRoute = memo(({ children }) => {
 AdminProtectedRoute.displayName = 'AdminProtectedRoute';
 
 const previewEmails = new Set(["faisal@millennia21.id"]);
-const mtssRoleAccess = new Set(['staff', 'support_staff', 'nurse', 'teacher', 'se_teacher', 'directorate', 'head_unit', 'admin', 'superadmin']);
+const mtssRoleAccess = new Set(['staff', 'support_staff', 'nurse', 'teacher', 'directorate', 'head_unit', 'admin', 'superadmin']);
 
 const MtssPreviewGate = memo(({ children }) => {
     const { user, loading } = useSelector((state) => state.auth);
@@ -146,7 +146,7 @@ const publicRoutes = [
     <Route key="emotional-patterns" path="/profile/emotional-patterns" element={<ProtectedRoute><MemoizedPageTransition><EmotionalPatternsPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="emotional-patterns-user" path="/profile/emotional-patterns/:userId" element={<ProtectedRoute><MemoizedPageTransition><EmotionalPatternsPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="user-management" path="/user-management" element={<AdminProtectedRoute><UserManagementDashboard /></AdminProtectedRoute>} />,
-    <Route key="support-hub" path="/support-hub" element={<ProtectedRoute allowedRoles={['staff', 'support_staff', 'nurse', 'teacher', 'se_teacher', 'head_unit', 'directorate', 'admin', 'superadmin']}><MtssPreviewGate><MemoizedPageTransition><SupportModeSelectionPage /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
+    <Route key="support-hub" path="/support-hub" element={<ProtectedRoute allowedRoles={['staff', 'support_staff', 'nurse', 'teacher', 'head_unit', 'directorate', 'admin', 'superadmin']}><MtssPreviewGate><MemoizedPageTransition><SupportModeSelectionPage /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
     <Route key="mtss-role" path="/mtss" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSRoleSelectionPage /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
     <Route key="mtss-teacher" path="/mtss/teacher" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSTeacherDashboard /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
     <Route key="mtss-admin" path="/mtss/admin" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSAdminDashboard /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,

@@ -10,7 +10,7 @@ import {
 } from "../student/portal/studentPortalStateUtils";
 
 const ADMIN_ROLES = new Set(["directorate", "admin", "superadmin", "head_unit"]);
-const MENTOR_ROLES = new Set(["teacher", "se_teacher", "staff", "support_staff"]);
+const MENTOR_ROLES = new Set(["teacher", "staff", "support_staff"]);
 
 export const useStudentPortalState = () => {
     const navigate = useNavigate();

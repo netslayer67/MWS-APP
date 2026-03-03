@@ -456,7 +456,7 @@ const SupportModeSelectionPage = memo(() => {
 
   const handleMtssClick = useCallback(() => {
     const normalizedRole = (user?.role || '').toLowerCase();
-    if (['teacher', 'se_teacher'].includes(normalizedRole)) {
+    if (['teacher'].includes(normalizedRole)) {
       navigate('/mtss/teacher');
       return;
     }

@@ -48,7 +48,7 @@ const HeroSection = memo(() => {
         const userRole = (resultAction.payload?.user?.role || '').toLowerCase();
         let redirectPath;
         if (userRole === 'student') redirectPath = '/student/support-hub';
-        else if (['teacher', 'se_teacher', 'head_unit', 'admin', 'superadmin'].includes(userRole)) redirectPath = '/support-hub';
+        else if (['teacher', 'head_unit', 'admin', 'superadmin'].includes(userRole)) redirectPath = '/support-hub';
         else redirectPath = '/select-role';
         toast({ title: "Login Successful! 🎉", description: "Welcome back! Redirecting...", duration: 3000 });
         setEmail(""); setPassword("");

@@ -364,7 +364,7 @@ export default function StudentAIChatPage() {
     );
     const isStudentRole = normalizedRole === 'student';
     const canExecuteAutomation = useMemo(
-        () => ['teacher', 'se_teacher', 'head_unit', 'principal', 'directorate', 'admin', 'superadmin'].includes(normalizedRole),
+        () => ['teacher', 'head_unit', 'principal', 'directorate', 'admin', 'superadmin'].includes(normalizedRole),
         [normalizedRole]
     );
     const studentCallName = useMemo(() => {
