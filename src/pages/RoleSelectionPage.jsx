@@ -390,6 +390,7 @@ const RoleSelection = memo(() => {
 
   const isTeacherRole = user && ['teacher', 'se_teacher'].includes(user.role);
   const isPrincipalRole = user && ['head_unit', 'directorate', 'admin', 'superadmin'].includes(user.role);
+  const hasSupportHubAccess = user && ['staff', 'support_staff', 'nurse', 'teacher', 'head_unit', 'directorate', 'admin', 'superadmin'].includes(user.role);
   const studentDashboardFeatures = isPrincipalRole
     ? ["Student emotional overview by grade and class", "Needs-support spotlight for faster follow up", "Unit-aligned scope for each principal", "Quick search and daily refresh monitoring"]
     : ["Class-scoped student check-ins", "Daily submission tracking", "Needs support highlights", "Quick search by student"];
@@ -411,13 +412,15 @@ const RoleSelection = memo(() => {
         <div className="rs-grid-overlay" />
       </div>
 
-      {/* Back button */}
-      <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-30">
-        <button onClick={() => navigate('/support-hub')}
-          className="rs-back-btn inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-primary bg-card/80 border border-border/40 shadow-md backdrop-blur-xl hover:shadow-lg hover:border-primary/30 active:scale-95 transition-all duration-200">
-          <ArrowLeft className="w-3.5 h-3.5" /> Support Hub
-        </button>
-      </div>
+      {/* Back button — only shown for roles with Support Hub access */}
+      {hasSupportHubAccess && (
+        <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-30">
+          <button onClick={() => navigate('/support-hub')}
+            className="rs-back-btn inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-primary bg-card/80 border border-border/40 shadow-md backdrop-blur-xl hover:shadow-lg hover:border-primary/30 active:scale-95 transition-all duration-200">
+            <ArrowLeft className="w-3.5 h-3.5" /> Support Hub
+          </button>
+        </div>
+      )}
 
       {/* Content */}
       <div className="rs-pointer-shell relative z-10 min-h-screen flex items-center justify-center p-4 sm:p-6">
