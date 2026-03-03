@@ -5,7 +5,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { createDefaultInterventionForm, createDefaultProgressForm } from "../data/teacherDashboardContent";
 import { createMentorAssignment, updateMentorAssignment } from "@/services/mtssService";
 
-export const useTeacherDashboardState = (tabs) => {
+export const useTeacherDashboardState = (tabs, { onSaveSuccess } = {}) => {
     const { toast } = useToast();
     const location = useLocation();
     const [activeTab, setActiveTab] = useState("dashboard");
@@ -90,6 +90,10 @@ export const useTeacherDashboardState = (tabs) => {
 
                 // Reset form after success
                 setInterventionForm(createDefaultInterventionForm());
+
+                // Switch to students tab and refresh dashboard data
+                setActiveTab("students");
+                onSaveSuccess?.();
             } catch (error) {
                 console.error("Failed to save intervention plan:", error);
                 toast({
@@ -101,7 +105,7 @@ export const useTeacherDashboardState = (tabs) => {
                 setSubmittingPlan(false);
             }
         },
-        [interventionForm, submittingPlan, toast, user],
+        [interventionForm, submittingPlan, toast, user, onSaveSuccess],
     );
 
     const handleSubmitProgress = useCallback(

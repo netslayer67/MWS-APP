@@ -130,9 +130,15 @@ const StudentSchedulePanel = ({ student, isLoading = false }) => {
                         username: intervention.mentorUsername,
                         gender: intervention.mentorGender,
                     });
+                    let monitoringLabel = intervention.monitoringFrequency || intervention.monitoringMethod || "Weekly review";
+                    if (monitoringLabel === "Custom" && Array.isArray(intervention.customFrequencyDays) && intervention.customFrequencyDays.length > 0) {
+                        const dayAbbr = intervention.customFrequencyDays.map((d) => d.slice(0, 3));
+                        monitoringLabel = `Custom — ${dayAbbr.join(", ")}`;
+                    }
+
                     const scheduleCards = [
                         { key: "next", label: "Next Review", value: formatReviewDate(intervention.endDate, student?.nextUpdate || "Awaiting schedule"), tone: "from-rose-100 to-pink-100 dark:from-rose-500/20 dark:to-pink-500/12" },
-                        { key: "monitoring", label: "Monitoring", value: intervention.monitoringFrequency || intervention.monitoringMethod || "Weekly review", tone: "from-sky-100 to-cyan-100 dark:from-sky-500/20 dark:to-cyan-500/12" },
+                        { key: "monitoring", label: "Monitoring", value: monitoringLabel, tone: "from-sky-100 to-cyan-100 dark:from-sky-500/20 dark:to-cyan-500/12" },
                         { key: "mentor", label: "Mentor", value: mentorLabel || "MTSS Mentor", tone: "from-violet-100 to-fuchsia-100 dark:from-violet-500/20 dark:to-fuchsia-500/12" },
                         { key: "duration", label: "Duration", value: intervention.duration || "Ongoing", tone: "from-amber-100 to-orange-100 dark:from-amber-500/20 dark:to-orange-500/12" },
                     ];

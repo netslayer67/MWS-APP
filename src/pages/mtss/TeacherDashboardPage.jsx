@@ -258,7 +258,7 @@ const TeacherDashboardPage = memo(() => {
         submittingPlan,
         setSubmittingProgress,
         submittingProgress,
-    } = useTeacherDashboardState(tabs);
+    } = useTeacherDashboardState(tabs, { onSaveSuccess: refresh });
     const [quickUpdateStudent, setQuickUpdateStudent] = useState(null);
     const [savingQuickUpdate, setSavingQuickUpdate] = useState(false);
 
