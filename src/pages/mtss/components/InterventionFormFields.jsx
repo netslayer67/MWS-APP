@@ -4,6 +4,7 @@ import {
     TIERS,
     DURATIONS,
     FREQUENCIES,
+    WEEKDAYS,
     METHODS,
     SCORE_UNITS
 } from "../config/interventionFormConfig";
@@ -126,6 +127,44 @@ const InterventionFormFields = memo(({
                     </select>
                 </div>
             </div>
+
+            {formState.monitorFrequency === "Custom" && (
+                <div className="flex flex-col gap-3 p-4 rounded-2xl bg-blue-50/60 dark:bg-blue-900/20 border border-blue-200/40 dark:border-blue-700/30" data-aos="fade-up" data-aos-delay="165">
+                    <label className={labelClass}>Select Days</label>
+                    <div className="flex flex-wrap gap-2">
+                        {WEEKDAYS.map((day) => {
+                            const selected = (formState.customFrequencyDays || []).includes(day.value);
+                            return (
+                                <button
+                                    key={day.value}
+                                    type="button"
+                                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                                        selected
+                                            ? "bg-primary text-white shadow-md"
+                                            : "bg-white/80 dark:bg-white/10 border border-primary/20 text-muted-foreground hover:border-primary/40"
+                                    }`}
+                                    onClick={() => {
+                                        const current = formState.customFrequencyDays || [];
+                                        const updated = selected
+                                            ? current.filter((d) => d !== day.value)
+                                            : [...current, day.value];
+                                        onChange("customFrequencyDays", updated);
+                                    }}
+                                >
+                                    {day.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                    <input
+                        type="text"
+                        className={fieldClass}
+                        placeholder="Optional note, e.g. 'Morning sessions only'"
+                        value={formState.customFrequencyNote || ""}
+                        onChange={(e) => onChange("customFrequencyNote", e.target.value)}
+                    />
+                </div>
+            )}
 
             {/* Method & Notes */}
             <div className="grid md:grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="210">

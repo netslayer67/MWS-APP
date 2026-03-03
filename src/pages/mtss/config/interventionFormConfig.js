@@ -28,7 +28,15 @@ export const TIERS = [
 
 export const DURATIONS = ["4 weeks", "6 weeks", "8 weeks", "10 weeks", "12 weeks", "16 weeks", "20 weeks", "24 weeks"];
 
-export const FREQUENCIES = ["Daily", "Weekly", "Bi-weekly"];
+export const FREQUENCIES = ["Daily", "Weekly", "Bi-weekly", "Custom"];
+
+export const WEEKDAYS = [
+    { label: "Mon", value: "Monday" },
+    { label: "Tue", value: "Tuesday" },
+    { label: "Wed", value: "Wednesday" },
+    { label: "Thu", value: "Thursday" },
+    { label: "Fri", value: "Friday" },
+];
 
 export const METHODS = [
     "Option 1 - Direct Observation",

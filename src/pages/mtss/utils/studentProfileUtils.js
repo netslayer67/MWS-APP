@@ -88,7 +88,11 @@ export const buildStudentProfileView = (student, selectedIntervention) => {
 
     const strategyLabel = currentIntervention?.strategyName || currentIntervention?.focusArea || null;
     const durationLabel = currentIntervention?.duration || null;
-    const frequencyLabel = currentIntervention?.monitoringFrequency || currentIntervention?.monitoringMethod || null;
+    let frequencyLabel = currentIntervention?.monitoringFrequency || currentIntervention?.monitoringMethod || null;
+    if (frequencyLabel === "Custom" && Array.isArray(currentIntervention?.customFrequencyDays) && currentIntervention.customFrequencyDays.length > 0) {
+        const dayAbbr = currentIntervention.customFrequencyDays.map((d) => d.slice(0, 3));
+        frequencyLabel = `Custom — ${dayAbbr.join(", ")}`;
+    }
     const mentorLabel = formatMentorDisplay({
         name: currentIntervention?.mentor || profile?.mentor || student.mentor,
         nickname: currentIntervention?.mentorNickname || profile?.mentorNickname || student.mentorNickname,

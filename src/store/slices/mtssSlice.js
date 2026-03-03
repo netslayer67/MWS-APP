@@ -27,6 +27,8 @@ export const createDefaultInterventionForm = () => ({
     startDate: '',
     duration: '',
     monitorFrequency: '',
+    customFrequencyDays: [],
+    customFrequencyNote: '',
     monitorMethod: '',
     baselineValue: '',
     baselineUnit: 'score',
@@ -116,6 +118,8 @@ export const createInterventionPlan = createAsyncThunk(
                 strategyName: formData.strategyName || undefined,
                 monitoringMethod: formData.monitorMethod || undefined,
                 monitoringFrequency: formData.monitorFrequency || undefined,
+                customFrequencyDays: formData.monitorFrequency === 'Custom' && formData.customFrequencyDays?.length ? formData.customFrequencyDays : undefined,
+                customFrequencyNote: formData.monitorFrequency === 'Custom' && formData.customFrequencyNote ? formData.customFrequencyNote : undefined,
                 metricLabel: formData.baselineUnit || formData.targetUnit || 'score',
                 baselineScore: formData.baselineValue
                     ? { value: Number(formData.baselineValue), unit: formData.baselineUnit || 'score' }

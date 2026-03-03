@@ -66,6 +66,8 @@ export const useTeacherDashboardState = (tabs) => {
                     strategyName: currentForm.strategyName || undefined,
                     monitoringMethod: currentForm.monitorMethod || undefined,
                     monitoringFrequency: currentForm.monitorFrequency || undefined,
+                    customFrequencyDays: currentForm.monitorFrequency === "Custom" && currentForm.customFrequencyDays?.length ? currentForm.customFrequencyDays : undefined,
+                    customFrequencyNote: currentForm.monitorFrequency === "Custom" && currentForm.customFrequencyNote ? currentForm.customFrequencyNote : undefined,
                     metricLabel: currentForm.baselineUnit || currentForm.targetUnit || "score",
                     baselineScore: currentForm.baselineValue
                         ? { value: Number(currentForm.baselineValue), unit: currentForm.baselineUnit || "score" }

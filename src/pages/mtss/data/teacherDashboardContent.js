@@ -31,6 +31,8 @@ export const createDefaultInterventionForm = () => ({
     startDate: "",
     duration: "",
     monitorFrequency: "",
+    customFrequencyDays: [],
+    customFrequencyNote: "",
     monitorMethod: "",
     baselineValue: "",
     baselineUnit: "score",
