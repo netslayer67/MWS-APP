@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { Eye, Pencil } from "lucide-react";
 import { ensureStudentInterventions, getMostCriticalForDisplay } from "../utils/interventionUtils";
+import { formatPlanAuditDate } from "../utils/editPlanAccess";
 
 const ROW_ACCENT_COLORS = [
     "from-indigo-500 to-purple-500",
@@ -10,6 +11,26 @@ const ROW_ACCENT_COLORS = [
     "from-pink-500 to-rose-500",
 ];
 
+const formatAuditDateCompact = (value) => {
+    if (!value) return null;
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return new Intl.DateTimeFormat("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    }).format(parsed);
+};
+
+const compactPersonName = (value = "Unknown") => {
+    const normalized = String(value || "Unknown").split(",")[0].trim();
+    if (!normalized) return "Unknown";
+    const words = normalized.split(/\s+/).filter(Boolean);
+    if (words.length <= 2) return normalized;
+    return `${words[0]} ${words[1]}`;
+};
+
 const StudentsTableDesktopRow = memo(
     ({
         index,
@@ -18,6 +39,8 @@ const StudentsTableDesktopRow = memo(
         showActions,
         onView,
         onUpdate,
+        onEditPlan,
+        canEditPlanForStudent,
         selectable,
         selected,
         onSelect,
@@ -36,6 +59,42 @@ const StudentsTableDesktopRow = memo(
         const icon = criticalInfo.intervention
             ? interventionIcons[criticalInfo.intervention.type] || defaultIcon
             : universalIcon;
+        const assignmentOptions = Array.isArray(student.assignmentOptions) ? student.assignmentOptions : [];
+        const primaryAssignment = assignmentOptions[0] || null;
+        const lastModifiedAtFull = formatPlanAuditDate(primaryAssignment?.lastPlanUpdatedAt);
+        const lastModifiedAtCompact = formatAuditDateCompact(primaryAssignment?.lastPlanUpdatedAt);
+        const lastModifiedBy = primaryAssignment?.lastPlanUpdatedByName || "Unknown";
+        const lastModifiedByCompact = compactPersonName(lastModifiedBy);
+        const canEditPlan = Boolean(onEditPlan) && (
+            typeof canEditPlanForStudent === "function"
+                ? canEditPlanForStudent(student)
+                : Boolean(primaryAssignment?.assignmentId || student.assignmentId)
+        );
+        const actionButtons = [
+            {
+                key: "view",
+                label: "View",
+                onClick: () => onView?.(student),
+                icon: Eye,
+                className: "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border-indigo-200/60 dark:border-indigo-700/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 hover:shadow-indigo-200/30 dark:hover:shadow-indigo-900/20",
+            },
+            {
+                key: "progress",
+                label: "Progress",
+                onClick: () => onUpdate?.(student),
+                icon: Pencil,
+                className: "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200/60 dark:border-amber-700/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 hover:shadow-amber-200/30 dark:hover:shadow-amber-900/20",
+            },
+        ];
+        if (canEditPlan) {
+            actionButtons.push({
+                key: "edit",
+                label: "Edit",
+                onClick: () => onEditPlan?.(student),
+                icon: Pencil,
+                className: "bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-300 border-cyan-200/60 dark:border-cyan-700/40 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 hover:shadow-cyan-200/30 dark:hover:shadow-cyan-900/20",
+            });
+        }
 
         const accentColor = ROW_ACCENT_COLORS[index % ROW_ACCENT_COLORS.length];
 
@@ -49,7 +108,7 @@ const StudentsTableDesktopRow = memo(
                 </td>
 
                 {selectable && (
-                    <td className="py-4 pl-2">
+                    <td className="py-3.5 pl-2 align-top">
                         <input
                             type="checkbox"
                             className="w-4 h-4 rounded-md border-slate-300 dark:border-slate-600 text-indigo-500 focus:ring-indigo-400 transition"
@@ -60,39 +119,50 @@ const StudentsTableDesktopRow = memo(
                 )}
 
                 {/* Student name */}
-                <td className="py-4 pl-3">
+                <td className="py-3.5 pl-3 pr-2 align-top w-[23%]">
                     <button
                         type="button"
                         onClick={() => onView?.(student)}
                         className="text-left group/name"
                     >
-                        <span className="font-semibold text-sm text-slate-800 dark:text-white group-hover/name:text-indigo-600 dark:group-hover/name:text-indigo-400 transition-colors">
+                        <span
+                            className="block truncate max-w-[220px] font-semibold text-sm text-slate-800 dark:text-white group-hover/name:text-indigo-600 dark:group-hover/name:text-indigo-400 transition-colors"
+                            title={student.name}
+                        >
                             {student.name}
                         </span>
-                        <span className="block text-[11px] text-slate-500 dark:text-slate-300 mt-0.5">{student.grade}</span>
+                        <span className="block text-[10px] text-slate-500 dark:text-slate-300 mt-0.5">{student.grade}</span>
                     </button>
                 </td>
 
                 {/* Class / Mentor */}
-                <td className="py-4">
-                    <span className="block text-sm font-medium text-slate-700 dark:text-slate-200">{classLabel}</span>
-                    <span className="block text-[11px] text-slate-500 dark:text-slate-300 mt-0.5">Mentor: {mentorLabel}</span>
+                <td className="py-3.5 pr-2 align-top w-[16%]">
+                    <span className="block text-sm font-medium text-slate-700 dark:text-slate-200 truncate" title={classLabel}>
+                        {classLabel}
+                    </span>
+                    <span className="block text-[10px] text-slate-500 dark:text-slate-300 mt-0.5 truncate" title={`Mentor: ${mentorLabel}`}>
+                        Mentor: {mentorLabel}
+                    </span>
                 </td>
 
                 {/* Focus Area */}
-                <td className="py-4">
+                <td className="py-3.5 pr-2 align-top w-[15%]">
                     {criticalInfo.mode === "universal" ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/25 border border-emerald-200/70 dark:border-emerald-700/40 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-                            <span>{universalIcon}</span>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/25 border border-emerald-200/70 dark:border-emerald-700/40 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                            <span className="text-[12px]">{universalIcon}</span>
                             Universal
                         </span>
                     ) : (
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/40">
-                            <span className="text-base leading-none">{icon}</span>
+                        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/40 max-w-full">
+                            <span className="text-[13px] leading-none">{icon}</span>
                             <div className="flex flex-col">
-                                <span className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">{criticalInfo.label}</span>
+                                <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 truncate max-w-[120px]" title={criticalInfo.label}>
+                                    {criticalInfo.label}
+                                </span>
                                 {criticalInfo.strategy && (
-                                    <span className="text-[10px] text-slate-500 dark:text-slate-300 truncate max-w-[110px]">{criticalInfo.strategy}</span>
+                                    <span className="text-[9px] text-slate-500 dark:text-slate-300 truncate max-w-[120px]" title={criticalInfo.strategy}>
+                                        {criticalInfo.strategy}
+                                    </span>
                                 )}
                             </div>
                         </div>
@@ -100,38 +170,48 @@ const StudentsTableDesktopRow = memo(
                 </td>
 
                 {/* Tier */}
-                <td className="py-4">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold tracking-wide ${tierStyle.bg} ${tierStyle.text} shadow-sm`}>
+                <td className="py-3.5 pr-2 align-top w-[8%]">
+                    <span className={`inline-flex items-center whitespace-nowrap px-2.5 py-1 rounded-lg text-[10px] font-bold tracking-wide ${tierStyle.bg} ${tierStyle.text} shadow-sm`}>
                         {criticalInfo.tier}
                     </span>
                 </td>
 
                 {/* Progress */}
-                <td className="py-4">
+                <td className="py-3.5 pr-2 align-top w-[11%]">
                     <ProgressBadge status={student.progress} />
                 </td>
 
                 {/* Next Update */}
-                <td className="py-4 text-[12px] text-slate-600 dark:text-slate-300 font-medium">{student.nextUpdate}</td>
+                <td className="py-3.5 pr-2 align-top w-[17%] text-[12px] text-slate-600 dark:text-slate-300 font-medium">
+                    <div className="whitespace-nowrap">{student.nextUpdate}</div>
+                    {lastModifiedAtCompact && (
+                        <div
+                            className="text-[10px] text-cyan-600 dark:text-cyan-300 mt-1 truncate max-w-[220px]"
+                            title={`Last modified: ${lastModifiedBy} · ${lastModifiedAtFull || lastModifiedAtCompact}`}
+                        >
+                            Updated {lastModifiedAtCompact} by {lastModifiedByCompact}
+                        </div>
+                    )}
+                </td>
 
                 {/* Actions */}
                 {showActions && (
-                    <td className="py-4">
-                        <div className="flex items-center gap-1.5 justify-center">
-                            <button
-                                onClick={() => onView?.(student)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-700/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 hover:shadow-md hover:shadow-indigo-200/30 dark:hover:shadow-indigo-900/20 hover:-translate-y-0.5 transition-all duration-150"
-                            >
-                                <Eye className="w-3 h-3" />
-                                View
-                            </button>
-                            <button
-                                onClick={() => onUpdate?.(student)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-700/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 hover:shadow-md hover:shadow-amber-200/30 dark:hover:shadow-amber-900/20 hover:-translate-y-0.5 transition-all duration-150"
-                            >
-                                <Pencil className="w-3 h-3" />
-                                Update
-                            </button>
+                    <td className="py-3.5 pr-3 align-top w-[14%]">
+                        <div className={`ml-auto grid gap-1 ${actionButtons.length === 3 ? "grid-cols-3" : "grid-cols-2"} max-w-[250px]`}>
+                            {actionButtons.map((action) => {
+                                const Icon = action.icon;
+                                return (
+                                <button
+                                    key={action.key}
+                                    type="button"
+                                    onClick={action.onClick}
+                                    className={`min-w-0 h-8 inline-flex items-center justify-center gap-1 px-2 text-[10px] font-semibold rounded-lg border hover:shadow-sm hover:-translate-y-0.5 transition-all duration-150 ${action.className}`}
+                                >
+                                    <Icon className="w-3 h-3 shrink-0" />
+                                    <span className="truncate">{action.label}</span>
+                                </button>
+                                );
+                            })}
                         </div>
                     </td>
                 )}

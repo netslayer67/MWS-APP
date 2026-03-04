@@ -62,19 +62,34 @@ export const mapAssignmentsToStudents = (assignments = [], teacherName = "MTSS M
                         {
                             assignmentId,
                             focus,
+                            focusAreas: Array.isArray(assignment.focusAreas) ? assignment.focusAreas : [],
                             tier,
                             tierCode,
+                            tierValue: assignment.tier || tierCode,
                             statusKey,
                             statusLabel: STATUS_LABELS[statusKey] || "On Track",
+                            startDate: assignment.startDate || null,
+                            endDate: assignment.endDate || null,
                             metricLabel: assignment.metricLabel || null,
+                            strategyId: assignment.strategyId?.toString?.() || assignment.strategyId || null,
                             strategyName,
                             duration,
                             monitoringFrequency,
                             monitoringMethod,
+                            customFrequencyDays: Array.isArray(assignment.customFrequencyDays) ? assignment.customFrequencyDays : [],
+                            customFrequencyNote: assignment.customFrequencyNote || null,
                             goal: goalDescription,
+                            goals: Array.isArray(assignment.goals) ? assignment.goals : [],
                             baselineScore: assignment.baselineScore || null,
                             targetScore: assignment.targetScore || null,
                             notes: assignment.notes || null,
+                            lastPlanUpdatedAt: assignment.lastPlanUpdatedAt || assignment.updatedAt || null,
+                            lastPlanUpdatedByName:
+                                assignment.lastPlanUpdatedBy?.name ||
+                                assignment.lastPlanUpdatedBy?.username ||
+                                assignment.createdBy?.name ||
+                                assignment.mentorId?.name ||
+                                null,
                         },
                     ]);
                 }
@@ -134,7 +149,11 @@ export const mapAssignmentsToStudents = (assignments = [], teacherName = "MTSS M
     const focusLabel = sorted[0] ? `${sorted[0].tier} ${sorted[0].type}` : null;
 
     return {
-        students: sorted.map(({ statusKey, ...rest }) => rest),
+        students: sorted.map((student) => {
+            const clone = { ...student };
+            delete clone.statusKey;
+            return clone;
+        }),
         spotlightChart,
         focusLabel,
     };

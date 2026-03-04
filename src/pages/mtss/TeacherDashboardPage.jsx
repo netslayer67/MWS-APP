@@ -1,15 +1,17 @@
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fieldClasses, tabs } from "./data/teacherDashboardContent";
 import { useTeacherDashboardState } from "./hooks/useTeacherDashboardState";
 import useTeacherDashboardData from "./hooks/useTeacherDashboardData";
 import TeacherHeroSection from "./teacher/TeacherHeroSection";
 import { useToast } from "@/components/ui/use-toast";
+import { useSelector } from "react-redux";
 import PageLoader from "@/components/PageLoader";
 import { useNavigate } from "react-router-dom";
 import QuickUpdateModal from "./components/QuickUpdateModal";
 import TeacherDashboardPanels from "./components/TeacherDashboardPanels";
 import TeacherDashboardStatus from "./components/TeacherDashboardStatus";
 import useTeacherDashboardActions from "./hooks/useTeacherDashboardActions";
+import { canUserEditPlanForStudent, resolveEditableAssignmentOption } from "./utils/editPlanAccess";
 import gsap from "gsap";
 import { animate, stagger } from "animejs";
 import "@/pages/styles/teacher-dashboard-collage.css";
@@ -235,6 +237,7 @@ TeacherDashboardCollageLayer.displayName = "TeacherDashboardCollageLayer";
 
 const TeacherDashboardPage = memo(() => {
     const { toast } = useToast();
+    const authUser = useSelector((state) => state.auth?.user);
     const navigate = useNavigate();
     const pageRef = useRef(null);
     const {
@@ -251,9 +254,13 @@ const TeacherDashboardPage = memo(() => {
         setActiveTab,
         interventionForm,
         progressForm,
+        editingPlan,
+        isEditingPlan,
         handleInterventionChange,
         handleProgressChange,
         handleSavePlan,
+        startEditingPlan,
+        cancelEditingPlan,
         resetProgressForm,
         submittingPlan,
         setSubmittingProgress,
@@ -272,6 +279,62 @@ const TeacherDashboardPage = memo(() => {
     );
 
     const handleOpenQuickUpdate = useCallback((student) => setQuickUpdateStudent(student), []);
+    const canEditPlanForStudent = useCallback(
+        (student) => {
+            const assignmentOption = resolveEditableAssignmentOption(student);
+            return canUserEditPlanForStudent(authUser, student, assignmentOption);
+        },
+        [authUser],
+    );
+    const handleEditPlan = useCallback(
+        (payload) => {
+            const student = payload?.student || payload;
+            if (!student) return;
+
+            const assignmentOption = payload?.assignmentOption || resolveEditableAssignmentOption(student);
+            if (!assignmentOption?.assignmentId) {
+                toast({
+                    title: "No editable intervention",
+                    description: `${student?.name || "Student"} doesn't have an intervention plan yet.`,
+                    variant: "destructive",
+                });
+                return;
+            }
+
+            if (!canUserEditPlanForStudent(authUser, student, assignmentOption)) {
+                toast({
+                    title: "Edit permission denied",
+                    description: "Only homeroom teacher or matching subject teacher can edit this intervention plan.",
+                    variant: "destructive",
+                });
+                return;
+            }
+
+            startEditingPlan(student, assignmentOption);
+        },
+        [authUser, startEditingPlan, toast],
+    );
+    const handleCancelEditPlan = useCallback(() => {
+        cancelEditingPlan();
+        setActiveTab("students");
+    }, [cancelEditingPlan, setActiveTab]);
+    const heroTabs = useMemo(() => tabs.filter((tab) => tab.key !== "edit"), []);
+    const handleHeroTabChange = useCallback(
+        (nextTab) => {
+            if (nextTab === "edit" && !isEditingPlan) {
+                toast({
+                    title: "No active edit session",
+                    description: "Use Edit Plan from Dashboard/My Students to open the dedicated edit workspace.",
+                });
+                return;
+            }
+            if (nextTab === "create" && isEditingPlan) {
+                cancelEditingPlan();
+            }
+            setActiveTab(nextTab);
+        },
+        [cancelEditingPlan, isEditingPlan, setActiveTab, toast],
+    );
     const handleCloseQuickUpdate = useCallback(() => setQuickUpdateStudent(null), []);
     const { handleProgressSubmitForm, handleQuickUpdateSubmit } = useTeacherDashboardActions({
         students,
@@ -467,7 +530,7 @@ const TeacherDashboardPage = memo(() => {
                     data-aos="fade-up"
                     data-aos-duration="700"
                 >
-                    <TeacherHeroSection heroBadge={heroBadge} tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+                    <TeacherHeroSection heroBadge={heroBadge} tabs={heroTabs} activeTab={activeTab} onTabChange={handleHeroTabChange} />
                 </section>
 
                 <TeacherDashboardStatus loading={dataLoading} error={dataError} onRetry={refresh} />
@@ -490,6 +553,10 @@ const TeacherDashboardPage = memo(() => {
                     submittingProgress={submittingProgress}
                     onViewStudent={handleViewStudent}
                     onQuickUpdate={handleOpenQuickUpdate}
+                    onEditPlan={handleEditPlan}
+                    canEditPlanForStudent={canEditPlanForStudent}
+                    editingPlan={editingPlan}
+                    onCancelEditPlan={handleCancelEditPlan}
                     refresh={refresh}
                 />
             </div>

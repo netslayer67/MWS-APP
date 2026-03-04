@@ -4,6 +4,7 @@ import { TierPill, ProgressBadge } from "./StatusPills";
 const DashboardOverview = lazy(() => import("./DashboardOverview"));
 const StudentsPanel = lazy(() => import("./StudentsPanel"));
 const InterventionFormPanel = lazy(() => import("./InterventionFormPanel"));
+const EditInterventionPanel = lazy(() => import("./EditInterventionPanel"));
 const ProgressFormPanel = lazy(() => import("./ProgressFormPanel"));
 
 const PanelFallback = () => (
@@ -29,6 +30,10 @@ const TeacherDashboardPanels = memo(
         submittingProgress,
         onViewStudent,
         onQuickUpdate,
+        onEditPlan,
+        canEditPlanForStudent,
+        editingPlan,
+        onCancelEditPlan,
         refresh,
     }) => {
         const panelContent = useMemo(() => {
@@ -43,6 +48,8 @@ const TeacherDashboardPanels = memo(
                             ProgressBadge={ProgressBadge}
                             onView={onViewStudent}
                             onUpdate={onQuickUpdate}
+                            onEditPlan={onEditPlan}
+                            canEditPlanForStudent={canEditPlanForStudent}
                         />
                     );
                 case "students":
@@ -51,6 +58,8 @@ const TeacherDashboardPanels = memo(
                             students={students}
                             TierPill={TierPill}
                             ProgressBadge={ProgressBadge}
+                            onEditPlan={onEditPlan}
+                            canEditPlanForStudent={canEditPlanForStudent}
                             onRefresh={refresh}
                         />
                     );
@@ -64,6 +73,20 @@ const TeacherDashboardPanels = memo(
                             textareaClass={textareaClass}
                             students={students}
                             submitting={submittingPlan}
+                        />
+                    );
+                case "edit":
+                    return (
+                        <EditInterventionPanel
+                            formState={interventionForm}
+                            onChange={handleInterventionChange}
+                            onSubmit={(event) => handleSavePlan(event, interventionForm)}
+                            baseFieldClass={baseFieldClass}
+                            textareaClass={textareaClass}
+                            students={students}
+                            submitting={submittingPlan}
+                            editingPlan={editingPlan}
+                            onCancelEdit={onCancelEditPlan}
                         />
                     );
                 case "submit":
@@ -88,13 +111,17 @@ const TeacherDashboardPanels = memo(
             handleProgressChange,
             handleProgressSubmitForm,
             handleSavePlan,
+            canEditPlanForStudent,
             interventionForm,
             notesTextareaClass,
+            onCancelEditPlan,
+            onEditPlan,
             onQuickUpdate,
             onViewStudent,
             progressData,
             progressForm,
             refresh,
+            editingPlan,
             statCards,
             students,
             submittingPlan,

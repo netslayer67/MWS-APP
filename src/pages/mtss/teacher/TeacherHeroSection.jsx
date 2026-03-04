@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import { memo } from "react";
 import { ArrowRight, Sparkles, CalendarDays, User } from "lucide-react";
 
 const TeacherHeroSection = ({ heroBadge, tabs, activeTab, onTabChange }) => (
@@ -67,17 +67,21 @@ const TeacherHeroSection = ({ heroBadge, tabs, activeTab, onTabChange }) => (
 
                 {/* Tab navigation — compact on mobile */}
                 <div className="mt-2.5 sm:mt-7">
-                    <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
+                    <div className={`grid gap-1.5 sm:gap-3 ${tabs.length > 3 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
                         {tabs.map((tab) => {
                             const Icon = tab.icon;
                             const active = activeTab === tab.key;
+                            const disabled = Boolean(tab.disabled);
                             return (
                                 <button
                                     key={tab.key}
-                                    onClick={() => onTabChange(tab.key)}
+                                    onClick={() => !disabled && onTabChange(tab.key)}
+                                    disabled={disabled}
                                     className={`group flex items-center justify-center sm:justify-between gap-1 sm:gap-2 rounded-xl sm:rounded-2xl px-2 py-2 sm:px-4 sm:py-3.5 text-[11px] sm:text-sm font-semibold transition-all duration-200 border ${
                                         active
                                             ? "bg-gradient-to-r from-[#6366f1] via-[#8b5cf6] to-[#d946ef] text-white border-transparent shadow-[0_8px_24px_rgba(99,102,241,0.35)] sm:shadow-[0_12px_35px_rgba(99,102,241,0.4)] scale-[1.02]"
+                                            : disabled
+                                                ? "bg-slate-100/70 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 border-slate-200/70 dark:border-slate-700/60 cursor-not-allowed"
                                             : "bg-white/80 dark:bg-slate-800/80 text-slate-600 dark:text-white border-white/70 dark:border-slate-600/60 hover:bg-white dark:hover:bg-slate-700/80 hover:border-indigo-200/50 dark:hover:border-indigo-400/40 hover:shadow-[0_8px_25px_rgba(99,102,241,0.12)] dark:hover:shadow-[0_8px_25px_rgba(99,102,241,0.2)]"
                                     }`}
                                     aria-pressed={active}
@@ -87,6 +91,8 @@ const TeacherHeroSection = ({ heroBadge, tabs, activeTab, onTabChange }) => (
                                             className={`inline-flex h-6 w-6 sm:h-8 sm:w-8 flex-shrink-0 items-center justify-center rounded-lg sm:rounded-xl transition-all ${
                                                 active
                                                     ? "bg-white/25 text-white"
+                                                    : disabled
+                                                        ? "bg-slate-200/70 dark:bg-slate-700/60 text-slate-400 dark:text-slate-500"
                                                     : "bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-600 text-slate-500 dark:text-slate-200 group-hover:from-indigo-50 group-hover:to-purple-50 group-hover:text-indigo-500 dark:group-hover:from-indigo-800 dark:group-hover:to-purple-800 dark:group-hover:text-indigo-300"
                                             }`}
                                         >
@@ -97,7 +103,7 @@ const TeacherHeroSection = ({ heroBadge, tabs, activeTab, onTabChange }) => (
                                     </span>
                                     <ArrowRight
                                         className={`hidden sm:block w-4 h-4 flex-shrink-0 transition-transform duration-200 ${
-                                            active ? "translate-x-0.5" : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0"
+                                            active ? "translate-x-0.5" : disabled ? "opacity-0 -translate-x-1" : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0"
                                         }`}
                                     />
                                 </button>

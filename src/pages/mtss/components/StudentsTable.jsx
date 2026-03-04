@@ -34,12 +34,12 @@ const DEFAULT_ICON = "\uD83D\uDCCB";
 const UNIVERSAL_ICON = "\uD83C\uDF1F";
 
 const HEADER_COLS = [
-    { label: "Student", align: "text-left" },
-    { label: "Class / Mentor", align: "text-left" },
-    { label: "Focus Area", align: "text-left" },
-    { label: "Tier", align: "text-left" },
-    { label: "Progress", align: "text-left" },
-    { label: "Next Update", align: "text-left" },
+    { label: "Student", align: "text-left", width: "w-[23%]" },
+    { label: "Class / Mentor", align: "text-left", width: "w-[16%]" },
+    { label: "Focus Area", align: "text-left", width: "w-[15%]" },
+    { label: "Tier", align: "text-left", width: "w-[8%]" },
+    { label: "Progress", align: "text-left", width: "w-[11%]" },
+    { label: "Next Update", align: "text-left", width: "w-[17%]" },
 ];
 
 const StudentsTable = memo(
@@ -50,6 +50,8 @@ const StudentsTable = memo(
         showActions = false,
         onView,
         onUpdate,
+        onEditPlan,
+        canEditPlanForStudent,
         selectable = false,
         selectedIds = [],
         onSelect,
@@ -66,7 +68,7 @@ const StudentsTable = memo(
                     data-aos-delay="120"
                     data-aos-duration="500"
                 >
-                    <table className="w-full text-sm">
+                    <table className="w-full table-fixed text-sm">
                         <thead>
                             <tr className="border-b border-slate-100 dark:border-slate-800/80">
                                 <th className="py-3.5 w-2" />
@@ -78,13 +80,13 @@ const StudentsTable = memo(
                                 {HEADER_COLS.map((col) => (
                                     <th
                                         key={col.label}
-                                        className={`py-3.5 font-semibold ${col.align} tracking-[0.18em] uppercase text-[10px] text-slate-500 dark:text-slate-300 ${dense ? "text-[9px]" : ""}`}
+                                        className={`py-3.5 font-semibold ${col.align} ${col.width} tracking-[0.14em] uppercase text-[10px] text-slate-500 dark:text-slate-300 whitespace-nowrap ${dense ? "text-[9px]" : ""}`}
                                     >
                                         {col.label}
                                     </th>
                                 ))}
                                 {showActions && (
-                                    <th className="py-3.5 font-semibold text-center tracking-[0.18em] uppercase text-[10px] text-slate-500 dark:text-slate-300">
+                                    <th className="py-3.5 w-[14%] font-semibold text-center tracking-[0.14em] uppercase text-[10px] text-slate-500 dark:text-slate-300 whitespace-nowrap">
                                         Action
                                     </th>
                                 )}
@@ -103,6 +105,8 @@ const StudentsTable = memo(
                                         showActions={showActions}
                                         onView={onView}
                                         onUpdate={onUpdate}
+                                        onEditPlan={onEditPlan}
+                                        canEditPlanForStudent={canEditPlanForStudent}
                                         selectable={selectable}
                                         selected={selected}
                                         onSelect={onSelect}
@@ -131,6 +135,8 @@ const StudentsTable = memo(
                                 showActions={showActions}
                                 onView={onView}
                                 onUpdate={onUpdate}
+                                onEditPlan={onEditPlan}
+                                canEditPlanForStudent={canEditPlanForStudent}
                                 selectable={selectable}
                                 selected={selected}
                                 onSelect={onSelect}

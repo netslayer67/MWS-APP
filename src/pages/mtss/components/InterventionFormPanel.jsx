@@ -1,18 +1,28 @@
-import React, { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import { fetchStrategies } from "@/services/mtssService";
 import { filterStrategiesByType, validateInterventionForm } from "../config/interventionFormConfig";
 import InterventionFormFields from "./InterventionFormFields";
 
-const InterventionFormPanel = memo(({ formState, onChange, onSubmit, baseFieldClass, textareaClass, students = [], submitting = false }) => {
+const InterventionFormPanel = memo(({
+    formState,
+    onChange,
+    onSubmit,
+    baseFieldClass,
+    textareaClass,
+    students = [],
+    submitting = false,
+    isEditing = false,
+    editingPlan = null,
+    onCancelEdit,
+}) => {
     const [strategies, setStrategies] = useState([]);
     const [loadingStrategies, setLoadingStrategies] = useState(false);
 
     useEffect(() => {
         let mounted = true;
         setLoadingStrategies(true);
-        const params = formState.type ? { type: formState.type } : {};
-        fetchStrategies(params)
+        fetchStrategies()
             .then((response) => {
                 if (!mounted) return;
                 setStrategies(response?.strategies || []);
@@ -25,12 +35,15 @@ const InterventionFormPanel = memo(({ formState, onChange, onSubmit, baseFieldCl
                 if (mounted) setLoadingStrategies(false);
             });
         return () => { mounted = false; };
-    }, [formState.type]);
+    }, []);
 
-    const filteredStrategies = useMemo(
+    const strategyMatchesType = useMemo(
         () => filterStrategiesByType(strategies, formState.type),
-        [formState.type, strategies]
+        [formState.type, strategies],
     );
+
+    const strategyFallbackActive = Boolean(formState.type && strategies.length && strategyMatchesType.length === 0);
+    const filteredStrategies = strategyFallbackActive ? strategies : strategyMatchesType;
 
     const selectedStudent = useMemo(
         () => students.find((student) => student.id === formState.studentId || student._id === formState.studentId),
@@ -76,11 +89,18 @@ const InterventionFormPanel = memo(({ formState, onChange, onSubmit, baseFieldCl
                         Plan Builder
                     </div>
                     <h2 className="text-2xl sm:text-3xl font-black leading-tight bg-gradient-to-r from-[#0f172a] via-[#334155] to-[#2563eb] dark:from-white dark:via-[#c7d2fe] dark:to-[#f472b6] text-transparent bg-clip-text">
-                        Set up a playful boost
+                        {isEditing ? "Adjust the active intervention" : "Set up a playful boost"}
                     </h2>
                     <p className="text-sm text-slate-600 dark:text-slate-200 max-w-2xl">
-                        Drop a mini plan for the kids who need a little more spark this week.
+                        {isEditing
+                            ? "Refine method, frequency, or strategy when the current plan needs a better fit."
+                            : "Drop a mini plan for the kids who need a little more spark this week."}
                     </p>
+                    {isEditing && (
+                        <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/60 bg-cyan-50/70 px-3 py-1 text-xs font-semibold text-cyan-700 dark:border-cyan-500/40 dark:bg-cyan-900/30 dark:text-cyan-200">
+                            Editing: {editingPlan?.studentName || "Student"} {editingPlan?.focusLabel ? `(${editingPlan.focusLabel})` : ""}
+                        </div>
+                    )}
                 </header>
 
                 <form className="space-y-5" onSubmit={onSubmit}>
@@ -89,13 +109,14 @@ const InterventionFormPanel = memo(({ formState, onChange, onSubmit, baseFieldCl
                     onChange={onChange}
                     students={students}
                     selectedStudent={selectedStudent}
-                    strategies={strategies}
                     filteredStrategies={filteredStrategies}
+                    strategyFallbackActive={strategyFallbackActive}
                     loadingStrategies={loadingStrategies}
                     baseFieldClass={baseFieldClass}
                     textareaClass={textareaClass}
                     onStudentChange={handleStudentChange}
                     onStrategyChange={handleStrategyChange}
+                    isEditing={isEditing}
                 />
 
                 <div className="flex flex-wrap gap-3 pt-3" data-aos="fade-up" data-aos-delay="260">
@@ -105,8 +126,18 @@ const InterventionFormPanel = memo(({ formState, onChange, onSubmit, baseFieldCl
                         className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#22d3ee] via-[#3b82f6] to-[#a855f7] text-white font-semibold shadow-[0_18px_45px_rgba(59,130,246,0.3)] transition hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                        {submitting ? "Saving..." : "Save Intervention Plan"}
+                        {submitting ? "Saving..." : isEditing ? "Update Intervention Plan" : "Save Intervention Plan"}
                     </button>
+                    {isEditing && (
+                        <button
+                            type="button"
+                            onClick={onCancelEdit}
+                            disabled={submitting}
+                            className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white/80 dark:bg-white/10 border border-white/60 dark:border-white/15 text-slate-700 dark:text-slate-200 font-semibold transition hover:-translate-y-0.5 disabled:opacity-60"
+                        >
+                            Cancel Edit
+                        </button>
+                    )}
                 </div>
             </form>
             </div>

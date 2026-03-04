@@ -4,7 +4,7 @@ import StudentsTable from "./StudentsTable";
 
 const BATCH = 10;
 
-const DashboardOverviewRoster = ({ students, TierPill, ProgressBadge, onView, onUpdate }) => {
+const DashboardOverviewRoster = ({ students, TierPill, ProgressBadge, onView, onUpdate, onEditPlan, canEditPlanForStudent }) => {
     const [visibleCount, setVisibleCount] = useState(BATCH);
 
     useEffect(() => {
@@ -56,6 +56,8 @@ const DashboardOverviewRoster = ({ students, TierPill, ProgressBadge, onView, on
                     showActions
                     onView={onView}
                     onUpdate={onUpdate}
+                    onEditPlan={onEditPlan}
+                    canEditPlanForStudent={canEditPlanForStudent}
                 />
             </div>
 

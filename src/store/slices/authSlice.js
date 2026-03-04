@@ -35,7 +35,10 @@ export const fetchCurrentUser = createAsyncThunk(
             const response = await getCurrentUser();
             return response.data?.data || response.data;
         } catch (error) {
-            return rejectWithValue(error.response?.data?.message || 'Failed to fetch user');
+            return rejectWithValue({
+                status: error.response?.status || null,
+                message: error.response?.data?.message || 'Failed to fetch user'
+            });
         }
     }
 );
@@ -145,10 +148,22 @@ const authSlice = createSlice({
             })
             .addCase(fetchCurrentUser.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload;
-                // Only clear auth if it's a 401 (token invalid/expired)
-                // Don't log out on transient network errors
-                if (action.payload === 'Unauthorized' || action.payload === 'Token expired') {
+                const payload = action.payload || {};
+                const message = typeof payload === 'string' ? payload : payload?.message;
+                const status = typeof payload === 'string' ? null : payload?.status;
+                state.error = message || 'Failed to fetch user';
+
+                const normalizedMessage = String(message || '').toLowerCase();
+                const shouldClearAuth =
+                    status === 401 ||
+                    status === 403 ||
+                    normalizedMessage.includes('unauthorized') ||
+                    normalizedMessage.includes('token expired') ||
+                    normalizedMessage.includes('invalid token') ||
+                    normalizedMessage.includes('access token required') ||
+                    normalizedMessage.includes('authentication required');
+
+                if (shouldClearAuth) {
                     state.isAuthenticated = false;
                     state.user = null;
                     state.token = null;

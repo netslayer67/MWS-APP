@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import { memo } from "react";
 
 export const TierPill = memo(({ tier, compact = false }) => {
     const styles = {
@@ -7,10 +7,10 @@ export const TierPill = memo(({ tier, compact = false }) => {
         "Tier 3": "bg-gradient-to-r from-[#f59e0b] to-[#f97316] text-white border border-amber-300/45 shadow-[0_6px_15px_rgba(245,158,11,0.35)] dark:from-[#b45309] dark:to-[#ea580c]",
     };
 
-    const sizing = compact ? "text-[10px] px-2.5 py-0.5" : "text-xs px-3 py-1";
+    const sizing = compact ? "text-[9px] px-2 py-0.5" : "text-xs px-3 py-1";
 
     return (
-        <span className={`font-semibold rounded-full ${sizing} ${styles[tier] || "bg-muted/50 text-foreground"}`}>
+        <span className={`inline-flex items-center whitespace-nowrap font-semibold rounded-full ${sizing} ${styles[tier] || "bg-muted/50 text-foreground"}`}>
             {tier}
         </span>
     );
@@ -25,10 +25,10 @@ export const ProgressBadge = memo(({ status, compact = false }) => {
         style = "bg-gradient-to-r from-[#f59e0b] to-[#f97316] text-white border border-amber-300/45 shadow-[0_6px_12px_rgba(249,115,22,0.3)]";
     }
 
-    const sizing = compact ? "text-[10px] px-2.5 py-0.5" : "text-xs px-3 py-1";
+    const sizing = compact ? "text-[9px] px-2 py-0.5" : "text-xs px-3 py-1";
 
     return (
-        <span className={`font-semibold rounded-full ${sizing} ${style}`}>
+        <span className={`inline-flex items-center whitespace-nowrap font-semibold rounded-full ${sizing} ${style}`}>
             {status}
         </span>
     );

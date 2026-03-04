@@ -14,13 +14,14 @@ const InterventionFormFields = memo(({
     onChange,
     students,
     selectedStudent,
-    strategies,
     filteredStrategies,
+    strategyFallbackActive = false,
     loadingStrategies,
     baseFieldClass,
     textareaClass,
     onStudentChange,
-    onStrategyChange
+    onStrategyChange,
+    isEditing = false
 }) => {
     const fieldClass = `${baseFieldClass} bg-white/90 dark:bg-slate-900/50 border border-white/70 dark:border-white/15 shadow-[0_10px_30px_rgba(15,23,42,0.08)] focus:ring-2 focus:ring-primary/40`;
     const textareaFieldClass = `${textareaClass} bg-white/90 dark:bg-slate-900/50 border border-white/70 dark:border-white/15 shadow-[0_10px_30px_rgba(15,23,42,0.08)] focus:ring-2 focus:ring-primary/40`;
@@ -36,12 +37,20 @@ const InterventionFormFields = memo(({
                     <label className={labelClass}>
                         Student Name
                     </label>
-                    <select className={fieldClass} value={formState.studentId} onChange={onStudentChange}>
+                    <select
+                        className={fieldClass}
+                        value={formState.studentId}
+                        onChange={onStudentChange}
+                        disabled={isEditing}
+                    >
                         <option value="">Select student</option>
                         {students.map((student) => (
                             <option key={student.id} value={student.id}>{student.name}</option>
                         ))}
                     </select>
+                    {isEditing && (
+                        <p className="text-xs text-muted-foreground">Student is locked while editing this intervention.</p>
+                    )}
                 </div>
                 <div className={`${fieldWrap} flex flex-col gap-2`}>
                     <label className={labelClass}>
@@ -90,7 +99,11 @@ const InterventionFormFields = memo(({
                             <option key={strategy._id} value={strategy._id}>{strategy.name}</option>
                         ))}
                     </select>
-                    <p className="text-xs text-muted-foreground">Suggestions filtered by intervention type.</p>
+                    <p className="text-xs text-muted-foreground">
+                        {strategyFallbackActive
+                            ? "No exact match for this type yet. Showing full strategy library."
+                            : "Suggestions filtered by intervention type."}
+                    </p>
                 </div>
                 <div className={`${fieldWrap} flex flex-col gap-2`}>
                     <label className={labelClass}>

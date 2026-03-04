@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useState, useCallback, useDeferredValue, useEffect } from "react";
+import { memo, useMemo, useState, useCallback, useDeferredValue, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import StudentsTable from "./StudentsTable";
@@ -7,7 +7,7 @@ import { updateMentorAssignment } from "@/services/mtssService";
 import { ensureStudentInterventions, getMostCriticalForDisplay } from "../utils/interventionUtils";
 import { FilterBar, RosterHeader, LoadMore, STUDENTS_PANEL_BATCH } from "./StudentsPanelParts";
 
-const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh }) => {
+const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh, onEditPlan, canEditPlanForStudent }) => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const [activeTier, setActiveTier] = useState("All");
@@ -118,6 +118,8 @@ const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh }) =>
                         showActions
                         onView={handleView}
                         onUpdate={(student) => handleOpen("update", student)}
+                        onEditPlan={onEditPlan}
+                        canEditPlanForStudent={canEditPlanForStudent}
                     />
                 </div>
 

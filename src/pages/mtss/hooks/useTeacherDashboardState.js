@@ -4,6 +4,135 @@ import { useSelector } from "react-redux";
 import { useToast } from "@/components/ui/use-toast";
 import { createDefaultInterventionForm, createDefaultProgressForm } from "../data/teacherDashboardContent";
 import { createMentorAssignment, updateMentorAssignment } from "@/services/mtssService";
+import { resolveEditableAssignmentOption } from "../utils/editPlanAccess";
+
+const TYPE_ALIAS_MAP = {
+    english: ["english", "ela", "reading", "literacy"],
+    math: ["math", "mathematics", "numeracy"],
+    behavior: ["behavior", "behaviour", "conduct"],
+    sel: ["sel", "social emotional", "social-emotional"],
+    attendance: ["attendance", "present", "absence", "absent"],
+    indonesian: ["indonesian", "bahasa", "bahasa indonesia", "bi"],
+    universal: ["universal", "all", "schoolwide", "tier 1"],
+};
+
+const normalizeText = (value = "") =>
+    value
+        .toString()
+        .trim()
+        .toLowerCase();
+
+const resolveTypeValue = (option = {}) => {
+    const candidates = [
+        option?.focus,
+        option?.focusAreas?.[0],
+        option?.strategyName,
+    ].filter(Boolean);
+
+    for (const raw of candidates) {
+        const normalized = normalizeText(raw);
+        if (!normalized) continue;
+        const direct = Object.keys(TYPE_ALIAS_MAP).find((key) => key === normalized);
+        if (direct) return direct;
+
+        for (const [type, aliases] of Object.entries(TYPE_ALIAS_MAP)) {
+            if (aliases.some((alias) => normalized === alias || normalized.includes(alias) || alias.includes(normalized))) {
+                return type;
+            }
+        }
+    }
+
+    return "universal";
+};
+
+const resolveTierValue = (value = "tier2") => {
+    const normalized = normalizeText(value).replace(/\s+/g, "");
+    if (!normalized) return "tier2";
+    if (normalized.includes("tier3") || normalized === "3") return "tier3";
+    if (normalized.includes("tier1") || normalized === "1") return "tier1";
+    return "tier2";
+};
+
+const resolveDurationValue = (value = "") => {
+    const normalized = normalizeText(value);
+    return /^\d+\s+weeks?$/.test(normalized) ? normalized.replace(/weeks?$/, "weeks") : "";
+};
+
+const toDateInputValue = (value) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toISOString().slice(0, 10);
+};
+
+const resolveScoreValue = (score) => {
+    if (score == null) return "";
+    if (typeof score === "number" || typeof score === "string") {
+        return `${score}`.trim();
+    }
+    if (score?.value == null) return "";
+    return `${score.value}`.trim();
+};
+
+const resolveScoreUnit = (score, fallback = "score") => {
+    if (typeof score === "string") return score || fallback;
+    return score?.unit || fallback;
+};
+
+const resolveGoalValue = (option = {}) => {
+    if (typeof option.goal === "string" && option.goal.trim()) return option.goal.trim();
+    if (typeof option.goals === "string" && option.goals.trim()) return option.goals.trim();
+    if (Array.isArray(option.goals) && option.goals.length) {
+        const goalEntry = option.goals.find(Boolean);
+        if (typeof goalEntry === "string") return goalEntry.trim();
+        if (goalEntry?.description) return goalEntry.description.trim();
+    }
+    return "";
+};
+
+const buildInterventionFormFromAssignment = (student, option = {}) => {
+    const fallbackUnit = option.metricLabel || "score";
+    const baselineUnit = resolveScoreUnit(option.baselineScore, fallbackUnit);
+    return {
+        ...createDefaultInterventionForm(),
+        studentId: student?.id || student?._id || "",
+        studentName: student?.name || "",
+        grade: student?.grade || student?.currentGrade || "",
+        className: student?.className || "",
+        type: resolveTypeValue(option),
+        strategyId: option?.strategyId || "",
+        strategyName: option?.strategyName || "",
+        tier: resolveTierValue(option?.tierValue || option?.tierCode || option?.tier),
+        goal: resolveGoalValue(option),
+        notes: option?.notes || "",
+        startDate: toDateInputValue(option?.startDate),
+        duration: resolveDurationValue(option?.duration),
+        monitorFrequency: option?.monitoringFrequency || "",
+        customFrequencyDays: Array.isArray(option?.customFrequencyDays) ? option.customFrequencyDays : [],
+        customFrequencyNote: option?.customFrequencyNote || "",
+        monitorMethod: option?.monitoringMethod || "",
+        baselineValue: resolveScoreValue(option?.baselineScore),
+        baselineUnit,
+        targetValue: resolveScoreValue(option?.targetScore),
+        targetUnit: resolveScoreUnit(option?.targetScore, baselineUnit),
+    };
+};
+
+const buildScorePayload = (value, unit = "score", allowClear = false) => {
+    if (value === "" || value === null || value === undefined) {
+        return allowClear ? { value: null, unit } : undefined;
+    }
+
+    const parsedValue = Number(value);
+    if (!Number.isFinite(parsedValue)) {
+        return allowClear ? { value: null, unit } : undefined;
+    }
+
+    return {
+        value: parsedValue,
+        unit,
+    };
+};
 
 export const useTeacherDashboardState = (tabs, { onSaveSuccess } = {}) => {
     const { toast } = useToast();
@@ -11,10 +140,10 @@ export const useTeacherDashboardState = (tabs, { onSaveSuccess } = {}) => {
     const [activeTab, setActiveTab] = useState("dashboard");
     const [interventionForm, setInterventionForm] = useState(() => createDefaultInterventionForm());
     const [progressForm, setProgressForm] = useState(() => createDefaultProgressForm());
+    const [editingPlan, setEditingPlan] = useState(null);
     const [submittingPlan, setSubmittingPlan] = useState(false);
     const [submittingProgress, setSubmittingProgress] = useState(false);
 
-    // Get current user from Redux auth state
     const user = useSelector((state) => state.auth?.user);
 
     useEffect(() => {
@@ -31,6 +160,25 @@ export const useTeacherDashboardState = (tabs, { onSaveSuccess } = {}) => {
 
     const handleProgressChange = useCallback((field, value) => {
         setProgressForm((prev) => ({ ...prev, [field]: value }));
+    }, []);
+
+    const startEditingPlan = useCallback((student, assignmentOption) => {
+        const selectedOption = assignmentOption || resolveEditableAssignmentOption(student);
+        if (!selectedOption?.assignmentId) return false;
+
+        setEditingPlan({
+            assignmentId: selectedOption.assignmentId,
+            studentName: student?.name || "Student",
+            focusLabel: selectedOption.focus || selectedOption.strategyName || "Intervention",
+        });
+        setInterventionForm(buildInterventionFormFromAssignment(student, selectedOption));
+        setActiveTab("edit");
+        return true;
+    }, []);
+
+    const cancelEditingPlan = useCallback(() => {
+        setEditingPlan(null);
+        setInterventionForm(createDefaultInterventionForm());
     }, []);
 
     const handleSavePlan = useCallback(
@@ -53,45 +201,58 @@ export const useTeacherDashboardState = (tabs, { onSaveSuccess } = {}) => {
             try {
                 setSubmittingPlan(true);
 
-                // Build payload for API
-                const mentorId = user?.id || user?._id;
+                const isEditing = Boolean(editingPlan?.assignmentId);
+                const metricUnit = currentForm.baselineUnit || currentForm.targetUnit || "score";
+                const baselineScore = buildScorePayload(currentForm.baselineValue, metricUnit, isEditing);
+                const targetScore = buildScorePayload(currentForm.targetValue, metricUnit, isEditing);
+                const goalText = currentForm.goal?.trim() || "";
+
                 const payload = {
-                    mentorId,
-                    studentIds: [currentForm.studentId],
                     tier: currentForm.tier,
                     focusAreas: currentForm.type ? [currentForm.type] : ["Universal Supports"],
-                    startDate: currentForm.startDate || new Date().toISOString(),
+                    startDate: currentForm.startDate || undefined,
                     duration: currentForm.duration || undefined,
                     strategyId: currentForm.strategyId || undefined,
                     strategyName: currentForm.strategyName || undefined,
                     monitoringMethod: currentForm.monitorMethod || undefined,
                     monitoringFrequency: currentForm.monitorFrequency || undefined,
-                    customFrequencyDays: currentForm.monitorFrequency === "Custom" && currentForm.customFrequencyDays?.length ? currentForm.customFrequencyDays : undefined,
-                    customFrequencyNote: currentForm.monitorFrequency === "Custom" && currentForm.customFrequencyNote ? currentForm.customFrequencyNote : undefined,
-                    metricLabel: currentForm.baselineUnit || currentForm.targetUnit || "score",
-                    baselineScore: currentForm.baselineValue
-                        ? { value: Number(currentForm.baselineValue), unit: currentForm.baselineUnit || "score" }
-                        : undefined,
-                    targetScore: currentForm.targetValue
-                        ? { value: Number(currentForm.targetValue), unit: currentForm.targetUnit || "score" }
-                        : undefined,
-                    notes: currentForm.notes || undefined,
-                    goals: currentForm.goal
-                        ? [{ description: currentForm.goal, successCriteria: "" }]
-                        : undefined,
+                    metricLabel: metricUnit,
+                    ...(baselineScore !== undefined ? { baselineScore } : {}),
+                    ...(targetScore !== undefined ? { targetScore } : {}),
+                    notes: isEditing ? (currentForm.notes || "") : (currentForm.notes || undefined),
+                    goals: goalText
+                        ? [{ description: goalText }]
+                        : (isEditing ? [] : undefined),
                 };
 
-                await createMentorAssignment(payload);
+                if (currentForm.monitorFrequency === "Custom") {
+                    payload.customFrequencyDays = currentForm.customFrequencyDays?.length ? currentForm.customFrequencyDays : [];
+                    payload.customFrequencyNote = currentForm.customFrequencyNote || "";
+                } else if (isEditing) {
+                    payload.customFrequencyDays = [];
+                    payload.customFrequencyNote = "";
+                }
+
+                if (isEditing) {
+                    await updateMentorAssignment(editingPlan.assignmentId, payload);
+                } else {
+                    const mentorId = user?.id || user?._id;
+                    await createMentorAssignment({
+                        ...payload,
+                        mentorId,
+                        studentIds: [currentForm.studentId],
+                    });
+                }
 
                 toast({
-                    title: "Intervention saved",
-                    description: "Student plan created successfully. Track their progress!",
+                    title: isEditing ? "Intervention updated" : "Intervention saved",
+                    description: isEditing
+                        ? "Plan changes are now live on the MTSS dashboard."
+                        : "Student plan created successfully. Track their progress!",
                 });
 
-                // Reset form after success
                 setInterventionForm(createDefaultInterventionForm());
-
-                // Switch to students tab and refresh dashboard data
+                setEditingPlan(null);
                 setActiveTab("students");
                 onSaveSuccess?.();
             } catch (error) {
@@ -105,7 +266,7 @@ export const useTeacherDashboardState = (tabs, { onSaveSuccess } = {}) => {
                 setSubmittingPlan(false);
             }
         },
-        [interventionForm, submittingPlan, toast, user, onSaveSuccess],
+        [editingPlan, interventionForm, onSaveSuccess, submittingPlan, toast, user],
     );
 
     const handleSubmitProgress = useCallback(
@@ -145,7 +306,6 @@ export const useTeacherDashboardState = (tabs, { onSaveSuccess } = {}) => {
                     description: "Your monitoring update is live on the MTSS dashboard.",
                 });
 
-                // Reset form after success
                 setProgressForm(createDefaultProgressForm());
             } catch (error) {
                 console.error("Failed to submit progress:", error);
@@ -162,6 +322,7 @@ export const useTeacherDashboardState = (tabs, { onSaveSuccess } = {}) => {
     );
 
     const resetInterventionForm = useCallback(() => {
+        setEditingPlan(null);
         setInterventionForm(createDefaultInterventionForm());
     }, []);
 
@@ -174,10 +335,14 @@ export const useTeacherDashboardState = (tabs, { onSaveSuccess } = {}) => {
         setActiveTab,
         interventionForm,
         progressForm,
+        editingPlan,
+        isEditingPlan: Boolean(editingPlan?.assignmentId),
         handleInterventionChange,
         handleProgressChange,
         handleSavePlan,
         handleSubmitProgress,
+        startEditingPlan,
+        cancelEditingPlan,
         resetInterventionForm,
         resetProgressForm,
         submittingPlan,

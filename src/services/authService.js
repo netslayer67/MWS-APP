@@ -45,14 +45,27 @@ api.interceptors.response.use(
             stopGlobalLoading();
         }
         if (error.response?.status === 401) {
-            const msg = error.response?.data?.message || '';
-            // Only clear auth for explicit token failures.
-            // Keep auth state for non-token 401s to avoid forced logout loops.
-            if (msg.includes('Token expired') || msg.includes('Invalid token') || msg.includes('jwt expired')) {
-                localStorage.removeItem('auth_token');
-                localStorage.removeItem('auth_user');
-                localStorage.removeItem('token');
-                window.location.assign('/');
+            const requestPath = String(error?.config?.url || '');
+            const isLoginRequest = /\/auth\/login$/i.test(requestPath);
+            if (!isLoginRequest) {
+                const msg = String(error.response?.data?.message || '').toLowerCase();
+                const authFailureHints = [
+                    'token expired',
+                    'invalid token',
+                    'jwt expired',
+                    'access token required',
+                    'authentication required',
+                    'user not found or inactive',
+                ];
+                const shouldResetAuth = !msg || authFailureHints.some((hint) => msg.includes(hint));
+                if (shouldResetAuth) {
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('auth_user');
+                    localStorage.removeItem('token');
+                    if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+                        window.location.assign('/');
+                    }
+                }
             }
         }
         return Promise.reject(error);

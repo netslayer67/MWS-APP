@@ -7,6 +7,7 @@ import App from '@/App';
 import '@/index.css';
 import { Toaster } from '@/components/ui/toaster';
 import { syncInitialTheme } from '@/lib/theme';
+import { fetchCurrentUser } from '@/store/slices/authSlice';
 
 syncInitialTheme();
 
@@ -21,6 +22,8 @@ if (token && user) {
             type: 'auth/setUser',
             payload: { user: userData, token }
         });
+        // Validate persisted token before rendering protected pages.
+        store.dispatch(fetchCurrentUser());
     } catch (error) {
         console.error('Error parsing stored user data:', error);
         // Clear invalid data

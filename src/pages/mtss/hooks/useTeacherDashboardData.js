@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchMentorAssignments, fetchMtssStudents } from "@/services/mtssService";
+import socketService from "@/services/socketService";
 import {
     buildStaffGreeting,
     formatStaffDisplayName,
@@ -14,6 +15,8 @@ import {
     mapAssignmentsToStudents,
     mergeRosterWithAssignments,
 } from "../utils/teacherDashboardUtils";
+
+const ADMIN_ROLES = new Set(["directorate", "admin", "superadmin", "head_unit"]);
 
 const buildGreeting = (name) =>
     buildStaffGreeting(name, {
@@ -63,8 +66,10 @@ const useTeacherDashboardData = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const loadDashboard = useCallback(async (signal) => {
-        setLoading(true);
+    const loadDashboard = useCallback(async ({ signal, silent = false } = {}) => {
+        if (!silent) {
+            setLoading(true);
+        }
         setError(null);
         try {
             const gradeQueryValues = buildGradeQueryValues(segments);
@@ -121,15 +126,50 @@ const useTeacherDashboardData = () => {
                 setError(err?.response?.data?.message || err?.message || "Failed to load MTSS data");
             }
         } finally {
-            setLoading(false);
+            if (!silent) {
+                setLoading(false);
+            }
         }
-    }, [baseHero, segments]);
+    }, [baseHero, segments, storedUser]);
 
     useEffect(() => {
         const controller = new AbortController();
-        loadDashboard(controller.signal);
+        loadDashboard({ signal: controller.signal });
         return () => controller.abort();
     }, [loadDashboard]);
+
+    useEffect(() => {
+        const userId = storedUser?.id || storedUser?._id;
+        const role = storedUser?.role;
+        if (!userId || !role) return;
+
+        socketService.connect();
+        if (ADMIN_ROLES.has(role)) {
+            socketService.joinMtssAdmin();
+        } else {
+            socketService.joinMtssMentor(userId);
+        }
+
+        const handleStudentsChanged = () => {
+            loadDashboard({ silent: true });
+        };
+        const handleAssignmentChanged = () => {
+            loadDashboard({ silent: true });
+        };
+
+        socketService.onMtssStudentsChanged(handleStudentsChanged);
+        socketService.onMtssAssignment(handleAssignmentChanged);
+
+        return () => {
+            socketService.offMtssStudentsChanged(handleStudentsChanged);
+            socketService.offMtssAssignment(handleAssignmentChanged);
+            if (ADMIN_ROLES.has(role)) {
+                socketService.leaveMtssAdmin();
+            } else {
+                socketService.leaveMtssMentor(userId);
+            }
+        };
+    }, [loadDashboard, storedUser]);
 
     return {
         statCards,

@@ -1,11 +1,9 @@
 import { Suspense, lazy, memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
 import { AnimatePresence } from 'framer-motion';
 import AppHelmet from '@/components/app/AppHelmet';
 import SkipLink from '@/components/app/SkipLink';
 import RouteConfig from '@/components/app/RouteConfig';
-import { fetchCurrentUser } from '@/store/slices/authSlice';
 
 const BackgroundDecor = lazy(() => import('@/components/app/BackgroundDecor'));
 const UtilityDock = lazy(() => import('@/components/app/UtilityDock'));
@@ -14,7 +12,6 @@ const GlobalLoadingOverlay = lazy(() => import('@/components/app/GlobalLoadingOv
 
 const App = memo(() => {
     const location = useLocation();
-    const dispatch = useDispatch();
     const aosRef = useRef(null);
     const [showEnhancements, setShowEnhancements] = useState(false);
 
@@ -80,12 +77,6 @@ const App = memo(() => {
             window.clearTimeout(timeoutId);
         };
     }, []);
-
-    useEffect(() => {
-        const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
-        if (!token) return;
-        dispatch(fetchCurrentUser());
-    }, [dispatch]);
 
     // Memoize key for AnimatePresence to prevent unnecessary re-renders
     const animatePresenceKey = useMemo(() => location.pathname, [location.pathname]);

@@ -1,5 +1,6 @@
 import {
     LineChart as LineChartIcon,
+    PencilLine,
     PlusCircle,
     Users2,
 } from "lucide-react";
@@ -8,6 +9,7 @@ export const tabs = [
     { key: "dashboard", label: "Dashboard", shortLabel: "Dashboard", icon: LineChartIcon },
     { key: "students", label: "My Students", shortLabel: "Students", icon: Users2 },
     { key: "create", label: "Create Intervention", shortLabel: "Create", icon: PlusCircle },
+    { key: "edit", label: "Edit Intervention", shortLabel: "Edit", icon: PencilLine },
 ];
 
 export const fieldClasses = {

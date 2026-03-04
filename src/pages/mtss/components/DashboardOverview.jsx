@@ -1,9 +1,9 @@
-import React, { memo } from "react";
+import { memo } from "react";
 import TeacherStatCards from "../teacher/TeacherStatCards";
 import DashboardOverviewRoster from "./DashboardOverviewRoster";
 import DashboardOverviewSpotlight from "./DashboardOverviewSpotlight";
 
-const DashboardOverview = memo(({ statCards, students, progressData, TierPill, ProgressBadge, onView, onUpdate }) => (
+const DashboardOverview = memo(({ statCards, students, progressData, TierPill, ProgressBadge, onView, onUpdate, onEditPlan, canEditPlanForStudent }) => (
     <div className="space-y-8 mtss-theme">
         <TeacherStatCards statCards={statCards} />
         <DashboardOverviewRoster
@@ -12,6 +12,8 @@ const DashboardOverview = memo(({ statCards, students, progressData, TierPill, P
             ProgressBadge={ProgressBadge}
             onView={onView}
             onUpdate={onUpdate}
+            onEditPlan={onEditPlan}
+            canEditPlanForStudent={canEditPlanForStudent}
         />
         <DashboardOverviewSpotlight students={students} progressData={progressData} TierPill={TierPill} />
     </div>
