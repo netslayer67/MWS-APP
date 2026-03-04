@@ -28,6 +28,21 @@ const normalizeGradeToken = (value = "") => {
     return normalized;
 };
 
+const BROAD_GRADE_SCOPES = new Set([
+    "junior high",
+    "middle school",
+    "secondary",
+    "high school",
+    "elementary",
+    "kindergarten",
+    "all grades",
+    "all grade",
+    "all students",
+    "all",
+]);
+
+const isBroadGradeScope = (value = "") => BROAD_GRADE_SCOPES.has(normalizeText(value));
+
 const normalizeClassToken = (value = "") => {
     const normalized = normalizeText(value);
     if (!normalized) return "";
@@ -93,6 +108,7 @@ const isSubjectRole = (value = "") => {
 
 const gradeMatches = (classGrade = "", student = {}) => {
     if (!classGrade) return true;
+    if (isBroadGradeScope(classGrade)) return true;
     const studentCandidates = [student?.grade, student?.currentGrade, student?.className].filter(Boolean);
     const classGradeKey = normalizeGradeToken(classGrade);
     return studentCandidates.some((candidate) => normalizeGradeToken(candidate) === classGradeKey);
@@ -138,10 +154,13 @@ const isEscalatedAssignment = (option = {}) => {
     return tierCode === "tier2" || tierCode === "tier3";
 };
 
-export const resolveEditableAssignmentOption = (student = {}) => {
-    const options = Array.isArray(student.assignmentOptions)
+const getCandidateAssignmentOptions = (student = {}) =>
+    Array.isArray(student.assignmentOptions)
         ? student.assignmentOptions.filter((option) => option?.assignmentId && isEditableAssignmentStatus(option?.statusKey || option?.status))
         : [];
+
+export const resolveEditableAssignmentOption = (student = {}) => {
+    const options = getCandidateAssignmentOptions(student);
     if (options.length) {
         const escalated = options.filter((option) => isEscalatedAssignment(option));
         return escalated[0] || null;
@@ -194,6 +213,17 @@ export const canUserEditPlanForStudent = (user = {}, student = {}, assignmentOpt
         if (!classSubjects.length) return false;
         return classSubjects.some((subjectKey) => subjectKeys.includes(subjectKey));
     });
+};
+
+export const resolveEditableAssignmentForUser = (user = {}, student = {}) => {
+    const options = getCandidateAssignmentOptions(student);
+    if (!options.length) return null;
+
+    const editableOptions = options.filter((option) => canUserEditPlanForStudent(user, student, option));
+    if (!editableOptions.length) return null;
+
+    const escalatedEditable = editableOptions.filter((option) => isEscalatedAssignment(option));
+    return escalatedEditable[0] || editableOptions[0];
 };
 
 export const formatPlanAuditDate = (value) => {

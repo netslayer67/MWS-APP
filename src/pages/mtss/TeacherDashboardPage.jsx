@@ -11,7 +11,7 @@ import QuickUpdateModal from "./components/QuickUpdateModal";
 import TeacherDashboardPanels from "./components/TeacherDashboardPanels";
 import TeacherDashboardStatus from "./components/TeacherDashboardStatus";
 import useTeacherDashboardActions from "./hooks/useTeacherDashboardActions";
-import { canUserEditPlanForStudent, resolveEditableAssignmentOption } from "./utils/editPlanAccess";
+import { canUserEditPlanForStudent, resolveEditableAssignmentForUser } from "./utils/editPlanAccess";
 import gsap from "gsap";
 import { animate, stagger } from "animejs";
 import "@/pages/styles/teacher-dashboard-collage.css";
@@ -281,8 +281,8 @@ const TeacherDashboardPage = memo(() => {
     const handleOpenQuickUpdate = useCallback((student) => setQuickUpdateStudent(student), []);
     const canEditPlanForStudent = useCallback(
         (student) => {
-            const assignmentOption = resolveEditableAssignmentOption(student);
-            return canUserEditPlanForStudent(authUser, student, assignmentOption);
+            const assignmentOption = resolveEditableAssignmentForUser(authUser, student);
+            return Boolean(assignmentOption?.assignmentId);
         },
         [authUser],
     );
@@ -291,11 +291,11 @@ const TeacherDashboardPage = memo(() => {
             const student = payload?.student || payload;
             if (!student) return;
 
-            const assignmentOption = payload?.assignmentOption || resolveEditableAssignmentOption(student);
+            const assignmentOption = payload?.assignmentOption || resolveEditableAssignmentForUser(authUser, student);
             if (!assignmentOption?.assignmentId) {
                 toast({
                     title: "No editable intervention",
-                    description: `${student?.name || "Student"} doesn't have an intervention plan yet.`,
+                    description: `${student?.name || "Student"} doesn't have an intervention plan you can edit.`,
                     variant: "destructive",
                 });
                 return;
