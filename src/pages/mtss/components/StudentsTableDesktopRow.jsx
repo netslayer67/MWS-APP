@@ -61,11 +61,17 @@ const StudentsTableDesktopRow = memo(
             : universalIcon;
         const assignmentOptions = Array.isArray(student.assignmentOptions) ? student.assignmentOptions : [];
         const primaryAssignment = assignmentOptions[0] || null;
+        const hasInterventionPlan = Boolean(
+            assignmentOptions.some((option) => option?.assignmentId) ||
+            student.assignmentId ||
+            Number(student.activeAssignmentCount || 0) > 0 ||
+            Number(student.assignmentCount || 0) > 0,
+        );
         const lastModifiedAtFull = formatPlanAuditDate(primaryAssignment?.lastPlanUpdatedAt);
         const lastModifiedAtCompact = formatAuditDateCompact(primaryAssignment?.lastPlanUpdatedAt);
         const lastModifiedBy = primaryAssignment?.lastPlanUpdatedByName || "Unknown";
         const lastModifiedByCompact = compactPersonName(lastModifiedBy);
-        const canEditPlan = Boolean(onEditPlan) && (
+        const canEditPlan = hasInterventionPlan && Boolean(onEditPlan) && (
             typeof canEditPlanForStudent === "function"
                 ? canEditPlanForStudent(student)
                 : Boolean(primaryAssignment?.assignmentId || student.assignmentId)
@@ -78,14 +84,16 @@ const StudentsTableDesktopRow = memo(
                 icon: Eye,
                 className: "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border-indigo-200/60 dark:border-indigo-700/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 hover:shadow-indigo-200/30 dark:hover:shadow-indigo-900/20",
             },
-            {
+        ];
+        if (hasInterventionPlan) {
+            actionButtons.push({
                 key: "progress",
                 label: "Progress",
                 onClick: () => onUpdate?.(student),
                 icon: Pencil,
                 className: "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200/60 dark:border-amber-700/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 hover:shadow-amber-200/30 dark:hover:shadow-amber-900/20",
-            },
-        ];
+            });
+        }
         if (canEditPlan) {
             actionButtons.push({
                 key: "edit",
@@ -197,7 +205,15 @@ const StudentsTableDesktopRow = memo(
                 {/* Actions */}
                 {showActions && (
                     <td className="py-3.5 pr-3 align-top w-[14%]">
-                        <div className={`ml-auto grid gap-1 ${actionButtons.length === 3 ? "grid-cols-3" : "grid-cols-2"} max-w-[250px]`}>
+                        <div
+                            className={`ml-auto grid gap-1 ${
+                                actionButtons.length === 3
+                                    ? "grid-cols-3"
+                                    : actionButtons.length === 2
+                                        ? "grid-cols-2"
+                                        : "grid-cols-1"
+                            } max-w-[250px]`}
+                        >
                             {actionButtons.map((action) => {
                                 const Icon = action.icon;
                                 return (

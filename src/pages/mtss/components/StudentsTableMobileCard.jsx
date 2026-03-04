@@ -38,9 +38,15 @@ const StudentsTableMobileCard = memo(
             : universalIcon;
         const assignmentOptions = Array.isArray(student.assignmentOptions) ? student.assignmentOptions : [];
         const primaryAssignment = assignmentOptions[0] || null;
+        const hasInterventionPlan = Boolean(
+            assignmentOptions.some((option) => option?.assignmentId) ||
+            student.assignmentId ||
+            Number(student.activeAssignmentCount || 0) > 0 ||
+            Number(student.assignmentCount || 0) > 0,
+        );
         const lastModifiedAt = formatPlanAuditDate(primaryAssignment?.lastPlanUpdatedAt);
         const lastModifiedBy = primaryAssignment?.lastPlanUpdatedByName || "Unknown";
-        const canEditPlan = Boolean(onEditPlan) && (
+        const canEditPlan = hasInterventionPlan && Boolean(onEditPlan) && (
             typeof canEditPlanForStudent === "function"
                 ? canEditPlanForStudent(student)
                 : Boolean(primaryAssignment?.assignmentId || student.assignmentId)
@@ -53,14 +59,16 @@ const StudentsTableMobileCard = memo(
                 icon: Eye,
                 className: "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border-indigo-200/50 dark:border-indigo-700/40",
             },
-            {
+        ];
+        if (hasInterventionPlan) {
+            actionButtons.push({
                 key: "progress",
                 label: "Progress",
                 onClick: () => onUpdate?.(student),
                 icon: Pencil,
                 className: "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200/50 dark:border-amber-700/40",
-            },
-        ];
+            });
+        }
         if (canEditPlan) {
             actionButtons.push({
                 key: "edit",
@@ -144,7 +152,15 @@ const StudentsTableMobileCard = memo(
                         )}
 
                         {showActions && (
-                            <div className={`grid gap-1.5 ${actionButtons.length === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
+                            <div
+                                className={`grid gap-1.5 ${
+                                    actionButtons.length === 3
+                                        ? "grid-cols-3"
+                                        : actionButtons.length === 2
+                                            ? "grid-cols-2"
+                                            : "grid-cols-1"
+                                }`}
+                            >
                                 {actionButtons.map((action) => {
                                     const Icon = action.icon;
                                     return (
