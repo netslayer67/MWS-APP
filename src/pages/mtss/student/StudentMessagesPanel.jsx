@@ -2,6 +2,7 @@ import { memo, useMemo, useState } from "react";
 import { MessageCircleHeart, Sparkles } from "lucide-react";
 import { buildStudentProfileView } from "../utils/studentProfileUtils";
 import { formatMentorDisplay } from "../utils/mentorNameUtils";
+import EvidenceViewer from "../components/EvidenceViewer";
 
 const toTimestamp = (value) => {
     if (!value) return 0;
@@ -50,6 +51,7 @@ const StudentMessagesPanel = ({ student, isLoading = false }) => {
                     dateRaw: intervention.updatedAt || intervention.endDate || intervention.startDate || null,
                     text: intervention.notes,
                     score: null,
+                    evidence: [],
                 });
             }
 
@@ -65,6 +67,7 @@ const StudentMessagesPanel = ({ student, isLoading = false }) => {
                         dateRaw: entry.dateRaw || entry.createdAt || entry.date,
                         text: entry.notes || "Check-in recorded",
                         score: entry.score,
+                        evidence: Array.isArray(entry.evidence) ? entry.evidence : [],
                     });
                 });
             }
@@ -152,6 +155,11 @@ const StudentMessagesPanel = ({ student, isLoading = false }) => {
                                 <p className="mt-1 text-sm text-slate-700 dark:text-slate-100">{message.text}</p>
                                 {(message.score !== undefined && message.score !== null) && (
                                     <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">Score: {message.score}</p>
+                                )}
+                                {message.evidence?.length > 0 && (
+                                    <div className="mt-2">
+                                        <EvidenceViewer evidence={message.evidence} />
+                                    </div>
                                 )}
                             </div>
                         ))}

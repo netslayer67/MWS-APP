@@ -1,7 +1,8 @@
-import React, { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { CircleDot, Sparkles, Star, TrendingUp } from "lucide-react";
 import { buildStudentProfileView } from "../utils/studentProfileUtils";
 import { formatMentorDisplay } from "../utils/mentorNameUtils";
+import EvidenceViewer from "../components/EvidenceViewer";
 import {
     buildFallbackChart,
     buildTrendSeries,
@@ -162,7 +163,7 @@ const StudentProgressPanel = ({ student, isLoading = false }) => {
                             </p>
                         </div>
                         <div className="no-scrollbar flex snap-x gap-2 overflow-x-auto pb-1">
-                            {visibleSubjects.map((item, index) => {
+                            {visibleSubjects.map((item) => {
                                 const isActive = item.type === activeIntervention?.type;
                                 const subjectEmoji = SUBJECT_EMOJI_MAP[item.type] || SUBJECT_EMOJI_MAP[item.label?.toUpperCase()] || "✨";
                                 return (
@@ -360,6 +361,11 @@ const StudentProgressPanel = ({ student, isLoading = false }) => {
                                     <p className="text-sm text-slate-700 dark:text-slate-100">{update.notes || "Check-in recorded"}</p>
                                     {update.score !== undefined && update.score !== null && (
                                         <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">Score: {formatScore(update.score, unitLabel)}</p>
+                                    )}
+                                    {update.evidence?.length > 0 && (
+                                        <div className="mt-2">
+                                            <EvidenceViewer evidence={update.evidence} />
+                                        </div>
                                     )}
                                 </div>
                             ))}

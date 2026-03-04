@@ -2,6 +2,7 @@ import { memo, useMemo } from "react";
 import { CalendarHeart, Clock3, Layers3, Target } from "lucide-react";
 import { buildStudentProfileView } from "../utils/studentProfileUtils";
 import { formatMentorDisplay } from "../utils/mentorNameUtils";
+import EvidenceViewer from "../components/EvidenceViewer";
 
 const normalizeGoals = (goals = []) => {
     if (!Array.isArray(goals)) return [];
@@ -67,6 +68,7 @@ const StudentSchedulePanel = ({ student, isLoading = false }) => {
                         date: entry?.date || "Recent",
                         dateRaw: entry?.dateRaw || entry?.createdAt || entry?.date,
                         notes: entry?.notes || "Check-in recorded",
+                        evidence: Array.isArray(entry?.evidence) ? entry.evidence : [],
                         mentor: formatMentorDisplay({
                             name: intervention.mentor,
                             nickname: intervention.mentorNickname,
@@ -218,6 +220,11 @@ const StudentSchedulePanel = ({ student, isLoading = false }) => {
                                     <p className="text-[10px] uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-300">{entry.subject}</p>
                                     <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-300">{entry.date}</p>
                                     <p className="mt-1 text-sm text-slate-700 dark:text-slate-100">{entry.notes}</p>
+                                    {entry.evidence?.length > 0 && (
+                                        <div className="mt-2">
+                                            <EvidenceViewer evidence={entry.evidence} />
+                                        </div>
+                                    )}
                                     <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">Mentor: {entry.mentor}</p>
                                 </div>
                             ))}
