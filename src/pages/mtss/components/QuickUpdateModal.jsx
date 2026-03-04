@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { X } from "lucide-react";
 import { normalizeTierCode } from "../utils/teacherMappingHelpers";
 import { SKIP_REASONS } from "../config/interventionFormConfig";
+import EvidenceUploader from "./EvidenceUploader";
 
 const baseField =
     "w-full px-4 py-3 rounded-2xl bg-white/80 dark:bg-white/10 border border-primary/20 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all";
@@ -90,6 +91,7 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
         badge: "🎉 Progress Party",
         assignmentId: defaultAssignmentId,
     });
+    const [evidenceFiles, setEvidenceFiles] = useState([]);
     const [isMobileSheet, setIsMobileSheet] = useState(() =>
         typeof window !== "undefined" ? window.matchMedia("(max-width: 639px)").matches : false,
     );
@@ -142,7 +144,7 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
 
     const handleSubmit = (event) => {
         event.preventDefault();
-        onSubmit?.(student, formState);
+        onSubmit?.(student, formState, evidenceFiles);
     };
 
     return (
@@ -356,6 +358,13 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                                     value={formState.notes}
                                     onChange={(event) => handleChange("notes", event.target.value)}
                                 />
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">
+                                    Evidence (Photos & Documents)
+                                </label>
+                                <EvidenceUploader files={evidenceFiles} setFiles={setEvidenceFiles} uploading={submitting} />
                             </div>
                         </section>
                     </div>

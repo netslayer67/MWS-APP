@@ -3,7 +3,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import StudentsTable from "./StudentsTable";
 import QuickUpdateModal from "./QuickUpdateModal";
-import { updateMentorAssignment } from "@/services/mtssService";
+import { updateMentorAssignment, uploadEvidence } from "@/services/mtssService";
 import { ensureStudentInterventions, getMostCriticalForDisplay } from "../utils/interventionUtils";
 import { FilterBar, RosterHeader, LoadMore, STUDENTS_PANEL_BATCH } from "./StudentsPanelParts";
 
@@ -51,7 +51,7 @@ const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh, onEd
     const handleClose = useCallback(() => setModalState({ type: null, student: null }), []);
 
     const handleQuickSubmit = useCallback(
-        async (student, formState) => {
+        async (student, formState, evidenceFiles = []) => {
             const assignmentId = formState?.assignmentId || student?.assignmentId;
             if (!assignmentId) {
                 toast({
@@ -63,6 +63,13 @@ const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh, onEd
             }
             setSavingUpdate(true);
             try {
+                let evidencePayload;
+                if (evidenceFiles.length > 0) {
+                    const rawFiles = evidenceFiles.map((f) => f.file);
+                    const uploadResult = await uploadEvidence(rawFiles);
+                    evidencePayload = uploadResult?.data?.evidence;
+                }
+
                 const trimmedNotes = formState.notes?.trim() || "";
                 const parsedScoreValue = formState.scoreValue !== "" ? Number(formState.scoreValue) : undefined;
                 await updateMentorAssignment(assignmentId, {
@@ -77,6 +84,7 @@ const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh, onEd
                             skipReason: formState.performed !== "yes" ? (formState.skipReason || undefined) : undefined,
                             skipReasonNote: formState.performed !== "yes" && formState.skipReason === "other" ? (formState.skipReasonNote || undefined) : undefined,
                             celebration: formState.badge,
+                            evidence: evidencePayload?.length ? evidencePayload : undefined,
                         },
                     ],
                 });

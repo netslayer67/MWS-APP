@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Sparkles, CalendarDays, TrendingUp } from "lucide-react";
+import EvidenceViewer from "./EvidenceViewer";
 
 const GrowthJourneyHistory = ({ intervention, config, glassStyles }) => (
     <div className="lg:w-80 xl:w-96">
@@ -42,6 +43,7 @@ const GrowthJourneyHistory = ({ intervention, config, glassStyles }) => (
                                     {entry.celebration}
                                 </div>
                             )}
+                            {entry.evidence?.length > 0 && <EvidenceViewer evidence={entry.evidence} />}
                         </motion.div>
                     ))
                 ) : (
