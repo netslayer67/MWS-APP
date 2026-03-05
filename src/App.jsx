@@ -9,6 +9,7 @@ const BackgroundDecor = lazy(() => import('@/components/app/BackgroundDecor'));
 const UtilityDock = lazy(() => import('@/components/app/UtilityDock'));
 const ThemeSpellOverlay = lazy(() => import('@/components/app/ThemeSpellOverlay'));
 const GlobalLoadingOverlay = lazy(() => import('@/components/app/GlobalLoadingOverlay'));
+const QuickLogoutButton = lazy(() => import('@/components/app/QuickLogoutButton'));
 
 const App = memo(() => {
     const location = useLocation();
@@ -101,6 +102,7 @@ const App = memo(() => {
                     <Suspense fallback={null}>
                         <ThemeSpellOverlay />
                         <UtilityDock />
+                        <QuickLogoutButton />
                         <GlobalLoadingOverlay />
                     </Suspense>
                 )}
