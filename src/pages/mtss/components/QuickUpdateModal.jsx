@@ -82,9 +82,7 @@ const getEscalatedOptions = (options = []) => {
 };
 
 const formatSubjectLabel = (option) => {
-    const focusLabel = option.focus || option.label || "Focused Support";
-    const tierLabel = option.tier || "Tier 1";
-    return `${focusLabel} - ${tierLabel}`;
+    return option.focus || option.label || "Focused Support";
 };
 
 /* ── iOS-style Plan Change Log for modal ── */
@@ -198,8 +196,6 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
     const monitoringDetail = buildMonitoringLabel(selectedOption);
     const baselineTargetDetail = buildBaselineTargetLabel(selectedOption);
     const gradeLabel = student?.grade || student?.currentGrade || "Grade";
-    const tierLabel = student?.tier || student?.primaryIntervention?.tier || "Tier 1";
-    const gradeTierLabel = `${gradeLabel} - ${tierLabel}`;
 
     useEffect(() => {
         if (typeof window === "undefined") return undefined;
@@ -279,6 +275,7 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                         className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5 space-y-5 bg-white/80 dark:bg-white/5"
                         style={{ WebkitOverflowScrolling: "touch" }}
                     >
+                        {/* Intervention Details — hidden for cleaner update flow
                         <section className="rounded-2xl border border-primary/15 bg-white/70 dark:bg-slate-900/40 p-4 sm:p-5 space-y-3">
                             <p className="text-xs font-semibold uppercase tracking-[0.22em] sm:tracking-[0.3em] text-muted-foreground">Intervention Details</p>
                             <div className="grid sm:grid-cols-2 gap-3">
@@ -313,12 +310,13 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                                     <div className={readonlyField}>{baselineTargetDetail}</div>
                                 </div>
 
-                                {/* Plan Change Log — iOS-style */}
+                                {planChangeLog — iOS-style}
                                 {selectedOption?.planChangeLog?.length > 0 && (
                                     <ModalPlanChangeLog entries={selectedOption.planChangeLog} />
                                 )}
                             </div>
                         </section>
+                        */}
 
                         <section className="rounded-2xl border border-primary/15 bg-white/70 dark:bg-slate-900/40 p-4 sm:p-5 space-y-4">
                             <p className="text-xs font-semibold uppercase tracking-[0.22em] sm:tracking-[0.3em] text-muted-foreground">Student Snapshot</p>
@@ -331,9 +329,9 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                                 </div>
                                 <div className="flex flex-col gap-2">
                                     <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">
-                                        Grade / Tier
+                                        Grade
                                     </label>
-                                    <div className={readonlyField}>{gradeTierLabel}</div>
+                                    <div className={readonlyField}>{gradeLabel}</div>
                                 </div>
                             </div>
 
