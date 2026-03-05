@@ -64,6 +64,10 @@
     user-select: none;
 }
 
+.whl-item--filler {
+    filter: saturate(0.94) brightness(1.02);
+}
+
 .whl-card {
     position: relative;
     border-radius: clamp(16px, 2.4vw, 24px);
@@ -71,6 +75,11 @@
     box-shadow: 0 18px 44px rgba(15, 23, 42, 0.2);
     overflow: hidden;
     backdrop-filter: blur(2px) saturate(1.08);
+}
+
+.whl-item--filler.whl-card {
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+    border-color: rgba(255, 255, 255, 0.54);
 }
 
 .whl-card::after {
@@ -119,6 +128,10 @@
 
 .whl-cutout--clean .whl-item-img {
     filter: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.18));
+}
+
+.whl-item--filler.whl-cutout .whl-item-img {
+    filter: drop-shadow(0 6px 12px rgba(15, 23, 42, 0.14));
 }
 
 .whl-glow {

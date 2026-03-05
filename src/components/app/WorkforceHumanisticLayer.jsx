@@ -100,8 +100,8 @@ const COLLAGE_VARIANTS = {
         { id: "sz-r2", type: "cutout", density: "core", right: "-2.6%", top: "34%", width: "clamp(110px, 11.2vw, 186px)", height: "clamp(148px, 15.8vw, 252px)", rotate: "3deg", opacity: 0.64, depth: 13, aos: "fade-left", delay: 130, hideMobile: true },
         { id: "sz-r3", type: "card", density: "plus", right: "2.4%", top: "58%", width: "clamp(76px, 5.8vw, 112px)", height: "clamp(98px, 7.3vw, 158px)", rotate: "-5deg", opacity: 0.58, depth: 9, aos: "fade-left", delay: 170 },
         { id: "sz-r4", type: "card", density: "max", right: "1.6%", bottom: "6%", width: "clamp(74px, 5.6vw, 108px)", height: "clamp(96px, 7vw, 154px)", rotate: "4deg", opacity: 0.54, depth: 8, aos: "fade-left", delay: 210, hideTablet: true },
-        { id: "sz-top-left", type: "cutout", density: "plus", left: "10.8%", top: "-1.2%", width: "clamp(96px, 9.2vw, 158px)", height: "clamp(122px, 11.6vw, 198px)", rotate: "-6deg", opacity: 0.54, depth: 8, aos: "fade-down", delay: 230, hideMobile: true },
-        { id: "sz-top-right", type: "cutout", density: "plus", right: "10.8%", top: "-1.2%", width: "clamp(96px, 9.2vw, 158px)", height: "clamp(122px, 11.6vw, 198px)", rotate: "6deg", opacity: 0.54, depth: 8, aos: "fade-down", delay: 230, hideMobile: true },
+        { id: "sz-top-left", type: "cutout", density: "plus", left: "10.8%", top: "1.2%", width: "clamp(96px, 9.2vw, 158px)", height: "clamp(122px, 11.6vw, 198px)", rotate: "-6deg", opacity: 0.54, depth: 8, aos: "fade-down", delay: 230, hideMobile: true },
+        { id: "sz-top-right", type: "cutout", density: "plus", right: "10.8%", top: "1.2%", width: "clamp(96px, 9.2vw, 158px)", height: "clamp(122px, 11.6vw, 198px)", rotate: "6deg", opacity: 0.54, depth: 8, aos: "fade-down", delay: 230, hideMobile: true },
         { id: "sz-bottom-left", type: "card", density: "max", left: "13%", bottom: "1.4%", width: "clamp(70px, 5.2vw, 102px)", height: "clamp(92px, 6.7vw, 144px)", rotate: "4deg", opacity: 0.46, depth: 6, aos: "fade-up", delay: 260, hideTablet: true },
         { id: "sz-bottom-right", type: "card", density: "max", right: "13%", bottom: "1.4%", width: "clamp(70px, 5.2vw, 102px)", height: "clamp(92px, 6.7vw, 144px)", rotate: "-4deg", opacity: 0.46, depth: 6, aos: "fade-up", delay: 260, hideTablet: true },
     ],
@@ -198,6 +198,61 @@ const selectScenarioSlots = (slots, scenario) => {
     return slots.filter((slot) => (densityRank[slot.density || "core"] || 1) <= threshold);
 };
 
+const parseRotateDeg = (value) => {
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value !== "string") return 0;
+    const parsed = Number.parseFloat(value.replace("deg", "").trim());
+    return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+const buildFillerSlots = ({ scenario, deviceTier, seed }) => {
+    const perSideByTier = {
+        mobile: { light: 4, medium: 5, dense: 6 },
+        tablet: { light: 5, medium: 6, dense: 7 },
+        desktop: { light: 6, medium: 8, dense: 10 },
+    };
+    const percentByTier = {
+        mobile: [8, 22, 36, 50, 64, 78, 92],
+        tablet: [7, 19, 31, 43, 55, 67, 79, 91],
+        desktop: [6, 16, 26, 36, 46, 56, 66, 76, 86, 94],
+    };
+
+    const tier = perSideByTier[deviceTier] ? deviceTier : "desktop";
+    const scenarioKey = scenarioRank[scenario] ? scenario : "light";
+    const perSide = perSideByTier[tier][scenarioKey];
+    const percents = percentByTier[tier].slice(0, perSide);
+    const fillers = [];
+
+    ["left", "right"].forEach((side, sideIndex) => {
+        percents.forEach((topPercent, index) => {
+            const slotSeed = hashString(`${seed}:${side}:${index}:${topPercent}`);
+            const isCutout = tier !== "mobile" && index % 4 === 2;
+            const rotateRaw = ((slotSeed % 5) - 2) * 0.4;
+
+            fillers.push({
+                id: `fill-${side}-${index}`,
+                type: isCutout ? "cutout" : "card",
+                density: "core",
+                left: side === "left" ? (index % 2 === 0 ? "-0.8%" : "0.3%") : undefined,
+                right: side === "right" ? (index % 2 === 0 ? "-0.8%" : "0.3%") : undefined,
+                top: `${topPercent}%`,
+                width: isCutout ? "clamp(70px, 6.2vw, 116px)" : "clamp(58px, 4.8vw, 88px)",
+                height: isCutout ? "clamp(92px, 8.2vw, 158px)" : "clamp(76px, 6.1vw, 128px)",
+                rotate: `${sideIndex === 0 ? -rotateRaw : rotateRaw}deg`,
+                opacity: isCutout ? 0.4 : 0.42,
+                depth: isCutout ? 7 : 6,
+                aos: side === "left" ? "fade-right" : "fade-left",
+                delay: 90 + (index * 28),
+                isFiller: true,
+            });
+        });
+    });
+
+    return fillers;
+};
+
 const slotStyleVars = (slot) => ({
     "--whl-left": slot.left ?? "auto",
     "--whl-right": slot.right ?? "auto",
@@ -205,7 +260,7 @@ const slotStyleVars = (slot) => ({
     "--whl-bottom": slot.bottom ?? "auto",
     "--whl-width": slot.width ?? "auto",
     "--whl-height": slot.height ?? "auto",
-    "--whl-rotate": slot.rotate ?? "0deg",
+    "--whl-rotate": slot.normalizedRotate ?? slot.rotate ?? "0deg",
     "--whl-opacity": slot.opacity ?? 0.56,
     "--whl-shift-x": `${slot.shiftX ?? 0}px`,
     "--whl-shift-y": `${slot.shiftY ?? 0}px`,
@@ -265,11 +320,23 @@ const WorkforceHumanisticLayer = memo(() => {
         return "desktop";
     }, [viewportWidth]);
 
-    const visibleSlots = useMemo(() => scenarioSlots.filter((slot) => {
+    const fillerSeed = useMemo(() => (
+        hashString(`${pathname}|${scenario}|${variantKey}|${deviceTier}`)
+    ), [deviceTier, pathname, scenario, variantKey]);
+
+    const fillerSlots = useMemo(() => (
+        buildFillerSlots({
+            scenario,
+            deviceTier,
+            seed: fillerSeed,
+        })
+    ), [deviceTier, fillerSeed, scenario]);
+
+    const visibleSlots = useMemo(() => [...scenarioSlots, ...fillerSlots].filter((slot) => {
         if (deviceTier === "mobile" && slot.hideMobile) return false;
         if ((deviceTier === "mobile" || deviceTier === "tablet") && slot.hideTablet) return false;
         return true;
-    }), [deviceTier, scenarioSlots]);
+    }), [deviceTier, fillerSlots, scenarioSlots]);
 
     const resolvedSlots = useMemo(() => {
         const cycleStamp = `${new Date().toISOString().slice(0, 10)}-${Math.floor(new Date().getHours() / 6)}`;
@@ -281,9 +348,17 @@ const WorkforceHumanisticLayer = memo(() => {
 
         return visibleSlots.map((slot, index) => {
             const slotSeed = hashString(`${slot.id}:${seed}:${index}`);
-            const shiftX = (slotSeed % 13) - 6;
-            const shiftY = (Math.floor(slotSeed / 7) % 11) - 5;
-            const rotateExtra = ((Math.floor(slotSeed / 13) % 5) - 2) * 0.3;
+            const shiftXRange = slot.type === "cutout" ? 1 : 2;
+            const shiftYRange = slot.type === "cutout" ? 2 : 3;
+            const shiftX = (slotSeed % ((shiftXRange * 2) + 1)) - shiftXRange;
+            const shiftY = (Math.floor(slotSeed / 7) % ((shiftYRange * 2) + 1)) - shiftYRange;
+            const baseRotate = parseRotateDeg(slot.rotate);
+            const rotateMicro = ((Math.floor(slotSeed / 13) % 5) - 2) * (slot.type === "cutout" ? 0.05 : 0.12);
+            const normalizedRotateDeg = slot.type === "cutout"
+                ? clamp(baseRotate * 0.16, -1.1, 1.1)
+                : clamp(baseRotate * 0.3, -2.2, 2.2);
+            const rotateExtra = rotateMicro;
+            const normalizedRotate = `${(normalizedRotateDeg).toFixed(2)}deg`;
 
             if (slot.type === "card") {
                 const assetId = cardPool[positiveIndex(cardCursor, cardPool.length)];
@@ -295,6 +370,7 @@ const WorkforceHumanisticLayer = memo(() => {
                     frameClass,
                     shiftX,
                     shiftY,
+                    normalizedRotate,
                     rotateExtra,
                 };
             }
@@ -308,6 +384,7 @@ const WorkforceHumanisticLayer = memo(() => {
                 frameClass: styleClass,
                 shiftX,
                 shiftY,
+                normalizedRotate,
                 rotateExtra,
             };
         });
@@ -386,7 +463,7 @@ const WorkforceHumanisticLayer = memo(() => {
             loops.push(
                 animate(cutoutNodes, {
                     translateY: [0, -7, 0],
-                    rotate: ["-1deg", "1deg", "-1deg"],
+                    rotate: ["-0.35deg", "0.35deg", "-0.35deg"],
                 }, {
                     duration: 3900,
                     delay: stagger(130, { start: 80 }),
@@ -448,7 +525,7 @@ const WorkforceHumanisticLayer = memo(() => {
             {resolvedSlots.map((slot) => (
                 <div
                     key={slot.id}
-                    className={`whl-item whl-${slot.type}${slotVisibilityClasses(slot)} ${slot.frameClass || ""}`}
+                    className={`whl-item whl-${slot.type}${slotVisibilityClasses(slot)} ${slot.frameClass || ""}${slot.isFiller ? " whl-item--filler" : ""}`}
                     style={slotStyleVars(slot)}
                     data-whl-depth={slot.depth ?? 8}
                     data-aos={slot.aos || "fade-up"}
