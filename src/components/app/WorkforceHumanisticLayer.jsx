@@ -207,56 +207,20 @@ const parseRotateDeg = (value) => {
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
-const buildFillerSlots = ({ scenario, deviceTier, seed }) => {
-    const perSideByTier = {
-        mobile: { light: 4, medium: 5, dense: 6 },
-        tablet: { light: 5, medium: 6, dense: 7 },
-        desktop: { light: 6, medium: 8, dense: 10 },
-    };
-    const percentByTier = {
-        mobile: [8, 22, 36, 50, 64, 78, 92],
-        tablet: [7, 19, 31, 43, 55, 67, 79, 91],
-        desktop: [6, 16, 26, 36, 46, 56, 66, 76, 86, 94],
-    };
-
-    const tier = perSideByTier[deviceTier] ? deviceTier : "desktop";
-    const scenarioKey = scenarioRank[scenario] ? scenario : "light";
-    const perSide = perSideByTier[tier][scenarioKey];
-    const percents = percentByTier[tier].slice(0, perSide);
-    const fillers = [];
-
-    ["left", "right"].forEach((side, sideIndex) => {
-        percents.forEach((topPercent, index) => {
-            const slotSeed = hashString(`${seed}:${side}:${index}:${topPercent}`);
-            const isCutout = tier !== "mobile" && index % 4 === 2;
-            const rotateRaw = ((slotSeed % 5) - 2) * 0.4;
-
-            fillers.push({
-                id: `fill-${side}-${index}`,
-                type: isCutout ? "cutout" : "card",
-                density: "core",
-                left: side === "left" ? (index % 2 === 0 ? "-0.8%" : "0.3%") : undefined,
-                right: side === "right" ? (index % 2 === 0 ? "-0.8%" : "0.3%") : undefined,
-                top: `${topPercent}%`,
-                width: isCutout ? "clamp(70px, 6.2vw, 116px)" : "clamp(58px, 4.8vw, 88px)",
-                height: isCutout ? "clamp(92px, 8.2vw, 158px)" : "clamp(76px, 6.1vw, 128px)",
-                rotate: `${sideIndex === 0 ? -rotateRaw : rotateRaw}deg`,
-                opacity: isCutout ? 0.4 : 0.42,
-                depth: isCutout ? 7 : 6,
-                aos: side === "left" ? "fade-right" : "fade-left",
-                delay: 90 + (index * 28),
-                isFiller: true,
-            });
-        });
-    });
-
-    return fillers;
+const pickEvenly = (items, target) => {
+    if (items.length <= target) return [...items];
+    const result = [];
+    const step = (items.length - 1) / Math.max(target - 1, 1);
+    for (let index = 0; index < target; index += 1) {
+        result.push(items[Math.round(index * step)]);
+    }
+    return result;
 };
 
 const TARGET_RAIL_COUNT = {
-    mobile: { light: 8, medium: 10, dense: 12 },
-    tablet: { light: 10, medium: 12, dense: 14 },
-    desktop: { light: 12, medium: 15, dense: 18 },
+    mobile: { light: 4, medium: 5, dense: 6 },
+    tablet: { light: 6, medium: 7, dense: 8 },
+    desktop: { light: 7, medium: 9, dense: 10 },
 };
 
 const resolveTargetRailCount = (scenario, deviceTier) => {
@@ -318,67 +282,100 @@ const balanceRailSlots = ({
         centerSlots.push(slot);
     });
 
-    const targetCount = Math.max(
-        resolveTargetRailCount(scenario, deviceTier),
-        leftRail.length,
-        rightRail.length
-    );
+    const targetCount = resolveTargetRailCount(scenario, deviceTier);
 
-    while (leftRail.length < targetCount) {
-        leftRail.push(buildBalancedRailFiller({
-            side: "left",
-            index: leftRail.length,
-            seed,
-            deviceTier,
-            nextCardSlot,
-            nextCutoutSlot,
-        }));
-    }
-    while (rightRail.length < targetCount) {
-        rightRail.push(buildBalancedRailFiller({
-            side: "right",
-            index: rightRail.length,
-            seed,
-            deviceTier,
-            nextCardSlot,
-            nextCutoutSlot,
-        }));
-    }
+    const normalizeRailCount = (rail, side) => {
+        const sorted = [...rail].sort((a, b) => (
+            toPercentNumber(a.top, 50) - toPercentNumber(b.top, 50)
+        ));
+        const trimmed = pickEvenly(sorted, targetCount);
+        const result = [...trimmed];
+        while (result.length < targetCount) {
+            result.push(buildBalancedRailFiller({
+                side,
+                index: result.length,
+                seed,
+                deviceTier,
+                nextCardSlot,
+                nextCutoutSlot,
+            }));
+        }
+        return result;
+    };
+
+    const leftNormalized = normalizeRailCount(leftRail, "left");
+    const rightNormalized = normalizeRailCount(rightRail, "right");
 
     const spreadRail = (slotsBySide, side) => {
         if (slotsBySide.length === 0) return [];
 
+        const metricByTier = {
+            mobile: {
+                card: 9.4,
+                cutout: 11.6,
+                gap: 2.1,
+                start: 4.6,
+                end: 95,
+                laneOffsets: [0.8],
+                laneStarts: [5.2],
+            },
+            tablet: {
+                card: 10.2,
+                cutout: 12.4,
+                gap: 1.9,
+                start: 3.8,
+                end: 95.5,
+                laneOffsets: [0.4, 10.6],
+                laneStarts: [4.2, 12.6],
+            },
+            desktop: {
+                card: 10.8,
+                cutout: 13.2,
+                gap: 1.7,
+                start: 3.4,
+                end: 96,
+                laneOffsets: [0.2, 11.6],
+                laneStarts: [4.1, 10.8],
+            },
+        };
+        const tier = metricByTier[deviceTier] ? deviceTier : "desktop";
+        const metric = metricByTier[tier];
+        const laneCount = metric.laneOffsets.length;
+        const lanes = metric.laneOffsets.map((offset, laneIndex) => ({
+            offset,
+            cursor: metric.laneStarts[laneIndex] ?? metric.start,
+        }));
         const sorted = [...slotsBySide].sort((a, b) => (
             toPercentNumber(a.top, 50) - toPercentNumber(b.top, 50)
         ));
-        const start = deviceTier === "mobile" ? 6 : 5;
-        const end = deviceTier === "mobile" ? 94 : 95;
-        const step = sorted.length === 1 ? 0 : (end - start) / (sorted.length - 1);
 
-        return sorted.map((slot, index) => {
-            const rowOffset = index % 2 === 0 ? 0.8 : -0.8;
-            const top = clamp(start + (step * index) + rowOffset, 4, 96);
-            const alignEdge = index % 2 === 0 ? "-0.7%" : "0.35%";
-            const isCutout = slot.type === "cutout";
+        return sorted.map((slot) => {
+            let laneIndex = 0;
+            for (let index = 1; index < laneCount; index += 1) {
+                if (lanes[index].cursor < lanes[laneIndex].cursor) laneIndex = index;
+            }
+
+            const lane = lanes[laneIndex];
+            const baseHeight = slot.type === "cutout" ? metric.cutout : metric.card;
+            const slotHeight = slot.isFiller ? baseHeight * 0.9 : baseHeight;
+            const slotWidthRatio = slot.type === "cutout" ? 0.76 : 0.68;
+            const topPercent = clamp(lane.cursor, metric.start, metric.end - slotHeight);
+            lane.cursor = topPercent + slotHeight + metric.gap;
 
             return {
                 ...slot,
-                left: side === "left" ? alignEdge : undefined,
-                right: side === "right" ? alignEdge : undefined,
-                top: `${top.toFixed(2)}%`,
-                width: slot.isFiller
-                    ? (isCutout ? "clamp(70px, 6vw, 104px)" : "clamp(58px, 4.8vw, 86px)")
-                    : slot.width,
-                height: slot.isFiller
-                    ? (isCutout ? "clamp(92px, 8vw, 144px)" : "clamp(76px, 6.2vw, 124px)")
-                    : slot.height,
+                left: side === "left" ? `${lane.offset.toFixed(2)}%` : undefined,
+                right: side === "right" ? `${lane.offset.toFixed(2)}%` : undefined,
+                top: `${topPercent.toFixed(2)}%`,
+                width: `${(slotHeight * slotWidthRatio).toFixed(2)}vh`,
+                height: `${slotHeight.toFixed(2)}vh`,
             };
         });
     };
 
     return [
-        ...spreadRail(leftRail, "left"),
-        ...spreadRail(rightRail, "right"),
+        ...spreadRail(leftNormalized, "left"),
+        ...spreadRail(rightNormalized, "right"),
         ...centerSlots,
     ];
 };
@@ -450,23 +447,11 @@ const WorkforceHumanisticLayer = memo(() => {
         return "desktop";
     }, [viewportWidth]);
 
-    const fillerSeed = useMemo(() => (
-        hashString(`${pathname}|${scenario}|${variantKey}|${deviceTier}`)
-    ), [deviceTier, pathname, scenario, variantKey]);
-
-    const fillerSlots = useMemo(() => (
-        buildFillerSlots({
-            scenario,
-            deviceTier,
-            seed: fillerSeed,
-        })
-    ), [deviceTier, fillerSeed, scenario]);
-
-    const visibleSlots = useMemo(() => [...scenarioSlots, ...fillerSlots].filter((slot) => {
+    const visibleSlots = useMemo(() => scenarioSlots.filter((slot) => {
         if (deviceTier === "mobile" && slot.hideMobile) return false;
         if ((deviceTier === "mobile" || deviceTier === "tablet") && slot.hideTablet) return false;
         return true;
-    }), [deviceTier, fillerSlots, scenarioSlots]);
+    }), [deviceTier, scenarioSlots]);
 
     const resolvedSlots = useMemo(() => {
         const cycleStamp = `${new Date().toISOString().slice(0, 10)}-${Math.floor(new Date().getHours() / 6)}`;
