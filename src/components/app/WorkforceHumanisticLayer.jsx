@@ -4,11 +4,15 @@ import { useSelector } from "react-redux";
 import gsap from "gsap";
 import { animate, stagger } from "animejs";
 import usePreferLowMotion from "@/hooks/usePreferLowMotion";
+import {
+    MWS_STUDENT_CARD_ASSET_IDS,
+    MWS_STUDENT_CUTOUT_ASSET_IDS,
+} from "@/data/mwsStudentsDesignAssets";
 import "@/pages/styles/workforce-humanistic.css";
 
 const CLD_BASE = "https://res.cloudinary.com/deldcwiji/image/upload";
-const cardPhoto = (id, w = 210, h = 276) => `${CLD_BASE}/c_fill,w_${w},h_${h},g_face,f_auto,q_auto/${id}.jpg`;
-const cutoutPhoto = (id, w = 340) => `${CLD_BASE}/c_scale,w_${w},f_auto,q_auto/${id}.png`;
+const cardPhoto = (id, w = 252, h = 324) => `${CLD_BASE}/c_fill,w_${w},h_${h},g_auto,f_auto,q_auto/${id}`;
+const cutoutPhoto = (id, w = 380) => `${CLD_BASE}/c_scale,w_${w},f_auto,q_auto/${id}`;
 
 const WORKFORCE_ROLES = new Set([
     "teacher",
@@ -23,36 +27,19 @@ const WORKFORCE_ROLES = new Set([
     "superadmin",
 ]);
 
-const PHOTO_LIBRARY = {
-    cardA: cardPhoto("_DSC2984_mxs3ek"),
-    cardB: cardPhoto("_DSC2191_e25zxe"),
-    cardC: cardPhoto("_DSC0771_r2qevu"),
-    cardD: cardPhoto("DSC02960_vxhqyf"),
-    cardE: cardPhoto("DSC02742_hydsle"),
-    cardF: cardPhoto("_DSC6357_ualwee"),
-    cardG: cardPhoto("_DSC2637_hx6sl5"),
-    cardH: cardPhoto("_DSC5112_yfimk2"),
-    cutoutA: cutoutPhoto("FOTO_BG_REMOVE_13_rcunr0"),
-    cutoutB: cutoutPhoto("FOTO_BG_REMOVE_16_jkk3az"),
-    cutoutC: cutoutPhoto("FOTO_BG_REMOVE_12_yf67be"),
-    cutoutD: cutoutPhoto("FOTO_BG_REMOVE_14_z4vqhb"),
-};
-
 const DENSE_LAYOUT = [
-    { id: "l-cutout-top", src: PHOTO_LIBRARY.cutoutA, type: "cutout", left: "-2.3%", top: "7%", width: "clamp(112px, 11vw, 188px)", height: "clamp(160px, 18vw, 286px)", rotate: "-4deg", opacity: 0.66, depth: 14, aos: "fade-right", delay: 80, hideMobile: true },
-    { id: "l-card-1", src: PHOTO_LIBRARY.cardA, type: "card", left: "1.2%", top: "18%", width: "clamp(78px, 6vw, 116px)", height: "clamp(102px, 8vw, 166px)", rotate: "-6deg", opacity: 0.6, depth: 10, aos: "fade-right", delay: 110 },
-    { id: "l-card-2", src: PHOTO_LIBRARY.cardC, type: "card", left: "1.4%", top: "38%", width: "clamp(76px, 5.9vw, 112px)", height: "clamp(98px, 7.6vw, 160px)", rotate: "4deg", opacity: 0.58, depth: 9, aos: "fade-right", delay: 150 },
-    { id: "l-card-3", src: PHOTO_LIBRARY.cardD, type: "card", left: "1.6%", top: "60%", width: "clamp(74px, 5.7vw, 108px)", height: "clamp(96px, 7.2vw, 154px)", rotate: "-3deg", opacity: 0.56, depth: 8, aos: "fade-right", delay: 180, hideTablet: true },
-    { id: "l-cutout-bottom", src: PHOTO_LIBRARY.cutoutC, type: "cutout", left: "-2%", bottom: "5%", width: "clamp(108px, 10.6vw, 180px)", height: "clamp(150px, 16vw, 260px)", rotate: "-2deg", opacity: 0.62, depth: 13, aos: "fade-right", delay: 220, hideMobile: true },
-
-    { id: "r-cutout-top", src: PHOTO_LIBRARY.cutoutB, type: "cutout", right: "-2.4%", top: "8%", width: "clamp(118px, 11.2vw, 194px)", height: "clamp(162px, 18.2vw, 290px)", rotate: "4deg", opacity: 0.66, depth: 14, aos: "fade-left", delay: 90, hideMobile: true },
-    { id: "r-card-1", src: PHOTO_LIBRARY.cardB, type: "card", right: "1.2%", top: "18%", width: "clamp(78px, 6vw, 116px)", height: "clamp(102px, 8vw, 166px)", rotate: "6deg", opacity: 0.6, depth: 10, aos: "fade-left", delay: 120 },
-    { id: "r-card-2", src: PHOTO_LIBRARY.cardE, type: "card", right: "1.4%", top: "38%", width: "clamp(76px, 5.9vw, 112px)", height: "clamp(98px, 7.6vw, 160px)", rotate: "-4deg", opacity: 0.58, depth: 9, aos: "fade-left", delay: 160 },
-    { id: "r-card-3", src: PHOTO_LIBRARY.cardF, type: "card", right: "1.6%", top: "60%", width: "clamp(74px, 5.7vw, 108px)", height: "clamp(96px, 7.2vw, 154px)", rotate: "3deg", opacity: 0.56, depth: 8, aos: "fade-left", delay: 190, hideTablet: true },
-    { id: "r-cutout-bottom", src: PHOTO_LIBRARY.cutoutD, type: "cutout", right: "-1.9%", bottom: "5%", width: "clamp(108px, 10.6vw, 180px)", height: "clamp(150px, 16vw, 260px)", rotate: "2deg", opacity: 0.62, depth: 13, aos: "fade-left", delay: 230, hideMobile: true },
-
-    { id: "top-card-left", src: PHOTO_LIBRARY.cardG, type: "card", left: "13%", top: "2.8%", width: "clamp(74px, 5.5vw, 106px)", height: "clamp(96px, 7.2vw, 150px)", rotate: "-2deg", opacity: 0.5, depth: 7, aos: "fade-down", delay: 210, hideMobile: true },
-    { id: "top-card-right", src: PHOTO_LIBRARY.cardH, type: "card", right: "13%", top: "2.8%", width: "clamp(74px, 5.5vw, 106px)", height: "clamp(96px, 7.2vw, 150px)", rotate: "2deg", opacity: 0.5, depth: 7, aos: "fade-down", delay: 210, hideMobile: true },
+    { id: "l-cutout-top", type: "cutout", left: "-2.3%", top: "7%", width: "clamp(112px, 11vw, 188px)", height: "clamp(160px, 18vw, 286px)", rotate: "-4deg", opacity: 0.66, depth: 14, aos: "fade-right", delay: 80, hideMobile: true },
+    { id: "l-card-1", type: "card", left: "1.2%", top: "18%", width: "clamp(78px, 6vw, 116px)", height: "clamp(102px, 8vw, 166px)", rotate: "-6deg", opacity: 0.6, depth: 10, aos: "fade-right", delay: 110 },
+    { id: "l-card-2", type: "card", left: "1.4%", top: "38%", width: "clamp(76px, 5.9vw, 112px)", height: "clamp(98px, 7.6vw, 160px)", rotate: "4deg", opacity: 0.58, depth: 9, aos: "fade-right", delay: 150 },
+    { id: "l-card-3", type: "card", left: "1.6%", top: "60%", width: "clamp(74px, 5.7vw, 108px)", height: "clamp(96px, 7.2vw, 154px)", rotate: "-3deg", opacity: 0.56, depth: 8, aos: "fade-right", delay: 180, hideTablet: true },
+    { id: "l-cutout-bottom", type: "cutout", left: "-2%", bottom: "5%", width: "clamp(108px, 10.6vw, 180px)", height: "clamp(150px, 16vw, 260px)", rotate: "-2deg", opacity: 0.62, depth: 13, aos: "fade-right", delay: 220, hideMobile: true },
+    { id: "r-cutout-top", type: "cutout", right: "-2.4%", top: "8%", width: "clamp(118px, 11.2vw, 194px)", height: "clamp(162px, 18.2vw, 290px)", rotate: "4deg", opacity: 0.66, depth: 14, aos: "fade-left", delay: 90, hideMobile: true },
+    { id: "r-card-1", type: "card", right: "1.2%", top: "18%", width: "clamp(78px, 6vw, 116px)", height: "clamp(102px, 8vw, 166px)", rotate: "6deg", opacity: 0.6, depth: 10, aos: "fade-left", delay: 120 },
+    { id: "r-card-2", type: "card", right: "1.4%", top: "38%", width: "clamp(76px, 5.9vw, 112px)", height: "clamp(98px, 7.6vw, 160px)", rotate: "-4deg", opacity: 0.58, depth: 9, aos: "fade-left", delay: 160 },
+    { id: "r-card-3", type: "card", right: "1.6%", top: "60%", width: "clamp(74px, 5.7vw, 108px)", height: "clamp(96px, 7.2vw, 154px)", rotate: "3deg", opacity: 0.56, depth: 8, aos: "fade-left", delay: 190, hideTablet: true },
+    { id: "r-cutout-bottom", type: "cutout", right: "-1.9%", bottom: "5%", width: "clamp(108px, 10.6vw, 180px)", height: "clamp(150px, 16vw, 260px)", rotate: "2deg", opacity: 0.62, depth: 13, aos: "fade-left", delay: 230, hideMobile: true },
+    { id: "top-card-left", type: "card", left: "13%", top: "2.8%", width: "clamp(74px, 5.5vw, 106px)", height: "clamp(96px, 7.2vw, 150px)", rotate: "-2deg", opacity: 0.5, depth: 7, aos: "fade-down", delay: 210, hideMobile: true },
+    { id: "top-card-right", type: "card", right: "13%", top: "2.8%", width: "clamp(74px, 5.5vw, 106px)", height: "clamp(96px, 7.2vw, 150px)", rotate: "2deg", opacity: 0.5, depth: 7, aos: "fade-down", delay: 210, hideMobile: true },
 ];
 
 const MEDIUM_LAYOUT = DENSE_LAYOUT.filter((item) => (
@@ -93,6 +80,31 @@ const resolveScenario = (pathname) => {
     return "light";
 };
 
+const hashString = (value = "") => {
+    let hash = 0;
+    for (let index = 0; index < value.length; index += 1) {
+        hash = ((hash << 5) - hash) + value.charCodeAt(index);
+        hash |= 0;
+    }
+    return Math.abs(hash);
+};
+
+const seededShuffle = (items, seedBase = 0) => {
+    const next = [...items];
+    let seed = (seedBase % 2147483647) || 1;
+    const random = () => {
+        seed = (seed * 48271) % 2147483647;
+        return seed / 2147483647;
+    };
+
+    for (let i = next.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(random() * (i + 1));
+        [next[i], next[j]] = [next[j], next[i]];
+    }
+
+    return next;
+};
+
 const slotStyleVars = (slot) => ({
     "--whl-left": slot.left ?? "auto",
     "--whl-right": slot.right ?? "auto",
@@ -127,6 +139,40 @@ const WorkforceHumanisticLayer = memo(() => {
 
     const scenario = useMemo(() => resolveScenario(pathname), [pathname]);
     const slots = useMemo(() => SCENARIO_LAYOUTS[scenario] || SCENARIO_LAYOUTS.light, [scenario]);
+
+    const deviceTier = useMemo(() => {
+        if (typeof window === "undefined") return "desktop";
+        if (window.innerWidth <= 768) return "mobile";
+        if (window.innerWidth <= 1024) return "tablet";
+        return "desktop";
+    }, []);
+
+    const visibleSlots = useMemo(() => slots.filter((slot) => {
+        if (deviceTier === "mobile" && slot.hideMobile) return false;
+        if ((deviceTier === "mobile" || deviceTier === "tablet") && slot.hideTablet) return false;
+        return true;
+    }), [deviceTier, slots]);
+
+    const resolvedSlots = useMemo(() => {
+        const cycleStamp = `${new Date().toISOString().slice(0, 10)}-${Math.floor(new Date().getHours() / 6)}`;
+        const seed = hashString(`${pathname}|${normalizedRole}|${scenario}|${cycleStamp}`);
+        const cardPool = seededShuffle(MWS_STUDENT_CARD_ASSET_IDS, seed + 17);
+        const cutoutPool = seededShuffle(MWS_STUDENT_CUTOUT_ASSET_IDS, seed + 97);
+        let cardCursor = 0;
+        let cutoutCursor = 0;
+
+        return visibleSlots.map((slot) => {
+            if (slot.type === "card") {
+                const id = cardPool[cardCursor % cardPool.length];
+                cardCursor += 1;
+                return { ...slot, src: cardPhoto(id) };
+            }
+
+            const id = cutoutPool[cutoutCursor % cutoutPool.length];
+            cutoutCursor += 1;
+            return { ...slot, src: cutoutPhoto(id) };
+        });
+    }, [normalizedRole, pathname, scenario, visibleSlots]);
 
     useEffect(() => {
         if (!shouldRender || lowMotion || typeof window === "undefined") return undefined;
@@ -170,7 +216,7 @@ const WorkforceHumanisticLayer = memo(() => {
             window.removeEventListener("pointermove", handlePointerMove);
             window.removeEventListener("pointerleave", handlePointerLeave);
         };
-    }, [lowMotion, pathname, shouldRender]);
+    }, [lowMotion, pathname, resolvedSlots, shouldRender]);
 
     useEffect(() => {
         loopsRef.current.forEach((loop) => loop?.pause?.());
@@ -244,7 +290,7 @@ const WorkforceHumanisticLayer = memo(() => {
             loops.forEach((loop) => loop?.pause?.());
             loopsRef.current = [];
         };
-    }, [lowMotion, pathname, shouldRender]);
+    }, [lowMotion, pathname, resolvedSlots, shouldRender]);
 
     if (!shouldRender) return null;
 
@@ -258,7 +304,7 @@ const WorkforceHumanisticLayer = memo(() => {
             <div className="whl-glow whl-glow-left" />
             <div className="whl-glow whl-glow-right" />
 
-            {slots.map((slot) => (
+            {resolvedSlots.map((slot) => (
                 <div
                     key={slot.id}
                     className={`whl-item whl-${slot.type}${slotVisibilityClasses(slot)}`}
