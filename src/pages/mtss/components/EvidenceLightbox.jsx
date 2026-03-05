@@ -1,9 +1,12 @@
 import { memo, useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { downloadEvidenceFile } from "./evidenceDownloadUtils";
 
 const EvidenceLightbox = memo(({ images = [], initialIndex = 0, onClose }) => {
     const [current, setCurrent] = useState(initialIndex);
+    const [isDownloading, setIsDownloading] = useState(false);
 
     useEffect(() => {
         setCurrent(initialIndex);
@@ -19,38 +22,55 @@ const EvidenceLightbox = memo(({ images = [], initialIndex = 0, onClose }) => {
             else if (e.key === "ArrowRight") goNext();
         };
         window.addEventListener("keydown", handler);
+        const previousOverflow = document.body.style.overflow;
+        const previousOverscroll = document.body.style.overscrollBehavior;
+        const previousTouchAction = document.body.style.touchAction;
         document.body.style.overflow = "hidden";
+        document.body.style.overscrollBehavior = "none";
+        document.body.style.touchAction = "none";
         return () => {
             window.removeEventListener("keydown", handler);
-            document.body.style.overflow = "";
+            document.body.style.overflow = previousOverflow;
+            document.body.style.overscrollBehavior = previousOverscroll;
+            document.body.style.touchAction = previousTouchAction;
         };
     }, [onClose, goPrev, goNext]);
+
+    const handleDownload = useCallback(async () => {
+        if (isDownloading) return;
+        const currentItem = images[current];
+        if (!currentItem) return;
+        setIsDownloading(true);
+        try {
+            await downloadEvidenceFile(currentItem);
+        } finally {
+            setIsDownloading(false);
+        }
+    }, [current, images, isDownloading]);
 
     const item = images[current];
     if (!item) return null;
 
     const fileLabel = item.fileName || `Image ${current + 1}`;
 
-    const handleDownload = () => {
-        const a = document.createElement("a");
-        a.href = item.url;
-        a.download = item.fileName || "evidence";
-        a.target = "_blank";
-        a.rel = "noopener noreferrer";
-        a.click();
-    };
-
     const actionBtnClass = "inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/40 bg-white/20 text-white backdrop-blur-xl transition hover:bg-white/30 active:scale-95";
     const navBtnClass = "inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-white/35 bg-white/18 px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-white/28 active:scale-[0.98]";
 
-    return (
+    const portalTarget = typeof document !== "undefined" ? document.body : null;
+    if (!portalTarget) return null;
+
+    return createPortal(
         <AnimatePresence>
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="fixed inset-0 z-[100] p-0 sm:p-4 md:p-6"
+                className="fixed inset-0 z-[2147483647] p-0 sm:p-4 md:p-6"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Evidence viewer"
+                style={{ isolation: "isolate" }}
             >
                 <motion.button
                     type="button"
@@ -77,7 +97,13 @@ const EvidenceLightbox = memo(({ images = [], initialIndex = 0, onClose }) => {
                             <span className="rounded-full border border-white/35 bg-white/15 px-2 py-0.5 text-[11px] font-semibold text-white/90 sm:text-xs">
                                 {current + 1}/{images.length}
                             </span>
-                            <button type="button" onClick={handleDownload} className={actionBtnClass} title="Download">
+                            <button
+                                type="button"
+                                onClick={handleDownload}
+                                className={actionBtnClass}
+                                title={isDownloading ? "Downloading..." : "Download"}
+                                disabled={isDownloading}
+                            >
                                 <Download className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
                             </button>
                             <button type="button" onClick={onClose} className={actionBtnClass} title="Close">
@@ -164,7 +190,8 @@ const EvidenceLightbox = memo(({ images = [], initialIndex = 0, onClose }) => {
                     </div>
                 </motion.div>
             </motion.div>
-        </AnimatePresence>
+        </AnimatePresence>,
+        portalTarget,
     );
 });
 EvidenceLightbox.displayName = "EvidenceLightbox";
