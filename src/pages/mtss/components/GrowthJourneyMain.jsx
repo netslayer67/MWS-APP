@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { TrendingUp, Zap, Clock, BarChart3, Award, Target, ClipboardList, CalendarDays, FileText, ChevronRight } from "lucide-react";
+import { useState, useCallback, useMemo } from "react";
+import { TrendingUp, Zap, Clock, BarChart3, Award, Target, ClipboardList, CalendarDays, FileText, ChevronRight, ChevronDown, History } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, Line, ReferenceLine, Legend } from "recharts";
 import NotesBottomSheet from "./NotesBottomSheet";
 import InfoCardDetailSheet from "./InfoCardDetailSheet";
@@ -65,6 +65,18 @@ const MONITORING_TONES = {
     },
 };
 
+const formatMethodShort = (method) => {
+    if (!method) return "Not set";
+    return method.replace(/^Option \d+ - /, "");
+};
+
+const formatLogDate = (dateValue) => {
+    if (!dateValue) return "";
+    const d = new Date(dateValue);
+    if (Number.isNaN(d.getTime())) return "";
+    return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
+};
+
 const InfoCard = ({ icon: Icon, label, value, gradient, shortLabel, onClick }) => (
     <button
         type="button"
@@ -90,6 +102,118 @@ const InfoCard = ({ icon: Icon, label, value, gradient, shortLabel, onClick }) =
         </div>
     </button>
 );
+
+/* ── iOS-style Plan Change Log ── */
+const PlanChangeLog = ({ entries }) => {
+    const [open, setOpen] = useState(false);
+    const sorted = useMemo(
+        () => [...entries].sort((a, b) => new Date(b.changedAt) - new Date(a.changedAt)),
+        [entries]
+    );
+
+    return (
+        <div
+            className="rounded-2xl border border-white/60 dark:border-slate-700/40 overflow-hidden"
+            style={{
+                background: "hsl(var(--card) / 0.85)",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)",
+            }}
+        >
+            {/* header / toggle */}
+            <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                className="flex items-center gap-2 w-full px-3 py-2.5 sm:px-4 sm:py-3 text-left active:bg-slate-100/60 dark:active:bg-slate-800/40 transition-colors duration-150"
+                style={{ WebkitTapHighlightColor: "transparent" }}
+            >
+                <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-[10px] bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-sm flex-shrink-0">
+                    <History className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </span>
+                <div className="flex-1 min-w-0">
+                    <span
+                        className="text-[13px] sm:text-sm font-semibold text-foreground"
+                        style={{ fontFamily: "-apple-system, 'SF Pro Text', system-ui, sans-serif" }}
+                    >
+                        Update Log
+                    </span>
+                    <span className="ml-2 text-[11px] sm:text-xs text-muted-foreground/50">
+                        {entries.length}
+                    </span>
+                </div>
+                <ChevronDown
+                    className="w-4 h-4 text-muted-foreground/40 flex-shrink-0 transition-transform duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]"
+                    style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
+                />
+            </button>
+
+            {/* collapsible content — CSS grid trick for smooth height */}
+            <div
+                className="transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] grid"
+                style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
+            >
+                <div className="overflow-hidden">
+                    <div className="px-3 pb-3 sm:px-4 sm:pb-4 max-h-52 overflow-y-auto overscroll-contain">
+                        {/* separator */}
+                        <div className="h-px bg-slate-200/60 dark:bg-slate-700/40 mb-2.5" />
+
+                        <div className="space-y-1.5">
+                            {sorted.map((entry, idx) => (
+                                <div
+                                    key={idx}
+                                    className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl transition-all duration-200"
+                                    style={{
+                                        background: "hsl(var(--muted) / 0.3)",
+                                        opacity: open ? 1 : 0,
+                                        transform: open ? "translateY(0)" : "translateY(-6px)",
+                                        transitionDelay: open ? `${Math.min(idx * 40, 200)}ms` : "0ms",
+                                    }}
+                                >
+                                    {/* timeline dot + line */}
+                                    <div className="flex flex-col items-center shrink-0 pt-1">
+                                        <div className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_0_2px_hsl(var(--card))]" />
+                                        {idx < sorted.length - 1 && (
+                                            <div className="w-px flex-1 mt-1 bg-amber-300/30 dark:bg-amber-500/20 min-h-[12px]" />
+                                        )}
+                                    </div>
+
+                                    <div className="min-w-0 flex-1">
+                                        {/* field label + date */}
+                                        <div className="flex items-center justify-between gap-2 mb-0.5">
+                                            <span
+                                                className="text-[11px] sm:text-xs font-semibold text-amber-600 dark:text-amber-400"
+                                                style={{ fontFamily: "-apple-system, 'SF Pro Text', system-ui, sans-serif" }}
+                                            >
+                                                {entry.label}
+                                            </span>
+                                            {entry.changedAt && (
+                                                <span className="text-[10px] text-muted-foreground/45 whitespace-nowrap shrink-0">
+                                                    {formatLogDate(entry.changedAt)}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {/* from → to */}
+                                        <div className="text-[11px] sm:text-xs leading-relaxed">
+                                            <span className="text-muted-foreground/70 line-through decoration-muted-foreground/25">
+                                                {formatMethodShort(entry.fromValue) || "Not set"}
+                                            </span>
+                                            <span className="mx-1.5 text-muted-foreground/35">&rarr;</span>
+                                            <span
+                                                className="font-semibold text-foreground"
+                                                style={{ fontFamily: "-apple-system, 'SF Pro Text', system-ui, sans-serif" }}
+                                            >
+                                                {formatMethodShort(entry.toValue) || "Not set"}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const GrowthJourneyMain = ({
     intervention,
@@ -330,6 +454,11 @@ const GrowthJourneyMain = ({
                                 </button>
                             )}
                         </div>
+                    )}
+
+                    {/* Plan Change Log — iOS-style disclosure */}
+                    {intervention?.planChangeLog?.length > 0 && (
+                        <PlanChangeLog entries={intervention.planChangeLog} />
                     )}
 
                     {/* Start Date + Notes — always 2-col */}

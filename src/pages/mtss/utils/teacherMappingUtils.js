@@ -83,6 +83,7 @@ export const mapAssignmentsToStudents = (assignments = [], teacherName = "MTSS M
                             baselineScore: assignment.baselineScore || null,
                             targetScore: assignment.targetScore || null,
                             notes: assignment.notes || null,
+                            planChangeLog: Array.isArray(assignment.planChangeLog) ? assignment.planChangeLog : [],
                             lastPlanUpdatedAt: assignment.lastPlanUpdatedAt || assignment.updatedAt || null,
                             lastPlanUpdatedByName:
                                 assignment.lastPlanUpdatedBy?.name ||

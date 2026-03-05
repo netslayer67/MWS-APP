@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Eye, Pencil } from "lucide-react";
+import { Eye, TrendingUp, FilePenLine } from "lucide-react";
 import { ensureStudentInterventions, getMostCriticalForDisplay } from "../utils/interventionUtils";
 import { formatPlanAuditDate } from "../utils/editPlanAccess";
 
@@ -79,7 +79,7 @@ const StudentsTableDesktopRow = memo(
         const actionButtons = [
             {
                 key: "view",
-                label: "View",
+                label: "View Details",
                 onClick: () => onView?.(student),
                 icon: Eye,
                 className: "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border-indigo-200/60 dark:border-indigo-700/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 hover:shadow-indigo-200/30 dark:hover:shadow-indigo-900/20",
@@ -88,18 +88,18 @@ const StudentsTableDesktopRow = memo(
         if (hasInterventionPlan) {
             actionButtons.push({
                 key: "progress",
-                label: "Progress",
+                label: "Progress Update",
                 onClick: () => onUpdate?.(student),
-                icon: Pencil,
+                icon: TrendingUp,
                 className: "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200/60 dark:border-amber-700/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 hover:shadow-amber-200/30 dark:hover:shadow-amber-900/20",
             });
         }
         if (canEditPlan) {
             actionButtons.push({
                 key: "edit",
-                label: "Edit",
+                label: "Edit Plan",
                 onClick: () => onEditPlan?.(student),
-                icon: Pencil,
+                icon: FilePenLine,
                 className: "bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-300 border-cyan-200/60 dark:border-cyan-700/40 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 hover:shadow-cyan-200/30 dark:hover:shadow-cyan-900/20",
             });
         }
@@ -221,10 +221,11 @@ const StudentsTableDesktopRow = memo(
                                     key={action.key}
                                     type="button"
                                     onClick={action.onClick}
-                                    className={`min-w-0 h-8 inline-flex items-center justify-center gap-1 px-2 text-[10px] font-semibold rounded-lg border hover:shadow-sm hover:-translate-y-0.5 transition-all duration-150 ${action.className}`}
+                                    title={action.label}
+                                    aria-label={action.label}
+                                    className={`w-8 h-8 inline-flex items-center justify-center rounded-lg border hover:shadow-sm hover:-translate-y-0.5 transition-all duration-150 ${action.className}`}
                                 >
-                                    <Icon className="w-3 h-3 shrink-0" />
-                                    <span className="truncate">{action.label}</span>
+                                    <Icon className="w-3.5 h-3.5" />
                                 </button>
                                 );
                             })}

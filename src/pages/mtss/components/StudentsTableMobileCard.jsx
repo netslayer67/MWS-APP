@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Eye, Pencil } from "lucide-react";
+import { Eye, TrendingUp, FilePenLine } from "lucide-react";
 import { ensureStudentInterventions, getMostCriticalForDisplay } from "../utils/interventionUtils";
 import { formatPlanAuditDate } from "../utils/editPlanAccess";
 
@@ -54,7 +54,7 @@ const StudentsTableMobileCard = memo(
         const actionButtons = [
             {
                 key: "view",
-                label: "View",
+                label: "View Details",
                 onClick: () => onView?.(student),
                 icon: Eye,
                 className: "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border-indigo-200/50 dark:border-indigo-700/40",
@@ -63,18 +63,18 @@ const StudentsTableMobileCard = memo(
         if (hasInterventionPlan) {
             actionButtons.push({
                 key: "progress",
-                label: "Progress",
+                label: "Progress Update",
                 onClick: () => onUpdate?.(student),
-                icon: Pencil,
+                icon: TrendingUp,
                 className: "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200/50 dark:border-amber-700/40",
             });
         }
         if (canEditPlan) {
             actionButtons.push({
                 key: "edit",
-                label: "Edit",
+                label: "Edit Plan",
                 onClick: () => onEditPlan?.(student),
-                icon: Pencil,
+                icon: FilePenLine,
                 className: "bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-300 border-cyan-200/50 dark:border-cyan-700/40",
             });
         }
@@ -152,15 +152,7 @@ const StudentsTableMobileCard = memo(
                         )}
 
                         {showActions && (
-                            <div
-                                className={`grid gap-1.5 ${
-                                    actionButtons.length === 3
-                                        ? "grid-cols-3"
-                                        : actionButtons.length === 2
-                                            ? "grid-cols-2"
-                                            : "grid-cols-1"
-                                }`}
-                            >
+                            <div className="flex flex-wrap gap-1.5">
                                 {actionButtons.map((action) => {
                                     const Icon = action.icon;
                                     return (
@@ -168,10 +160,11 @@ const StudentsTableMobileCard = memo(
                                             key={action.key}
                                             type="button"
                                             onClick={action.onClick}
-                                            className={`min-w-0 h-7 inline-flex items-center justify-center gap-1 px-1.5 text-[9px] font-semibold rounded-md border active:scale-95 transition-all ${action.className}`}
+                                            aria-label={action.label}
+                                            className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[10px] font-semibold active:scale-95 transition-all ${action.className}`}
                                         >
-                                            <Icon className="w-2.5 h-2.5 shrink-0" />
-                                            <span className="truncate">{action.label}</span>
+                                            <Icon className="w-3 h-3 shrink-0" />
+                                            {action.label}
                                         </button>
                                     );
                                 })}
