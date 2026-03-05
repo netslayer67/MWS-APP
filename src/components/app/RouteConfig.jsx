@@ -26,7 +26,7 @@ const EmotionalHistoryPage = lazy(() => import(/* webpackPrefetch: true */ '@/pa
 const EmotionalPatternsPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/EmotionalPatternsPage'));
 const UserManagementDashboard = lazy(() => import(/* webpackPrefetch: true */ '@/pages/UserManagementDashboard'));
 const SupportModeSelectionPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/mtss/SupportModeSelectionPage'));
-const MTSSRoleSelectionPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/mtss/MTSSRoleSelectionPage'));
+// const MTSSRoleSelectionPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/mtss/MTSSRoleSelectionPage'));
 const MTSSTeacherDashboard = lazy(() => import(/* webpackPrefetch: true */ '@/pages/mtss/TeacherDashboardPage'));
 const MTSSAdminDashboard = lazy(() => import(/* webpackPrefetch: true */ '@/pages/mtss/AdminDashboardPage'));
 const MTSSAdminAssignPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/mtss/admin/AdminMentorAssignPage'));
@@ -147,7 +147,7 @@ const publicRoutes = [
     <Route key="emotional-patterns-user" path="/profile/emotional-patterns/:userId" element={<ProtectedRoute><MemoizedPageTransition><EmotionalPatternsPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="user-management" path="/user-management" element={<AdminProtectedRoute><UserManagementDashboard /></AdminProtectedRoute>} />,
     <Route key="support-hub" path="/support-hub" element={<ProtectedRoute allowedRoles={['staff', 'support_staff', 'nurse', 'teacher', 'head_unit', 'directorate', 'admin', 'superadmin']}><MtssPreviewGate><MemoizedPageTransition><SupportModeSelectionPage /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
-    <Route key="mtss-role" path="/mtss" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSRoleSelectionPage /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
+    // <Route key="mtss-role" path="/mtss" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSRoleSelectionPage /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
     <Route key="mtss-teacher" path="/mtss/teacher" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSTeacherDashboard /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
     <Route key="mtss-admin" path="/mtss/admin" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSAdminDashboard /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
     <Route
