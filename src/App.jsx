@@ -6,6 +6,7 @@ import SkipLink from '@/components/app/SkipLink';
 import RouteConfig from '@/components/app/RouteConfig';
 
 const BackgroundDecor = lazy(() => import('@/components/app/BackgroundDecor'));
+const WorkforceHumanisticLayer = lazy(() => import('@/components/app/WorkforceHumanisticLayer'));
 const UtilityDock = lazy(() => import('@/components/app/UtilityDock'));
 const ThemeSpellOverlay = lazy(() => import('@/components/app/ThemeSpellOverlay'));
 const GlobalLoadingOverlay = lazy(() => import('@/components/app/GlobalLoadingOverlay'));
@@ -94,9 +95,17 @@ const App = memo(() => {
                     </Suspense>
                 )}
 
-                <AnimatePresence mode="wait" key={animatePresenceKey}>
-                    <RouteConfig />
-                </AnimatePresence>
+                {showEnhancements && (
+                    <Suspense fallback={null}>
+                        <WorkforceHumanisticLayer />
+                    </Suspense>
+                )}
+
+                <div className="relative z-10">
+                    <AnimatePresence mode="wait" key={animatePresenceKey}>
+                        <RouteConfig />
+                    </AnimatePresence>
+                </div>
 
                 {showEnhancements && (
                     <Suspense fallback={null}>
