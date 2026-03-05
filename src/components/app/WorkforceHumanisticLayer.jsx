@@ -253,6 +253,136 @@ const buildFillerSlots = ({ scenario, deviceTier, seed }) => {
     return fillers;
 };
 
+const TARGET_RAIL_COUNT = {
+    mobile: { light: 8, medium: 10, dense: 12 },
+    tablet: { light: 10, medium: 12, dense: 14 },
+    desktop: { light: 12, medium: 15, dense: 18 },
+};
+
+const resolveTargetRailCount = (scenario, deviceTier) => {
+    const tier = TARGET_RAIL_COUNT[deviceTier] ? deviceTier : "desktop";
+    const mode = scenarioRank[scenario] ? scenario : "light";
+    return TARGET_RAIL_COUNT[tier][mode];
+};
+
+const toPercentNumber = (value, fallback = 50) => {
+    if (typeof value === "number") return value;
+    if (typeof value !== "string") return fallback;
+    const parsed = Number.parseFloat(value.replace("%", "").trim());
+    return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const buildBalancedRailFiller = ({
+    side,
+    index,
+    seed,
+    deviceTier,
+    nextCardSlot,
+    nextCutoutSlot,
+}) => {
+    const slotSeed = hashString(`${seed}:balance:${side}:${index}`);
+    const preferCutout = deviceTier !== "mobile" && slotSeed % 5 === 0;
+    const baseSlot = preferCutout ? nextCutoutSlot(slotSeed) : nextCardSlot(slotSeed);
+    return {
+        ...baseSlot,
+        id: `bal-${side}-${index}`,
+        density: "core",
+        isFiller: true,
+        aos: side === "left" ? "fade-right" : "fade-left",
+        delay: 90 + (index * 18),
+        depth: preferCutout ? 7 : 6,
+    };
+};
+
+const balanceRailSlots = ({
+    slots,
+    scenario,
+    deviceTier,
+    seed,
+    nextCardSlot,
+    nextCutoutSlot,
+}) => {
+    const leftRail = [];
+    const rightRail = [];
+    const centerSlots = [];
+
+    slots.forEach((slot) => {
+        if (slot.left !== undefined && slot.right === undefined) {
+            leftRail.push(slot);
+            return;
+        }
+        if (slot.right !== undefined && slot.left === undefined) {
+            rightRail.push(slot);
+            return;
+        }
+        centerSlots.push(slot);
+    });
+
+    const targetCount = Math.max(
+        resolveTargetRailCount(scenario, deviceTier),
+        leftRail.length,
+        rightRail.length
+    );
+
+    while (leftRail.length < targetCount) {
+        leftRail.push(buildBalancedRailFiller({
+            side: "left",
+            index: leftRail.length,
+            seed,
+            deviceTier,
+            nextCardSlot,
+            nextCutoutSlot,
+        }));
+    }
+    while (rightRail.length < targetCount) {
+        rightRail.push(buildBalancedRailFiller({
+            side: "right",
+            index: rightRail.length,
+            seed,
+            deviceTier,
+            nextCardSlot,
+            nextCutoutSlot,
+        }));
+    }
+
+    const spreadRail = (slotsBySide, side) => {
+        if (slotsBySide.length === 0) return [];
+
+        const sorted = [...slotsBySide].sort((a, b) => (
+            toPercentNumber(a.top, 50) - toPercentNumber(b.top, 50)
+        ));
+        const start = deviceTier === "mobile" ? 6 : 5;
+        const end = deviceTier === "mobile" ? 94 : 95;
+        const step = sorted.length === 1 ? 0 : (end - start) / (sorted.length - 1);
+
+        return sorted.map((slot, index) => {
+            const rowOffset = index % 2 === 0 ? 0.8 : -0.8;
+            const top = clamp(start + (step * index) + rowOffset, 4, 96);
+            const alignEdge = index % 2 === 0 ? "-0.7%" : "0.35%";
+            const isCutout = slot.type === "cutout";
+
+            return {
+                ...slot,
+                left: side === "left" ? alignEdge : undefined,
+                right: side === "right" ? alignEdge : undefined,
+                top: `${top.toFixed(2)}%`,
+                width: slot.isFiller
+                    ? (isCutout ? "clamp(70px, 6vw, 104px)" : "clamp(58px, 4.8vw, 86px)")
+                    : slot.width,
+                height: slot.isFiller
+                    ? (isCutout ? "clamp(92px, 8vw, 144px)" : "clamp(76px, 6.2vw, 124px)")
+                    : slot.height,
+            };
+        });
+    };
+
+    return [
+        ...spreadRail(leftRail, "left"),
+        ...spreadRail(rightRail, "right"),
+        ...centerSlots,
+    ];
+};
+
 const slotStyleVars = (slot) => ({
     "--whl-left": slot.left ?? "auto",
     "--whl-right": slot.right ?? "auto",
@@ -346,7 +476,29 @@ const WorkforceHumanisticLayer = memo(() => {
         let cardCursor = 0;
         let cutoutCursor = 0;
 
-        return visibleSlots.map((slot, index) => {
+        const nextCardSlot = (slotSeed = seed) => {
+            const assetId = cardPool[positiveIndex(cardCursor, cardPool.length)];
+            const frameClass = CARD_FRAME_CLASSES[positiveIndex(slotSeed + cardCursor, CARD_FRAME_CLASSES.length)];
+            cardCursor += 1;
+            return {
+                type: "card",
+                src: cardPhoto(assetId),
+                frameClass,
+            };
+        };
+
+        const nextCutoutSlot = (slotSeed = seed) => {
+            const assetId = cutoutPool[positiveIndex(cutoutCursor, cutoutPool.length)];
+            const frameClass = CUTOUT_STYLE_CLASSES[positiveIndex(slotSeed + cutoutCursor, CUTOUT_STYLE_CLASSES.length)];
+            cutoutCursor += 1;
+            return {
+                type: "cutout",
+                src: cutoutPhoto(assetId),
+                frameClass,
+            };
+        };
+
+        const mappedSlots = visibleSlots.map((slot, index) => {
             const slotSeed = hashString(`${slot.id}:${seed}:${index}`);
             const shiftXRange = slot.type === "cutout" ? 1 : 2;
             const shiftYRange = slot.type === "cutout" ? 2 : 3;
@@ -361,13 +513,11 @@ const WorkforceHumanisticLayer = memo(() => {
             const normalizedRotate = `${(normalizedRotateDeg).toFixed(2)}deg`;
 
             if (slot.type === "card") {
-                const assetId = cardPool[positiveIndex(cardCursor, cardPool.length)];
-                const frameClass = CARD_FRAME_CLASSES[positiveIndex(slotSeed + cardCursor, CARD_FRAME_CLASSES.length)];
-                cardCursor += 1;
+                const assigned = nextCardSlot(slotSeed);
                 return {
                     ...slot,
-                    src: cardPhoto(assetId),
-                    frameClass,
+                    src: assigned.src,
+                    frameClass: assigned.frameClass,
                     shiftX,
                     shiftY,
                     normalizedRotate,
@@ -375,20 +525,27 @@ const WorkforceHumanisticLayer = memo(() => {
                 };
             }
 
-            const assetId = cutoutPool[positiveIndex(cutoutCursor, cutoutPool.length)];
-            const styleClass = CUTOUT_STYLE_CLASSES[positiveIndex(slotSeed + cutoutCursor, CUTOUT_STYLE_CLASSES.length)];
-            cutoutCursor += 1;
+            const assigned = nextCutoutSlot(slotSeed);
             return {
                 ...slot,
-                src: cutoutPhoto(assetId),
-                frameClass: styleClass,
+                src: assigned.src,
+                frameClass: assigned.frameClass,
                 shiftX,
                 shiftY,
                 normalizedRotate,
                 rotateExtra,
             };
         });
-    }, [normalizedRole, pathname, scenario, variantKey, visibleSlots]);
+
+        return balanceRailSlots({
+            slots: mappedSlots,
+            scenario,
+            deviceTier,
+            seed,
+            nextCardSlot,
+            nextCutoutSlot,
+        });
+    }, [deviceTier, normalizedRole, pathname, scenario, variantKey, visibleSlots]);
 
     useEffect(() => {
         if (!shouldRender || lowMotion || typeof window === "undefined") return undefined;
