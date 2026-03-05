@@ -218,9 +218,9 @@ const pickEvenly = (items, target) => {
 };
 
 const TARGET_RAIL_COUNT = {
-    mobile: { light: 4, medium: 5, dense: 6 },
-    tablet: { light: 6, medium: 7, dense: 8 },
-    desktop: { light: 7, medium: 9, dense: 10 },
+    mobile: { light: 2, medium: 3, dense: 4 },
+    tablet: { light: 3, medium: 4, dense: 5 },
+    desktop: { light: 4, medium: 6, dense: 7 },
 };
 
 const resolveTargetRailCount = (scenario, deviceTier) => {
@@ -245,7 +245,7 @@ const buildBalancedRailFiller = ({
     nextCutoutSlot,
 }) => {
     const slotSeed = hashString(`${seed}:balance:${side}:${index}`);
-    const preferCutout = deviceTier !== "mobile" && slotSeed % 5 === 0;
+    const preferCutout = deviceTier === "desktop" && slotSeed % 9 === 0;
     const baseSlot = preferCutout ? nextCutoutSlot(slotSeed) : nextCardSlot(slotSeed);
     return {
         ...baseSlot,
@@ -311,31 +311,55 @@ const balanceRailSlots = ({
 
         const metricByTier = {
             mobile: {
-                card: 9.4,
-                cutout: 11.6,
-                gap: 2.1,
-                start: 4.6,
+                card: {
+                    width: "clamp(72px, 19vw, 108px)",
+                    height: "clamp(98px, 24vw, 148px)",
+                    span: 17.4,
+                },
+                cutout: {
+                    width: "clamp(92px, 24vw, 142px)",
+                    height: "clamp(124px, 31vw, 194px)",
+                    span: 20.8,
+                },
+                gap: 3.2,
+                start: 5.2,
                 end: 95,
-                laneOffsets: [0.8],
-                laneStarts: [5.2],
+                laneOffsets: [1.2],
+                laneStarts: [6.2],
             },
             tablet: {
-                card: 10.2,
-                cutout: 12.4,
-                gap: 1.9,
-                start: 3.8,
+                card: {
+                    width: "clamp(82px, 8.2vw, 124px)",
+                    height: "clamp(112px, 11vw, 174px)",
+                    span: 16.8,
+                },
+                cutout: {
+                    width: "clamp(102px, 10.8vw, 170px)",
+                    height: "clamp(138px, 14.4vw, 224px)",
+                    span: 20,
+                },
+                gap: 3,
+                start: 4.4,
                 end: 95.5,
-                laneOffsets: [0.4, 10.6],
-                laneStarts: [4.2, 12.6],
+                laneOffsets: [0.8, 10.2],
+                laneStarts: [5.2, 14],
             },
             desktop: {
-                card: 10.8,
-                cutout: 13.2,
-                gap: 1.7,
-                start: 3.4,
+                card: {
+                    width: "clamp(92px, 6.8vw, 136px)",
+                    height: "clamp(124px, 9.2vw, 188px)",
+                    span: 15.8,
+                },
+                cutout: {
+                    width: "clamp(112px, 9.2vw, 190px)",
+                    height: "clamp(150px, 12vw, 250px)",
+                    span: 18.8,
+                },
+                gap: 2.8,
+                start: 4,
                 end: 96,
-                laneOffsets: [0.2, 11.6],
-                laneStarts: [4.1, 10.8],
+                laneOffsets: [0.4, 11.4],
+                laneStarts: [5.2, 12],
             },
         };
         const tier = metricByTier[deviceTier] ? deviceTier : "desktop";
@@ -356,19 +380,19 @@ const balanceRailSlots = ({
             }
 
             const lane = lanes[laneIndex];
-            const baseHeight = slot.type === "cutout" ? metric.cutout : metric.card;
-            const slotHeight = slot.isFiller ? baseHeight * 0.9 : baseHeight;
-            const slotWidthRatio = slot.type === "cutout" ? 0.76 : 0.68;
-            const topPercent = clamp(lane.cursor, metric.start, metric.end - slotHeight);
-            lane.cursor = topPercent + slotHeight + metric.gap;
+            const sizeProfile = slot.type === "cutout" ? metric.cutout : metric.card;
+            const slotSpan = slot.isFiller ? sizeProfile.span * 0.92 : sizeProfile.span;
+            const topPercent = clamp(lane.cursor, metric.start, metric.end - slotSpan);
+            lane.cursor = topPercent + slotSpan + metric.gap;
 
             return {
                 ...slot,
                 left: side === "left" ? `${lane.offset.toFixed(2)}%` : undefined,
                 right: side === "right" ? `${lane.offset.toFixed(2)}%` : undefined,
                 top: `${topPercent.toFixed(2)}%`,
-                width: `${(slotHeight * slotWidthRatio).toFixed(2)}vh`,
-                height: `${slotHeight.toFixed(2)}vh`,
+                bottom: undefined,
+                width: sizeProfile.width,
+                height: sizeProfile.height,
             };
         });
     };
