@@ -24,6 +24,46 @@ const OPERATION_CONFIG = {
         description: 'Log objective progress evidence for an MTSS assignment.',
         regex: /(log|append|update|isi|catat|submit).*(progress|check[\s-]?in|perkembangan|progres)/i
     },
+    append_mtss_progress_checkin_with_evidence: {
+        label: 'Log Progress + Evidence',
+        description: 'Submit MTSS progress and evidence links together.',
+        regex: /(log|submit|upload).*(progress).*(evidence|bukti|rubric|worksheet|assessment)/i
+    },
+    upload_mtss_evidence: {
+        label: 'Upload MTSS Evidence',
+        description: 'Upload MTSS evidence files/links and return structured metadata.',
+        regex: /(upload|unggah).*(evidence|bukti|rubric|worksheet|assessment)/i
+    },
+    update_mtss_intervention_plan: {
+        label: 'Update Intervention Plan',
+        description: 'Revise focus, strategy, monitoring, and targets on an active plan.',
+        regex: /(update|revise|ubah|perbarui).*(intervention|plan|rencana).*(mtss|tier|monitoring|strategy)/i
+    },
+    bulk_append_mtss_progress_checkin: {
+        label: 'Bulk Progress Check-in',
+        description: 'Submit progress check-ins for multiple assignments at once.',
+        regex: /(bulk|mass|batch).*(progress|check[\s-]?in|progres)/i
+    },
+    bulk_update_mtss_assignment_status: {
+        label: 'Bulk Status Update',
+        description: 'Update status across multiple MTSS assignments in one run.',
+        regex: /(bulk|mass|batch).*(status).*(assignment|mtss)/i
+    },
+    clone_mtss_intervention_plan: {
+        label: 'Clone Intervention Plan',
+        description: 'Duplicate a proven intervention plan to new student targets.',
+        regex: /(clone|duplicate|copy|salin).*(intervention|plan|rencana)/i
+    },
+    complete_mtss_assignment_with_outcome_summary: {
+        label: 'Complete With Outcome',
+        description: 'Close assignment with outcome summary and next support recommendation.',
+        regex: /(complete|close|finish|selesaikan).*(assignment|intervention).*(outcome|summary|ringkasan)/i
+    },
+    request_mtss_tier_review: {
+        label: 'Request Tier Review',
+        description: 'Submit tier escalation/de-escalation request to leadership queue.',
+        regex: /(request|ajukan|submit).*(tier).*(review|escalat|deescalat|peninjauan)/i
+    },
     assign_students_to_mtss_mentor: {
         label: 'Assign Students to Mentor',
         description: 'Assign one or more students to a mentor scope.',
@@ -53,7 +93,15 @@ const OPERATION_CONFIG = {
 
 const OPERATION_ORDER = [
     'create_mtss_intervention',
+    'append_mtss_progress_checkin_with_evidence',
     'append_mtss_progress_checkin',
+    'upload_mtss_evidence',
+    'update_mtss_intervention_plan',
+    'bulk_append_mtss_progress_checkin',
+    'bulk_update_mtss_assignment_status',
+    'clone_mtss_intervention_plan',
+    'complete_mtss_assignment_with_outcome_summary',
+    'request_mtss_tier_review',
     'assign_students_to_mtss_mentor',
     'assign_intervention_mentor',
     'reassign_mtss_assignment_mentor',
@@ -77,6 +125,61 @@ const OPERATION_FORM_FIELDS = {
         { key: 'score', label: 'Score / Value', type: 'number', required: false, placeholder: '78' },
         { key: 'interventionPerformed', label: 'Intervention Performed', type: 'select', required: true, options: ['yes', 'no'] },
         { key: 'notes', label: 'Notes', type: 'textarea', required: false, placeholder: 'optional notes' }
+    ],
+    append_mtss_progress_checkin_with_evidence: [
+        { key: 'assignmentId', label: 'Assignment ID', type: 'text', required: true, placeholder: 'assignment id' },
+        { key: 'summary', label: 'Progress Summary', type: 'textarea', required: true, placeholder: 'objective progress update' },
+        { key: 'score', label: 'Score / Value', type: 'number', required: false, placeholder: '78' },
+        { key: 'evidenceUrlsCsv', label: 'Evidence URLs', type: 'textarea', required: true, placeholder: 'https://..., https://...' },
+        { key: 'notes', label: 'Notes', type: 'textarea', required: false, placeholder: 'optional notes' }
+    ],
+    upload_mtss_evidence: [
+        { key: 'assignmentId', label: 'Assignment ID', type: 'text', required: false, placeholder: 'assignment id (optional)' },
+        { key: 'evidenceUrlsCsv', label: 'Evidence URLs', type: 'textarea', required: true, placeholder: 'https://..., https://...' }
+    ],
+    update_mtss_intervention_plan: [
+        { key: 'assignmentId', label: 'Assignment ID', type: 'text', required: true, placeholder: 'assignment id' },
+        { key: 'focusAreasCsv', label: 'Focus Areas', type: 'textarea', required: false, placeholder: 'SEL, Behavior, Math' },
+        { key: 'strategyName', label: 'Strategy Name', type: 'text', required: false, placeholder: 'strategy name' },
+        { key: 'monitoringMethod', label: 'Monitoring Method', type: 'select', required: false, options: ['Option 1 - Direct Observation', 'Option 2 - Student Self-Report', 'Option 3 - Assessment Data'] },
+        { key: 'monitoringFrequency', label: 'Monitoring Frequency', type: 'select', required: false, options: ['Daily', 'Weekly', 'Bi-weekly', 'Custom'] },
+        { key: 'tier', label: 'Tier', type: 'select', required: false, options: ['tier1', 'tier2', 'tier3'] },
+        { key: 'duration', label: 'Duration', type: 'select', required: false, options: ['4 weeks', '6 weeks', '8 weeks', '10 weeks', '12 weeks', '16 weeks', '20 weeks', '24 weeks'] },
+        { key: 'notes', label: 'Notes', type: 'textarea', required: false, placeholder: 'revision notes' }
+    ],
+    bulk_append_mtss_progress_checkin: [
+        { key: 'assignmentIdsCsv', label: 'Assignment IDs', type: 'textarea', required: true, placeholder: 'id1, id2, id3' },
+        { key: 'summary', label: 'Shared Summary', type: 'textarea', required: true, placeholder: 'shared progress summary' },
+        { key: 'score', label: 'Score / Value', type: 'number', required: false, placeholder: '78' },
+        { key: 'status', label: 'Status', type: 'select', required: false, options: ['active', 'paused', 'completed', 'closed'] },
+        { key: 'evidenceUrlsCsv', label: 'Evidence URLs', type: 'textarea', required: false, placeholder: 'https://..., https://...' }
+    ],
+    bulk_update_mtss_assignment_status: [
+        { key: 'assignmentIdsCsv', label: 'Assignment IDs', type: 'textarea', required: true, placeholder: 'id1, id2, id3' },
+        { key: 'status', label: 'Status', type: 'select', required: true, options: ['active', 'paused', 'completed', 'closed'] },
+        { key: 'summary', label: 'Summary', type: 'textarea', required: false, placeholder: 'short summary for all' },
+        { key: 'notes', label: 'Notes', type: 'textarea', required: false, placeholder: 'optional notes' }
+    ],
+    clone_mtss_intervention_plan: [
+        { key: 'sourceAssignmentId', label: 'Source Assignment ID', type: 'text', required: true, placeholder: 'source assignment id' },
+        { key: 'studentIdsCsv', label: 'Target Student IDs', type: 'textarea', required: true, placeholder: 'id1, id2, id3' },
+        { key: 'mentorId', label: 'Mentor ID', type: 'text', required: false, placeholder: 'mentor id (admin optional)' },
+        { key: 'tier', label: 'Tier Override', type: 'select', required: false, options: ['tier1', 'tier2', 'tier3'] },
+        { key: 'notes', label: 'Notes', type: 'textarea', required: false, placeholder: 'optional clone note' }
+    ],
+    complete_mtss_assignment_with_outcome_summary: [
+        { key: 'assignmentId', label: 'Assignment ID', type: 'text', required: true, placeholder: 'assignment id' },
+        { key: 'outcomeSummary', label: 'Outcome Summary', type: 'textarea', required: false, placeholder: 'completion summary (optional)' },
+        { key: 'autoRequestTierReview', label: 'Auto Tier Review', type: 'select', required: true, options: ['yes', 'no'] },
+        { key: 'requestTier', label: 'Request Tier', type: 'select', required: false, options: ['tier1', 'tier2', 'tier3'] },
+        { key: 'requestRationale', label: 'Tier Review Rationale', type: 'textarea', required: false, placeholder: 'why request tier review' }
+    ],
+    request_mtss_tier_review: [
+        { key: 'assignmentId', label: 'Assignment ID', type: 'text', required: true, placeholder: 'assignment id' },
+        { key: 'requestedTier', label: 'Requested Tier', type: 'select', required: true, options: ['tier1', 'tier2', 'tier3'] },
+        { key: 'priority', label: 'Priority', type: 'select', required: true, options: ['high', 'medium', 'low'] },
+        { key: 'rationale', label: 'Rationale', type: 'textarea', required: true, placeholder: 'why this tier review is needed' },
+        { key: 'evidenceUrlsCsv', label: 'Evidence URLs', type: 'textarea', required: false, placeholder: 'https://..., https://...' }
     ],
     assign_students_to_mtss_mentor: [
         { key: 'mentorId', label: 'Mentor ID', type: 'text', required: true, placeholder: 'mentor id' },
@@ -111,7 +214,9 @@ const DEFAULT_VALUES = {
     tier: 'Tier 2',
     interventionPerformed: 'yes',
     status: 'active',
-    completed: 'yes'
+    completed: 'yes',
+    autoRequestTierReview: 'yes',
+    priority: 'medium'
 };
 
 const toCsvList = (rawValue = '') =>
@@ -119,6 +224,9 @@ const toCsvList = (rawValue = '') =>
         .split(/[,;\n]/g)
         .map((item) => item.trim())
         .filter(Boolean);
+
+const toEvidenceListFromCsv = (rawValue = '') =>
+    toCsvList(rawValue).map((url) => ({ url }));
 
 const toBoolean = (rawValue = '', fallback = false) => {
     const value = String(rawValue || '').trim().toLowerCase();
@@ -161,6 +269,69 @@ const buildInitialFormValues = (operation = '', seedPayload = {}) => {
         base.score = getSeedValue(seedPayload, ['score', 'value'], '');
         base.interventionPerformed = getSeedValue(seedPayload, ['interventionPerformed'], DEFAULT_VALUES.interventionPerformed);
         base.notes = getSeedValue(seedPayload, ['notes'], '');
+    } else if (operation === 'append_mtss_progress_checkin_with_evidence') {
+        base.assignmentId = getSeedValue(seedPayload, ['assignmentId'], '');
+        base.summary = getSeedValue(seedPayload, ['summary'], '');
+        base.score = getSeedValue(seedPayload, ['score', 'value'], '');
+        const evidence = getSeedValue(seedPayload, ['evidence'], []);
+        base.evidenceUrlsCsv = Array.isArray(evidence)
+            ? evidence.map((entry) => entry?.url).filter(Boolean).join(', ')
+            : '';
+        base.notes = getSeedValue(seedPayload, ['notes'], '');
+    } else if (operation === 'upload_mtss_evidence') {
+        base.assignmentId = getSeedValue(seedPayload, ['assignmentId'], '');
+        const evidence = getSeedValue(seedPayload, ['evidence'], []);
+        base.evidenceUrlsCsv = Array.isArray(evidence)
+            ? evidence.map((entry) => entry?.url).filter(Boolean).join(', ')
+            : '';
+    } else if (operation === 'update_mtss_intervention_plan') {
+        base.assignmentId = getSeedValue(seedPayload, ['assignmentId'], '');
+        const focusAreas = getSeedValue(seedPayload, ['focusAreas'], []);
+        base.focusAreasCsv = Array.isArray(focusAreas) ? focusAreas.join(', ') : String(focusAreas || '');
+        base.strategyName = getSeedValue(seedPayload, ['strategyName'], '');
+        base.monitoringMethod = getSeedValue(seedPayload, ['monitoringMethod'], '');
+        base.monitoringFrequency = getSeedValue(seedPayload, ['monitoringFrequency'], '');
+        base.tier = getSeedValue(seedPayload, ['tier'], '');
+        base.duration = getSeedValue(seedPayload, ['duration'], '');
+        base.notes = getSeedValue(seedPayload, ['notes'], '');
+    } else if (operation === 'bulk_append_mtss_progress_checkin') {
+        const assignmentIds = getSeedValue(seedPayload, ['assignmentIds'], []);
+        base.assignmentIdsCsv = Array.isArray(assignmentIds) ? assignmentIds.join(', ') : String(assignmentIds || '');
+        base.summary = getSeedValue(seedPayload, ['summary'], '');
+        base.score = getSeedValue(seedPayload, ['score', 'value'], '');
+        base.status = getSeedValue(seedPayload, ['status'], '');
+        const evidence = getSeedValue(seedPayload, ['evidence'], []);
+        base.evidenceUrlsCsv = Array.isArray(evidence)
+            ? evidence.map((entry) => entry?.url).filter(Boolean).join(', ')
+            : '';
+    } else if (operation === 'bulk_update_mtss_assignment_status') {
+        const assignmentIds = getSeedValue(seedPayload, ['assignmentIds'], []);
+        base.assignmentIdsCsv = Array.isArray(assignmentIds) ? assignmentIds.join(', ') : String(assignmentIds || '');
+        base.status = getSeedValue(seedPayload, ['status'], DEFAULT_VALUES.status);
+        base.summary = getSeedValue(seedPayload, ['summary'], '');
+        base.notes = getSeedValue(seedPayload, ['notes'], '');
+    } else if (operation === 'clone_mtss_intervention_plan') {
+        base.sourceAssignmentId = getSeedValue(seedPayload, ['sourceAssignmentId', 'assignmentId'], '');
+        const studentIds = getSeedValue(seedPayload, ['studentIds'], []);
+        base.studentIdsCsv = Array.isArray(studentIds) ? studentIds.join(', ') : String(studentIds || '');
+        base.mentorId = getSeedValue(seedPayload, ['mentorId'], '');
+        base.tier = getSeedValue(seedPayload, ['tier'], '');
+        base.notes = getSeedValue(seedPayload, ['notes'], '');
+    } else if (operation === 'complete_mtss_assignment_with_outcome_summary') {
+        base.assignmentId = getSeedValue(seedPayload, ['assignmentId'], '');
+        base.outcomeSummary = getSeedValue(seedPayload, ['outcomeSummary', 'summary'], '');
+        base.autoRequestTierReview = getSeedValue(seedPayload, ['autoRequestTierReview'], DEFAULT_VALUES.autoRequestTierReview);
+        base.requestTier = getSeedValue(seedPayload, ['requestTier', 'requestedTier'], '');
+        base.requestRationale = getSeedValue(seedPayload, ['requestRationale'], '');
+    } else if (operation === 'request_mtss_tier_review') {
+        base.assignmentId = getSeedValue(seedPayload, ['assignmentId'], '');
+        base.requestedTier = getSeedValue(seedPayload, ['requestedTier', 'requestTier'], 'tier2');
+        base.priority = getSeedValue(seedPayload, ['priority'], DEFAULT_VALUES.priority);
+        base.rationale = getSeedValue(seedPayload, ['rationale', 'summary'], '');
+        const evidence = getSeedValue(seedPayload, ['evidence'], []);
+        base.evidenceUrlsCsv = Array.isArray(evidence)
+            ? evidence.map((entry) => entry?.url).filter(Boolean).join(', ')
+            : '';
     } else if (operation === 'assign_students_to_mtss_mentor') {
         base.mentorId = getSeedValue(seedPayload, ['mentorId'], '');
         const studentIds = getSeedValue(seedPayload, ['studentIds'], []);
@@ -234,6 +405,138 @@ const validateOperationPayload = (operation = '', formValues = {}, seedPayload =
         if (score !== null) payload.score = score;
         const notes = toTrimmedText(formValues.notes);
         if (notes) payload.notes = notes;
+        return { payload };
+    }
+
+    if (operation === 'append_mtss_progress_checkin_with_evidence') {
+        const assignmentId = validateRequiredText(formValues.assignmentId, 'Assignment ID');
+        if (assignmentId.error) return { error: assignmentId.error };
+        const summary = validateRequiredText(formValues.summary, 'Progress Summary');
+        if (summary.error) return { error: summary.error };
+        const evidence = toEvidenceListFromCsv(formValues.evidenceUrlsCsv);
+        if (evidence.length === 0) return { error: 'At least one Evidence URL is required.' };
+
+        payload.assignmentId = assignmentId.value;
+        payload.summary = summary.value;
+        payload.evidence = evidence;
+
+        const score = toNumberIfPossible(formValues.score);
+        if (score !== null) payload.score = score;
+        const notes = toTrimmedText(formValues.notes);
+        if (notes) payload.notes = notes;
+        return { payload };
+    }
+
+    if (operation === 'upload_mtss_evidence') {
+        const evidence = toEvidenceListFromCsv(formValues.evidenceUrlsCsv);
+        if (evidence.length === 0) return { error: 'At least one Evidence URL is required.' };
+
+        const assignmentId = toTrimmedText(formValues.assignmentId);
+        if (assignmentId) payload.assignmentId = assignmentId;
+        payload.evidence = evidence;
+        return { payload };
+    }
+
+    if (operation === 'update_mtss_intervention_plan') {
+        const assignmentId = validateRequiredText(formValues.assignmentId, 'Assignment ID');
+        if (assignmentId.error) return { error: assignmentId.error };
+        payload.assignmentId = assignmentId.value;
+
+        const focusAreas = toCsvList(formValues.focusAreasCsv);
+        if (focusAreas.length > 0) payload.focusAreas = focusAreas;
+        const strategyName = toTrimmedText(formValues.strategyName);
+        if (strategyName) payload.strategyName = strategyName;
+        const monitoringMethod = toTrimmedText(formValues.monitoringMethod);
+        if (monitoringMethod) payload.monitoringMethod = monitoringMethod;
+        const monitoringFrequency = toTrimmedText(formValues.monitoringFrequency);
+        if (monitoringFrequency) payload.monitoringFrequency = monitoringFrequency;
+        const tier = toTrimmedText(formValues.tier).toLowerCase();
+        if (tier) payload.tier = tier;
+        const duration = toTrimmedText(formValues.duration);
+        if (duration) payload.duration = duration;
+        const notes = toTrimmedText(formValues.notes);
+        if (notes) payload.notes = notes;
+        return { payload };
+    }
+
+    if (operation === 'bulk_append_mtss_progress_checkin') {
+        const assignmentIds = toCsvList(formValues.assignmentIdsCsv);
+        if (assignmentIds.length === 0) return { error: 'At least one Assignment ID is required.' };
+        const summary = validateRequiredText(formValues.summary, 'Shared Summary');
+        if (summary.error) return { error: summary.error };
+
+        payload.assignmentIds = assignmentIds;
+        payload.summary = summary.value;
+        const score = toNumberIfPossible(formValues.score);
+        if (score !== null) payload.score = score;
+        const status = toTrimmedText(formValues.status).toLowerCase();
+        if (status) payload.status = status;
+        const evidence = toEvidenceListFromCsv(formValues.evidenceUrlsCsv);
+        if (evidence.length > 0) payload.evidence = evidence;
+        return { payload };
+    }
+
+    if (operation === 'bulk_update_mtss_assignment_status') {
+        const assignmentIds = toCsvList(formValues.assignmentIdsCsv);
+        if (assignmentIds.length === 0) return { error: 'At least one Assignment ID is required.' };
+        const status = validateRequiredText(formValues.status, 'Status');
+        if (status.error) return { error: status.error };
+
+        payload.assignmentIds = assignmentIds;
+        payload.status = status.value.toLowerCase();
+        const summary = toTrimmedText(formValues.summary);
+        if (summary) payload.summary = summary;
+        const notes = toTrimmedText(formValues.notes);
+        if (notes) payload.notes = notes;
+        return { payload };
+    }
+
+    if (operation === 'clone_mtss_intervention_plan') {
+        const sourceAssignmentId = validateRequiredText(formValues.sourceAssignmentId, 'Source Assignment ID');
+        if (sourceAssignmentId.error) return { error: sourceAssignmentId.error };
+        const studentIds = toCsvList(formValues.studentIdsCsv);
+        if (studentIds.length === 0) return { error: 'At least one Target Student ID is required.' };
+
+        payload.sourceAssignmentId = sourceAssignmentId.value;
+        payload.studentIds = studentIds;
+        const mentorId = toTrimmedText(formValues.mentorId);
+        if (mentorId) payload.mentorId = mentorId;
+        const tier = toTrimmedText(formValues.tier).toLowerCase();
+        if (tier) payload.tier = tier;
+        const notes = toTrimmedText(formValues.notes);
+        if (notes) payload.notes = notes;
+        return { payload };
+    }
+
+    if (operation === 'complete_mtss_assignment_with_outcome_summary') {
+        const assignmentId = validateRequiredText(formValues.assignmentId, 'Assignment ID');
+        if (assignmentId.error) return { error: assignmentId.error };
+
+        payload.assignmentId = assignmentId.value;
+        const outcomeSummary = toTrimmedText(formValues.outcomeSummary);
+        if (outcomeSummary) payload.outcomeSummary = outcomeSummary;
+        payload.autoRequestTierReview = toBoolean(formValues.autoRequestTierReview, true);
+        const requestTier = toTrimmedText(formValues.requestTier).toLowerCase();
+        if (requestTier) payload.requestTier = requestTier;
+        const requestRationale = toTrimmedText(formValues.requestRationale);
+        if (requestRationale) payload.requestRationale = requestRationale;
+        return { payload };
+    }
+
+    if (operation === 'request_mtss_tier_review') {
+        const assignmentId = validateRequiredText(formValues.assignmentId, 'Assignment ID');
+        if (assignmentId.error) return { error: assignmentId.error };
+        const requestedTier = validateRequiredText(formValues.requestedTier, 'Requested Tier');
+        if (requestedTier.error) return { error: requestedTier.error };
+        const rationale = validateRequiredText(formValues.rationale, 'Rationale');
+        if (rationale.error) return { error: rationale.error };
+
+        payload.assignmentId = assignmentId.value;
+        payload.requestedTier = requestedTier.value.toLowerCase();
+        payload.rationale = rationale.value;
+        payload.priority = toTrimmedText(formValues.priority).toLowerCase() || DEFAULT_VALUES.priority;
+        const evidence = toEvidenceListFromCsv(formValues.evidenceUrlsCsv);
+        if (evidence.length > 0) payload.evidence = evidence;
         return { payload };
     }
 
@@ -360,8 +663,8 @@ export const detectDockOperationIntent = (message = '', { role = '', routeFamily
 
     const text = normalizeText(message);
     if (!text) return null;
-    const hasActionCue = /(create|buat|bikin|assign|tetapkan|update|ubah|log|catat|submit|mark|ganti|reassign)/i.test(text);
-    const hasMtssCue = /(mtss|intervention|intervensi|mentor|assignment|goal|check[\s-]?in|progress|progres)/i.test(text);
+    const hasActionCue = /(create|buat|bikin|assign|tetapkan|update|ubah|log|catat|submit|mark|ganti|reassign|clone|copy|upload|complete|request|ajukan|bulk|mass|batch)/i.test(text);
+    const hasMtssCue = /(mtss|intervention|intervensi|mentor|assignment|goal|check[\s-]?in|progress|progres|evidence|bukti|tier|review)/i.test(text);
     if (!hasActionCue || !hasMtssCue) return null;
 
     for (const operation of OPERATION_ORDER) {
