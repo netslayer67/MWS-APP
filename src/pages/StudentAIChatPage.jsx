@@ -363,6 +363,18 @@ export default function StudentAIChatPage() {
         [authUser?.role]
     );
     const isStudentRole = normalizedRole === 'student';
+    const isTeacherRole = useMemo(
+        () => ['teacher', 'se_teacher'].includes(normalizedRole),
+        [normalizedRole]
+    );
+    const isPrincipalRole = useMemo(
+        () => ['head_unit', 'principal'].includes(normalizedRole),
+        [normalizedRole]
+    );
+    const isLeadershipRole = useMemo(
+        () => ['head_unit', 'principal', 'directorate', 'admin', 'superadmin'].includes(normalizedRole),
+        [normalizedRole]
+    );
     const canExecuteAutomation = useMemo(
         () => ['teacher', 'head_unit', 'principal', 'directorate', 'admin', 'superadmin'].includes(normalizedRole),
         [normalizedRole]
@@ -374,10 +386,24 @@ export default function StudentAIChatPage() {
         if (!name) return 'there';
         return name.split(/\s+/)[0] || 'there';
     }, [authUser?.name, authUser?.nickname]);
-    const assistantSupportTagline = isStudentRole ? 'daily school support' : 'daily work support';
-    const assistantWelcomeSubtitle = isStudentRole
-        ? 'I can help with daily planning, homework strategy, MTSS check-ins, and personal study coaching.'
-        : 'I can help with workday planning, MTSS follow-up, check-in workflow, and role-specific dashboard actions.';
+    const assistantSupportTagline = useMemo(() => {
+        if (isStudentRole) return 'daily school support';
+        if (isPrincipalRole || isLeadershipRole) return 'leadership planning and MTSS decision support';
+        if (isTeacherRole) return 'classroom and MTSS intervention support';
+        return 'daily work support';
+    }, [isLeadershipRole, isPrincipalRole, isStudentRole, isTeacherRole]);
+    const assistantWelcomeSubtitle = useMemo(() => {
+        if (isStudentRole) {
+            return 'I can help with daily planning, homework strategy, MTSS check-ins, and personal study coaching.';
+        }
+        if (isPrincipalRole || isLeadershipRole) {
+            return 'I can help with executive MTSS briefing, team priority triage, escalation planning, and dashboard-driven decisions.';
+        }
+        if (isTeacherRole) {
+            return 'I can help with intervention planning, progress notes, classroom follow-up, and student support workflow.';
+        }
+        return 'I can help with workday planning, MTSS follow-up, check-in workflow, and role-specific dashboard actions.';
+    }, [isLeadershipRole, isPrincipalRole, isStudentRole, isTeacherRole]);
     const coachStateUserKey = useMemo(() => {
         const seed = authUser?.email || authUser?.id || authUser?._id || authUser?.username || 'student';
         return String(seed).replace(/[^a-zA-Z0-9_.@-]/g, '_');
@@ -1457,14 +1483,47 @@ export default function StudentAIChatPage() {
         }
     }, [assistantName, dispatch, nicknameDraft, toast]);
 
+    const defaultRoleSuggestions = useMemo(() => {
+        if (isStudentRole) {
+            return [
+                'Help me make a study plan for today',
+                'Explain this topic step by step',
+                'Quiz me in 5 quick questions',
+                'Check my MTSS progress'
+            ];
+        }
+
+        if (isPrincipalRole || isLeadershipRole) {
+            return [
+                'Create an executive MTSS brief for today',
+                'Rank unit risks and assign owner + due date',
+                'Recommend mentor workload rebalance for this week',
+                'Summarize overdue check-ins and escalation actions'
+            ];
+        }
+
+        if (isTeacherRole) {
+            return [
+                'Analyze my MTSS students and rank today priorities',
+                'Draft a progress check-in note I can paste now',
+                'Create an intervention plan with baseline and target',
+                'Draft a parent-friendly support update'
+            ];
+        }
+
+        return [
+            'Help me make a practical work plan for today',
+            'Summarize my top priorities and next actions',
+            'Prepare a concise dashboard update',
+            'Show my current MTSS task status'
+        ];
+    }, [isLeadershipRole, isPrincipalRole, isStudentRole, isTeacherRole]);
+
     // Quick suggestions
     const quickSuggestions = useMemo(() => [
         ...dailyQuickActions,
-        'Help me make a study plan for today',
-        'Explain this topic step by step',
-        'Quiz me in 5 quick questions',
-        'Check my MTSS progress'
-    ].filter((item, index, arr) => arr.indexOf(item) === index).slice(0, 6), [dailyQuickActions]);
+        ...defaultRoleSuggestions
+    ].filter((item, index, arr) => arr.indexOf(item) === index).slice(0, 6), [dailyQuickActions, defaultRoleSuggestions]);
 
     const quickSuggestionStyles = useMemo(() => ([
         'bg-gradient-to-r from-cyan-300/80 to-sky-200/85 text-sky-950',
