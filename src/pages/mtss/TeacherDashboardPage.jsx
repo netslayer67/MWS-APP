@@ -132,9 +132,9 @@ const TeacherDashboardPage = memo(() => {
             {(submittingPlan || submittingProgress || savingQuickUpdate) && <PageLoader />}
             <div className="mtss-bg-overlay" />
 
-            {/* Filmstrip + photo mosaic background */}
+            {/* Human-centered hybrid photo background */}
             <Suspense fallback={null}>
-                <CheckinCollageLayer pageSeed={42} />
+                <CheckinCollageLayer pageSeed={42} variant="hybrid-studio" />
             </Suspense>
 
             {/* Soft color blobs (background layer) */}

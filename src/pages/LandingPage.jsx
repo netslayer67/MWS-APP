@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import DecorativeBlob from "../components/ui/DecorativeBlob";
@@ -7,56 +7,161 @@ import HeroSection from "../components/ui/HeroSection";
 import Footer from "../components/ui/Footer";
 import InstallButton from "../components/ui/InstallButton";
 import kidsGroupPhoto from "@/assets/landing/kids-group.jpg";
+import {
+  MWS_STUDENT_CARD_ASSET_IDS,
+  MWS_STUDENT_CUTOUT_ASSET_IDS,
+} from "@/data/mwsStudentsDesignAssets";
 import useLandingAnimations from "@/hooks/useLandingAnimations";
 import "@/pages/styles/landing-humanistic.css";
 
-const PHOTO_LAYOUT_VARIANT = "clean";
+const CLD_BASE = "https://res.cloudinary.com/deldcwiji/image/upload";
+const cardPhoto = (id, w = 280, h = 190) => `${CLD_BASE}/c_fill,w_${w},h_${h},g_auto,f_auto,q_auto/${id}`;
+const cutoutPhoto = (id, w = 340) => `${CLD_BASE}/c_scale,w_${w},f_auto,q_auto/${id}`;
 
-const PHOTO_CUTOUTS = [
-  { id: "peek-right", className: "landing-photo-cutout--peek-right", position: "88% 56%", depth: 24 },
-  { id: "top-card", className: "landing-photo-cutout--top-card", position: "74% 34%", depth: 19 },
-  { id: "left-bubble", className: "landing-photo-cutout--left-bubble", position: "20% 52%", depth: 16 },
-  { id: "bottom-bubble", className: "landing-photo-cutout--bottom-bubble", position: "64% 64%", depth: 18 },
-  { id: "edge-slice", className: "landing-photo-cutout--edge-slice", position: "86% 40%", depth: 14 },
-  { id: "left-pill", className: "landing-photo-cutout--left-pill", position: "12% 58%", depth: 11 },
-  { id: "top-badge", className: "landing-photo-cutout--top-badge", position: "46% 26%", depth: 12 },
-  { id: "mid-card", className: "landing-photo-cutout--mid-card", position: "60% 48%", depth: 15 },
-  { id: "bottom-strip", className: "landing-photo-cutout--bottom-strip", position: "46% 74%", depth: 10 },
-  { id: "right-chip", className: "landing-photo-cutout--right-chip", position: "82% 28%", depth: 12 },
+const PHOTO_LAYOUT_VARIANT = "hybrid";
+
+const CARD_SIZE_PRESETS = {
+  landscape: { w: 360, h: 236 },
+  portrait: { w: 300, h: 410 },
+  square: { w: 320, h: 320 },
+};
+
+const PHOTO_FRAME_SLOTS = [
+  { id: "portrait-left", type: "cutout", className: "landing-photo-frame--portrait-left", depth: 15, width: 380 },
+  { id: "portrait-right", type: "cutout", className: "landing-photo-frame--portrait-right", depth: 15, width: 380 },
+  { id: "top-left", type: "card", className: "landing-photo-frame--top-left", depth: 10, preset: "landscape" },
+  { id: "top-center", type: "card", className: "landing-photo-frame--top-center", depth: 8, preset: "landscape" },
+  { id: "top-right", type: "card", className: "landing-photo-frame--top-right", depth: 10, preset: "landscape" },
+  { id: "left-mid", type: "card", className: "landing-photo-frame--left-mid", depth: 11, preset: "portrait" },
+  { id: "left-bottom", type: "card", className: "landing-photo-frame--left-bottom", depth: 8, preset: "square" },
+  { id: "right-mid", type: "card", className: "landing-photo-frame--right-mid", depth: 11, preset: "portrait" },
+  { id: "right-low", type: "card", className: "landing-photo-frame--right-low", depth: 8, preset: "square" },
+  { id: "bottom-left", type: "card", className: "landing-photo-frame--bottom-left", depth: 7, preset: "landscape" },
+  { id: "bottom-right", type: "card", className: "landing-photo-frame--bottom-right", depth: 7, preset: "landscape" },
 ];
 
-const PHOTO_ACCENTS = [
-  { id: "accent-a", className: "landing-photo-accent--a", depth: 8 },
-  { id: "accent-b", className: "landing-photo-accent--b", depth: 12 },
-  { id: "accent-c", className: "landing-photo-accent--c", depth: 10 },
-];
+const hashString = (value = "") => {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = ((hash << 5) - hash) + value.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+};
 
-const HumanisticPhotoLayer = memo(() => (
-  <div className="landing-photo-layer landing-gsap-photo-layer" aria-hidden="true">
-    <div
-      className="landing-photo-bg"
-      style={{ backgroundImage: `url(${kidsGroupPhoto})` }}
-    />
-    <div className="landing-photo-veil" />
+const seededShuffle = (items, seedBase = 1) => {
+  const next = [...items];
+  let seed = (Math.abs(seedBase) % 2147483647) || 1;
+  const random = () => {
+    seed = (seed * 48271) % 2147483647;
+    return seed / 2147483647;
+  };
 
-    {PHOTO_ACCENTS.map((item) => (
+  for (let i = next.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [next[i], next[j]] = [next[j], next[i]];
+  }
+
+  return next;
+};
+
+const HumanisticPhotoLayer = memo(() => {
+  const dayKey = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const daySeed = useMemo(() => hashString(`landing-hybrid-gallery:${dayKey}`), [dayKey]);
+
+  const cardDeck = useMemo(
+    () => seededShuffle(MWS_STUDENT_CARD_ASSET_IDS, daySeed + 29),
+    [daySeed],
+  );
+  const cutoutDeck = useMemo(
+    () => seededShuffle(MWS_STUDENT_CUTOUT_ASSET_IDS, daySeed + 79),
+    [daySeed],
+  );
+
+  const frameDeck = useMemo(() => {
+    let cardCursor = 2;
+    let cutoutCursor = 0;
+    return PHOTO_FRAME_SLOTS.map((slot) => {
+      if (slot.type === "cutout") {
+        const assetId = cutoutDeck[cutoutCursor % cutoutDeck.length];
+        cutoutCursor += 1;
+        return {
+          ...slot,
+          src: cutoutPhoto(assetId, slot.width || 340),
+        };
+      }
+
+      const assetId = cardDeck[cardCursor % cardDeck.length];
+      cardCursor += 1;
+      const preset = CARD_SIZE_PRESETS[slot.preset] || CARD_SIZE_PRESETS.landscape;
+      return {
+        ...slot,
+        src: cardPhoto(assetId, preset.w, preset.h),
+      };
+    });
+  }, [cardDeck, cutoutDeck]);
+
+  const backgroundPrimary = useMemo(
+    () => cardPhoto(cardDeck[0] || MWS_STUDENT_CARD_ASSET_IDS[0], 2048, 1260),
+    [cardDeck],
+  );
+  const backgroundSecondary = useMemo(
+    () => cardPhoto(cardDeck[1] || MWS_STUDENT_CARD_ASSET_IDS[1], 1920, 1220),
+    [cardDeck],
+  );
+
+  const applyFallback = useCallback((event) => {
+    if (event.currentTarget.dataset.fallback === "1") return;
+    event.currentTarget.dataset.fallback = "1";
+    event.currentTarget.src = kidsGroupPhoto;
+  }, []);
+
+  return (
+    <div className="landing-photo-layer landing-gsap-photo-layer" aria-hidden="true">
+      <div className="landing-photo-bg landing-photo-bg--primary" style={{ backgroundImage: `url(${backgroundPrimary})` }} />
+      <div className="landing-photo-bg landing-photo-bg--secondary" style={{ backgroundImage: `url(${backgroundSecondary})` }} />
+      <div className="landing-photo-veil" />
+      <div className="landing-photo-mesh" />
+
+      {frameDeck.map((slot, index) => (
+        <figure
+          key={slot.id}
+          className={`landing-photo-cutout landing-photo-frame landing-anime-frame ${slot.className} ${slot.type === "cutout" ? "landing-photo-frame--cutout" : "landing-photo-frame--card"}`}
+          data-landing-depth={slot.depth}
+          data-aos={["fade-up-right", "zoom-in-up", "fade-up-left", "zoom-in"][index % 4]}
+          data-aos-delay={70 + (index * 26)}
+          data-aos-duration={640 + ((index % 4) * 70)}
+          data-aos-easing="ease-out-cubic"
+          data-aos-anchor-placement="top-bottom"
+        >
+          <img className="landing-anime-frame-media" src={slot.src} alt="" loading="lazy" decoding="async" onError={applyFallback} />
+        </figure>
+      ))}
+
       <div
-        key={item.id}
-        className={`landing-photo-accent landing-anime-orb ${item.className}`}
-        data-landing-depth={item.depth}
+        className="landing-photo-halo landing-photo-halo--left landing-anime-orb"
+        data-landing-depth={8}
+        data-aos="zoom-in"
+        data-aos-delay="120"
+        data-aos-duration="700"
       />
-    ))}
-
-    {PHOTO_CUTOUTS.map((item) => (
       <div
-        key={item.id}
-        className={`landing-photo-cutout ${item.className}`}
-        data-landing-depth={item.depth}
-        style={{ backgroundImage: `url(${kidsGroupPhoto})`, backgroundPosition: item.position }}
+        className="landing-photo-halo landing-photo-halo--right landing-anime-orb"
+        data-landing-depth={9}
+        data-aos="zoom-in"
+        data-aos-delay="180"
+        data-aos-duration="760"
       />
-    ))}
-  </div>
-));
+      <div
+        className="landing-photo-halo landing-photo-halo--bottom landing-anime-orb"
+        data-landing-depth={7}
+        data-aos="zoom-in"
+        data-aos-delay="220"
+        data-aos-duration="720"
+      />
+    </div>
+  );
+});
 HumanisticPhotoLayer.displayName = "HumanisticPhotoLayer";
 
 const FloatingParticles = memo(() => (
@@ -73,7 +178,7 @@ const FloatingParticles = memo(() => (
           background: i % 3 === 0 ? "hsl(var(--primary))" : i % 3 === 1 ? "hsl(var(--gold))" : "hsl(var(--emerald))",
           opacity: 0.2,
         }}
-      />
+        />
     ))}
   </div>
 ));

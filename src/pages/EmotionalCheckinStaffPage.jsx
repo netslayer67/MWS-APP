@@ -1,4 +1,4 @@
-import React, { useState, memo, Suspense, lazy } from "react";
+import { useState, memo, Suspense, lazy } from "react";
 import { Helmet } from "react-helmet";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -130,7 +130,7 @@ const EmotionalCheckinStaffPage = memo(function EmotionalCheckinStaffPage() {
                 <meta name="description" content="Daily emotional wellness check-in for Millennia World School staff" />
             </Helmet>
 
-            <div className="relative min-h-screen text-foreground overflow-hidden">
+            <div className="staff-orbit-page relative min-h-screen text-foreground overflow-hidden">
                 <DecorativeElements />
 
                 <div className="relative z-10 min-h-screen flex items-center justify-center p-4 md:p-6">

@@ -33,79 +33,131 @@ const resolveDepth = (value) => {
   return Number.isFinite(parsed) ? parsed : 12;
 };
 
-/* Natural body cutouts — all transparent PNGs from Cloudinary on white bg */
+/* Structured, human-centered collage for Select Role page */
 const RS_BODY_CUTOUTS = [
   {
-    id: "body-left-top",
-    className: "rs-body--left-top",
-    src: cld("FOTO_POTRAIT_4_toxvjw", 260),
+    id: "hero-left",
+    className: "rs-body--hero-left",
+    src: cld("FOTO_POTRAIT_4_toxvjw", 280),
     depth: 13,
     aos: "rs-natural-rise",
     delay: 60,
-    duration: 860
-  },
-  {
-    id: "body-left-mid",
-    className: "rs-body--left-mid",
-    src: cld("FOTO_POTRAIT_3_faupks", 230),
-    depth: 11,
-    aos: "rs-natural-rise",
-    delay: 130,
-    duration: 820
-  },
-  {
-    id: "body-right-top",
-    className: "rs-body--right-top",
-    src: cld("FOTO_BG_REMOVE_17_dh98bg", 260),
-    depth: 13,
-    aos: "rs-natural-drift",
-    delay: 100,
     duration: 840
   },
   {
-    id: "body-top-accent",
-    className: "rs-body--top-accent",
-    src: cld("FOTO_BG_REMOVE_15_r6ncjw", 190),
-    depth: 10,
+    id: "hero-right",
+    className: "rs-body--hero-right",
+    src: cld("FOTO_BG_REMOVE_17_dh98bg", 280),
+    depth: 13,
     aos: "rs-natural-drift",
-    delay: 170,
-    duration: 800
+    delay: 110,
+    duration: 840
   },
   {
-    id: "body-bottom-center",
-    className: "rs-body--bottom-center",
-    src: cld("FOTO_BG_REMOVE_1133_x_2000_px_73_jsv6a0", 460),
+    id: "hero-bottom",
+    className: "rs-body--hero-bottom",
+    src: cld("FOTO_BG_REMOVE_1133_x_2000_px_73_jsv6a0", 430),
     depth: 8,
     aos: "rs-natural-rise",
-    delay: 260,
-    duration: 780
+    delay: 220,
+    duration: 820
   },
 ];
 
-/* Photo cards — JPG photos with borders as decorative elements */
-const RS_PHOTO_CARDS = [
-  { id: "pc-1", className: "rs-pc--1", src: cldJpg("DSC01543_epizl3", 160), depth: 10, aos: "rs-card-pop", delay: 100, duration: 720 },
-  { id: "pc-2", className: "rs-pc--2", src: cldJpg("_DSC8750_fdmetn", 150), depth: 8, aos: "rs-card-pop", delay: 170, duration: 740 },
-  { id: "pc-3", className: "rs-pc--3", src: cldJpg("DSC02677_zgyz6w", 170), depth: 11, aos: "rs-card-pop", delay: 220, duration: 760 },
-  { id: "pc-4", className: "rs-pc--4", src: cldJpg("_DSC6603_sonkrm", 140), depth: 7, aos: "rs-card-pop", delay: 270, duration: 720 },
-  { id: "pc-5", className: "rs-pc--5", src: cldJpg("DSC01621_nssiis", 160), depth: 9, aos: "rs-card-pop", delay: 140, duration: 700 },
-  { id: "pc-6", className: "rs-pc--6", src: cldJpg("_DSC5962_mym0e5", 150), depth: 10, aos: "rs-card-pop", delay: 300, duration: 740 },
-  { id: "pc-7", className: "rs-pc--7", src: cldJpg("DSC02730_k10pn3", 170), depth: 11, aos: "rs-card-pop", delay: 340, duration: 760 },
-  { id: "pc-8", className: "rs-pc--8", src: cldJpg("_DSC6346_rjpzcy", 145), depth: 8, aos: "rs-card-pop", delay: 210, duration: 720 },
-  { id: "pc-9", className: "rs-pc--9", src: cldJpg("DSC01079_tc6ttw", 155), depth: 9, aos: "rs-card-pop", delay: 260, duration: 730 },
-  { id: "pc-10", className: "rs-pc--10", src: cldJpg("_DSC5535_yuiqgh", 145), depth: 8, aos: "rs-card-pop", delay: 380, duration: 740 },
+const RS_LEFT_LANE_CARDS = [
+  { id: "left-1", src: cldJpg("DSC01543_epizl3", 176), depth: 9, delay: 90, rotate: -6 },
+  { id: "left-2", src: cldJpg("_DSC8750_fdmetn", 172), depth: 10, delay: 140, rotate: -2 },
+  { id: "left-3", src: cldJpg("DSC02677_zgyz6w", 178), depth: 11, delay: 190, rotate: 3 },
+  { id: "left-4", src: cldJpg("_DSC6603_sonkrm", 170), depth: 9, delay: 230, rotate: -4 },
+];
+
+const RS_RIGHT_LANE_CARDS = [
+  { id: "right-1", src: cldJpg("DSC01621_nssiis", 176), depth: 9, delay: 120, rotate: 6 },
+  { id: "right-2", src: cldJpg("_DSC5962_mym0e5", 170), depth: 10, delay: 170, rotate: 2 },
+  { id: "right-3", src: cldJpg("DSC02730_k10pn3", 178), depth: 11, delay: 220, rotate: -3 },
+  { id: "right-4", src: cldJpg("_DSC6346_rjpzcy", 172), depth: 9, delay: 270, rotate: 4 },
+];
+
+const RS_TOP_STRIP_CARDS = [
+  { id: "top-1", src: cldJpg("DSC01079_tc6ttw", 150), depth: 8, delay: 130, rotate: -4 },
+  { id: "top-2", src: cldJpg("_DSC5535_yuiqgh", 156), depth: 8, delay: 180, rotate: 3 },
+  { id: "top-3", src: cldJpg("_DSC6603_sonkrm", 148), depth: 8, delay: 220, rotate: -2 },
+];
+
+const RS_COMMUNITY_CHIPS = [
+  cldJpg("DSC01543_epizl3", 120),
+  cldJpg("_DSC8750_fdmetn", 120),
+  cldJpg("DSC02677_zgyz6w", 120),
+  cldJpg("DSC01621_nssiis", 120),
+  cldJpg("_DSC5962_mym0e5", 120),
+  cldJpg("DSC02730_k10pn3", 120),
 ];
 
 const RS_PHOTO_ACCENTS = [
-  { id: "a", className: "rs-photo-accent--a", depth: 8, aos: "rs-orb-pop", delay: 80, duration: 680 },
-  { id: "b", className: "rs-photo-accent--b", depth: 10, aos: "rs-orb-pop", delay: 140, duration: 700 },
-  { id: "c", className: "rs-photo-accent--c", depth: 9, aos: "rs-orb-pop", delay: 200, duration: 720 },
-  { id: "d", className: "rs-photo-accent--d", depth: 7, aos: "rs-orb-pop", delay: 260, duration: 730 },
+  { id: "accent-left", className: "rs-photo-accent--left", depth: 8, aos: "rs-orb-pop", delay: 90, duration: 680 },
+  { id: "accent-right", className: "rs-photo-accent--right", depth: 8, aos: "rs-orb-pop", delay: 150, duration: 700 },
+  { id: "accent-center", className: "rs-photo-accent--center", depth: 7, aos: "rs-orb-pop", delay: 220, duration: 710 },
 ];
 
 const RoleSelectionPhotoLayer = memo(() => (
   <div className="rs-photo-layer" aria-hidden="true">
     <div className="rs-white-canvas" />
+    <div className="rs-photo-fabric" />
+
+    <div className="rs-top-strip">
+      {RS_TOP_STRIP_CARDS.map((item) => (
+        <div
+          key={item.id}
+          className="rs-photo-card rs-photo-card--top"
+          style={{ "--rs-card-rotate": `${item.rotate}deg` }}
+          data-rs-depth={item.depth}
+          data-aos="rs-card-pop"
+          data-aos-delay={item.delay}
+          data-aos-duration={740}
+          data-aos-easing="ease-out-cubic"
+        >
+          <img src={item.src} alt="" className="rs-photo-card-img" loading="lazy" decoding="async" />
+        </div>
+      ))}
+    </div>
+
+    {RS_ENABLE_FRAMED_CARDS && (
+      <>
+        <div className="rs-gallery-lane rs-gallery-lane--left">
+          {RS_LEFT_LANE_CARDS.map((item) => (
+            <div
+              key={item.id}
+              className="rs-photo-card rs-photo-card--lane"
+              style={{ "--rs-card-rotate": `${item.rotate}deg` }}
+              data-rs-depth={item.depth}
+              data-aos="rs-card-pop"
+              data-aos-delay={item.delay}
+              data-aos-duration={760}
+              data-aos-easing="ease-out-cubic"
+            >
+              <img src={item.src} alt="" className="rs-photo-card-img" loading="lazy" decoding="async" />
+            </div>
+          ))}
+        </div>
+
+        <div className="rs-gallery-lane rs-gallery-lane--right">
+          {RS_RIGHT_LANE_CARDS.map((item) => (
+            <div
+              key={item.id}
+              className="rs-photo-card rs-photo-card--lane"
+              style={{ "--rs-card-rotate": `${item.rotate}deg` }}
+              data-rs-depth={item.depth}
+              data-aos="rs-card-pop"
+              data-aos-delay={item.delay}
+              data-aos-duration={760}
+              data-aos-easing="ease-out-cubic"
+            >
+              <img src={item.src} alt="" className="rs-photo-card-img" loading="lazy" decoding="async" />
+            </div>
+          ))}
+        </div>
+      </>
+    )}
 
     {RS_BODY_CUTOUTS.map((item) => (
       <div
@@ -117,35 +169,21 @@ const RoleSelectionPhotoLayer = memo(() => (
         data-aos-duration={item.duration}
         data-aos-easing="ease-out-cubic"
       >
-        <img
-          src={item.src}
-          alt=""
-          className="rs-body-cutout-img"
-          loading="lazy"
-          decoding="async"
-        />
+        <img src={item.src} alt="" className="rs-body-cutout-img" loading="lazy" decoding="async" />
       </div>
     ))}
 
-    {RS_ENABLE_FRAMED_CARDS && RS_PHOTO_CARDS.map((item) => (
-      <div
-        key={item.id}
-        className={`rs-photo-card ${item.className}`}
-        data-rs-depth={item.depth}
-        data-aos={item.aos}
-        data-aos-delay={item.delay}
-        data-aos-duration={item.duration}
-        data-aos-easing="ease-out-cubic"
-      >
-        <img
-          src={item.src}
-          alt=""
-          className="rs-photo-card-img"
-          loading="lazy"
-          decoding="async"
-        />
-      </div>
-    ))}
+    <div className="rs-community-row" data-rs-depth={7}>
+      {RS_COMMUNITY_CHIPS.map((src, index) => (
+        <div
+          key={`rs-chip-${index}`}
+          className="rs-avatar-chip"
+          style={{ "--rs-chip-delay": `${index * 0.36}s` }}
+        >
+          <img src={src} alt="" loading="lazy" decoding="async" />
+        </div>
+      ))}
+    </div>
 
     {RS_PHOTO_ACCENTS.map((item) => (
       <div
@@ -315,7 +353,7 @@ const RoleSelection = memo(() => {
       });
     }, el);
 
-    let removeParallax = () => {};
+    let removeParallax = () => { };
     if (!reduceMotion && supportsFinePointer()) {
       const shell = el.querySelector(".rs-pointer-shell") || el;
       const layers = Array.from(el.querySelectorAll("[data-rs-depth]"));
@@ -477,9 +515,9 @@ const RoleSelection = memo(() => {
             )}
 
             {user && user.role && !canAccessDashboard && (
-              <div className="rounded-xl border border-border/30 bg-card/40 backdrop-blur-sm p-3 text-center" style={{ animation: 'rs-card-in 0.5s ease-out 0.65s both' }}>
-                <p className="text-[10px] text-muted-foreground">Role: <span className="font-semibold text-foreground">{user.role}</span></p>
-                <p className="text-[9px] text-muted-foreground/60 mt-0.5">Dashboard access is available for Directorate, Head Unit, or approved delegated accounts.</p>
+              <div className="rounded-xl border border-border/30 bg-card/40  p-3 text-center" style={{ animation: 'rs-card-in 0.5s ease-out 0.65s both' }}>
+                <p className="text-[10px] text-muted-foreground"></p>
+                <p className="text-[9px] text-muted-foreground/60 mt-0.5"></p>
               </div>
             )}
 

@@ -12,6 +12,8 @@ const ThemeSpellOverlay = lazy(() => import('@/components/app/ThemeSpellOverlay'
 const GlobalLoadingOverlay = lazy(() => import('@/components/app/GlobalLoadingOverlay'));
 const QuickLogoutButton = lazy(() => import('@/components/app/QuickLogoutButton'));
 
+const routeMatches = (pathname, prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`);
+
 const App = memo(() => {
     const location = useLocation();
     const aosRef = useRef(null);
@@ -82,6 +84,10 @@ const App = memo(() => {
 
     // Memoize key for AnimatePresence to prevent unnecessary re-renders
     const animatePresenceKey = useMemo(() => location.pathname, [location.pathname]);
+    const shouldShowWorkforceLayer = useMemo(
+        () => !routeMatches(location.pathname, '/emotional-checkin/staff'),
+        [location.pathname],
+    );
 
     return (
         <>
@@ -95,7 +101,7 @@ const App = memo(() => {
                     </Suspense>
                 )}
 
-                {showEnhancements && (
+                {showEnhancements && shouldShowWorkforceLayer && (
                     <Suspense fallback={null}>
                         <WorkforceHumanisticLayer />
                     </Suspense>
