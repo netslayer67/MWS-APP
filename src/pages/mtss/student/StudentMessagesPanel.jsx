@@ -85,7 +85,7 @@ const StudentMessagesPanel = ({ student, isLoading = false }) => {
 
     if (isLoading) {
         return (
-            <div className="rounded-[30px] border border-white/70 bg-white/82 p-8 text-center text-sm text-slate-600 shadow-sm dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
+            <div className="rounded-[30px] border border-white/80 bg-white/90 p-8 text-center text-sm text-slate-700 shadow-sm dark:border-white/20 dark:bg-slate-900/82 dark:text-slate-200">
                 Loading mentor updates...
             </div>
         );
@@ -93,7 +93,7 @@ const StudentMessagesPanel = ({ student, isLoading = false }) => {
 
     if (!student) {
         return (
-            <div className="rounded-[30px] border border-white/70 bg-white/82 p-8 text-center text-sm text-slate-600 shadow-sm dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
+            <div className="rounded-[30px] border border-white/80 bg-white/90 p-8 text-center text-sm text-slate-700 shadow-sm dark:border-white/20 dark:bg-slate-900/82 dark:text-slate-200">
                 No communication data available.
             </div>
         );
@@ -101,13 +101,13 @@ const StudentMessagesPanel = ({ student, isLoading = false }) => {
 
     return (
         <div className="space-y-5">
-            <div className="rounded-[34px] border border-white/70 bg-white/82 p-5 shadow-[0_14px_36px_rgba(236,72,153,0.08)] backdrop-blur-xl dark:border-white/15 dark:bg-slate-900/55">
+            <div className="rounded-[34px] border border-white/80 bg-white/90 p-5 shadow-[0_14px_36px_rgba(236,72,153,0.1)] backdrop-blur-xl dark:border-white/20 dark:bg-slate-900/82">
                 <div className="mb-4 flex items-center justify-between">
                     <div>
-                        <p className="text-xs uppercase tracking-[0.35em] text-slate-500 dark:text-slate-300">Mentor Updates</p>
+                        <p className="text-xs uppercase tracking-[0.35em] text-slate-600 dark:text-slate-200">Mentor Updates</p>
                         <h3 className="text-lg font-black text-slate-800 dark:text-white">All Subject Communication Log</h3>
                     </div>
-                    <MessageCircleHeart className="h-5 w-5 text-pink-500 dark:text-pink-300" />
+                    <MessageCircleHeart className="h-5 w-5 text-pink-600 dark:text-pink-200" />
                 </div>
 
                 {subjects.length > 1 && (
@@ -117,8 +117,8 @@ const StudentMessagesPanel = ({ student, isLoading = false }) => {
                             onClick={() => setSelectedSubject("all")}
                             className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
                                 selectedSubject === "all"
-                                    ? "border-violet-300 bg-violet-100 text-violet-700 dark:border-violet-400/40 dark:bg-violet-500/20 dark:text-violet-200"
-                                    : "border-white/70 bg-white/90 text-slate-600 dark:border-white/15 dark:bg-white/5 dark:text-slate-300"
+                                    ? "border-violet-300 bg-violet-100 text-violet-700 dark:border-violet-300/55 dark:bg-violet-900/55 dark:text-violet-100"
+                                    : "border-white/80 bg-white/92 text-slate-700 dark:border-white/20 dark:bg-slate-800/72 dark:text-slate-200"
                             }`}
                         >
                             All Subjects
@@ -130,8 +130,8 @@ const StudentMessagesPanel = ({ student, isLoading = false }) => {
                                 onClick={() => setSelectedSubject(subject.type)}
                                 className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
                                     selectedSubject === subject.type
-                                        ? "border-violet-300 bg-violet-100 text-violet-700 dark:border-violet-400/40 dark:bg-violet-500/20 dark:text-violet-200"
-                                        : "border-white/70 bg-white/90 text-slate-600 dark:border-white/15 dark:bg-white/5 dark:text-slate-300"
+                                        ? "border-violet-300 bg-violet-100 text-violet-700 dark:border-violet-300/55 dark:bg-violet-900/55 dark:text-violet-100"
+                                        : "border-white/80 bg-white/92 text-slate-700 dark:border-white/20 dark:bg-slate-800/72 dark:text-slate-200"
                                 }`}
                             >
                                 {subject.label}
@@ -145,16 +145,16 @@ const StudentMessagesPanel = ({ student, isLoading = false }) => {
                         {filteredFeed.map((message) => (
                             <div
                                 key={message.id}
-                                className="rounded-2xl border border-white/80 bg-gradient-to-r from-sky-50 via-violet-50 to-pink-50 px-4 py-3 shadow-sm dark:border-white/10 dark:from-sky-500/10 dark:via-violet-500/10 dark:to-pink-500/10"
+                                className="rounded-2xl border border-white/80 bg-gradient-to-r from-sky-50 via-violet-50 to-pink-50 px-4 py-3 shadow-sm dark:border-white/20 dark:from-sky-950/70 dark:via-violet-950/70 dark:to-pink-950/60"
                             >
                                 <div className="flex items-center justify-between gap-2">
-                                    <p className="text-[10px] uppercase tracking-[0.2em] text-violet-600 dark:text-violet-300">{message.subject}</p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-300">{message.date}</p>
+                                    <p className="text-[10px] uppercase tracking-[0.2em] text-violet-700 dark:text-violet-100">{message.subject}</p>
+                                    <p className="text-xs text-slate-600 dark:text-slate-200">{message.date}</p>
                                 </div>
-                                <p className="text-sm font-black text-indigo-700 dark:text-indigo-300">{message.from}</p>
+                                <p className="text-sm font-black text-indigo-700 dark:text-indigo-100">{message.from}</p>
                                 <p className="mt-1 text-sm text-slate-700 dark:text-slate-100">{message.text}</p>
                                 {(message.score !== undefined && message.score !== null) && (
-                                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">Score: {message.score}</p>
+                                    <p className="mt-1 text-xs text-slate-600 dark:text-slate-200">Score: {message.score}</p>
                                 )}
                                 {message.evidence?.length > 0 && (
                                     <div className="mt-2">
@@ -165,7 +165,7 @@ const StudentMessagesPanel = ({ student, isLoading = false }) => {
                         ))}
                     </div>
                 ) : (
-                    <div className="rounded-2xl border border-white/80 bg-gradient-to-r from-sky-50 via-violet-50 to-pink-50 px-4 py-3 text-sm text-slate-600 dark:border-white/10 dark:from-sky-500/10 dark:via-violet-500/10 dark:to-pink-500/10 dark:text-slate-300">
+                    <div className="rounded-2xl border border-white/80 bg-gradient-to-r from-sky-50 via-violet-50 to-pink-50 px-4 py-3 text-sm text-slate-700 dark:border-white/20 dark:from-sky-950/70 dark:via-violet-950/70 dark:to-pink-950/60 dark:text-slate-200">
                         No communication notes for this subject yet.
                     </div>
                 )}

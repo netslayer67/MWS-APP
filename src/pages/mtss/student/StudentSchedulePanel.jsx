@@ -84,7 +84,7 @@ const StudentSchedulePanel = ({ student, isLoading = false }) => {
 
     if (isLoading) {
         return (
-            <div className="rounded-[30px] border border-white/70 bg-white/82 p-8 text-center text-sm text-slate-600 shadow-sm dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
+            <div className="rounded-[30px] border border-white/80 bg-white/90 p-8 text-center text-sm text-slate-700 shadow-sm dark:border-white/20 dark:bg-slate-900/82 dark:text-slate-200">
                 Loading intervention schedule...
             </div>
         );
@@ -92,7 +92,7 @@ const StudentSchedulePanel = ({ student, isLoading = false }) => {
 
     if (!student) {
         return (
-            <div className="rounded-[30px] border border-white/70 bg-white/82 p-8 text-center text-sm text-slate-600 shadow-sm dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
+            <div className="rounded-[30px] border border-white/80 bg-white/90 p-8 text-center text-sm text-slate-700 shadow-sm dark:border-white/20 dark:bg-slate-900/82 dark:text-slate-200">
                 No schedule data available.
             </div>
         );
@@ -100,23 +100,23 @@ const StudentSchedulePanel = ({ student, isLoading = false }) => {
 
     return (
         <div className="space-y-5">
-            <div className="rounded-[34px] border border-white/70 bg-white/82 p-5 shadow-[0_14px_36px_rgba(14,165,233,0.08)] backdrop-blur-xl dark:border-white/15 dark:bg-slate-900/55 space-y-4">
+            <div className="rounded-[34px] border border-white/80 bg-white/90 p-5 shadow-[0_14px_36px_rgba(14,165,233,0.12)] backdrop-blur-xl dark:border-white/20 dark:bg-slate-900/82 space-y-4">
                 <div className="flex items-center justify-between">
                     <div>
-                        <p className="text-xs uppercase tracking-[0.35em] text-slate-500 dark:text-slate-300">Intervention Plan</p>
+                        <p className="text-xs uppercase tracking-[0.35em] text-slate-600 dark:text-slate-200">Intervention Plan</p>
                         <h3 className="text-xl font-black text-slate-800 dark:text-white">All Active Subjects</h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-300">
+                        <p className="text-xs text-slate-600 dark:text-slate-200">
                             {interventions.length} subject intervention{interventions.length > 1 ? "s" : ""} in your schedule
                         </p>
                     </div>
-                    <CalendarHeart className="h-5 w-5 text-cyan-500 dark:text-cyan-300" />
+                    <CalendarHeart className="h-5 w-5 text-cyan-600 dark:text-cyan-200" />
                 </div>
 
                 <div className="flex flex-wrap gap-2">
                     {interventions.map((intervention) => (
                         <span
                             key={`${intervention.type}-${intervention.id || intervention.label}`}
-                            className="rounded-full border border-white/70 bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 dark:border-white/20 dark:bg-white/10 dark:text-slate-100"
+                            className="rounded-full border border-white/80 bg-white/92 px-3 py-1 text-xs font-semibold text-slate-800 dark:border-white/20 dark:bg-slate-800/72 dark:text-slate-100"
                         >
                             {intervention.label} - {intervention.tierLabel || intervention.tier || "Tier 1"}
                         </span>
@@ -139,29 +139,29 @@ const StudentSchedulePanel = ({ student, isLoading = false }) => {
                     }
 
                     const scheduleCards = [
-                        { key: "next", label: "Next Review", value: formatReviewDate(intervention.endDate, student?.nextUpdate || "Awaiting schedule"), tone: "from-rose-100 to-pink-100 dark:from-rose-500/20 dark:to-pink-500/12" },
-                        { key: "monitoring", label: "Monitoring", value: monitoringLabel, tone: "from-sky-100 to-cyan-100 dark:from-sky-500/20 dark:to-cyan-500/12" },
-                        { key: "mentor", label: "Mentor", value: mentorLabel || "MTSS Mentor", tone: "from-violet-100 to-fuchsia-100 dark:from-violet-500/20 dark:to-fuchsia-500/12" },
-                        { key: "duration", label: "Duration", value: intervention.duration || "Ongoing", tone: "from-amber-100 to-orange-100 dark:from-amber-500/20 dark:to-orange-500/12" },
+                        { key: "next", label: "Next Review", value: formatReviewDate(intervention.endDate, student?.nextUpdate || "Awaiting schedule"), tone: "from-rose-100 to-pink-100 dark:from-rose-950/70 dark:to-pink-950/60", labelTone: "text-rose-700 dark:text-rose-100" },
+                        { key: "monitoring", label: "Monitoring", value: monitoringLabel, tone: "from-sky-100 to-cyan-100 dark:from-sky-950/70 dark:to-cyan-950/60", labelTone: "text-sky-700 dark:text-sky-100" },
+                        { key: "mentor", label: "Mentor", value: mentorLabel || "MTSS Mentor", tone: "from-violet-100 to-fuchsia-100 dark:from-violet-950/70 dark:to-fuchsia-950/60", labelTone: "text-violet-700 dark:text-violet-100" },
+                        { key: "duration", label: "Duration", value: intervention.duration || "Ongoing", tone: "from-amber-100 to-orange-100 dark:from-amber-950/70 dark:to-orange-950/60", labelTone: "text-amber-700 dark:text-amber-100" },
                     ];
 
                     return (
-                        <div key={`${intervention.type}-${intervention.id || intervention.label}`} className="rounded-[28px] border border-white/70 bg-white/82 p-4 shadow-md backdrop-blur-xl dark:border-white/15 dark:bg-slate-900/55">
+                        <div key={`${intervention.type}-${intervention.id || intervention.label}`} className="rounded-[28px] border border-white/80 bg-white/90 p-4 shadow-md backdrop-blur-xl dark:border-white/20 dark:bg-slate-900/82">
                             <div className="mb-3 flex items-center justify-between gap-3">
                                 <div>
-                                    <p className="text-xs uppercase tracking-[0.3em] text-slate-500 dark:text-slate-300">Subject Plan</p>
+                                    <p className="text-xs uppercase tracking-[0.3em] text-slate-600 dark:text-slate-200">Subject Plan</p>
                                     <h4 className="text-lg font-black text-slate-800 dark:text-white">{intervention.label || "Intervention"}</h4>
                                 </div>
-                                <span className="rounded-full border border-white/70 bg-white/90 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-violet-600 dark:border-white/20 dark:bg-white/10 dark:text-violet-300">
+                                <span className="rounded-full border border-white/80 bg-white/92 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-violet-700 dark:border-white/20 dark:bg-slate-800/72 dark:text-violet-100">
                                     {intervention.tierLabel || intervention.tier || "Tier 1"}
                                 </span>
                             </div>
 
                             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                                 {scheduleCards.map((item) => (
-                                    <div key={item.key} className={`rounded-2xl bg-gradient-to-r ${item.tone} px-4 py-3`}>
-                                        <p className="text-[11px] uppercase tracking-[0.28em] text-slate-500 dark:text-slate-300">{item.label}</p>
-                                        <p className="mt-1 text-sm font-semibold text-slate-700 dark:text-slate-100">{item.value}</p>
+                                    <div key={item.key} className={`rounded-2xl border border-white/60 bg-gradient-to-r ${item.tone} px-4 py-3 dark:border-white/20`}>
+                                        <p className={`text-[11px] uppercase tracking-[0.28em] ${item.labelTone}`}>{item.label}</p>
+                                        <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">{item.value}</p>
                                     </div>
                                 ))}
                             </div>
@@ -171,13 +171,13 @@ const StudentSchedulePanel = ({ student, isLoading = false }) => {
             </div>
 
             <div className="grid gap-5 lg:grid-cols-2">
-                <div className="rounded-[30px] border border-white/70 bg-white/82 p-5 shadow-md backdrop-blur-xl dark:border-white/15 dark:bg-slate-900/55 space-y-4">
+                <div className="rounded-[30px] border border-white/80 bg-white/90 p-5 shadow-md backdrop-blur-xl dark:border-white/20 dark:bg-slate-900/82 space-y-4">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-xs uppercase tracking-[0.35em] text-slate-500 dark:text-slate-300">Goals</p>
+                            <p className="text-xs uppercase tracking-[0.35em] text-slate-600 dark:text-slate-200">Goals</p>
                             <h3 className="text-lg font-black text-slate-800 dark:text-white">All Subject Targets</h3>
                         </div>
-                        <Target className="h-5 w-5 text-rose-500 dark:text-rose-300" />
+                        <Target className="h-5 w-5 text-rose-600 dark:text-rose-200" />
                     </div>
 
                     {allGoals.length > 0 ? (
@@ -187,50 +187,50 @@ const StudentSchedulePanel = ({ student, isLoading = false }) => {
                                     key={`${goal.subject}-${goal.id}`}
                                     className={`rounded-2xl px-4 py-3 border ${
                                         goal.completed
-                                            ? "bg-emerald-50/90 border-emerald-200/80 dark:bg-emerald-500/12 dark:border-emerald-400/30"
-                                            : "bg-gradient-to-r from-violet-50 to-pink-50 border-white/80 dark:from-violet-500/10 dark:to-pink-500/10 dark:border-white/10"
+                                            ? "bg-emerald-50/90 border-emerald-200/80 dark:bg-emerald-950/50 dark:border-emerald-400/35"
+                                            : "bg-gradient-to-r from-violet-50 to-pink-50 border-white/80 dark:from-violet-950/70 dark:to-pink-950/60 dark:border-white/20"
                                     }`}
                                 >
-                                    <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">{goal.subject}</p>
-                                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-100">{goal.label}</p>
-                                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">{goal.completed ? "Completed" : "In Progress"}</p>
+                                    <p className="text-[10px] uppercase tracking-[0.2em] text-slate-600 dark:text-slate-200">{goal.subject}</p>
+                                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{goal.label}</p>
+                                    <p className="mt-1 text-xs text-slate-600 dark:text-slate-200">{goal.completed ? "Completed" : "In Progress"}</p>
                                 </div>
                             ))}
                         </div>
                     ) : (
-                        <div className="rounded-2xl border border-white/80 bg-gradient-to-r from-violet-50 to-pink-50 px-4 py-3 text-sm text-slate-600 dark:border-white/10 dark:from-violet-500/10 dark:to-pink-500/10 dark:text-slate-300">
+                        <div className="rounded-2xl border border-white/80 bg-gradient-to-r from-violet-50 to-pink-50 px-4 py-3 text-sm text-slate-700 dark:border-white/20 dark:from-violet-950/70 dark:to-pink-950/60 dark:text-slate-200">
                             No detailed goals recorded yet.
                         </div>
                     )}
                 </div>
 
-                <div className="rounded-[30px] border border-white/70 bg-white/82 p-5 shadow-md backdrop-blur-xl dark:border-white/15 dark:bg-slate-900/55 space-y-4">
+                <div className="rounded-[30px] border border-white/80 bg-white/90 p-5 shadow-md backdrop-blur-xl dark:border-white/20 dark:bg-slate-900/82 space-y-4">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-xs uppercase tracking-[0.35em] text-slate-500 dark:text-slate-300">Timeline</p>
+                            <p className="text-xs uppercase tracking-[0.35em] text-slate-600 dark:text-slate-200">Timeline</p>
                             <h3 className="text-lg font-black text-slate-800 dark:text-white">All Subject Sessions</h3>
                         </div>
-                        <Clock3 className="h-5 w-5 text-indigo-500 dark:text-indigo-300" />
+                        <Clock3 className="h-5 w-5 text-indigo-600 dark:text-indigo-200" />
                     </div>
 
                     {timeline.length > 0 ? (
                         <div className="space-y-3">
                             {timeline.map((entry) => (
-                                <div key={entry.id} className="rounded-2xl border border-white/80 bg-gradient-to-r from-indigo-50 to-cyan-50 px-4 py-3 dark:border-white/10 dark:from-indigo-500/10 dark:to-cyan-500/10">
-                                    <p className="text-[10px] uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-300">{entry.subject}</p>
-                                    <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-300">{entry.date}</p>
+                                <div key={entry.id} className="rounded-2xl border border-white/80 bg-gradient-to-r from-indigo-50 to-cyan-50 px-4 py-3 dark:border-white/20 dark:from-indigo-950/70 dark:to-cyan-950/60">
+                                    <p className="text-[10px] uppercase tracking-[0.2em] text-indigo-700 dark:text-indigo-100">{entry.subject}</p>
+                                    <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-100">{entry.date}</p>
                                     <p className="mt-1 text-sm text-slate-700 dark:text-slate-100">{entry.notes}</p>
                                     {entry.evidence?.length > 0 && (
                                         <div className="mt-2">
                                             <EvidenceViewer evidence={entry.evidence} />
                                         </div>
                                     )}
-                                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">Mentor: {entry.mentor}</p>
+                                    <p className="mt-1 text-xs text-slate-600 dark:text-slate-200">Mentor: {entry.mentor}</p>
                                 </div>
                             ))}
                         </div>
                     ) : (
-                        <div className="rounded-2xl border border-white/80 bg-gradient-to-r from-indigo-50 to-cyan-50 px-4 py-3 text-sm text-slate-600 dark:border-white/10 dark:from-indigo-500/10 dark:to-cyan-500/10 dark:text-slate-300">
+                        <div className="rounded-2xl border border-white/80 bg-gradient-to-r from-indigo-50 to-cyan-50 px-4 py-3 text-sm text-slate-700 dark:border-white/20 dark:from-indigo-950/70 dark:to-cyan-950/60 dark:text-slate-200">
                             Session timeline will appear after mentor check-ins are submitted.
                         </div>
                     )}
