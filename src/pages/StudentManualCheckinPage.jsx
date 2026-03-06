@@ -1,4 +1,4 @@
-import React, { useState, memo, useEffect, useCallback } from "react";
+import { useState, memo, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -15,6 +15,7 @@ import AnimatedPage from "@/components/AnimatedPage";
 import { useToast } from "@/components/ui/use-toast";
 import checkinService from "@/services/checkinService";
 import StudentSupportSelector from "@/components/emotion-student/StudentSupportSelector";
+import "@/pages/styles/student-ios-system.css";
 
 /* ── Data ── */
 const weatherOptions = [
@@ -271,7 +272,7 @@ const EmojiEnergyMeter = memo(({ levels, value, onChange, label }) => (
 EmojiEnergyMeter.displayName = "EmojiEnergyMeter";
 
 /* ── Step progress bar ── */
-const StepProgress = memo(({ current, total, steps }) => (
+const StepProgress = memo(({ current, steps }) => (
     <div className="flex items-center gap-1.5 w-full max-w-xs mx-auto">
         {steps.map((step, i) => (
             <div key={step.id} className="flex-1 flex items-center gap-1.5">
@@ -380,7 +381,7 @@ const StudentManualCheckinPage = memo(function StudentManualCheckinPage() {
         } finally {
             setIsSubmitting(false);
         }
-    }, [selectedWeather, selectedMoods, reflection, presenceLevel, capacityLevel, supportContactId, supportContact, navigate, toast]);
+    }, [selectedWeather, selectedMoods, reflection, presenceLevel, capacityLevel, supportContactId, navigate, toast]);
 
     const slideVariants = {
         enter: (dir) => ({ x: dir > 0 ? 80 : -80, opacity: 0 }),
@@ -397,7 +398,10 @@ const StudentManualCheckinPage = memo(function StudentManualCheckinPage() {
             <Helmet><title>Manual Check-in - Millennia World School</title></Helmet>
             <ScopedStyles />
 
-            <div className="smc-bg smc-font min-h-screen relative overflow-hidden bg-gradient-to-br from-pink-50 via-amber-50 via-50% to-sky-50 dark:from-background dark:via-background dark:to-background">
+            <div
+                className="smc-bg smc-font student-shell min-h-screen relative overflow-hidden bg-gradient-to-br from-pink-50 via-amber-50 via-50% to-sky-50 dark:from-background dark:via-background dark:to-background"
+                data-student-theme="manual"
+            >
                 <div className="smc-grid absolute inset-0 pointer-events-none" />
 
                 {/* Blobs */}
@@ -418,7 +422,7 @@ const StudentManualCheckinPage = memo(function StudentManualCheckinPage() {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         onClick={() => navigate('/student/emotional-checkin')}
-                        className="flex items-center gap-2 text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors mb-5 font-semibold"
+                        className="ios-pill flex items-center gap-2 text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors mb-5 font-semibold px-3 py-1.5 w-fit"
                     >
                         <ArrowLeft className="w-4 h-4" />
                         <span>Back</span>
@@ -431,7 +435,7 @@ const StudentManualCheckinPage = memo(function StudentManualCheckinPage() {
                         transition={{ duration: 0.35 }}
                         className="text-center mb-5"
                     >
-                        <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/70 dark:bg-white/8 border border-gray-200/40 dark:border-white/10 backdrop-blur-sm mb-3 shadow-sm">
+                        <div className="ios-pill inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/70 dark:bg-white/8 border border-gray-200/40 dark:border-white/10 backdrop-blur-sm mb-3 shadow-sm">
                             <Sparkles className="w-3 h-3 text-pink-500" />
                             <span className="text-[10px] font-extrabold tracking-widest text-pink-600 dark:text-pink-400 uppercase">Manual Check-in</span>
                         </div>
@@ -447,7 +451,7 @@ const StudentManualCheckinPage = memo(function StudentManualCheckinPage() {
 
                     {/* Step progress */}
                     <div className="mb-6">
-                        <StepProgress current={step} total={STEPS.length} steps={STEPS} />
+                        <StepProgress current={step} steps={STEPS} />
                         <p className="text-center text-[10px] text-gray-400 dark:text-gray-500 font-bold mt-2">
                             Step {step + 1} of {STEPS.length}
                         </p>
@@ -458,7 +462,7 @@ const StudentManualCheckinPage = memo(function StudentManualCheckinPage() {
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="backdrop-blur-xl bg-gradient-to-r from-emerald-50/90 to-teal-50/70 dark:from-emerald-900/20 dark:to-teal-900/10 border border-emerald-200/50 dark:border-emerald-700/40 rounded-2xl p-4 mb-5 flex items-center gap-3"
+                            className="ios-glass-soft backdrop-blur-xl bg-gradient-to-r from-emerald-50/90 to-teal-50/70 dark:from-emerald-900/20 dark:to-teal-900/10 border border-emerald-200/50 dark:border-emerald-700/40 rounded-2xl p-4 mb-5 flex items-center gap-3"
                         >
                             <Check className="w-5 h-5 text-emerald-500 flex-shrink-0" />
                             <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">You've already completed your manual check-in today!</p>
@@ -466,7 +470,7 @@ const StudentManualCheckinPage = memo(function StudentManualCheckinPage() {
                     )}
 
                     {/* Step content */}
-                    <div className="backdrop-blur-xl bg-white/55 dark:bg-white/5 border border-white/70 dark:border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-sm min-h-[280px]">
+                    <div className="ios-glass-strong backdrop-blur-xl bg-white/55 dark:bg-white/5 border border-white/70 dark:border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-sm min-h-[280px]">
                         <AnimatePresence mode="wait" custom={direction}>
                             {/* Step 0: Weather */}
                             {step === 0 && (

@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
@@ -12,6 +12,7 @@ import { fetchSupportContacts } from "@/store/slices/supportSlice";
 import { useCameraScanner } from "@/pages/verification/hooks/useCameraScanner";
 import { useEmotionAnalysis } from "@/pages/verification/hooks/useEmotionAnalysis";
 import { useCheckinSubmission } from "@/pages/verification/hooks/useCheckinSubmission";
+import "@/pages/styles/student-ios-system.css";
 
 const MAX_AI_RESCAN_ATTEMPTS = 2;
 
@@ -143,7 +144,10 @@ const StudentFaceScanPage = memo(() => {
             <Helmet><title>AI Face Scan - Student</title></Helmet>
             <ScanStyles />
 
-            <div className="sf-bg sf-font min-h-screen relative overflow-hidden bg-gradient-to-br from-violet-50 via-rose-50 via-50% to-amber-50 dark:from-background dark:via-background dark:to-background">
+            <div
+                className="sf-bg sf-font student-shell min-h-screen relative overflow-hidden bg-gradient-to-br from-violet-50 via-rose-50 via-50% to-amber-50 dark:from-background dark:via-background dark:to-background"
+                data-student-theme="scan"
+            >
                 {/* Dot grid */}
                 <div className="sf-grid absolute inset-0 pointer-events-none" />
 
@@ -170,7 +174,7 @@ const StudentFaceScanPage = memo(() => {
                         >
                             <button
                                 onClick={() => navigate('/student/emotional-checkin/ai')}
-                                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/60 dark:bg-white/8 border border-white/80 dark:border-white/10 backdrop-blur-sm hover:shadow-md hover:-translate-y-0.5 active:scale-95 transition-all duration-200"
+                                className="ios-pill flex h-10 w-10 items-center justify-center rounded-full bg-white/60 dark:bg-white/8 border border-white/80 dark:border-white/10 backdrop-blur-sm hover:shadow-md hover:-translate-y-0.5 active:scale-95 transition-all duration-200"
                                 aria-label="Go back"
                             >
                                 <ArrowLeft className="w-4 h-4 text-gray-600 dark:text-gray-300" />
@@ -193,7 +197,7 @@ const StudentFaceScanPage = memo(() => {
                         {stage === "preview" && (
                             <motion.div key="preview" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="w-full max-w-md text-center space-y-5">
                                 {/* Pill */}
-                                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/70 dark:bg-white/8 border border-gray-200/40 dark:border-white/10 backdrop-blur-sm shadow-sm">
+                                <div className="ios-pill inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/70 dark:bg-white/8 border border-gray-200/40 dark:border-white/10 backdrop-blur-sm shadow-sm">
                                     <Camera className="w-3 h-3 text-violet-500" />
                                     <span className="text-[11px] font-extrabold tracking-wide text-gray-500 dark:text-gray-400 uppercase">Camera Ready</span>
                                 </div>
@@ -240,7 +244,7 @@ const StudentFaceScanPage = memo(() => {
                         {/* Scanning in progress */}
                         {stage === "scanning" && (
                             <motion.div key="scanning" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full max-w-md text-center space-y-5">
-                                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/70 dark:bg-white/8 border border-gray-200/40 dark:border-white/10 backdrop-blur-sm shadow-sm">
+                                <div className="ios-pill inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/70 dark:bg-white/8 border border-gray-200/40 dark:border-white/10 backdrop-blur-sm shadow-sm">
                                     <Sparkles className="w-3 h-3 text-amber-500" />
                                     <span className="text-[11px] font-extrabold tracking-wide text-gray-500 dark:text-gray-400 uppercase">Scanning</span>
                                 </div>

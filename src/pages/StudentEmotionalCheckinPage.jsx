@@ -1,13 +1,14 @@
-import React, { memo, useEffect, useState, useCallback } from "react";
+import { memo, useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import {
-    Smile, Brain, Sparkles, Camera, ArrowLeft, ArrowRight,
+    Smile, Brain, Sparkles, ArrowLeft, ArrowRight,
     CheckCircle, XCircle, Star, Zap
 } from "lucide-react";
 import AnimatedPage from "@/components/AnimatedPage";
 import checkinService from "@/services/checkinService";
+import "@/pages/styles/student-ios-system.css";
 
 /* ── CSS-only animations ── */
 const ScopedStyles = memo(() => (
@@ -183,7 +184,10 @@ const StudentEmotionalCheckinPage = memo(function StudentEmotionalCheckinPage() 
             </Helmet>
             <ScopedStyles />
 
-            <div className="sec-bg sec-font min-h-screen relative overflow-hidden bg-gradient-to-br from-sky-50 via-pink-50 via-50% to-amber-50 dark:from-background dark:via-background dark:to-background">
+            <div
+                className="sec-bg sec-font student-shell min-h-screen relative overflow-hidden bg-gradient-to-br from-sky-50 via-pink-50 via-50% to-amber-50 dark:from-background dark:via-background dark:to-background"
+                data-student-theme="emotion"
+            >
                 <div className="sec-grid absolute inset-0 pointer-events-none" />
 
                 {/* Blobs */}
@@ -218,7 +222,7 @@ const StudentEmotionalCheckinPage = memo(function StudentEmotionalCheckinPage() 
                         transition={{ duration: 0.4 }}
                         className="text-center mb-5 sm:mb-7 max-w-lg"
                     >
-                        <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/70 dark:bg-white/8 border border-gray-200/40 dark:border-white/10 backdrop-blur-sm mb-4 shadow-sm">
+                        <div className="ios-pill inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/70 dark:bg-white/8 border border-gray-200/40 dark:border-white/10 backdrop-blur-sm mb-4 shadow-sm">
                             <Sparkles className="w-3 h-3 text-pink-500" />
                             <span className="text-[11px] font-extrabold tracking-wide text-pink-600 dark:text-pink-400 uppercase">Emotional Check-in</span>
                         </div>
@@ -242,7 +246,7 @@ const StudentEmotionalCheckinPage = memo(function StudentEmotionalCheckinPage() 
                             transition={{ duration: 0.35, delay: 0.1 }}
                             className="flex items-center gap-2 sm:gap-3 mb-6 sm:mb-8"
                         >
-                            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-sm border ${
+                            <div className={`ios-pill flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-sm border ${
                                 checkinStatus.hasManualCheckin
                                     ? "bg-emerald-50/80 dark:bg-emerald-500/10 border-emerald-200/50 dark:border-emerald-700/30"
                                     : "bg-white/60 dark:bg-white/5 border-white/80 dark:border-white/10"
@@ -252,7 +256,7 @@ const StudentEmotionalCheckinPage = memo(function StudentEmotionalCheckinPage() 
                                     Manual {manualCount}/{manualLimit}
                                 </span>
                             </div>
-                            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-sm border ${
+                            <div className={`ios-pill flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-sm border ${
                                 checkinStatus.hasAICheckin
                                     ? "bg-emerald-50/80 dark:bg-emerald-500/10 border-emerald-200/50 dark:border-emerald-700/30"
                                     : "bg-white/60 dark:bg-white/5 border-white/80 dark:border-white/10"
@@ -271,7 +275,7 @@ const StudentEmotionalCheckinPage = memo(function StudentEmotionalCheckinPage() 
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2 }}
-                            className="w-full max-w-md mb-5 flex items-center gap-3 px-4 py-3 rounded-2xl bg-gradient-to-r from-emerald-50/90 via-teal-50/80 to-cyan-50/60 dark:from-emerald-900/15 dark:via-teal-900/10 dark:to-cyan-900/5 border border-emerald-200/50 dark:border-emerald-700/30 backdrop-blur-sm"
+                            className="ios-glass-soft w-full max-w-md mb-5 flex items-center gap-3 px-4 py-3 rounded-2xl bg-gradient-to-r from-emerald-50/90 via-teal-50/80 to-cyan-50/60 dark:from-emerald-900/15 dark:via-teal-900/10 dark:to-cyan-900/5 border border-emerald-200/50 dark:border-emerald-700/30 backdrop-blur-sm"
                         >
                             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-sm">
                                 <CheckCircle className="w-4 h-4 text-white" />
@@ -296,7 +300,7 @@ const StudentEmotionalCheckinPage = memo(function StudentEmotionalCheckinPage() 
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.4, delay: 0.15 + i * 0.1 }}
                                     onClick={() => go(opt.path)}
-                                    className="sec-card w-full relative overflow-hidden rounded-2xl sm:rounded-3xl text-left bg-white/65 dark:bg-white/[0.04] backdrop-blur-xl border border-white/90 dark:border-white/8 shadow-sm hover:shadow-xl p-4 sm:p-5 group"
+                                    className="sec-card ios-glass ios-lift w-full relative overflow-hidden rounded-2xl sm:rounded-3xl text-left bg-white/65 dark:bg-white/[0.04] backdrop-blur-xl border border-white/90 dark:border-white/8 shadow-sm hover:shadow-xl p-4 sm:p-5 group"
                                 >
                                     <div className={`absolute -top-10 -left-10 w-36 h-36 rounded-full bg-gradient-to-br ${opt.cardAccent} blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-700`} />
                                     <div className={`absolute -bottom-8 -right-8 w-28 h-28 rounded-full bg-gradient-to-tl ${opt.cardAccent} blur-2xl pointer-events-none opacity-50 group-hover:opacity-80 transition-opacity duration-500`} />
@@ -336,7 +340,7 @@ const StudentEmotionalCheckinPage = memo(function StudentEmotionalCheckinPage() 
                         transition={{ delay: 0.45, duration: 0.35 }}
                         className="mt-8 sm:mt-10 w-full max-w-md"
                     >
-                        <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-gradient-to-r from-violet-50/80 via-purple-50/60 to-pink-50/40 dark:from-violet-900/10 dark:via-purple-900/5 dark:to-transparent border border-violet-100/60 dark:border-violet-800/20 backdrop-blur-sm">
+                        <div className="ios-glass-soft flex items-center gap-3 px-4 py-3 rounded-2xl bg-gradient-to-r from-violet-50/80 via-purple-50/60 to-pink-50/40 dark:from-violet-900/10 dark:via-purple-900/5 dark:to-transparent border border-violet-100/60 dark:border-violet-800/20 backdrop-blur-sm">
                             <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center shadow-sm">
                                 <Zap className="w-4 h-4 text-white" />
                             </div>

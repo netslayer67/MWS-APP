@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import { memo } from "react";
 import { motion } from "framer-motion";
 import { RefreshCw } from "lucide-react";
 import { resolveStudentTitle } from "./studentPortalUtils";
@@ -38,7 +38,7 @@ const StudentPortalHeader = ({
                     damping: 34,
                     mass: 0.52,
                 }}
-                className="sticky top-2 z-20 rounded-[30px] border border-white/70 bg-white/80 px-4 py-4 shadow-[0_16px_40px_rgba(91,33,182,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/60 md:rounded-[34px] md:px-4 md:py-5"
+                className="sticky top-2 z-20 ios-glass rounded-[30px] border border-white/70 bg-white/80 px-4 py-4 shadow-[0_16px_40px_rgba(91,33,182,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/60 md:rounded-[34px] md:px-4 md:py-5"
             >
                 <div className="relative flex items-start justify-end gap-2">
                     <motion.p
@@ -54,7 +54,7 @@ const StudentPortalHeader = ({
                             initial={{ opacity: 0, y: -6, scale: 0.98 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             transition={{ type: "spring", stiffness: 320, damping: 30, mass: 0.45 }}
-                            className="inline-flex md:hidden items-center gap-1.5 rounded-2xl border border-white/75 bg-white/72 p-1 shadow-[0_8px_20px_rgba(99,102,241,0.14)] backdrop-blur-xl dark:border-white/15 dark:bg-slate-900/58"
+                            className="inline-flex md:hidden ios-glass-soft items-center gap-1.5 rounded-2xl border border-white/75 bg-white/72 p-1 shadow-[0_8px_20px_rgba(99,102,241,0.14)] backdrop-blur-xl dark:border-white/15 dark:bg-slate-900/58"
                         >
                             <span className="inline-flex min-h-[34px] items-center rounded-xl bg-gradient-to-r from-rose-500 to-fuchsia-500 px-2.5 py-1 text-[10px] font-extrabold text-white shadow-sm">
                                 {tierShortLabel}
@@ -73,7 +73,7 @@ const StudentPortalHeader = ({
                     <motion.div
                         animate={isHeaderSnapped ? { y: 0, scale: 0.99 } : { y: 2, scale: 1 }}
                         transition={{ type: "spring", stiffness: 340, damping: 30, mass: 0.45 }}
-                        className="hidden md:inline-flex items-center gap-1.5 rounded-[20px] border border-white/75 bg-white/70 p-1.5 shadow-[0_10px_24px_rgba(99,102,241,0.12)] backdrop-blur-xl dark:border-white/15 dark:bg-slate-900/52"
+                        className="hidden md:inline-flex ios-glass-soft items-center gap-1.5 rounded-[20px] border border-white/75 bg-white/70 p-1.5 shadow-[0_10px_24px_rgba(99,102,241,0.12)] backdrop-blur-xl dark:border-white/15 dark:bg-slate-900/52"
                     >
                         <motion.span
                             animate={{ y: [0, -1.5, 0] }}

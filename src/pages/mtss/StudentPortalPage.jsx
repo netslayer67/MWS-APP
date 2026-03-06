@@ -1,4 +1,4 @@
-import React, { memo, useState } from "react";
+import { memo, useState } from "react";
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { useStudentPortalState } from "./hooks/useStudentPortalState";
 import StudentSelectionView from "./student/StudentSelectionView";
@@ -9,6 +9,7 @@ import StudentBottomBar from "./student/portal/StudentBottomBar";
 import StudentPortalHeader from "./student/portal/StudentPortalHeader";
 import StudentPortalTabs from "./student/portal/StudentPortalTabs";
 import { resolveBadges, resolveTierShortLabel } from "./student/portal/studentPortalUtils";
+import "@/pages/styles/student-ios-system.css";
 
 const StudentPortalPage = memo(() => {
     const {
@@ -59,7 +60,10 @@ const StudentPortalPage = memo(() => {
     const navBadges = resolveBadges(currentStudent);
 
     return (
-        <div className="mtss-theme min-h-screen relative overflow-hidden text-slate-800 dark:text-white">
+        <div
+            className="mtss-theme student-shell min-h-screen relative overflow-hidden text-slate-800 dark:text-white"
+            data-student-theme="portal"
+        >
             <div className="pointer-events-none absolute inset-0">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_12%,rgba(251,191,36,0.35),transparent_45%),radial-gradient(circle_at_82%_18%,rgba(244,114,182,0.28),transparent_42%),radial-gradient(circle_at_60%_82%,rgba(129,140,248,0.3),transparent_50%),linear-gradient(135deg,#fff7ed_0%,#fdf2f8_40%,#eef2ff_100%)] dark:bg-[radial-gradient(circle_at_15%_12%,rgba(251,191,36,0.12),transparent_45%),radial-gradient(circle_at_82%_18%,rgba(244,114,182,0.12),transparent_42%),radial-gradient(circle_at_60%_82%,rgba(129,140,248,0.13),transparent_50%),linear-gradient(135deg,#1f1b2e_0%,#1e2030_50%,#1a2238_100%)]" />
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.18)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.16)_1px,transparent_1px)] bg-[size:52px_52px] opacity-25 dark:opacity-20" />
@@ -103,7 +107,7 @@ const StudentPortalPage = memo(() => {
                 </AnimatePresence>
 
                 {!currentStudent && !isLoadingDetail && (
-                    <div className="rounded-[24px] border border-white/65 bg-white/80 p-6 text-center text-sm text-slate-600 shadow-sm dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
+                    <div className="ios-glass rounded-[24px] border border-white/65 bg-white/80 p-6 text-center text-sm text-slate-600 shadow-sm dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
                         Student data is unavailable right now. Try refreshing.
                     </div>
                 )}

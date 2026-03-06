@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import { memo } from "react";
 import { motion } from "framer-motion";
 import { studentTabs } from "../../data/studentPortalContent";
 
@@ -19,9 +19,9 @@ const StudentPortalTabs = ({ activeTab, setActiveTab, isHeaderSnapped }) => {
                         type="button"
                         whileTap={{ scale: 0.97 }}
                         onClick={() => setActiveTab(tab.key)}
-                        className={`inline-flex min-h-[44px] items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-bold transition ${active
+                        className={`inline-flex ios-lift min-h-[44px] items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-bold transition ${active
                             ? "border-violet-200 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-md dark:border-violet-400/30"
-                            : "border-white/65 bg-white/70 text-slate-600 hover:bg-white dark:border-white/15 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+                            : "ios-glass-soft border-white/65 bg-white/70 text-slate-600 hover:bg-white dark:border-white/15 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
                         }`}
                     >
                         <TabIcon className="h-4 w-4" />

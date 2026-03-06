@@ -1,7 +1,8 @@
-import React, { memo } from "react";
+import { memo } from "react";
 import { motion } from "framer-motion";
 import { Loader2, RefreshCw } from "lucide-react";
 import { formatMentorDisplay, formatMentorRoster } from "../utils/mentorNameUtils";
+import "@/pages/styles/student-ios-system.css";
 
 const resolveMentorDisplay = (student = {}) => {
     const mentorRoster = formatMentorRoster(student.profile?.mentors || []);
@@ -37,7 +38,7 @@ const resolveGradeLabel = (student = {}) => {
 };
 
 const StudentSelectionView = ({ students, onSelect, onBack, isLoading = false, error = null, onRetry }) => (
-    <div className="mtss-theme min-h-screen relative overflow-hidden">
+    <div className="mtss-theme student-shell min-h-screen relative overflow-hidden" data-student-theme="portal">
         <div className="absolute inset-0 pointer-events-none">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,rgba(251,191,36,0.36),transparent_42%),radial-gradient(circle_at_88%_12%,rgba(244,114,182,0.3),transparent_38%),radial-gradient(circle_at_72%_80%,rgba(59,130,246,0.26),transparent_46%),linear-gradient(140deg,#fff7ed_0%,#fdf2f8_42%,#eef2ff_100%)] dark:bg-[radial-gradient(circle_at_12%_18%,rgba(251,191,36,0.12),transparent_42%),radial-gradient(circle_at_88%_12%,rgba(244,114,182,0.12),transparent_38%),radial-gradient(circle_at_72%_80%,rgba(59,130,246,0.12),transparent_46%),linear-gradient(140deg,#1f1b2e_0%,#1e2134_42%,#1a2238_100%)]" />
             <div className="absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.2)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.18)_1px,transparent_1px)] bg-[size:52px_52px] opacity-25 dark:opacity-18" />
@@ -45,7 +46,7 @@ const StudentSelectionView = ({ students, onSelect, onBack, isLoading = false, e
 
         <div className="relative z-10 container-tight pb-28 pt-12 text-slate-800 dark:text-white space-y-9">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center space-y-4">
-                <p className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/80 px-6 py-2 text-xs font-black tracking-[0.34em] text-rose-500 shadow-lg dark:border-white/15 dark:bg-white/10 dark:text-rose-200">
+                <p className="ios-pill inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/80 px-6 py-2 text-xs font-black tracking-[0.34em] text-rose-500 shadow-lg dark:border-white/15 dark:bg-white/10 dark:text-rose-200">
                     MTSS Student Portal
                 </p>
                 <h1 className="text-4xl md:text-5xl font-black leading-tight">
@@ -57,19 +58,19 @@ const StudentSelectionView = ({ students, onSelect, onBack, isLoading = false, e
             </motion.div>
 
             {isLoading && (
-                <div className="rounded-[34px] border border-white/70 bg-white/82 p-8 text-center space-y-3 shadow-md dark:border-white/15 dark:bg-white/10">
+                <div className="ios-glass rounded-[34px] border border-white/70 bg-white/82 p-8 text-center space-y-3 shadow-md dark:border-white/15 dark:bg-white/10">
                     <Loader2 className="w-7 h-7 animate-spin mx-auto text-rose-500" />
                     <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">Loading MTSS students...</p>
                 </div>
             )}
 
             {!isLoading && error && (
-                <div className="rounded-[34px] bg-rose-50/95 dark:bg-rose-500/10 border border-rose-200/70 p-6 text-center space-y-3 shadow-sm">
+                <div className="ios-glass-soft rounded-[34px] bg-rose-50/95 dark:bg-rose-500/10 border border-rose-200/70 p-6 text-center space-y-3 shadow-sm">
                     <p className="text-sm font-semibold text-rose-700 dark:text-rose-200">Could not load students.</p>
                     <p className="text-sm text-rose-600 dark:text-rose-300">{error}</p>
                     <button
                         onClick={onRetry}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 dark:bg-white/10 border border-white/60 dark:border-white/20 text-sm font-semibold"
+                        className="ios-pill inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 dark:bg-white/10 border border-white/60 dark:border-white/20 text-sm font-semibold"
                     >
                         <RefreshCw className="w-4 h-4" />
                         Retry
@@ -78,7 +79,7 @@ const StudentSelectionView = ({ students, onSelect, onBack, isLoading = false, e
             )}
 
             {!isLoading && !error && students.length === 0 && (
-                <div className="rounded-[34px] border border-white/70 bg-white/85 p-8 text-center shadow-sm dark:border-white/15 dark:bg-white/5">
+                <div className="ios-glass rounded-[34px] border border-white/70 bg-white/85 p-8 text-center shadow-sm dark:border-white/15 dark:bg-white/5">
                     <p className="text-lg font-bold">No MTSS student data found for this account.</p>
                     <p className="text-sm text-slate-600 dark:text-slate-300">Ask your MTSS admin to verify class assignments and student roster scope.</p>
                 </div>
@@ -92,7 +93,7 @@ const StudentSelectionView = ({ students, onSelect, onBack, isLoading = false, e
                             whileHover={{ scale: 1.02, y: -6 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => onSelect(student.id)}
-                            className="group relative overflow-hidden rounded-[42px] border border-white/70 text-left shadow-[0_22px_56px_rgba(15,23,42,0.2)]"
+                            className="group ios-lift relative overflow-hidden rounded-[42px] border border-white/70 text-left shadow-[0_22px_56px_rgba(15,23,42,0.2)]"
                         >
                             <div className={`absolute inset-0 bg-gradient-to-br ${student.accent}`} />
                             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-white/15 mix-blend-overlay" />
@@ -119,7 +120,7 @@ const StudentSelectionView = ({ students, onSelect, onBack, isLoading = false, e
             <div className="flex justify-center">
                 <button
                     onClick={onBack}
-                    className="px-6 py-3 rounded-full bg-white/85 dark:bg-white/10 text-sm font-semibold text-rose-500 shadow-lg border border-white/60 hover:shadow-xl transition"
+                    className="ios-pill px-6 py-3 rounded-full bg-white/85 dark:bg-white/10 text-sm font-semibold text-rose-500 shadow-lg border border-white/60 hover:shadow-xl transition"
                 >
                     &lt;- Back to Role Selection
                 </button>

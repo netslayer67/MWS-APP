@@ -1,11 +1,12 @@
-import React, { memo, useCallback, useEffect, useRef } from "react";
+import { memo, useCallback, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import { Heart, BookOpen, Sparkles, ArrowRight, Star, Zap } from "lucide-react";
 import AnimatedPage from "@/components/AnimatedPage";
 import gsap from "gsap";
-import { animate, stagger, utils } from "animejs";
+import { animate } from "animejs";
+import "@/pages/styles/student-ios-system.css";
 
 /* ── Card data ── */
 const hubOptions = [
@@ -54,30 +55,122 @@ const moods = [
     { emoji: '💪', label: 'Strong', bg: 'hover:bg-rose-50 dark:hover:bg-rose-500/10', hue: '#fb7185' },
 ];
 
+const clampValue = (value, min, max) => Math.min(max, Math.max(min, value));
+
 /*
  * All CSS animations — GPU-composited (transform/opacity/background-position).
  */
 const ScopedStyles = memo(() => (
     <style>{`
         @keyframes shubBgShift{
-            0%{background-position:0% 0%}
-            25%{background-position:50% 100%}
-            50%{background-position:100% 50%}
-            75%{background-position:50% 0%}
-            100%{background-position:0% 0%}
+            0%{background-position:0% 0%,0% 0%,0% 0%,0% 0%}
+            50%{background-position:100% 80%,0% 100%,55% 0%,0% 0%}
+            100%{background-position:0% 0%,0% 0%,0% 0%,0% 0%}
         }
         .shub-bg{
-            background-size:300% 300%;
-            animation:shubBgShift 16s ease infinite;
+            --mx:50%;
+            --my:50%;
+            background:
+                radial-gradient(125% 98% at 4% 2%, rgba(251,191,36,.34) 0%, rgba(251,191,36,0) 60%),
+                radial-gradient(92% 84% at 98% 4%, rgba(244,114,182,.29) 0%, rgba(244,114,182,0) 58%),
+                radial-gradient(82% 92% at 50% 100%, rgba(56,189,248,.26) 0%, rgba(56,189,248,0) 64%),
+                linear-gradient(148deg,#fff8eb 0%,#fff2fa 42%,#f1f5ff 72%,#e9f8ff 100%);
+            animation:shubBgShift 20s ease-in-out infinite;
+            will-change: background-position;
         }
-        :is(.dark) .shub-bg{ animation:none }
+        :is(.dark) .shub-bg{
+            background:
+                radial-gradient(115% 92% at 8% 0%, rgba(251,191,36,.14) 0%, rgba(251,191,36,0) 58%),
+                radial-gradient(90% 80% at 92% 6%, rgba(167,139,250,.13) 0%, rgba(167,139,250,0) 55%),
+                radial-gradient(80% 90% at 50% 100%, rgba(14,165,233,.12) 0%, rgba(14,165,233,0) 62%),
+                linear-gradient(160deg,#0d1220 0%,#131a2b 44%,#111d28 75%,#0e1724 100%);
+            animation-duration: 30s;
+        }
+
+        .shub-aura{
+            background:
+                radial-gradient(42% 30% at 22% 22%, rgba(253,186,116,.34), transparent 70%),
+                radial-gradient(36% 26% at 78% 28%, rgba(196,181,253,.30), transparent 72%),
+                radial-gradient(38% 32% at 50% 78%, rgba(125,211,252,.30), transparent 74%);
+            background-size: 140% 140%;
+            animation: shubBgShift 26s ease-in-out infinite;
+            mix-blend-mode: normal;
+            opacity: .86;
+            filter: saturate(1.08);
+            will-change: background-position;
+        }
+        :is(.dark) .shub-aura{
+            mix-blend-mode: screen;
+            opacity: .4;
+            filter: none;
+        }
 
         .shub-grid{
-            background-image:radial-gradient(circle,rgba(0,0,0,.04) 1px,transparent 1px);
-            background-size:24px 24px;
+            background-image:
+                radial-gradient(circle,rgba(15,23,42,.12) 1.1px,transparent 1.1px),
+                linear-gradient(115deg,rgba(236,72,153,.08),rgba(236,72,153,0) 55%),
+                linear-gradient(295deg,rgba(59,130,246,.08),rgba(59,130,246,0) 58%);
+            background-size:24px 24px, 100% 100%, 100% 100%;
+            background-position:0 0,0 0,0 0;
+            opacity:.52;
         }
         :is(.dark) .shub-grid{
-            background-image:radial-gradient(circle,rgba(255,255,255,.035) 1px,transparent 1px);
+            background-image:
+                radial-gradient(circle,rgba(226,232,240,.14) 1px,transparent 1px),
+                linear-gradient(115deg,rgba(244,114,182,.08),rgba(244,114,182,0) 55%),
+                linear-gradient(295deg,rgba(56,189,248,.08),rgba(56,189,248,0) 58%);
+            opacity:.24;
+        }
+
+        .shub-weave{
+            background-image:
+                repeating-linear-gradient(0deg,rgba(100,116,139,.16) 0 1px,transparent 1px 30px),
+                repeating-linear-gradient(90deg,rgba(100,116,139,.16) 0 1px,transparent 1px 30px);
+            mask-image:radial-gradient(circle at 50% 50%,black,transparent 78%);
+            opacity:.3;
+        }
+        :is(.dark) .shub-weave{
+            background-image:
+                repeating-linear-gradient(0deg,rgba(148,163,184,.17) 0 1px,transparent 1px 34px),
+                repeating-linear-gradient(90deg,rgba(148,163,184,.17) 0 1px,transparent 1px 34px);
+            opacity:.16;
+        }
+
+        .shub-cursor-glow{
+            background:radial-gradient(260px 220px at var(--mx) var(--my), rgba(255,255,255,.5), rgba(255,255,255,0) 70%);
+            mix-blend-mode:soft-light;
+            opacity:.85;
+            transition:opacity .25s ease;
+        }
+        :is(.dark) .shub-cursor-glow{
+            background:radial-gradient(260px 220px at var(--mx) var(--my), rgba(148,163,184,.25), rgba(148,163,184,0) 72%);
+            mix-blend-mode:screen;
+            opacity:.65;
+        }
+
+        .shub-orb{
+            border-radius:9999px;
+            filter:blur(24px);
+            animation:shubBlob var(--orb-dur,12s) ease-in-out infinite;
+            animation-delay:var(--orb-del,0s);
+            opacity:var(--orb-op,.65);
+            mix-blend-mode:multiply;
+        }
+        :is(.dark) .shub-orb{
+            mix-blend-mode:screen;
+        }
+
+        .shub-ribbon{
+            border-radius:9999px;
+            transform-origin:center;
+            filter:blur(.5px);
+            animation:shubDrift var(--rb-dur,12s) ease-in-out infinite;
+            animation-delay:var(--rb-del,0s);
+            opacity:var(--rb-op,.58);
+            mix-blend-mode:multiply;
+        }
+        :is(.dark) .shub-ribbon{
+            mix-blend-mode:screen;
         }
 
         @keyframes shubTextShimmer{
@@ -208,8 +301,12 @@ const ScopedStyles = memo(() => (
             animation:shubConfetti var(--cf-dur,0.8s) ease-out forwards;
         }
 
+        @media(pointer:coarse){
+            .shub-cursor-glow{display:none}
+        }
+
         @media(prefers-reduced-motion:reduce){
-            .shub-bg,.shub-title,.shub-tip,.shub-badge-sparkle,
+            .shub-bg,.shub-aura,.shub-title,.shub-tip,.shub-badge-sparkle,
             .shub-jelly,.shub-mood-btn:hover .shub-emoji,
             .shub-card:hover .shub-card-icon{animation:none!important}
             .shub-card,.shub-card:hover,.shub-card:active{transform:none!important;transition:none!important}
@@ -460,6 +557,52 @@ function useCardTilt(containerRef) {
     }, [containerRef]);
 }
 
+/* ── Pointer spotlight for lightweight interactivity ── */
+function useInteractiveBackdrop(containerRef) {
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        if (window.matchMedia('(pointer: coarse)').matches) return;
+
+        let rafId = 0;
+        let targetX = 50;
+        let targetY = 50;
+        let currentX = 50;
+        let currentY = 50;
+
+        const setTargetFromEvent = (e) => {
+            const rect = container.getBoundingClientRect();
+            if (!rect.width || !rect.height) return;
+            targetX = clampValue(((e.clientX - rect.left) / rect.width) * 100, 0, 100);
+            targetY = clampValue(((e.clientY - rect.top) / rect.height) * 100, 0, 100);
+        };
+
+        const animateSpotlight = () => {
+            currentX += (targetX - currentX) * 0.12;
+            currentY += (targetY - currentY) * 0.12;
+            container.style.setProperty('--mx', `${currentX.toFixed(2)}%`);
+            container.style.setProperty('--my', `${currentY.toFixed(2)}%`);
+            rafId = window.requestAnimationFrame(animateSpotlight);
+        };
+
+        const handleLeave = () => {
+            targetX = 50;
+            targetY = 50;
+        };
+
+        container.addEventListener('pointermove', setTargetFromEvent, { passive: true });
+        container.addEventListener('pointerleave', handleLeave, { passive: true });
+        rafId = window.requestAnimationFrame(animateSpotlight);
+
+        return () => {
+            window.cancelAnimationFrame(rafId);
+            container.removeEventListener('pointermove', setTargetFromEvent);
+            container.removeEventListener('pointerleave', handleLeave);
+        };
+    }, [containerRef]);
+}
+
 const StudentSupportHubPage = memo(() => {
     const navigate = useNavigate();
     const go = useCallback((p) => navigate(p), [navigate]);
@@ -469,6 +612,7 @@ const StudentSupportHubPage = memo(() => {
     usePageEnterTimeline(containerRef);
     useAmbientAnimations(containerRef);
     useCardTilt(containerRef);
+    useInteractiveBackdrop(containerRef);
 
     // Mood button click handler with jelly + confetti
     const handleMoodClick = useCallback((e) => {
@@ -506,19 +650,50 @@ const StudentSupportHubPage = memo(() => {
             <Helmet><title>Student Support Hub - Millennia World School</title></Helmet>
             <ScopedStyles />
 
-            <div ref={containerRef} className="shub-bg shub-font min-h-screen relative overflow-hidden bg-gradient-to-br from-amber-50 via-rose-50 via-50% to-violet-50 dark:from-background dark:via-background dark:to-background">
+            <div
+                ref={containerRef}
+                className="shub-bg shub-font student-shell min-h-screen relative overflow-hidden"
+                data-student-theme="support"
+                style={{ '--mx': '50%', '--my': '50%' }}
+            >
 
-                {/* Dot-grid */}
+                {/* Background layers */}
+                <div className="shub-aura absolute inset-0 pointer-events-none" />
                 <div className="shub-grid absolute inset-0 pointer-events-none" />
+                <div className="shub-weave absolute inset-0 pointer-events-none" />
+                <div className="shub-cursor-glow absolute inset-0 pointer-events-none" />
 
                 {/* ── Blobs ── */}
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                    <div className="absolute -top-20 -right-16 w-80 sm:w-[420px] h-80 sm:h-[420px] rounded-full blur-3xl bg-gradient-to-br from-rose-200/50 via-orange-200/35 to-amber-100/25 dark:from-rose-500/8 dark:via-orange-500/4 dark:to-transparent" style={{ animation: 'shubBlob 10s ease-in-out infinite' }} />
-                    <div className="absolute -bottom-16 -left-16 w-72 sm:w-[380px] h-72 sm:h-[380px] rounded-full blur-3xl bg-gradient-to-br from-violet-200/50 via-blue-200/35 to-sky-100/25 dark:from-violet-500/8 dark:via-blue-500/4 dark:to-transparent" style={{ animation: 'shubBlob 12s ease-in-out infinite', animationDelay: '3s' }} />
-                    <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-64 sm:w-80 h-64 sm:h-80 rounded-full blur-3xl bg-gradient-to-br from-amber-100/45 via-yellow-100/25 to-transparent dark:from-amber-500/5 dark:to-transparent" style={{ animation: 'shubBlob 9s ease-in-out infinite', animationDelay: '1.5s' }} />
-                    <div className="absolute bottom-[10%] right-[5%] w-60 sm:w-72 h-60 sm:h-72 rounded-full blur-3xl bg-gradient-to-br from-emerald-100/40 via-teal-100/25 to-transparent dark:from-emerald-500/5 dark:to-transparent" style={{ animation: 'shubBlob 11s ease-in-out infinite', animationDelay: '5s' }} />
-                    <div className="absolute top-[5%] -left-10 w-52 sm:w-64 h-52 sm:h-64 rounded-full blur-3xl bg-gradient-to-br from-pink-100/40 via-fuchsia-100/20 to-transparent dark:from-pink-500/5 dark:to-transparent" style={{ animation: 'shubBlob 8s ease-in-out infinite', animationDelay: '2s' }} />
-                    <div className="absolute top-[55%] -right-8 w-48 sm:w-60 h-48 sm:h-60 rounded-full blur-3xl bg-gradient-to-br from-indigo-100/35 via-violet-100/20 to-transparent dark:from-indigo-500/5 dark:to-transparent" style={{ animation: 'shubBlob 13s ease-in-out infinite', animationDelay: '4s' }} />
+                    <div
+                        className="shub-orb absolute -top-20 -right-16 w-80 sm:w-[420px] h-80 sm:h-[420px] bg-gradient-to-br from-rose-200/55 via-orange-200/30 to-amber-100/10 dark:from-rose-400/14 dark:via-orange-300/8 dark:to-transparent"
+                        style={{ '--orb-dur': '14s', '--orb-del': '0.4s', '--orb-op': 0.78 }}
+                    />
+                    <div
+                        className="shub-orb absolute -bottom-16 -left-16 w-72 sm:w-[380px] h-72 sm:h-[380px] bg-gradient-to-br from-violet-200/55 via-blue-200/35 to-sky-100/10 dark:from-violet-400/14 dark:via-blue-400/10 dark:to-transparent"
+                        style={{ '--orb-dur': '16s', '--orb-del': '2.1s', '--orb-op': 0.72 }}
+                    />
+                    <div
+                        className="shub-orb absolute top-[32%] left-[48%] -translate-x-1/2 w-64 sm:w-80 h-64 sm:h-80 bg-gradient-to-br from-amber-100/45 via-yellow-100/24 to-transparent dark:from-amber-300/10 dark:via-yellow-200/7 dark:to-transparent"
+                        style={{ '--orb-dur': '13s', '--orb-del': '1.3s', '--orb-op': 0.62 }}
+                    />
+                    <div
+                        className="shub-orb absolute bottom-[8%] right-[5%] w-60 sm:w-72 h-60 sm:h-72 bg-gradient-to-br from-emerald-100/45 via-teal-100/25 to-transparent dark:from-emerald-300/11 dark:via-teal-300/7 dark:to-transparent"
+                        style={{ '--orb-dur': '18s', '--orb-del': '3.6s', '--orb-op': 0.56 }}
+                    />
+
+                    <div
+                        className="shub-ribbon absolute top-[16%] -left-8 w-72 sm:w-[420px] h-14 sm:h-16 rotate-[-8deg] bg-gradient-to-r from-pink-200/55 via-fuchsia-200/45 to-transparent dark:from-pink-400/16 dark:via-fuchsia-300/12 dark:to-transparent"
+                        style={{ '--rb-dur': '11s', '--rb-del': '0.6s', '--rb-op': 0.62 }}
+                    />
+                    <div
+                        className="shub-ribbon absolute top-[56%] right-[-8%] w-64 sm:w-[360px] h-12 sm:h-14 rotate-[10deg] bg-gradient-to-l from-sky-200/55 via-blue-200/45 to-transparent dark:from-sky-400/16 dark:via-blue-300/12 dark:to-transparent"
+                        style={{ '--rb-dur': '13s', '--rb-del': '1.4s', '--rb-op': 0.58 }}
+                    />
+                    <div
+                        className="shub-ribbon absolute bottom-[14%] left-[16%] w-56 sm:w-[320px] h-10 sm:h-12 rotate-[4deg] bg-gradient-to-r from-emerald-200/48 via-teal-200/40 to-transparent dark:from-emerald-300/14 dark:via-teal-300/10 dark:to-transparent"
+                        style={{ '--rb-dur': '15s', '--rb-del': '2.8s', '--rb-op': 0.48 }}
+                    />
                     {particles.map((p, i) => <Particle key={i} p={p} />)}
                 </div>
 
@@ -531,14 +706,14 @@ const StudentSupportHubPage = memo(() => {
                     {/* Header */}
                     <div className="text-center mb-5 sm:mb-7 max-w-lg">
                         {/* Pill badge */}
-                        <div className="shub-badge inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/70 dark:bg-white/8 border border-gray-200/40 dark:border-white/10 backdrop-blur-sm mb-4 shadow-sm shub-badge-sparkle" style={{ opacity: 0 }}>
+                        <div className="shub-badge ios-pill inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/80 dark:bg-slate-900/45 border border-slate-200/70 dark:border-slate-200/15 backdrop-blur-sm mb-4 shadow-sm shub-badge-sparkle" style={{ opacity: 0 }}>
                             <Sparkles className="shub-badge-icon w-3 h-3 text-amber-500" />
-                            <span className="text-[11px] font-extrabold tracking-wide text-gray-500 dark:text-gray-400 uppercase">Student Hub</span>
+                            <span className="text-[11px] font-extrabold tracking-wide text-slate-600 dark:text-slate-300 uppercase">Student Hub</span>
                         </div>
 
                         {/* Main heading */}
                         <h1 className="text-[1.65rem] sm:text-4xl font-black leading-tight mb-2">
-                            <span className="shub-heading-line inline-block text-gray-700 dark:text-white" style={{ opacity: 0 }}>
+                            <span className="shub-heading-line inline-block text-slate-800 dark:text-slate-100" style={{ opacity: 0 }}>
                                 Hey there{' '}
                                 <motion.span
                                     className="inline-block origin-bottom-right"
@@ -553,7 +728,7 @@ const StudentSupportHubPage = memo(() => {
                             </span>
                         </h1>
 
-                        <p className="shub-subtitle text-[13px] sm:text-sm text-gray-400 dark:text-gray-500 font-medium leading-relaxed" style={{ opacity: 0 }}>
+                        <p className="shub-subtitle text-[13px] sm:text-sm text-slate-600 dark:text-slate-300 font-semibold leading-relaxed" style={{ opacity: 0 }}>
                             Pick how you want to start — we've got your back!
                         </p>
                     </div>
@@ -564,12 +739,12 @@ const StudentSupportHubPage = memo(() => {
                             <button
                                 key={m.emoji}
                                 onClick={handleMoodClick}
-                                className={`shub-mood-btn flex flex-col items-center gap-0.5 px-3 py-2 rounded-2xl bg-white/60 dark:bg-white/5 border border-white/80 dark:border-white/8 ${m.bg} hover:shadow-md hover:-translate-y-1 active:scale-95 transition-all duration-200 cursor-pointer backdrop-blur-sm`}
+                                className={`shub-mood-btn ios-glass-soft ios-lift flex flex-col items-center gap-0.5 px-3 py-2 rounded-2xl bg-white/78 dark:bg-slate-900/45 border border-white/80 dark:border-slate-200/15 ${m.bg} hover:shadow-md hover:-translate-y-1 active:scale-95 transition-all duration-200 cursor-pointer backdrop-blur-sm`}
                                 style={{ opacity: 0, perspective: '600px' }}
                                 title={m.label}
                             >
                                 <span className="shub-emoji text-xl sm:text-2xl select-none inline-block">{m.emoji}</span>
-                                <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 tracking-wide uppercase">{m.label}</span>
+                                <span className="text-[9px] font-bold text-slate-600 dark:text-slate-200 tracking-wide uppercase">{m.label}</span>
                             </button>
                         ))}
                     </div>
@@ -582,7 +757,7 @@ const StudentSupportHubPage = memo(() => {
                                 <button
                                     key={opt.id}
                                     onClick={(e) => handleCardClick(opt.path, e)}
-                                    className="shub-feature-card shub-card w-full relative overflow-hidden rounded-2xl sm:rounded-3xl text-left bg-white/65 dark:bg-white/[0.04] backdrop-blur-xl border border-white/90 dark:border-white/8 shadow-sm hover:shadow-xl p-4 sm:p-5 group"
+                                    className="shub-feature-card shub-card ios-glass ios-lift w-full relative overflow-hidden rounded-2xl sm:rounded-3xl text-left bg-white/78 dark:bg-slate-900/44 backdrop-blur-xl border border-white/90 dark:border-slate-200/15 shadow-sm hover:shadow-xl p-4 sm:p-5 group"
                                     style={{ opacity: 0, perspective: '800px', transformStyle: 'preserve-3d' }}
                                 >
                                     <div className={`absolute -top-10 -left-10 w-36 h-36 rounded-full bg-gradient-to-br ${opt.cardAccent} blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-700`} />
@@ -594,13 +769,13 @@ const StudentSupportHubPage = memo(() => {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 mb-0.5">
-                                                <h3 className="text-sm sm:text-base font-extrabold text-gray-800 dark:text-white truncate">{opt.title}</h3>
+                                                <h3 className="text-sm sm:text-base font-extrabold text-slate-800 dark:text-slate-100 truncate">{opt.title}</h3>
                                                 <span className={`text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded ${opt.tagStyle}`}>{opt.tag}</span>
                                             </div>
-                                            <p className="text-[11px] sm:text-xs text-gray-400 dark:text-gray-500 leading-snug font-medium">{opt.description}</p>
+                                            <p className="text-[11px] sm:text-xs text-slate-600 dark:text-slate-300 leading-snug font-medium">{opt.description}</p>
                                         </div>
-                                        <div className="shub-arrow flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gray-50/80 dark:bg-white/8 flex items-center justify-center group-hover:bg-gray-100 dark:group-hover:bg-white/12 transition-all duration-200">
-                                            <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-500 dark:group-hover:text-gray-300 transition-colors" />
+                                        <div className="shub-arrow flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-50/85 dark:bg-slate-200/10 flex items-center justify-center group-hover:bg-slate-100 dark:group-hover:bg-slate-200/16 transition-all duration-200">
+                                            <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 group-hover:text-slate-700 dark:text-slate-300 dark:group-hover:text-slate-100 transition-colors" />
                                         </div>
                                     </div>
                                 </button>
@@ -610,20 +785,20 @@ const StudentSupportHubPage = memo(() => {
 
                     {/* ── Daily tip ── */}
                     <div className="shub-daily-tip shub-tip mt-8 sm:mt-10 w-full max-w-md" style={{ opacity: 0 }}>
-                        <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-gradient-to-r from-amber-50/80 via-orange-50/60 to-yellow-50/40 dark:from-amber-900/10 dark:via-orange-900/5 dark:to-transparent border border-amber-100/60 dark:border-amber-800/20 backdrop-blur-sm">
+                        <div className="ios-glass-soft flex items-center gap-3 px-4 py-3 rounded-2xl bg-gradient-to-r from-amber-50/80 via-orange-50/60 to-yellow-50/40 dark:from-amber-900/10 dark:via-orange-900/5 dark:to-transparent border border-amber-100/60 dark:border-amber-800/20 backdrop-blur-sm">
                             <div className="shub-zap-icon flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-amber-300 to-orange-400 flex items-center justify-center shadow-sm">
                                 <Zap className="w-4 h-4 text-white" />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-[11px] font-extrabold text-amber-700/80 dark:text-amber-400/80">Daily Tip</p>
-                                <p className="text-[10px] text-amber-600/60 dark:text-amber-500/50 leading-snug font-medium">Take a moment to check in with yourself. Your feelings matter!</p>
+                                <p className="text-[11px] font-extrabold text-amber-700/90 dark:text-amber-300/90">Daily Tip</p>
+                                <p className="text-[10px] text-amber-700/70 dark:text-amber-200/70 leading-snug font-medium">Take a moment to check in with yourself. Your feelings matter!</p>
                             </div>
                             <Star className="w-4 h-4 text-amber-300 flex-shrink-0" />
                         </div>
                     </div>
 
                     {/* Footer */}
-                    <p className="shub-footer mt-6 text-[10px] text-gray-300 dark:text-gray-600 tracking-wide font-semibold" style={{ opacity: 0 }}>
+                    <p className="shub-footer mt-6 text-[10px] text-slate-500/80 dark:text-slate-300/60 tracking-wide font-semibold" style={{ opacity: 0 }}>
                         Millennia World School
                     </p>
                 </div>

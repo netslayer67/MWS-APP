@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import AnimatedPage from "@/components/AnimatedPage";
 import checkinService from "@/services/checkinService";
 import { prefetchStudentFaceScanOnIntent } from "@/utils/faceScanPrefetch";
+import "@/pages/styles/student-ios-system.css";
 
 /* ── CSS-only animations ── */
 const ScopedStyles = memo(() => (
@@ -148,7 +149,10 @@ const StudentAICheckinPage = memo(function StudentAICheckinPage() {
             <Helmet><title>AI Emotional Analysis - Millennia World School</title></Helmet>
             <ScopedStyles />
 
-            <div className="sai-bg sai-font min-h-screen relative overflow-hidden bg-gradient-to-br from-sky-50 via-violet-50 via-50% to-indigo-50 dark:from-background dark:via-background dark:to-background">
+            <div
+                className="sai-bg sai-font student-shell min-h-screen relative overflow-hidden bg-gradient-to-br from-sky-50 via-violet-50 via-50% to-indigo-50 dark:from-background dark:via-background dark:to-background"
+                data-student-theme="ai-checkin"
+            >
                 <div className="sai-grid absolute inset-0 pointer-events-none" />
 
                 {/* Blobs */}
@@ -169,7 +173,7 @@ const StudentAICheckinPage = memo(function StudentAICheckinPage() {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         onClick={() => navigate('/student/emotional-checkin')}
-                        className="self-start flex items-center gap-2 text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors mb-6 font-semibold"
+                        className="ios-pill self-start flex items-center gap-2 text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors mb-6 font-semibold px-3 py-1.5"
                     >
                         <ArrowLeft className="w-4 h-4" />
                         <span>Back</span>
@@ -204,7 +208,7 @@ const StudentAICheckinPage = memo(function StudentAICheckinPage() {
                         transition={{ duration: 0.35, delay: 0.1 }}
                         className="text-center mb-6"
                     >
-                        <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/70 dark:bg-white/8 border border-gray-200/40 dark:border-white/10 backdrop-blur-sm mb-3 shadow-sm">
+                        <div className="ios-pill inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/70 dark:bg-white/8 border border-gray-200/40 dark:border-white/10 backdrop-blur-sm mb-3 shadow-sm">
                             <Sparkles className="w-3 h-3 text-sky-500" />
                             <span className="text-[10px] font-extrabold tracking-widest text-sky-600 dark:text-sky-400 uppercase">AI Analysis</span>
                         </div>
@@ -223,7 +227,7 @@ const StudentAICheckinPage = memo(function StudentAICheckinPage() {
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="w-full backdrop-blur-xl bg-gradient-to-r from-emerald-50/90 to-teal-50/70 dark:from-emerald-900/20 dark:to-teal-900/10 border border-emerald-200/50 dark:border-emerald-700/40 rounded-2xl p-4 mb-5 flex items-center gap-3"
+                            className="ios-glass-soft w-full backdrop-blur-xl bg-gradient-to-r from-emerald-50/90 to-teal-50/70 dark:from-emerald-900/20 dark:to-teal-900/10 border border-emerald-200/50 dark:border-emerald-700/40 rounded-2xl p-4 mb-5 flex items-center gap-3"
                         >
                             <Check className="w-5 h-5 text-emerald-500 flex-shrink-0" />
                             <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">You've already completed your AI analysis today!</p>
@@ -245,7 +249,7 @@ const StudentAICheckinPage = memo(function StudentAICheckinPage() {
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.25 + i * 0.08 }}
-                                    className="backdrop-blur-xl bg-white/55 dark:bg-white/5 border border-white/70 dark:border-white/10 rounded-2xl p-3.5 shadow-sm"
+                                    className="ios-glass backdrop-blur-xl bg-white/55 dark:bg-white/5 border border-white/70 dark:border-white/10 rounded-2xl p-3.5 shadow-sm"
                                 >
                                     <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${feat.gradient} flex items-center justify-center shadow-lg ${feat.shadow} mb-2`}>
                                         <Icon className="w-4 h-4 text-white" />

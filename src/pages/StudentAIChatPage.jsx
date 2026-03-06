@@ -46,6 +46,7 @@ import {
 } from '@/store/slices/aiChatSlice';
 import aiChatService from '@/services/aiChatService';
 import './StudentAIChatPage.css';
+import '@/pages/styles/student-ios-system.css';
 
 const CHAT_COACH_STORAGE_KEY = 'student_ai_chat_coach_v1';
 const CHAT_COACH_IDLE_MS = 95 * 1000;
@@ -1541,7 +1542,7 @@ export default function StudentAIChatPage() {
     }, [twinRiskLevel]);
 
     return (
-        <div className="chat-bg chat-font h-[100dvh] min-h-screen relative overflow-x-hidden">
+        <div className="chat-bg chat-font student-shell h-[100dvh] min-h-screen relative overflow-x-hidden" data-student-theme="chat">
             {/* Background grid */}
             <div className="chat-grid absolute inset-0 pointer-events-none" />
 
