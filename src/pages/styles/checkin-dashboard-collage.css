@@ -1,0 +1,272 @@
+/* ═══════════════════════════════════════════════════════════════
+   Emotional Check-in Dashboard — Photo Mosaic BG, Filmstrip & Warm Gradient
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Page root — override App's bg-background so layers show ── */
+.ecd-page-root {
+    background: transparent !important;
+}
+
+
+/* ═══════════════════════════════════════════
+   PHOTO MOSAIC BACKGROUND — subtle student photos behind content
+   ═══════════════════════════════════════════ */
+
+.ecd-mosaic-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    min-height: 100%;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.ecd-mosaic-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 6px;
+    padding: 6px;
+    width: 100%;
+    min-height: 100%;
+    opacity: 0.12;
+    filter: saturate(0.5) brightness(1.1);
+}
+
+.ecd-mosaic-cell {
+    aspect-ratio: 4 / 5;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.ecd-mosaic-cell img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Warm overlay on top of mosaic for readability */
+.ecd-mosaic-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    min-height: 100%;
+    background:
+        radial-gradient(900px ellipse at 18% 14%, rgba(255, 228, 196, 0.28), transparent 60%),
+        radial-gradient(850px ellipse at 82% 10%, rgba(226, 210, 255, 0.22), transparent 58%),
+        radial-gradient(700px circle at 10% 50%, rgba(255, 218, 185, 0.18), transparent 55%),
+        radial-gradient(700px circle at 90% 48%, rgba(186, 220, 255, 0.18), transparent 55%),
+        radial-gradient(800px ellipse at 22% 82%, rgba(255, 236, 179, 0.2), transparent 56%),
+        radial-gradient(780px ellipse at 78% 86%, rgba(178, 235, 210, 0.18), transparent 56%),
+        linear-gradient(168deg,
+            rgba(255, 250, 245, 0.82) 0%,
+            rgba(255, 247, 238, 0.78) 20%,
+            rgba(252, 245, 240, 0.75) 40%,
+            rgba(248, 244, 250, 0.74) 60%,
+            rgba(245, 248, 255, 0.76) 80%,
+            rgba(250, 248, 245, 0.8) 100%
+        );
+    pointer-events: none;
+}
+
+/* Animated warm light sweep over mosaic */
+.ecd-mosaic-overlay::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(1200px ellipse at var(--ecd-light-x, 30%) var(--ecd-light-y, 20%),
+            rgba(255, 235, 210, 0.16), transparent 60%);
+    opacity: 0.8;
+    animation: ecd-light-drift 18s ease-in-out infinite alternate;
+}
+
+@keyframes ecd-light-drift {
+    0%   { --ecd-light-x: 20%; --ecd-light-y: 16%; }
+    25%  { --ecd-light-x: 42%; --ecd-light-y: 28%; }
+    50%  { --ecd-light-x: 68%; --ecd-light-y: 22%; }
+    75%  { --ecd-light-x: 56%; --ecd-light-y: 38%; }
+    100% { --ecd-light-x: 30%; --ecd-light-y: 24%; }
+}
+
+
+/* ═══════════════════════════════════════════
+   Dark mode — mosaic
+   ═══════════════════════════════════════════ */
+
+html.dark .ecd-mosaic-grid {
+    opacity: 0.08;
+    filter: saturate(0.3) brightness(0.7);
+}
+
+html.dark .ecd-mosaic-overlay {
+    background:
+        radial-gradient(900px ellipse at 18% 14%, rgba(120, 80, 40, 0.14), transparent 60%),
+        radial-gradient(850px ellipse at 82% 10%, rgba(80, 60, 130, 0.12), transparent 58%),
+        radial-gradient(700px circle at 10% 50%, rgba(100, 70, 40, 0.1), transparent 55%),
+        radial-gradient(700px circle at 90% 48%, rgba(40, 70, 120, 0.1), transparent 55%),
+        radial-gradient(800px ellipse at 22% 82%, rgba(100, 90, 40, 0.1), transparent 56%),
+        radial-gradient(780px ellipse at 78% 86%, rgba(40, 100, 80, 0.1), transparent 56%),
+        linear-gradient(168deg,
+            rgba(12, 14, 24, 0.88) 0%,
+            rgba(14, 16, 28, 0.86) 20%,
+            rgba(16, 14, 26, 0.85) 40%,
+            rgba(14, 14, 28, 0.86) 60%,
+            rgba(12, 16, 30, 0.87) 80%,
+            rgba(14, 14, 26, 0.88) 100%
+        );
+}
+
+html.dark .ecd-mosaic-overlay::after {
+    background: radial-gradient(1200px ellipse at var(--ecd-light-x, 30%) var(--ecd-light-y, 20%),
+        rgba(120, 90, 50, 0.08), transparent 60%);
+    opacity: 0.5;
+}
+
+
+/* ═══════════════════════════════════════════
+   FILMSTRIP COLLAGE — Clean scrolling columns
+   ═══════════════════════════════════════════ */
+
+.ecd-collage-layer {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    margin-bottom: -100vh; /* collapse so it doesn't push content down */
+    z-index: 2;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+/* ── Filmstrip container ── */
+.ecd-filmstrip {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: clamp(64px, 5.4vw, 100px);
+    overflow: hidden;
+
+    /* Vertical fade mask — top & bottom edges dissolve smoothly */
+    -webkit-mask-image: linear-gradient(
+        to bottom,
+        transparent 0%,
+        black 12%,
+        black 88%,
+        transparent 100%
+    );
+    mask-image: linear-gradient(
+        to bottom,
+        transparent 0%,
+        black 12%,
+        black 88%,
+        transparent 100%
+    );
+}
+
+.ecd-filmstrip--left {
+    left: clamp(6px, 0.6vw, 14px);
+}
+
+.ecd-filmstrip--right {
+    right: clamp(6px, 0.6vw, 14px);
+}
+
+/* ── Track (scrolling container) ── */
+.ecd-filmstrip__track {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(8px, 1vh, 14px);
+    will-change: transform;
+}
+
+/* ── Individual photo frame ── */
+.ecd-filmstrip__frame {
+    flex-shrink: 0;
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    border-radius: clamp(10px, 1.4vw, 16px);
+    overflow: hidden;
+    opacity: 0.55;
+    border: 2px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1), 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.ecd-filmstrip__frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Subtle shimmer */
+.ecd-filmstrip__frame::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(140deg, rgba(255, 255, 255, 0.15), transparent 50%);
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+
+/* ═══════════════════════════════════════════
+   Dark mode — filmstrip
+   ═══════════════════════════════════════════ */
+
+html.dark .ecd-filmstrip__frame {
+    border-color: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 4px 14px rgba(2, 6, 23, 0.3), 0 1px 3px rgba(2, 6, 23, 0.16);
+    opacity: 0.45;
+}
+
+
+/* ═══════════════════════════════════════════
+   Responsive
+   ═══════════════════════════════════════════ */
+
+@media (max-width: 1024px) {
+    .ecd-filmstrip {
+        width: clamp(52px, 4.8vw, 80px);
+    }
+
+    .ecd-filmstrip__frame {
+        opacity: 0.45;
+    }
+
+    .ecd-mosaic-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        opacity: 0.1;
+    }
+}
+
+@media (max-width: 767px) {
+    .ecd-filmstrip {
+        width: clamp(40px, 12vw, 56px);
+    }
+
+    .ecd-filmstrip__frame {
+        opacity: 0.35;
+        border-width: 1.5px;
+        border-radius: clamp(8px, 1.2vw, 12px);
+    }
+
+    .ecd-mosaic-grid {
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        opacity: 0.08;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ecd-filmstrip__track {
+        animation: none !important;
+        transform: none !important;
+    }
+
+    .ecd-mosaic-overlay::after {
+        animation: none !important;
+    }
+}

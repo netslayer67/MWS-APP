@@ -1,8 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { useSelector } from "react-redux";
 import { Calendar, Search, Users, AlertTriangle, CheckCircle2, Filter } from "lucide-react";
 import { getTeacherDailyCheckins } from "@/services/checkinService";
 import StudentCheckinInsightCard from "@/components/emotion-staff/StudentCheckinInsightCard";
+import "@/pages/styles/checkin-dashboard-collage.css";
+
+const CheckinCollageLayer = lazy(() => import("@/components/emotion-staff/CheckinCollageLayer"));
 
 const formatClassLabels = (classes = []) => {
     if (!Array.isArray(classes)) return [];
@@ -159,7 +162,12 @@ const EmotionalCheckinTeacherDashboard = () => {
         : `Hi ${honorific ? `${honorific} ${displayName}` : displayName}, here is today's class pulse.`;
 
     return (
-        <div className="min-h-screen text-foreground relative overflow-hidden">
+        <div className="ecd-page-root min-h-screen text-foreground relative">
+            {/* Photo mosaic background + filmstrip collage */}
+            <Suspense fallback={null}>
+                <CheckinCollageLayer />
+            </Suspense>
+
             <div className="relative z-10 container-tight py-6">
                 <div className="glass glass-card p-5 md:p-6 mb-8">
                     <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
