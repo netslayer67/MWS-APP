@@ -6,7 +6,10 @@ import {
     FREQUENCIES,
     WEEKDAYS,
     METHODS,
-    SCORE_UNITS
+    SCORE_UNITS,
+    KINDERGARTEN_DOMAIN_TAGS,
+    KINDERGARTEN_WEEKLY_FOCUS_OPTIONS,
+    KINDERGARTEN_SIGNAL_OPTIONS,
 } from "../config/interventionFormConfig";
 
 const InterventionFormFields = memo(({
@@ -21,7 +24,11 @@ const InterventionFormFields = memo(({
     textareaClass,
     onStudentChange,
     onStrategyChange,
-    isEditing = false
+    isEditing = false,
+    isKindergartenFlow = false,
+    kindergartenStrategies = [],
+    onUseKindergartenStrategy,
+    loadingKindergartenStrategies = false,
 }) => {
     const fieldClass = `${baseFieldClass} bg-white/90 dark:bg-slate-900/50 border border-white/70 dark:border-white/15 shadow-[0_10px_30px_rgba(15,23,42,0.08)] focus:ring-2 focus:ring-primary/40`;
     const textareaFieldClass = `${textareaClass} bg-white/90 dark:bg-slate-900/50 border border-white/70 dark:border-white/15 shadow-[0_10px_30px_rgba(15,23,42,0.08)] focus:ring-2 focus:ring-primary/40`;
@@ -29,9 +36,297 @@ const InterventionFormFields = memo(({
     const fieldWrap = "rounded-2xl border border-white/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-4 shadow-inner";
     const labelClass = "text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-500 dark:text-slate-200";
 
+    const toggleDomainTag = (tagValue) => {
+        const current = Array.isArray(formState.domainTags) ? formState.domainTags : [];
+        const next = current.includes(tagValue)
+            ? current.filter((item) => item !== tagValue)
+            : [...current, tagValue];
+        onChange("domainTags", next);
+    };
+
+    if (isKindergartenFlow) {
+        return (
+            <>
+                <div className="grid md:grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="90">
+                    <div className={`${fieldWrap} flex flex-col gap-2`}>
+                        <label className={labelClass}>Student Name</label>
+                        <select
+                            className={fieldClass}
+                            value={formState.studentId}
+                            onChange={onStudentChange}
+                            disabled={isEditing}
+                        >
+                            <option value="">Select student</option>
+                            {students.map((student) => (
+                                <option key={student.id} value={student.id}>{student.name}</option>
+                            ))}
+                        </select>
+                        {isEditing && (
+                            <p className="text-xs text-muted-foreground">Student is locked while editing this intervention.</p>
+                        )}
+                    </div>
+                    <div className={`${fieldWrap} flex flex-col gap-2`}>
+                        <label className={labelClass}>Class Scope</label>
+                        <div className="px-4 py-3 rounded-2xl bg-gradient-to-r from-white/90 via-white/70 to-white/60 dark:from-white/10 dark:via-white/5 dark:to-white/5 border border-white/60 dark:border-white/10 text-sm text-slate-600 dark:text-slate-200">
+                            {selectedStudent?.className || selectedStudent?.grade || formState.grade || "Filtered to your classes"}
+                        </div>
+                    </div>
+                </div>
+
+                <div className={`${fieldWrap} flex flex-col gap-3`} data-aos="fade-up" data-aos-delay="120">
+                    <label className={labelClass}>Kindergarten Domain Tags</label>
+                    <div className="flex flex-wrap gap-2">
+                        {KINDERGARTEN_DOMAIN_TAGS.map((tag) => {
+                            const active = (formState.domainTags || []).includes(tag.value);
+                            return (
+                                <button
+                                    key={tag.value}
+                                    type="button"
+                                    onClick={() => toggleDomainTag(tag.value)}
+                                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
+                                        active
+                                            ? "bg-emerald-500 border-emerald-500 text-white shadow-sm"
+                                            : "bg-white/80 dark:bg-white/10 border-primary/20 text-muted-foreground hover:border-emerald-400"
+                                    }`}
+                                >
+                                    {tag.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                        Select one or more domains to anchor the qualitative intervention plan.
+                    </p>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="150">
+                    <div className={`${fieldWrap} flex flex-col gap-2`}>
+                        <label className={labelClass}>Tier Level</label>
+                        <select className={fieldClass} value={formState.tier} onChange={(e) => onChange("tier", e.target.value)}>
+                            {TIERS.map((tier) => (
+                                <option key={tier.value} value={tier.value}>{tier.label}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className={`${fieldWrap} flex flex-col gap-2`}>
+                        <label className={labelClass}>Duration</label>
+                        <select className={fieldClass} value={formState.duration} onChange={(e) => onChange("duration", e.target.value)}>
+                            <option value="">Select duration</option>
+                            {DURATIONS.map((duration) => (
+                                <option key={duration} value={duration}>{duration}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="180">
+                    <div className={`${fieldWrap} flex flex-col gap-2`}>
+                        <label className={labelClass}>Strategy Support</label>
+                        <select
+                            className={fieldClass}
+                            value={formState.strategyName || ""}
+                            onChange={(event) => {
+                                const value = event.target.value;
+                                onChange("strategyName", value);
+                                const matched = kindergartenStrategies.find((entry) => entry.title === value);
+                                if (matched && typeof onUseKindergartenStrategy === "function") {
+                                    onUseKindergartenStrategy(matched);
+                                }
+                            }}
+                            disabled={loadingKindergartenStrategies}
+                        >
+                            <option value="">
+                                {loadingKindergartenStrategies ? "Loading strategy options..." : "Select strategy suggestion"}
+                            </option>
+                            {kindergartenStrategies.map((entry) => (
+                                <option key={`${entry.domainTag}-${entry.id || entry.title}`} value={entry.title}>
+                                    {entry.title} ({entry.domainLabel})
+                                </option>
+                            ))}
+                        </select>
+                        <input
+                            type="text"
+                            className={fieldClass}
+                            placeholder="Or type a custom strategy"
+                            value={formState.strategyName || ""}
+                            onChange={(event) => onChange("strategyName", event.target.value)}
+                        />
+                    </div>
+                    <div className={`${fieldWrap} flex flex-col gap-2`}>
+                        <label className={labelClass}>Start Date</label>
+                        <input
+                            type="date"
+                            className={fieldClass}
+                            value={formState.startDate}
+                            onChange={(e) => onChange("startDate", e.target.value)}
+                        />
+                    </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="210">
+                    <div className={`${fieldWrap} flex flex-col gap-2`}>
+                        <label className={labelClass}>Weekly Focus</label>
+                        <select
+                            className={fieldClass}
+                            value={formState.weeklyFocus || ""}
+                            onChange={(event) => onChange("weeklyFocus", event.target.value)}
+                        >
+                            <option value="">Select weekly focus</option>
+                            {KINDERGARTEN_WEEKLY_FOCUS_OPTIONS.map((option) => (
+                                <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className={`${fieldWrap} flex flex-col gap-2`}>
+                        <label className={labelClass}>Initial Signal</label>
+                        <select
+                            className={fieldClass}
+                            value={formState.initialSignal || ""}
+                            onChange={(event) => onChange("initialSignal", event.target.value)}
+                        >
+                            <option value="">Select signal</option>
+                            {KINDERGARTEN_SIGNAL_OPTIONS.map((option) => (
+                                <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="230">
+                    <div className={`${fieldWrap} flex flex-col gap-2`}>
+                        <label className={labelClass}>Monitoring Frequency</label>
+                        <select className={fieldClass} value={formState.monitorFrequency} onChange={(e) => onChange("monitorFrequency", e.target.value)}>
+                            <option value="">Select frequency</option>
+                            {FREQUENCIES.map((frequency) => (
+                                <option key={frequency} value={frequency}>{frequency}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className={`${fieldWrap} flex flex-col gap-2`}>
+                        <label className={labelClass}>Monitoring Method</label>
+                        <select className={fieldClass} value={formState.monitorMethod} onChange={(e) => onChange("monitorMethod", e.target.value)}>
+                            <option value="">Select method</option>
+                            {METHODS.map((method) => (
+                                <option key={method} value={method}>{method}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                {formState.monitorFrequency === "Custom" && (
+                    <div className="flex flex-col gap-3 p-4 rounded-2xl bg-blue-50/60 dark:bg-blue-900/20 border border-blue-200/40 dark:border-blue-700/30" data-aos="fade-up" data-aos-delay="250">
+                        <label className={labelClass}>Select Days</label>
+                        <div className="flex flex-wrap gap-2">
+                            {WEEKDAYS.map((day) => {
+                                const selected = (formState.customFrequencyDays || []).includes(day.value);
+                                return (
+                                    <button
+                                        key={day.value}
+                                        type="button"
+                                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                                            selected
+                                                ? "bg-primary text-white shadow-md"
+                                                : "bg-white/80 dark:bg-white/10 border border-primary/20 text-muted-foreground hover:border-primary/40"
+                                        }`}
+                                        onClick={() => {
+                                            const current = formState.customFrequencyDays || [];
+                                            const updated = selected
+                                                ? current.filter((d) => d !== day.value)
+                                                : [...current, day.value];
+                                            onChange("customFrequencyDays", updated);
+                                        }}
+                                    >
+                                        {day.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <input
+                            type="text"
+                            className={fieldClass}
+                            placeholder="Optional note, e.g. 'Morning sessions only'"
+                            value={formState.customFrequencyNote || ""}
+                            onChange={(e) => onChange("customFrequencyNote", e.target.value)}
+                        />
+                    </div>
+                )}
+
+                <div className={`${fieldWrap} flex flex-col gap-2`} data-aos="fade-up" data-aos-delay="260">
+                    <label className={labelClass}>Goal</label>
+                    <textarea
+                        className={textareaFieldClass}
+                        placeholder="Describe the support goal in strengths-based language..."
+                        value={formState.goal}
+                        onChange={(e) => onChange("goal", e.target.value)}
+                    />
+                </div>
+
+                <div className={`${fieldWrap} flex flex-col gap-2`} data-aos="fade-up" data-aos-delay="280">
+                    <label className={labelClass}>Plan Notes</label>
+                    <textarea
+                        className={textareaFieldClass}
+                        placeholder="Add qualitative context for teacher/mentor follow-up..."
+                        value={formState.notes}
+                        onChange={(e) => onChange("notes", e.target.value)}
+                    />
+                </div>
+
+                <div className="rounded-2xl border border-white/60 dark:border-white/10 bg-white/70 dark:bg-white/5 p-4 shadow-inner space-y-4" data-aos="fade-up" data-aos-delay="300">
+                    <div>
+                        <p className={labelClass}>Initial CORN Snapshot (Optional)</p>
+                        <p className="text-xs text-muted-foreground mt-1">If known, seed the first qualitative observation directly from the intervention setup.</p>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-2">
+                            <label className={labelClass}>Context</label>
+                            <input
+                                type="text"
+                                className={fieldClass}
+                                placeholder="When/where this happened"
+                                value={formState.context || ""}
+                                onChange={(event) => onChange("context", event.target.value)}
+                            />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <label className={labelClass}>Response</label>
+                            <input
+                                type="text"
+                                className={fieldClass}
+                                placeholder="What was done in the moment"
+                                value={formState.response || ""}
+                                onChange={(event) => onChange("response", event.target.value)}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-2">
+                            <label className={labelClass}>Observation</label>
+                            <textarea
+                                className={textareaFieldClass}
+                                placeholder="What behavior was observed?"
+                                value={formState.observation || ""}
+                                onChange={(event) => onChange("observation", event.target.value)}
+                            />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <label className={labelClass}>Next Step</label>
+                            <textarea
+                                className={textareaFieldClass}
+                                placeholder="What to try in the next session?"
+                                value={formState.nextStep || ""}
+                                onChange={(event) => onChange("nextStep", event.target.value)}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </>
+        );
+    }
+
     return (
         <>
-            {/* Student & Class */}
             <div className="grid md:grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="90">
                 <div className={`${fieldWrap} flex flex-col gap-2`}>
                     <label className={labelClass}>
@@ -62,7 +357,6 @@ const InterventionFormFields = memo(({
                 </div>
             </div>
 
-            {/* Type & Tier */}
             <div className="grid md:grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="120">
                 <div className={`${fieldWrap} flex flex-col gap-2`}>
                     <label className={labelClass}>
@@ -87,7 +381,6 @@ const InterventionFormFields = memo(({
                 </div>
             </div>
 
-            {/* Strategy & Duration */}
             <div className="grid md:grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="150">
                 <div className={`${fieldWrap} flex flex-col gap-2`}>
                     <label className={labelClass}>
@@ -118,13 +411,11 @@ const InterventionFormFields = memo(({
                 </div>
             </div>
 
-            {/* Goal */}
             <div className={`${fieldWrap} flex flex-col gap-2`} data-aos="fade-up" data-aos-delay="170">
                 <label className={labelClass}>Goal</label>
                 <textarea className={textareaFieldClass} placeholder="Describe the intervention goal..." value={formState.goal} onChange={(e) => onChange("goal", e.target.value)} />
             </div>
 
-            {/* Date & Frequency */}
             <div className="grid md:grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="190">
                 <div className={`${fieldWrap} flex flex-col gap-2`}>
                     <label className={labelClass}>Start Date</label>
@@ -179,7 +470,6 @@ const InterventionFormFields = memo(({
                 </div>
             )}
 
-            {/* Method & Notes */}
             <div className="grid md:grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="210">
                 <div className={`${fieldWrap} flex flex-col gap-2`}>
                     <label className={labelClass}>Monitoring Method</label>
@@ -196,7 +486,6 @@ const InterventionFormFields = memo(({
                 </div>
             </div>
 
-            {/* Scores */}
             <div className="grid md:grid-cols-2 gap-4" data-aos="fade-up" data-aos-delay="230">
                 <div className={`${fieldWrap} flex flex-col gap-2`}>
                     <label className={labelClass}>Baseline Score</label>

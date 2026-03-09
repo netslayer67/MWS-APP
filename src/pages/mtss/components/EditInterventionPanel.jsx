@@ -1,8 +1,13 @@
 import { memo, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Loader2, PencilLine, Save, ShieldAlert } from "lucide-react";
-import { fetchStrategies } from "@/services/mtssService";
+import { useSelector } from "react-redux";
+import { fetchStrategies, fetchKindergartenInterventionBank } from "@/services/mtssService";
+import { FALLBACK_INTERVENTION_BANK } from "../data/kindergartenInterventionBank";
 import { filterStrategiesByType, validateInterventionForm } from "../config/interventionFormConfig";
 import InterventionFormFields from "./InterventionFormFields";
+
+const KINDERGARTEN_PATTERN = /(kindergarten|pre[-\s]?k|\bk\s*1\b|\bk\s*2\b|kindy)/i;
+const KINDERGARTEN_TAGS = new Set(["emotional_regulation", "language", "social", "motor", "independence"]);
 
 const EditInterventionPanel = memo(({
     formState,
@@ -15,8 +20,11 @@ const EditInterventionPanel = memo(({
     editingPlan = null,
     onCancelEdit,
 }) => {
+    const authUser = useSelector((state) => state.auth?.user);
     const [strategies, setStrategies] = useState([]);
     const [loadingStrategies, setLoadingStrategies] = useState(false);
+    const [kindergartenBank, setKindergartenBank] = useState(FALLBACK_INTERVENTION_BANK);
+    const [loadingKindergartenBank, setLoadingKindergartenBank] = useState(false);
 
     useEffect(() => {
         let mounted = true;
@@ -50,6 +58,63 @@ const EditInterventionPanel = memo(({
         () => students.find((student) => student.id === formState.studentId || student._id === formState.studentId),
         [students, formState.studentId],
     );
+    const isKindergartenFlow = useMemo(() => {
+        const pool = [
+            selectedStudent?.grade,
+            selectedStudent?.currentGrade,
+            selectedStudent?.className,
+            formState.grade,
+            formState.className,
+            authUser?.unit,
+            authUser?.department,
+        ]
+            .filter(Boolean)
+            .join(" ");
+        return KINDERGARTEN_PATTERN.test(pool);
+    }, [authUser?.department, authUser?.unit, formState.className, formState.grade, selectedStudent]);
+
+    useEffect(() => {
+        if (!isKindergartenFlow) return;
+        let mounted = true;
+        setLoadingKindergartenBank(true);
+        fetchKindergartenInterventionBank()
+            .then((response = {}) => {
+                if (!mounted) return;
+                setKindergartenBank(response?.interventionBank || FALLBACK_INTERVENTION_BANK);
+            })
+            .catch(() => {
+                if (!mounted) return;
+                setKindergartenBank(FALLBACK_INTERVENTION_BANK);
+            })
+            .finally(() => {
+                if (mounted) setLoadingKindergartenBank(false);
+            });
+        return () => {
+            mounted = false;
+        };
+    }, [isKindergartenFlow]);
+
+    const kindergartenStrategies = useMemo(() => {
+        if (!isKindergartenFlow) return [];
+        const selectedTags = Array.isArray(formState.domainTags)
+            ? formState.domainTags.filter((tag) => KINDERGARTEN_TAGS.has(tag))
+            : [];
+        const selectedSignal = String(formState.initialSignal || "").trim().toLowerCase();
+        const domainKeys = selectedTags.length ? selectedTags : Object.keys(kindergartenBank || {});
+
+        return domainKeys.flatMap((tag) => {
+            const domain = kindergartenBank?.[tag];
+            const domainLabel = domain?.label || tag;
+            const strategiesList = Array.isArray(domain?.strategies) ? domain.strategies : [];
+            return strategiesList
+                .filter((entry) => !selectedSignal || !Array.isArray(entry.signals) || entry.signals.includes(selectedSignal))
+                .map((entry) => ({
+                    ...entry,
+                    domainTag: tag,
+                    domainLabel,
+                }));
+        });
+    }, [formState.domainTags, formState.initialSignal, isKindergartenFlow, kindergartenBank]);
 
     const handleStudentChange = (event) => {
         const value = event.target.value;
@@ -67,7 +132,7 @@ const EditInterventionPanel = memo(({
         onChange("strategyName", strategy?.name || "");
     };
 
-    const isValid = validateInterventionForm(formState);
+    const isValid = validateInterventionForm(formState, { isKindergarten: isKindergartenFlow });
 
     if (!editingPlan?.assignmentId) {
         return (
@@ -137,6 +202,10 @@ const EditInterventionPanel = memo(({
                         onStudentChange={handleStudentChange}
                         onStrategyChange={handleStrategyChange}
                         isEditing
+                        isKindergartenFlow={isKindergartenFlow}
+                        kindergartenStrategies={kindergartenStrategies}
+                        onUseKindergartenStrategy={(strategy = {}) => onChange("strategyName", strategy.title || "")}
+                        loadingKindergartenStrategies={loadingKindergartenBank}
                     />
 
                     <div className="flex flex-wrap gap-3 pt-3">

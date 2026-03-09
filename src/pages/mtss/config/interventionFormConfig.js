@@ -56,6 +56,26 @@ export const SKIP_REASONS = [
 
 export const SCORE_UNITS = ["wpm", "%", "pts", "score"];
 
+export const KINDERGARTEN_DOMAIN_TAGS = [
+    { value: "emotional_regulation", label: "Emotional Regulation" },
+    { value: "language", label: "Language & Communication" },
+    { value: "social", label: "Social" },
+    { value: "motor", label: "Motor Skills" },
+    { value: "independence", label: "Independence" },
+];
+
+export const KINDERGARTEN_WEEKLY_FOCUS_OPTIONS = [
+    { value: "continue", label: "Continue" },
+    { value: "try", label: "Try" },
+    { value: "support_needed", label: "Support Needed" },
+];
+
+export const KINDERGARTEN_SIGNAL_OPTIONS = [
+    { value: "emerging", label: "Emerging" },
+    { value: "developing", label: "Developing" },
+    { value: "consistent", label: "Consistent" },
+];
+
 export const filterStrategiesByType = (strategies, type) => {
     if (!type) return strategies;
     const typeKey = type.toLowerCase();
@@ -79,7 +99,23 @@ export const filterStrategiesByType = (strategies, type) => {
     });
 };
 
-export const validateInterventionForm = (formState) => {
+export const validateInterventionForm = (formState, { isKindergarten = false } = {}) => {
+    if (isKindergarten) {
+        const hasDomainSelection = Array.isArray(formState.domainTags) && formState.domainTags.length > 0;
+        const hasActionablePlan = Boolean(
+            hasDomainSelection ||
+            formState.strategyName?.trim() ||
+            formState.goal?.trim() ||
+            formState.notes?.trim()
+        );
+        return Boolean(
+            formState.studentId &&
+            formState.tier &&
+            formState.startDate &&
+            hasActionablePlan
+        );
+    }
+
     return Boolean(
         formState.studentId &&
         formState.type &&

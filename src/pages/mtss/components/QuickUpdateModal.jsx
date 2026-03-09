@@ -644,11 +644,11 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                                         {/* Notes (summary auto-generated from CORN or manual) */}
                                         <div className="flex flex-col gap-2">
                                             <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">
-                                                Summary Note <span className="text-muted-foreground/50">(opsional)</span>
+                                                Summary Note <span className="text-muted-foreground/50">(optional)</span>
                                             </label>
                                             <textarea
                                                 className={`${baseField} min-h-[72px] resize-y`}
-                                                placeholder="Catatan tambahan..."
+                                                placeholder="Additional notes..."
                                                 value={formState.notes}
                                                 onChange={(event) => handleChange("notes", event.target.value)}
                                             />
@@ -656,7 +656,7 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                                         {/* Domain Tags */}
                                         <div className="flex flex-col gap-2">
                                             <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                                                Domain Tags <span className="text-muted-foreground/50">(pilih semua yang sesuai)</span>
+                                                Domain Tags <span className="text-muted-foreground/50">(select all that apply)</span>
                                             </label>
                                             <div className="flex flex-wrap gap-2">
                                                 {DOMAIN_TAGS.map((tag) => {
@@ -712,7 +712,7 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                                         {/* Weekly Focus */}
                                         <div className="flex flex-col gap-2">
                                             <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                                                Weekly Focus <span className="text-muted-foreground/50">(opsional)</span>
+                                                Weekly Focus <span className="text-muted-foreground/50">(optional)</span>
                                             </label>
                                             <div className="grid grid-cols-3 gap-2">
                                                 {weeklyFocusOptions.map((opt) => {
@@ -761,7 +761,7 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
 
                                         {!hasSelectedTags && (
                                             <p className="text-[11px] text-muted-foreground">
-                                                Pilih minimal 1 domain tag agar saran lebih relevan.
+                                                Select at least 1 domain tag to get more relevant strategy suggestions.
                                             </p>
                                         )}
 
@@ -786,7 +786,7 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                                         </div>
 
                                         <p className="text-[10px] text-muted-foreground">
-                                            Klik strategi untuk auto-fill ke <span className="font-semibold">Next Step</span>.
+                                            Click a strategy to auto-fill <span className="font-semibold">Next Step</span>.
                                         </p>
                                     </aside>
                                 </div>

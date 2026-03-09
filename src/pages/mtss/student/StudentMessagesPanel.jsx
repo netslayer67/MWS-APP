@@ -3,6 +3,7 @@ import { MessageCircleHeart, Sparkles } from "lucide-react";
 import { buildStudentProfileView } from "../utils/studentProfileUtils";
 import { formatMentorDisplay } from "../utils/mentorNameUtils";
 import EvidenceViewer from "../components/EvidenceViewer";
+import { useToast } from "@/components/ui/use-toast";
 
 const SIGNAL_META = {
     emerging: { label: "🌱 Emerging", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
@@ -25,7 +26,14 @@ const toTimestamp = (value) => {
     return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const StudentMessagesPanel = ({ student, isLoading = false }) => {
+const StudentMessagesPanel = ({
+    student,
+    isLoading = false,
+    portalViewMode = "student",
+    onSubmitHomeObservation,
+    isSubmittingHomeObservation = false,
+}) => {
+    const { toast } = useToast();
     const sortedInterventions = useMemo(() => {
         if (!student) return [];
         return buildStudentProfileView(student).sortedInterventions || [];
@@ -44,6 +52,9 @@ const StudentMessagesPanel = ({ student, isLoading = false }) => {
         [interventions],
     );
     const [selectedSubject, setSelectedSubject] = useState("all");
+    const [homeObservationNote, setHomeObservationNote] = useState("");
+    const isKindergartenPortal = Boolean(student?.kindergartenPortal?.isKindergarten);
+    const parentProxyData = student?.kindergartenPortal?.parentProxy || { homeObservations: [] };
 
     const feed = useMemo(() => {
         const entries = interventions.flatMap((intervention) => {
@@ -103,6 +114,28 @@ const StudentMessagesPanel = ({ student, isLoading = false }) => {
         () => (selectedSubject === "all" ? feed : feed.filter((entry) => entry.subjectType === selectedSubject)),
         [feed, selectedSubject],
     );
+
+    const handleHomeObservationSubmit = async () => {
+        if (!student?.id || !homeObservationNote.trim()) return;
+        if (!onSubmitHomeObservation) return;
+        try {
+            await onSubmitHomeObservation(student.id, {
+                note: homeObservationNote.trim(),
+                source: portalViewMode === "parent_proxy" ? "parent_proxy" : "student",
+            });
+            setHomeObservationNote("");
+            toast({
+                title: "Home observation saved",
+                description: "The note is now available in the teacher workflow.",
+            });
+        } catch (error) {
+            toast({
+                title: "Unable to save home observation",
+                description: error?.response?.data?.message || error?.message || "Please try again.",
+                variant: "destructive",
+            });
+        }
+    };
 
     if (isLoading) {
         return (
@@ -216,6 +249,60 @@ const StudentMessagesPanel = ({ student, isLoading = false }) => {
                 ) : (
                     <div className="rounded-2xl border border-white/80 bg-gradient-to-r from-sky-50 via-violet-50 to-pink-50 px-4 py-3 text-sm text-slate-700 dark:border-white/20 dark:from-sky-950/70 dark:via-violet-950/70 dark:to-pink-950/60 dark:text-slate-200">
                         No communication notes for this subject yet.
+                    </div>
+                )}
+
+                {isKindergartenPortal && (
+                    <div className="mt-4 rounded-2xl border border-white/80 bg-gradient-to-r from-emerald-50 via-cyan-50 to-sky-50 p-4 dark:border-white/20 dark:from-emerald-950/60 dark:via-cyan-950/55 dark:to-sky-950/55">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div>
+                                <p className="text-[11px] font-black uppercase tracking-[0.28em] text-emerald-700 dark:text-emerald-100">
+                                    Parent Proxy Portal
+                                </p>
+                                <h4 className="text-sm font-black text-slate-800 dark:text-slate-100">Home Observation Notes</h4>
+                            </div>
+                            <span className="rounded-full border border-white/70 bg-white/85 px-3 py-1 text-[11px] font-semibold text-slate-700 dark:border-white/20 dark:bg-slate-800/70 dark:text-slate-200">
+                                {portalViewMode === "parent_proxy" ? "Edit Mode" : "Read-only"}
+                            </span>
+                        </div>
+
+                        {portalViewMode === "parent_proxy" ? (
+                            <div className="mt-3 space-y-2">
+                                <textarea
+                                    value={homeObservationNote}
+                                    onChange={(event) => setHomeObservationNote(event.target.value)}
+                                    placeholder="Share a short home observation (1-2 sentences)."
+                                    rows={3}
+                                    maxLength={260}
+                                    className="w-full rounded-2xl border border-white/75 bg-white/90 px-3 py-2 text-sm text-slate-700 focus:border-emerald-300 focus:outline-none dark:border-white/20 dark:bg-slate-800/70 dark:text-slate-100"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleHomeObservationSubmit}
+                                    disabled={!homeObservationNote.trim() || isSubmittingHomeObservation}
+                                    className="inline-flex items-center rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-4 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    {isSubmittingHomeObservation ? "Saving..." : "Submit Home Observation"}
+                                </button>
+                            </div>
+                        ) : (
+                            <p className="mt-2 text-sm text-slate-600 dark:text-slate-200">
+                                Switch to Parent Proxy mode to submit a home observation note.
+                            </p>
+                        )}
+
+                        {Array.isArray(parentProxyData.homeObservations) && parentProxyData.homeObservations.length > 0 && (
+                            <div className="mt-3 space-y-2">
+                                {parentProxyData.homeObservations.slice(0, 4).map((entry) => (
+                                    <div key={entry.id || `${entry.createdAt}-${entry.note}`} className="rounded-xl border border-white/75 bg-white/85 px-3 py-2 dark:border-white/20 dark:bg-slate-800/70">
+                                        <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-300">
+                                            {entry.dateLabel} {entry.submittedByName ? `• ${entry.submittedByName}` : ""}
+                                        </p>
+                                        <p className="text-sm text-slate-700 dark:text-slate-100">{entry.note}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
 
