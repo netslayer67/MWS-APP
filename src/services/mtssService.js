@@ -23,6 +23,9 @@ export const fetchMtssStudentById = (id, config = {}) => api.get(`/mtss/students
 export const fetchMtssMentors = (params = {}, config = {}) =>
     api.get('/mtss/mentors', withConfig(config, params)).then(withData);
 
+export const fetchKindergartenAdminAnalytics = (params = {}, config = {}) =>
+    api.get('/mtss/admin/kindergarten-analytics', withConfig(config, params)).then(withData);
+
 export const fetchKindergartenInterventionBank = (config = {}) =>
     api.get('/mtss/kindergarten/intervention-bank', config).then(withData);
 
@@ -60,6 +63,7 @@ export default {
     fetchMtssStudents,
     fetchMtssStudentById,
     fetchMtssMentors,
+    fetchKindergartenAdminAnalytics,
     fetchKindergartenInterventionBank,
     createMentorAssignment,
     updateMentorAssignment,

@@ -36,6 +36,7 @@ const AdminDashboardPage = memo(() => {
         trendPaths,
         strategyHighlights,
         tierMovement,
+        kindergartenAnalytics,
         loading,
         error,
         refresh,
@@ -136,6 +137,7 @@ const AdminDashboardPage = memo(() => {
                         trendData={trendData}
                         strategyHighlights={strategyHighlights}
                         tierMovement={tierMovement}
+                        kindergartenAnalytics={kindergartenAnalytics}
                     />
                 );
             default:
@@ -161,6 +163,7 @@ const AdminDashboardPage = memo(() => {
         systemSnapshot,
         recentActivity,
         mentorSpotlights,
+        kindergartenAnalytics,
         successByType,
         trendData,
         trendPaths,

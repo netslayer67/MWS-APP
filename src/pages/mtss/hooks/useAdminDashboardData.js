@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import socketService from "@/services/socketService";
-import { fetchMentorAssignments, fetchMtssStudents, fetchMtssMentors } from "@/services/mtssService";
+import {
+    fetchMentorAssignments,
+    fetchMtssStudents,
+    fetchMtssMentors,
+    fetchKindergartenAdminAnalytics,
+} from "@/services/mtssService";
 import {
     buildAdminStatCards,
     buildSystemSnapshot,
@@ -25,6 +30,7 @@ const useAdminDashboardData = () => {
     const [summary, setSummary] = useState(null);
     const [assignments, setAssignments] = useState([]);
     const [mentors, setMentors] = useState([]);
+    const [kindergartenAnalytics, setKindergartenAnalytics] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -90,11 +96,26 @@ const useAdminDashboardData = () => {
             if (classQueryValues.length) {
                 studentParams.className = classQueryValues.join(",");
             }
+            const analyticsParams = {
+                weeks: 4,
+                fidelityDays: 5,
+                minWeeklyObservations: 2,
+            };
+            if (effectiveSegments.unit) {
+                analyticsParams.unit = effectiveSegments.unit;
+            }
+            if (gradeQueryValues.length) {
+                analyticsParams.grade = gradeQueryValues.join(",");
+            }
+            if (classQueryValues.length) {
+                analyticsParams.className = classQueryValues.join(",");
+            }
 
-            const [studentResponse, assignmentResponse, mentorResponse] = await Promise.all([
+            const [studentResponse, assignmentResponse, mentorResponse, kindergartenAnalyticsResponse] = await Promise.all([
                 fetchMtssStudents(studentParams),
                 fetchMentorAssignments(),
                 fetchMtssMentors(mentorParams),
+                fetchKindergartenAdminAnalytics(analyticsParams).catch(() => null),
             ]);
 
             const roster = studentResponse.students || [];
@@ -121,6 +142,7 @@ const useAdminDashboardData = () => {
             setSummary(buildSummaryFromStudents(normalizedRoster));
             setAssignments(scopedAssignments);
             setMentors(scopedMentors);
+            setKindergartenAnalytics(kindergartenAnalyticsResponse || null);
         } catch (err) {
             setError(err?.response?.data?.message || err.message || "Failed to load MTSS dashboard data");
         } finally {
@@ -189,6 +211,7 @@ const useAdminDashboardData = () => {
         strategyHighlights,
         tierMovement,
         recentActivity,
+        kindergartenAnalytics,
         loading,
         error,
         refresh: loadDashboard,
