@@ -2,6 +2,24 @@ import { motion } from "framer-motion";
 import { Sparkles, CalendarDays, TrendingUp } from "lucide-react";
 import EvidenceViewer from "./EvidenceViewer";
 
+const SIGNAL_META = {
+    emerging: { label: "🌱 Emerging", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
+    developing: { label: "🌿 Developing", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" },
+    consistent: { label: "🌳 Consistent", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
+};
+const TAG_LABELS = {
+    emotional_regulation: "Regulasi Emosi",
+    language: "Bahasa",
+    social: "Sosial",
+    motor: "Motorik",
+    independence: "Kemandirian",
+};
+const WEEKLY_FOCUS_META = {
+    continue: { label: "▶️ Continue", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
+    try: { label: "🔄 Try", color: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300" },
+    support_needed: { label: "🆘 Support Needed", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" },
+};
+
 const GrowthJourneyHistory = ({ intervention, config, glassStyles }) => (
     <div className="lg:w-80 xl:w-96">
         <div className={`${glassStyles.inner} rounded-xl sm:rounded-2xl p-2.5 sm:p-4 h-full`}>
@@ -30,15 +48,45 @@ const GrowthJourneyHistory = ({ intervention, config, glassStyles }) => (
                                     <CalendarDays className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                                     {entry.date}
                                 </span>
-                                {entry.score != null && (
+                                {entry.signal ? (
+                                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] sm:text-xs font-semibold ${SIGNAL_META[entry.signal]?.color || ""}`}>
+                                        {SIGNAL_META[entry.signal]?.label}
+                                    </span>
+                                ) : entry.score != null && entry.score !== "-" && (
                                     <span className={`inline-flex items-center gap-0.5 sm:gap-1 px-1.5 py-0.5 rounded-full ${config.lightBg} ${config.text} text-[9px] sm:text-xs font-medium`}>
                                         <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                                         {entry.score} {intervention.progressUnit || "pts"}
                                     </span>
                                 )}
                             </div>
-                            <p className="text-[10px] sm:text-sm text-foreground dark:text-white line-clamp-2 leading-snug">{entry.notes}</p>
-                            {entry.celebration && (
+                            {/* CORN fields */}
+                            {entry.observation ? (
+                                <div className="space-y-0.5 mt-0.5">
+                                    {entry.context && <p className="text-[9px] sm:text-[11px] text-muted-foreground italic">📍 {entry.context}</p>}
+                                    <p className="text-[10px] sm:text-sm text-foreground dark:text-white line-clamp-3 leading-snug">{entry.observation}</p>
+                                    {entry.response && <p className="text-[9px] sm:text-[11px] text-muted-foreground">↩ {entry.response}</p>}
+                                    {entry.nextStep && <p className="text-[9px] sm:text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">→ {entry.nextStep}</p>}
+                                </div>
+                            ) : (
+                                <p className="text-[10px] sm:text-sm text-foreground dark:text-white line-clamp-2 leading-snug">{entry.notes}</p>
+                            )}
+                            {/* Domain tags */}
+                            {entry.tags?.length > 0 && (
+                                <div className="mt-1 flex flex-wrap gap-1">
+                                    {entry.tags.map((tag) => (
+                                        <span key={tag} className="px-1.5 py-0.5 rounded-full text-[8px] sm:text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                                            {TAG_LABELS[tag] || tag}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                            {/* Weekly focus */}
+                            {entry.weeklyFocus && (
+                                <div className={`mt-1 text-[9px] sm:text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full inline-flex items-center gap-0.5 sm:gap-1 ${WEEKLY_FOCUS_META[entry.weeklyFocus]?.color || ""}`}>
+                                    {WEEKLY_FOCUS_META[entry.weeklyFocus]?.label}
+                                </div>
+                            )}
+                            {entry.celebration && !entry.signal && (
                                 <div className="mt-1 sm:mt-2 text-[9px] sm:text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full inline-flex items-center gap-0.5 sm:gap-1">
                                     {entry.celebration}
                                 </div>

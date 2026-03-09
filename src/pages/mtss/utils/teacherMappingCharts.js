@@ -36,4 +36,11 @@ export const buildHistory = (assignment = {}) =>
             notes: entry.summary || entry.nextSteps || "Check-in recorded",
             celebration: entry.celebration || null,
             evidence: entry.evidence || [],
+            signal: entry.signal || null,
+            tags: entry.tags || [],
+            context: entry.context || null,
+            observation: entry.observation || null,
+            response: entry.response || null,
+            nextStep: entry.nextStep || null,
+            weeklyFocus: entry.weeklyFocus || null,
         }));

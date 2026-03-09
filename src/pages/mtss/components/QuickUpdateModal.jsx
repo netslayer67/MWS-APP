@@ -167,11 +167,30 @@ const ModalPlanChangeLog = ({ entries }) => {
     );
 };
 
+const DOMAIN_TAGS = [
+    { value: "emotional_regulation", label: "Regulasi Emosi" },
+    { value: "language", label: "Bahasa" },
+    { value: "social", label: "Sosial" },
+    { value: "motor", label: "Motorik" },
+    { value: "independence", label: "Kemandirian" },
+];
+const SIGNAL_OPTIONS = [
+    { value: "emerging", label: "🌱 Emerging", desc: "Baru muncul, belum konsisten" },
+    { value: "developing", label: "🌿 Developing", desc: "Ada perkembangan, perlu support" },
+    { value: "consistent", label: "🌳 Consistent", desc: "Mandiri & konsisten" },
+];
+const WEEKLY_FOCUS_OPTIONS = [
+    { value: "continue", label: "▶️ Continue", desc: "Lanjutkan strategi saat ini" },
+    { value: "try", label: "🔄 Try", desc: "Coba pendekatan baru" },
+    { value: "support_needed", label: "🆘 Support Needed", desc: "Perlu eskalasi / Tier 2" },
+];
+
 const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false }) => {
     const initialDate = useMemo(() => new Date().toISOString().split("T")[0], []);
     const assignmentOptions = useMemo(() => getEscalatedOptions(getAssignmentOptions(student)), [student]);
     const defaultOption = assignmentOptions[0];
     const defaultAssignmentId = defaultOption?.assignmentId || "";
+    const isKindergarten = /kindergarten/i.test(student?.grade || student?.currentGrade || "");
     const [formState, setFormState] = useState({
         date: initialDate,
         performed: "yes",
@@ -182,6 +201,14 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
         notes: "",
         badge: "🎉 Progress Party",
         assignmentId: defaultAssignmentId,
+        // Qualitative fields
+        signal: "",
+        tags: [],
+        context: "",
+        observation: "",
+        response: "",
+        nextStep: "",
+        weeklyFocus: "",
     });
     const [evidenceFiles, setEvidenceFiles] = useState([]);
     const [isMobileSheet, setIsMobileSheet] = useState(() =>
@@ -227,6 +254,16 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
         if (field === "assignmentId") {
             const option = assignmentOptions.find((opt) => opt.assignmentId === value);
             setFormState((prev) => ({ ...prev, assignmentId: value, scoreUnit: option?.metricLabel || prev.scoreUnit }));
+            return;
+        }
+        if (field === "tags") {
+            setFormState((prev) => {
+                const current = prev.tags || [];
+                return {
+                    ...prev,
+                    tags: current.includes(value) ? current.filter((t) => t !== value) : [...current, value],
+                };
+            });
             return;
         }
         setFormState((prev) => ({ ...prev, [field]: value }));
@@ -359,103 +396,259 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                         </section>
 
                         <section className="rounded-2xl border border-primary/15 bg-white/70 dark:bg-slate-900/40 p-4 sm:p-5 space-y-4">
-                            <p className="text-xs font-semibold uppercase tracking-[0.22em] sm:tracking-[0.3em] text-muted-foreground">Today Update</p>
-                            <div className="grid md:grid-cols-2 gap-4">
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">Date</label>
-                                    <input
-                                        type="date"
-                                        className={baseField}
-                                        value={formState.date}
-                                        onChange={(event) => handleChange("date", event.target.value)}
-                                    />
-                                </div>
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">
-                                        Intervention Performed?
-                                    </label>
-                                    <select
-                                        className={baseField}
-                                        value={formState.performed}
-                                        onChange={(event) => handleChange("performed", event.target.value)}
-                                    >
-                                        <option value="yes">Yes</option>
-                                        <option value="no">No</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            {formState.performed === "no" && (
-                                <div className="flex flex-col gap-3 p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-900/20 border border-amber-200/40 dark:border-amber-700/30">
-                                    <div className="flex flex-col gap-2">
-                                        <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-amber-700 dark:text-amber-400">
-                                            Reason Not Performed
-                                        </label>
-                                        <select
-                                            className={baseField}
-                                            value={formState.skipReason}
-                                            onChange={(event) => handleChange("skipReason", event.target.value)}
-                                        >
-                                            <option value="">Select a reason...</option>
-                                            {SKIP_REASONS.map((reason) => (
-                                                <option key={reason.value} value={reason.value}>{reason.label}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    {formState.skipReason === "other" && (
-                                        <div className="flex flex-col gap-2">
-                                            <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-amber-700 dark:text-amber-400">
-                                                Please specify
-                                            </label>
-                                            <input
-                                                type="text"
-                                                className={baseField}
-                                                placeholder="Describe the reason..."
-                                                value={formState.skipReasonNote}
-                                                onChange={(event) => handleChange("skipReasonNote", event.target.value)}
-                                            />
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            <div className="grid md:grid-cols-2 gap-4">
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">Status or Score</label>
-                                    <div className="grid grid-cols-[1fr_auto] gap-2">
-                                        <input
-                                            type="number"
-                                            className={baseField}
-                                            placeholder="e.g. 78"
-                                            value={formState.scoreValue}
-                                            onChange={(event) => handleChange("scoreValue", event.target.value)}
-                                        />
-                                        <div className={`${readonlyField} min-w-[94px] justify-center`}>{lockedUnit}</div>
-                                    </div>
-                                </div>
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">Celebration Emoji</label>
-                                    <select
-                                        className={baseField}
-                                        value={formState.badge}
-                                        onChange={(event) => handleChange("badge", event.target.value)}
-                                    >
-                                        <option value="🎉 Progress Party">🎉 Progress Party</option>
-                                        <option value="✨ Stellar Boost">✨ Stellar Boost</option>
-                                        <option value="🌈 Focus Mode">🌈 Focus Mode</option>
-                                    </select>
-                                </div>
+                            <div className="flex items-center gap-2">
+                                <p className="text-xs font-semibold uppercase tracking-[0.22em] sm:tracking-[0.3em] text-muted-foreground">
+                                    {isKindergarten ? "Observation Journal" : "Today Update"}
+                                </p>
+                                {isKindergarten && (
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                                        🌱 Qualitative Mode
+                                    </span>
+                                )}
                             </div>
 
                             <div className="flex flex-col gap-2">
-                                <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">Notes & Observations</label>
-                                <textarea
-                                    className={`${baseField} min-h-[132px] resize-y`}
-                                    placeholder="Describe the student's progress, challenges, or celebrations..."
-                                    value={formState.notes}
-                                    onChange={(event) => handleChange("notes", event.target.value)}
+                                <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">Date</label>
+                                <input
+                                    type="date"
+                                    className={baseField}
+                                    value={formState.date}
+                                    onChange={(event) => handleChange("date", event.target.value)}
                                 />
                             </div>
+
+                            {!isKindergarten && (
+                                <>
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">
+                                            Intervention Performed?
+                                        </label>
+                                        <select
+                                            className={baseField}
+                                            value={formState.performed}
+                                            onChange={(event) => handleChange("performed", event.target.value)}
+                                        >
+                                            <option value="yes">Yes</option>
+                                            <option value="no">No</option>
+                                        </select>
+                                    </div>
+                                    {formState.performed === "no" && (
+                                        <div className="flex flex-col gap-3 p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-900/20 border border-amber-200/40 dark:border-amber-700/30">
+                                            <div className="flex flex-col gap-2">
+                                                <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-amber-700 dark:text-amber-400">
+                                                    Reason Not Performed
+                                                </label>
+                                                <select
+                                                    className={baseField}
+                                                    value={formState.skipReason}
+                                                    onChange={(event) => handleChange("skipReason", event.target.value)}
+                                                >
+                                                    <option value="">Select a reason...</option>
+                                                    {SKIP_REASONS.map((reason) => (
+                                                        <option key={reason.value} value={reason.value}>{reason.label}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            {formState.skipReason === "other" && (
+                                                <div className="flex flex-col gap-2">
+                                                    <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-amber-700 dark:text-amber-400">
+                                                        Please specify
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        className={baseField}
+                                                        placeholder="Describe the reason..."
+                                                        value={formState.skipReasonNote}
+                                                        onChange={(event) => handleChange("skipReasonNote", event.target.value)}
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                    <div className="grid md:grid-cols-2 gap-4">
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">Status or Score</label>
+                                            <div className="grid grid-cols-[1fr_auto] gap-2">
+                                                <input
+                                                    type="number"
+                                                    className={baseField}
+                                                    placeholder="e.g. 78"
+                                                    value={formState.scoreValue}
+                                                    onChange={(event) => handleChange("scoreValue", event.target.value)}
+                                                />
+                                                <div className={`${readonlyField} min-w-[94px] justify-center`}>{lockedUnit}</div>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">Celebration Emoji</label>
+                                            <select
+                                                className={baseField}
+                                                value={formState.badge}
+                                                onChange={(event) => handleChange("badge", event.target.value)}
+                                            >
+                                                <option value="🎉 Progress Party">🎉 Progress Party</option>
+                                                <option value="✨ Stellar Boost">✨ Stellar Boost</option>
+                                                <option value="🌈 Focus Mode">🌈 Focus Mode</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">Notes & Observations</label>
+                                        <textarea
+                                            className={`${baseField} min-h-[132px] resize-y`}
+                                            placeholder="Describe the student's progress, challenges, or celebrations..."
+                                            value={formState.notes}
+                                            onChange={(event) => handleChange("notes", event.target.value)}
+                                        />
+                                    </div>
+                                </>
+                            )}
+
+                            {/* ── Kindergarten Qualitative CORN Form ── */}
+                            {isKindergarten && (
+                                <>
+                                    {/* CORN: Context */}
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-400">
+                                            C — Context
+                                        </label>
+                                        <input
+                                            type="text"
+                                            className={baseField}
+                                            placeholder="Kapan/di mana ini terjadi? (mis. Saat transisi ke meja)"
+                                            value={formState.context}
+                                            onChange={(event) => handleChange("context", event.target.value)}
+                                        />
+                                    </div>
+                                    {/* CORN: Observation */}
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-400">
+                                            O — Observation
+                                        </label>
+                                        <textarea
+                                            className={`${baseField} min-h-[80px] resize-y`}
+                                            placeholder="Apa yang kamu lihat? (factual, non-judgmental)"
+                                            value={formState.observation}
+                                            onChange={(event) => handleChange("observation", event.target.value)}
+                                        />
+                                    </div>
+                                    {/* CORN: Response */}
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-400">
+                                            R — Response
+                                        </label>
+                                        <input
+                                            type="text"
+                                            className={baseField}
+                                            placeholder="Apa yang kamu lakukan sebagai respons?"
+                                            value={formState.response}
+                                            onChange={(event) => handleChange("response", event.target.value)}
+                                        />
+                                    </div>
+                                    {/* CORN: Next Step */}
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-400">
+                                            N — Next Step
+                                        </label>
+                                        <input
+                                            type="text"
+                                            className={baseField}
+                                            placeholder="Strategi yang akan dicoba besok?"
+                                            value={formState.nextStep}
+                                            onChange={(event) => handleChange("nextStep", event.target.value)}
+                                        />
+                                    </div>
+                                    {/* Notes (summary auto-generated from CORN or manual) */}
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">
+                                            Summary Note <span className="text-muted-foreground/50">(opsional)</span>
+                                        </label>
+                                        <textarea
+                                            className={`${baseField} min-h-[72px] resize-y`}
+                                            placeholder="Catatan tambahan..."
+                                            value={formState.notes}
+                                            onChange={(event) => handleChange("notes", event.target.value)}
+                                        />
+                                    </div>
+                                    {/* Domain Tags */}
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                                            Domain Tags <span className="text-muted-foreground/50">(pilih semua yang sesuai)</span>
+                                        </label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {DOMAIN_TAGS.map((tag) => {
+                                                const active = formState.tags.includes(tag.value);
+                                                return (
+                                                    <button
+                                                        key={tag.value}
+                                                        type="button"
+                                                        onClick={() => handleChange("tags", tag.value)}
+                                                        className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                                                            active
+                                                                ? "bg-emerald-500 border-emerald-500 text-white shadow-sm"
+                                                                : "bg-white/80 dark:bg-white/10 border-primary/20 text-muted-foreground hover:border-emerald-400"
+                                                        }`}
+                                                    >
+                                                        {tag.label}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                    {/* Signal Level */}
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Signal Level</label>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {SIGNAL_OPTIONS.map((opt) => {
+                                                const active = formState.signal === opt.value;
+                                                return (
+                                                    <button
+                                                        key={opt.value}
+                                                        type="button"
+                                                        onClick={() => handleChange("signal", active ? "" : opt.value)}
+                                                        className={`flex flex-col items-center gap-1 px-2 py-3 rounded-2xl border text-center transition-all ${
+                                                            active
+                                                                ? "bg-emerald-500 border-emerald-500 text-white shadow-md"
+                                                                : "bg-white/80 dark:bg-white/10 border-primary/20 text-muted-foreground hover:border-emerald-400"
+                                                        }`}
+                                                    >
+                                                        <span className="text-sm font-bold">{opt.label}</span>
+                                                        <span className={`text-[10px] leading-tight ${active ? "text-white/80" : "text-muted-foreground/60"}`}>{opt.desc}</span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                    {/* Weekly Focus */}
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                                            Weekly Focus <span className="text-muted-foreground/50">(opsional)</span>
+                                        </label>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {WEEKLY_FOCUS_OPTIONS.map((opt) => {
+                                                const active = formState.weeklyFocus === opt.value;
+                                                return (
+                                                    <button
+                                                        key={opt.value}
+                                                        type="button"
+                                                        onClick={() => handleChange("weeklyFocus", active ? "" : opt.value)}
+                                                        className={`flex flex-col items-center gap-1 px-2 py-3 rounded-2xl border text-center transition-all ${
+                                                            active
+                                                                ? opt.value === "support_needed"
+                                                                    ? "bg-red-500 border-red-500 text-white shadow-md"
+                                                                    : "bg-blue-500 border-blue-500 text-white shadow-md"
+                                                                : "bg-white/80 dark:bg-white/10 border-primary/20 text-muted-foreground hover:border-blue-400"
+                                                        }`}
+                                                    >
+                                                        <span className="text-sm font-bold">{opt.label}</span>
+                                                        <span className={`text-[10px] leading-tight ${active ? "text-white/80" : "text-muted-foreground/60"}`}>{opt.desc}</span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
 
                             <div className="flex flex-col gap-2">
                                 <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">

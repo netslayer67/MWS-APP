@@ -4,6 +4,21 @@ import { buildStudentProfileView } from "../utils/studentProfileUtils";
 import { formatMentorDisplay } from "../utils/mentorNameUtils";
 import EvidenceViewer from "../components/EvidenceViewer";
 
+const SIGNAL_META = {
+    emerging: { label: "🌱 Emerging", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
+    developing: { label: "🌿 Developing", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" },
+    consistent: { label: "🌳 Consistent", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
+};
+const TAG_LABELS = {
+    emotional_regulation: "Regulasi Emosi", language: "Bahasa", social: "Sosial",
+    motor: "Motorik", independence: "Kemandirian",
+};
+const WEEKLY_FOCUS_META = {
+    continue: { label: "▶️ Continue", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
+    try: { label: "🔄 Try", color: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300" },
+    support_needed: { label: "🆘 Support Needed", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" },
+};
+
 const toTimestamp = (value) => {
     if (!value) return 0;
     const parsed = new Date(value).getTime();
@@ -65,9 +80,15 @@ const StudentMessagesPanel = ({ student, isLoading = false }) => {
                         from: mentor || "MTSS Mentor",
                         date: entry.date || "Recent",
                         dateRaw: entry.dateRaw || entry.createdAt || entry.date,
-                        text: entry.notes || "Check-in recorded",
+                        text: entry.observation || entry.notes || "Check-in recorded",
                         score: entry.score,
                         evidence: Array.isArray(entry.evidence) ? entry.evidence : [],
+                        signal: entry.signal || null,
+                        tags: Array.isArray(entry.tags) ? entry.tags : [],
+                        context: entry.context || null,
+                        response: entry.response || null,
+                        nextStep: entry.nextStep || null,
+                        weeklyFocus: entry.weeklyFocus || null,
                     });
                 });
             }
@@ -152,8 +173,36 @@ const StudentMessagesPanel = ({ student, isLoading = false }) => {
                                     <p className="text-xs text-slate-600 dark:text-slate-200">{message.date}</p>
                                 </div>
                                 <p className="text-sm font-black text-indigo-700 dark:text-indigo-100">{message.from}</p>
+                                {message.context && (
+                                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 italic">📍 {message.context}</p>
+                                )}
                                 <p className="mt-1 text-sm text-slate-700 dark:text-slate-100">{message.text}</p>
-                                {(message.score !== undefined && message.score !== null) && (
+                                {message.response && (
+                                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">↩ {message.response}</p>
+                                )}
+                                {message.nextStep && (
+                                    <p className="mt-0.5 text-xs text-emerald-700 dark:text-emerald-400 font-medium">→ {message.nextStep}</p>
+                                )}
+                                {message.signal && (
+                                    <span className={`mt-1.5 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${SIGNAL_META[message.signal]?.color || ""}`}>
+                                        {SIGNAL_META[message.signal]?.label}
+                                    </span>
+                                )}
+                                {message.tags?.length > 0 && (
+                                    <div className="mt-1 flex flex-wrap gap-1">
+                                        {message.tags.map((tag) => (
+                                            <span key={tag} className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                                                {TAG_LABELS[tag] || tag}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+                                {message.weeklyFocus && (
+                                    <div className={`mt-1 text-[11px] px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${WEEKLY_FOCUS_META[message.weeklyFocus]?.color || ""}`}>
+                                        {WEEKLY_FOCUS_META[message.weeklyFocus]?.label}
+                                    </div>
+                                )}
+                                {!message.signal && message.score !== undefined && message.score !== null && (
                                     <p className="mt-1 text-xs text-slate-600 dark:text-slate-200">Score: {message.score}</p>
                                 )}
                                 {message.evidence?.length > 0 && (
