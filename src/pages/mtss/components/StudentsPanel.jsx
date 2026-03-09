@@ -3,6 +3,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import StudentsTable from "./StudentsTable";
 import QuickUpdateModal from "./QuickUpdateModal";
+import KindergartenWeeklyFocusOverview from "./KindergartenWeeklyFocusOverview";
 import { updateMentorAssignment, uploadEvidence } from "@/services/mtssService";
 import { ensureStudentInterventions, getMostCriticalForDisplay } from "../utils/interventionUtils";
 import { FilterBar, RosterHeader, LoadMore, STUDENTS_PANEL_BATCH } from "./StudentsPanelParts";
@@ -129,6 +130,7 @@ const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh, onEd
     return (
         <div className="space-y-6 mtss-theme">
             <FilterBar activeTier={activeTier} setActiveTier={setActiveTier} query={query} setQuery={setQuery} />
+            <KindergartenWeeklyFocusOverview students={filteredStudents} />
 
             <section
                 className="rounded-[32px] border border-white/40 bg-white/95 dark:bg-slate-900/40 p-6 space-y-4 shadow-[0_14px_48px_rgba(15,23,42,0.14)]"

@@ -4,6 +4,12 @@ import { X, History, ChevronDown } from "lucide-react";
 import { normalizeTierCode } from "../utils/teacherMappingHelpers";
 import { SKIP_REASONS } from "../config/interventionFormConfig";
 import EvidenceUploader from "./EvidenceUploader";
+import { fetchKindergartenInterventionBank } from "@/services/mtssService";
+import {
+    FALLBACK_INTERVENTION_BANK,
+    FALLBACK_SIGNAL_LEVELS,
+    FALLBACK_WEEKLY_FOCUS_OPTIONS,
+} from "../data/kindergartenInterventionBank";
 
 const baseField =
     "w-full px-4 py-3 rounded-2xl bg-white/80 dark:bg-white/10 border border-primary/20 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all";
@@ -174,16 +180,19 @@ const DOMAIN_TAGS = [
     { value: "motor", label: "Motorik" },
     { value: "independence", label: "Kemandirian" },
 ];
-const SIGNAL_OPTIONS = [
-    { value: "emerging", label: "🌱 Emerging", desc: "Baru muncul, belum konsisten" },
-    { value: "developing", label: "🌿 Developing", desc: "Ada perkembangan, perlu support" },
-    { value: "consistent", label: "🌳 Consistent", desc: "Mandiri & konsisten" },
-];
-const WEEKLY_FOCUS_OPTIONS = [
-    { value: "continue", label: "▶️ Continue", desc: "Lanjutkan strategi saat ini" },
-    { value: "try", label: "🔄 Try", desc: "Coba pendekatan baru" },
-    { value: "support_needed", label: "🆘 Support Needed", desc: "Perlu eskalasi / Tier 2" },
-];
+const SIGNAL_COPY = {
+    emerging: "Baru muncul, belum konsisten",
+    developing: "Ada perkembangan, perlu support",
+    consistent: "Mandiri & konsisten",
+};
+
+const WEEKLY_FOCUS_COPY = {
+    continue: "Lanjutkan strategi saat ini",
+    try: "Coba pendekatan baru",
+    support_needed: "Perlu eskalasi / Tier 2",
+};
+
+let kindergartenBankCache = null;
 
 const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false }) => {
     const initialDate = useMemo(() => new Date().toISOString().split("T")[0], []);
@@ -214,6 +223,10 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
     const [isMobileSheet, setIsMobileSheet] = useState(() =>
         typeof window !== "undefined" ? window.matchMedia("(max-width: 639px)").matches : false,
     );
+    const [interventionBank, setInterventionBank] = useState(() => kindergartenBankCache || FALLBACK_INTERVENTION_BANK);
+    const [signalLevels, setSignalLevels] = useState(FALLBACK_SIGNAL_LEVELS);
+    const [weeklyFocusOptions, setWeeklyFocusOptions] = useState(FALLBACK_WEEKLY_FOCUS_OPTIONS);
+    const [bankLoading, setBankLoading] = useState(false);
 
     const selectedOption = assignmentOptions.find((opt) => opt.assignmentId === formState.assignmentId);
     const lockedUnit = selectedOption?.metricLabel || formState.scoreUnit || "score";
@@ -223,6 +236,8 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
     const monitoringDetail = buildMonitoringLabel(selectedOption);
     const baselineTargetDetail = buildBaselineTargetLabel(selectedOption);
     const gradeLabel = student?.grade || student?.currentGrade || "Grade";
+    const selectedSignal = formState.signal || null;
+    const hasSelectedTags = Array.isArray(formState.tags) && formState.tags.length > 0;
 
     useEffect(() => {
         if (typeof window === "undefined") return undefined;
@@ -248,6 +263,65 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
         };
     }, [student]);
 
+    useEffect(() => {
+        if (!isKindergarten) return undefined;
+        if (kindergartenBankCache) {
+            setInterventionBank(kindergartenBankCache);
+            return undefined;
+        }
+        let active = true;
+        setBankLoading(true);
+        fetchKindergartenInterventionBank()
+            .then((payload = {}) => {
+                if (!active) return;
+                const bank = payload.interventionBank || FALLBACK_INTERVENTION_BANK;
+                kindergartenBankCache = bank;
+                setInterventionBank(bank);
+                if (Array.isArray(payload.signalLevels) && payload.signalLevels.length) {
+                    setSignalLevels(payload.signalLevels);
+                }
+                if (Array.isArray(payload.weeklyFocusOptions) && payload.weeklyFocusOptions.length) {
+                    setWeeklyFocusOptions(payload.weeklyFocusOptions);
+                }
+            })
+            .catch(() => {
+                if (!active) return;
+                setInterventionBank(FALLBACK_INTERVENTION_BANK);
+            })
+            .finally(() => {
+                if (active) setBankLoading(false);
+            });
+        return () => {
+            active = false;
+        };
+    }, [isKindergarten]);
+
+    const interventionSuggestions = useMemo(() => {
+        if (!isKindergarten) return [];
+        const tags = hasSelectedTags ? formState.tags : DOMAIN_TAGS.map((tag) => tag.value).slice(0, 2);
+        const result = [];
+        tags.forEach((tag) => {
+            const domain = interventionBank?.[tag];
+            if (!domain || !Array.isArray(domain.strategies)) return;
+            const list = selectedSignal
+                ? domain.strategies.filter((strategy) => !Array.isArray(strategy.signals) || strategy.signals.includes(selectedSignal))
+                : domain.strategies;
+            list.slice(0, 3).forEach((strategy) => {
+                result.push({
+                    ...strategy,
+                    domainTag: tag,
+                    domainLabel: domain.label || tag,
+                });
+            });
+        });
+        const uniqueById = new Map();
+        result.forEach((item) => {
+            const key = `${item.domainTag}:${item.id || item.title}`;
+            if (!uniqueById.has(key)) uniqueById.set(key, item);
+        });
+        return Array.from(uniqueById.values()).slice(0, 8);
+    }, [formState.tags, hasSelectedTags, interventionBank, isKindergarten, selectedSignal]);
+
     if (!student) return null;
 
     const handleChange = (field, value) => {
@@ -267,6 +341,14 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
             return;
         }
         setFormState((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleUseStrategy = (strategy) => {
+        const strategyText = strategy?.title || strategy?.label;
+        if (!strategyText) return;
+        const existing = formState.nextStep?.trim();
+        const nextText = existing ? `${existing}; ${strategyText}` : strategyText;
+        handleChange("nextStep", nextText);
     };
 
     const handleSubmit = (event) => {
@@ -506,148 +588,208 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
 
                             {/* ── Kindergarten Qualitative CORN Form ── */}
                             {isKindergarten && (
-                                <>
-                                    {/* CORN: Context */}
-                                    <div className="flex flex-col gap-2">
-                                        <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-400">
-                                            C — Context
-                                        </label>
-                                        <input
-                                            type="text"
-                                            className={baseField}
-                                            placeholder="Kapan/di mana ini terjadi? (mis. Saat transisi ke meja)"
-                                            value={formState.context}
-                                            onChange={(event) => handleChange("context", event.target.value)}
-                                        />
-                                    </div>
-                                    {/* CORN: Observation */}
-                                    <div className="flex flex-col gap-2">
-                                        <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-400">
-                                            O — Observation
-                                        </label>
-                                        <textarea
-                                            className={`${baseField} min-h-[80px] resize-y`}
-                                            placeholder="Apa yang kamu lihat? (factual, non-judgmental)"
-                                            value={formState.observation}
-                                            onChange={(event) => handleChange("observation", event.target.value)}
-                                        />
-                                    </div>
-                                    {/* CORN: Response */}
-                                    <div className="flex flex-col gap-2">
-                                        <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-400">
-                                            R — Response
-                                        </label>
-                                        <input
-                                            type="text"
-                                            className={baseField}
-                                            placeholder="Apa yang kamu lakukan sebagai respons?"
-                                            value={formState.response}
-                                            onChange={(event) => handleChange("response", event.target.value)}
-                                        />
-                                    </div>
-                                    {/* CORN: Next Step */}
-                                    <div className="flex flex-col gap-2">
-                                        <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-400">
-                                            N — Next Step
-                                        </label>
-                                        <input
-                                            type="text"
-                                            className={baseField}
-                                            placeholder="Strategi yang akan dicoba besok?"
-                                            value={formState.nextStep}
-                                            onChange={(event) => handleChange("nextStep", event.target.value)}
-                                        />
-                                    </div>
-                                    {/* Notes (summary auto-generated from CORN or manual) */}
-                                    <div className="flex flex-col gap-2">
-                                        <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">
-                                            Summary Note <span className="text-muted-foreground/50">(opsional)</span>
-                                        </label>
-                                        <textarea
-                                            className={`${baseField} min-h-[72px] resize-y`}
-                                            placeholder="Catatan tambahan..."
-                                            value={formState.notes}
-                                            onChange={(event) => handleChange("notes", event.target.value)}
-                                        />
-                                    </div>
-                                    {/* Domain Tags */}
-                                    <div className="flex flex-col gap-2">
-                                        <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                                            Domain Tags <span className="text-muted-foreground/50">(pilih semua yang sesuai)</span>
-                                        </label>
-                                        <div className="flex flex-wrap gap-2">
-                                            {DOMAIN_TAGS.map((tag) => {
-                                                const active = formState.tags.includes(tag.value);
-                                                return (
-                                                    <button
-                                                        key={tag.value}
-                                                        type="button"
-                                                        onClick={() => handleChange("tags", tag.value)}
-                                                        className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                                                            active
-                                                                ? "bg-emerald-500 border-emerald-500 text-white shadow-sm"
-                                                                : "bg-white/80 dark:bg-white/10 border-primary/20 text-muted-foreground hover:border-emerald-400"
-                                                        }`}
-                                                    >
-                                                        {tag.label}
-                                                    </button>
-                                                );
-                                            })}
+                                <div className="grid lg:grid-cols-[minmax(0,1fr)_300px] gap-4 items-start">
+                                    <div className="space-y-4">
+                                        {/* CORN: Context */}
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-400">
+                                                C — Context
+                                            </label>
+                                            <input
+                                                type="text"
+                                                className={baseField}
+                                                placeholder="Kapan/di mana ini terjadi? (mis. Saat transisi ke meja)"
+                                                value={formState.context}
+                                                onChange={(event) => handleChange("context", event.target.value)}
+                                            />
+                                        </div>
+                                        {/* CORN: Observation */}
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-400">
+                                                O — Observation
+                                            </label>
+                                            <textarea
+                                                className={`${baseField} min-h-[80px] resize-y`}
+                                                placeholder="Apa yang kamu lihat? (factual, non-judgmental)"
+                                                value={formState.observation}
+                                                onChange={(event) => handleChange("observation", event.target.value)}
+                                            />
+                                        </div>
+                                        {/* CORN: Response */}
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-400">
+                                                R — Response
+                                            </label>
+                                            <input
+                                                type="text"
+                                                className={baseField}
+                                                placeholder="Apa yang kamu lakukan sebagai respons?"
+                                                value={formState.response}
+                                                onChange={(event) => handleChange("response", event.target.value)}
+                                            />
+                                        </div>
+                                        {/* CORN: Next Step */}
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-400">
+                                                N — Next Step
+                                            </label>
+                                            <input
+                                                type="text"
+                                                className={baseField}
+                                                placeholder="Strategi yang akan dicoba besok?"
+                                                value={formState.nextStep}
+                                                onChange={(event) => handleChange("nextStep", event.target.value)}
+                                            />
+                                        </div>
+                                        {/* Notes (summary auto-generated from CORN or manual) */}
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">
+                                                Summary Note <span className="text-muted-foreground/50">(opsional)</span>
+                                            </label>
+                                            <textarea
+                                                className={`${baseField} min-h-[72px] resize-y`}
+                                                placeholder="Catatan tambahan..."
+                                                value={formState.notes}
+                                                onChange={(event) => handleChange("notes", event.target.value)}
+                                            />
+                                        </div>
+                                        {/* Domain Tags */}
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                                                Domain Tags <span className="text-muted-foreground/50">(pilih semua yang sesuai)</span>
+                                            </label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {DOMAIN_TAGS.map((tag) => {
+                                                    const active = formState.tags.includes(tag.value);
+                                                    return (
+                                                        <button
+                                                            key={tag.value}
+                                                            type="button"
+                                                            onClick={() => handleChange("tags", tag.value)}
+                                                            className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                                                                active
+                                                                    ? "bg-emerald-500 border-emerald-500 text-white shadow-sm"
+                                                                    : "bg-white/80 dark:bg-white/10 border-primary/20 text-muted-foreground hover:border-emerald-400"
+                                                            }`}
+                                                        >
+                                                            {tag.label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                        {/* Signal Level */}
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Signal Level</label>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                {signalLevels.map((opt) => {
+                                                    const active = formState.signal === opt.value;
+                                                    return (
+                                                        <button
+                                                            key={opt.value}
+                                                            type="button"
+                                                            onClick={() => handleChange("signal", active ? "" : opt.value)}
+                                                            className={`flex flex-col items-center gap-1 px-2 py-3 rounded-2xl border text-center transition-all ${
+                                                                active
+                                                                    ? "bg-emerald-500 border-emerald-500 text-white shadow-md"
+                                                                    : "bg-white/80 dark:bg-white/10 border-primary/20 text-muted-foreground hover:border-emerald-400"
+                                                            }`}
+                                                        >
+                                                            <span className="text-sm font-bold">
+                                                                {opt.value === "emerging" && "🌱 "}
+                                                                {opt.value === "developing" && "🌿 "}
+                                                                {opt.value === "consistent" && "🌳 "}
+                                                                {opt.label}
+                                                            </span>
+                                                            <span className={`text-[10px] leading-tight ${active ? "text-white/80" : "text-muted-foreground/60"}`}>
+                                                                {SIGNAL_COPY[opt.value] || ""}
+                                                            </span>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                        {/* Weekly Focus */}
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                                                Weekly Focus <span className="text-muted-foreground/50">(opsional)</span>
+                                            </label>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                {weeklyFocusOptions.map((opt) => {
+                                                    const active = formState.weeklyFocus === opt.value;
+                                                    return (
+                                                        <button
+                                                            key={opt.value}
+                                                            type="button"
+                                                            onClick={() => handleChange("weeklyFocus", active ? "" : opt.value)}
+                                                            className={`flex flex-col items-center gap-1 px-2 py-3 rounded-2xl border text-center transition-all ${
+                                                                active
+                                                                    ? opt.value === "support_needed"
+                                                                        ? "bg-red-500 border-red-500 text-white shadow-md"
+                                                                        : "bg-blue-500 border-blue-500 text-white shadow-md"
+                                                                    : "bg-white/80 dark:bg-white/10 border-primary/20 text-muted-foreground hover:border-blue-400"
+                                                            }`}
+                                                        >
+                                                            <span className="text-sm font-bold">
+                                                                {opt.value === "continue" && "▶️ "}
+                                                                {opt.value === "try" && "🔄 "}
+                                                                {opt.value === "support_needed" && "🆘 "}
+                                                                {opt.label}
+                                                            </span>
+                                                            <span className={`text-[10px] leading-tight ${active ? "text-white/80" : "text-muted-foreground/60"}`}>
+                                                                {WEEKLY_FOCUS_COPY[opt.value] || ""}
+                                                            </span>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
                                     </div>
-                                    {/* Signal Level */}
-                                    <div className="flex flex-col gap-2">
-                                        <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Signal Level</label>
-                                        <div className="grid grid-cols-3 gap-2">
-                                            {SIGNAL_OPTIONS.map((opt) => {
-                                                const active = formState.signal === opt.value;
-                                                return (
-                                                    <button
-                                                        key={opt.value}
-                                                        type="button"
-                                                        onClick={() => handleChange("signal", active ? "" : opt.value)}
-                                                        className={`flex flex-col items-center gap-1 px-2 py-3 rounded-2xl border text-center transition-all ${
-                                                            active
-                                                                ? "bg-emerald-500 border-emerald-500 text-white shadow-md"
-                                                                : "bg-white/80 dark:bg-white/10 border-primary/20 text-muted-foreground hover:border-emerald-400"
-                                                        }`}
-                                                    >
-                                                        <span className="text-sm font-bold">{opt.label}</span>
-                                                        <span className={`text-[10px] leading-tight ${active ? "text-white/80" : "text-muted-foreground/60"}`}>{opt.desc}</span>
-                                                    </button>
-                                                );
-                                            })}
+
+                                    <aside className="rounded-2xl border border-emerald-200/60 dark:border-emerald-700/30 bg-emerald-50/50 dark:bg-emerald-900/10 p-4 space-y-3 lg:sticky lg:top-1">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div>
+                                                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-300">
+                                                    Intervention Bank
+                                                </p>
+                                                <p className="text-xs text-emerald-700/80 dark:text-emerald-200/80">
+                                                    Saran strategi berdasarkan domain + signal
+                                                </p>
+                                            </div>
+                                            {bankLoading && <span className="text-[10px] text-muted-foreground">Loading...</span>}
                                         </div>
-                                    </div>
-                                    {/* Weekly Focus */}
-                                    <div className="flex flex-col gap-2">
-                                        <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                                            Weekly Focus <span className="text-muted-foreground/50">(opsional)</span>
-                                        </label>
-                                        <div className="grid grid-cols-3 gap-2">
-                                            {WEEKLY_FOCUS_OPTIONS.map((opt) => {
-                                                const active = formState.weeklyFocus === opt.value;
-                                                return (
+
+                                        {!hasSelectedTags && (
+                                            <p className="text-[11px] text-muted-foreground">
+                                                Pilih minimal 1 domain tag agar saran lebih relevan.
+                                            </p>
+                                        )}
+
+                                        <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+                                            {interventionSuggestions.length ? (
+                                                interventionSuggestions.map((strategy) => (
                                                     <button
-                                                        key={opt.value}
+                                                        key={`${strategy.domainTag}-${strategy.id || strategy.title}`}
                                                         type="button"
-                                                        onClick={() => handleChange("weeklyFocus", active ? "" : opt.value)}
-                                                        className={`flex flex-col items-center gap-1 px-2 py-3 rounded-2xl border text-center transition-all ${
-                                                            active
-                                                                ? opt.value === "support_needed"
-                                                                    ? "bg-red-500 border-red-500 text-white shadow-md"
-                                                                    : "bg-blue-500 border-blue-500 text-white shadow-md"
-                                                                : "bg-white/80 dark:bg-white/10 border-primary/20 text-muted-foreground hover:border-blue-400"
-                                                        }`}
+                                                        onClick={() => handleUseStrategy(strategy)}
+                                                        className="w-full text-left rounded-xl border border-emerald-200/70 dark:border-emerald-700/40 bg-white/85 dark:bg-white/5 px-3 py-2 hover:border-emerald-400 transition"
                                                     >
-                                                        <span className="text-sm font-bold">{opt.label}</span>
-                                                        <span className={`text-[10px] leading-tight ${active ? "text-white/80" : "text-muted-foreground/60"}`}>{opt.desc}</span>
+                                                        <p className="text-xs font-semibold text-foreground">{strategy.title || strategy.label}</p>
+                                                        <p className="text-[10px] text-muted-foreground mt-0.5">{strategy.domainLabel}</p>
                                                     </button>
-                                                );
-                                            })}
+                                                ))
+                                            ) : (
+                                                <p className="text-[11px] text-muted-foreground">
+                                                    Belum ada strategi yang cocok untuk kombinasi domain dan signal saat ini.
+                                                </p>
+                                            )}
                                         </div>
-                                    </div>
-                                </>
+
+                                        <p className="text-[10px] text-muted-foreground">
+                                            Klik strategi untuk auto-fill ke <span className="font-semibold">Next Step</span>.
+                                        </p>
+                                    </aside>
+                                </div>
                             )}
 
                             <div className="flex flex-col gap-2">
