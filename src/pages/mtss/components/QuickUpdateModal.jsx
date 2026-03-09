@@ -174,22 +174,22 @@ const ModalPlanChangeLog = ({ entries }) => {
 };
 
 const DOMAIN_TAGS = [
-    { value: "emotional_regulation", label: "Regulasi Emosi" },
-    { value: "language", label: "Bahasa" },
-    { value: "social", label: "Sosial" },
-    { value: "motor", label: "Motorik" },
-    { value: "independence", label: "Kemandirian" },
+    { value: "emotional_regulation", label: "Emotional Regulation" },
+    { value: "language", label: "Language" },
+    { value: "social", label: "Social" },
+    { value: "motor", label: "Motor Skills" },
+    { value: "independence", label: "Independence" },
 ];
 const SIGNAL_COPY = {
-    emerging: "Baru muncul, belum konsisten",
-    developing: "Ada perkembangan, perlu support",
-    consistent: "Mandiri & konsisten",
+    emerging: "Newly appearing, not yet consistent",
+    developing: "Showing progress, still needs support",
+    consistent: "Independent and consistent",
 };
 
 const WEEKLY_FOCUS_COPY = {
-    continue: "Lanjutkan strategi saat ini",
-    try: "Coba pendekatan baru",
-    support_needed: "Perlu eskalasi / Tier 2",
+    continue: "Continue current strategy",
+    try: "Try a new approach",
+    support_needed: "Needs escalation / Tier 2",
 };
 
 let kindergartenBankCache = null;
@@ -598,7 +598,7 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                                             <input
                                                 type="text"
                                                 className={baseField}
-                                                placeholder="Kapan/di mana ini terjadi? (mis. Saat transisi ke meja)"
+                                                placeholder="When/where did this happen? (e.g., transition to desk time)"
                                                 value={formState.context}
                                                 onChange={(event) => handleChange("context", event.target.value)}
                                             />
@@ -610,7 +610,7 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                                             </label>
                                             <textarea
                                                 className={`${baseField} min-h-[80px] resize-y`}
-                                                placeholder="Apa yang kamu lihat? (factual, non-judgmental)"
+                                                placeholder="What did you observe? (factual, non-judgmental)"
                                                 value={formState.observation}
                                                 onChange={(event) => handleChange("observation", event.target.value)}
                                             />
@@ -623,7 +623,7 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                                             <input
                                                 type="text"
                                                 className={baseField}
-                                                placeholder="Apa yang kamu lakukan sebagai respons?"
+                                                placeholder="What response did you provide?"
                                                 value={formState.response}
                                                 onChange={(event) => handleChange("response", event.target.value)}
                                             />
@@ -636,7 +636,7 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                                             <input
                                                 type="text"
                                                 className={baseField}
-                                                placeholder="Strategi yang akan dicoba besok?"
+                                                placeholder="What strategy will be tried next?"
                                                 value={formState.nextStep}
                                                 onChange={(event) => handleChange("nextStep", event.target.value)}
                                             />
@@ -780,7 +780,7 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                                                 ))
                                             ) : (
                                                 <p className="text-[11px] text-muted-foreground">
-                                                    Belum ada strategi yang cocok untuk kombinasi domain dan signal saat ini.
+                                                    No matching strategy found for the current domain and signal combination.
                                                 </p>
                                             )}
                                         </div>

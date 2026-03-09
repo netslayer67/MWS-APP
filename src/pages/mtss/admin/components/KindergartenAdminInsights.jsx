@@ -47,7 +47,7 @@ const KindergartenAdminInsights = memo(({ analytics }) => {
     if (!analytics) {
         return (
             <div className="rounded-[28px] border border-white/40 bg-white/85 dark:bg-white/5 p-6 text-sm text-muted-foreground">
-                Kindergarten analytics belum tersedia.
+                Kindergarten analytics are not available yet.
             </div>
         );
     }
@@ -59,7 +59,7 @@ const KindergartenAdminInsights = memo(({ analytics }) => {
                     <div>
                         <p className="text-xs uppercase tracking-[0.32em] text-muted-foreground">Kindergarten Pulse</p>
                         <h3 className="text-xl font-black text-foreground dark:text-white">
-                            Domain Heatmap ({weeks.length || 0} minggu)
+                            Domain Heatmap ({weeks.length || 0} weeks)
                         </h3>
                     </div>
                     <BarChart3 className="w-5 h-5 text-indigo-500" />
@@ -108,10 +108,10 @@ const KindergartenAdminInsights = memo(({ analytics }) => {
                         <div key={entry.className} className="rounded-2xl bg-white/70 dark:bg-white/5 border border-primary/10 p-3">
                             <p className="text-sm font-semibold text-foreground dark:text-white">{entry.className}</p>
                             <p className="text-xs text-muted-foreground mt-1">
-                                {entry.studentCount} siswa • {entry.totalObservations} observasi minggu ini
+                                {entry.studentCount} students • {entry.totalObservations} observations this week
                             </p>
                             <p className="text-xs text-indigo-600 dark:text-indigo-300 mt-1">
-                                Dominan: {entry.dominantDomainLabel || "Belum cukup data"}
+                                Dominant: {entry.dominantDomainLabel || "Not enough data yet"}
                             </p>
                         </div>
                     ))}
@@ -121,7 +121,7 @@ const KindergartenAdminInsights = memo(({ analytics }) => {
             <section className="grid gap-6 lg:grid-cols-2">
                 <div className="glass glass-card mtss-card-surface p-6 rounded-[32px] space-y-4">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-bold text-foreground dark:text-white">Signal Distribution (minggu ini)</h3>
+                        <h3 className="text-lg font-bold text-foreground dark:text-white">Signal Distribution (this week)</h3>
                         <Users2 className="w-5 h-5 text-sky-500" />
                     </div>
                     <div className="space-y-3">
@@ -133,7 +133,7 @@ const KindergartenAdminInsights = memo(({ analytics }) => {
                                 <div key={signalKey}>
                                     <div className="flex items-center justify-between text-sm mb-1">
                                         <span className="font-semibold text-foreground dark:text-white">{meta.label}</span>
-                                        <span className="text-muted-foreground">{count} siswa ({percent}%)</span>
+                                        <span className="text-muted-foreground">{count} students ({percent}%)</span>
                                     </div>
                                     <div className="h-2.5 rounded-full bg-white/20">
                                         <div className={`h-full rounded-full bg-gradient-to-r ${meta.accent}`} style={{ width: `${percent}%` }} />
@@ -142,7 +142,7 @@ const KindergartenAdminInsights = memo(({ analytics }) => {
                             );
                         })}
                         <p className="text-xs text-muted-foreground pt-1">
-                            Total siswa terdeteksi signal minggu ini: {signalDistribution?.total || 0}
+                            Total students with signal detected this week: {signalDistribution?.total || 0}
                         </p>
                     </div>
                 </div>
@@ -173,7 +173,7 @@ const KindergartenAdminInsights = memo(({ analytics }) => {
                             </div>
                         ))}
                         {!(tierMonitoring?.escalationCandidates || []).length && (
-                            <p className="text-xs text-muted-foreground">Belum ada kandidat eskalasi minggu ini.</p>
+                            <p className="text-xs text-muted-foreground">No escalation candidates this week.</p>
                         )}
                     </div>
                 </div>
@@ -183,7 +183,7 @@ const KindergartenAdminInsights = memo(({ analytics }) => {
                 <div className="flex items-center justify-between">
                     <div>
                         <h3 className="text-lg font-bold text-foreground dark:text-white">Teacher Fidelity Check</h3>
-                        <p className="text-xs text-muted-foreground">Cek rutinitas observasi qualitative per mentor</p>
+                        <p className="text-xs text-muted-foreground">Review qualitative observation routine per mentor</p>
                     </div>
                     <AlertTriangle className="w-5 h-5 text-amber-500" />
                 </div>
@@ -208,7 +208,7 @@ const KindergartenAdminInsights = memo(({ analytics }) => {
                                     <td className="px-3 py-2 text-center">
                                         {formatDate(teacher.lastObservationDate)}
                                         {teacher.daysSinceLastObservation !== null && (
-                                            <span className="block text-[11px] text-muted-foreground">{teacher.daysSinceLastObservation} hari lalu</span>
+                                            <span className="block text-[11px] text-muted-foreground">{teacher.daysSinceLastObservation} days ago</span>
                                         )}
                                     </td>
                                     <td className="px-3 py-2 text-center">

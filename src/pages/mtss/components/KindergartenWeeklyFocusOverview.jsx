@@ -22,7 +22,7 @@ const toSafeDate = (value) => {
 
 const formatDate = (value) => {
     const parsed = toSafeDate(value);
-    if (!parsed) return "Belum ada";
+    if (!parsed) return "No data yet";
     return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(parsed);
 };
 
@@ -94,7 +94,7 @@ const KindergartenWeeklyFocusOverview = memo(({ students = [] }) => {
                     <h4 className="text-lg font-semibold text-foreground">Overview per Child</h4>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                    {rows.length} siswa • {supportNeededCount} butuh perhatian lanjutan
+                    {rows.length} students • {supportNeededCount} need follow-up support
                 </div>
             </div>
 
@@ -116,7 +116,7 @@ const KindergartenWeeklyFocusOverview = memo(({ students = [] }) => {
                                 </span>
                             ) : (
                                 <span className="px-2 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                                    Weekly focus belum diisi
+                                    Weekly focus not set
                                 </span>
                             )}
                             {row.signal && (

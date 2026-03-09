@@ -8,11 +8,11 @@ const SIGNAL_META = {
     consistent: { label: "🌳 Consistent", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
 };
 const TAG_LABELS = {
-    emotional_regulation: "Regulasi Emosi",
-    language: "Bahasa",
-    social: "Sosial",
-    motor: "Motorik",
-    independence: "Kemandirian",
+    emotional_regulation: "Emotional Regulation",
+    language: "Language",
+    social: "Social",
+    motor: "Motor Skills",
+    independence: "Independence",
 };
 const WEEKLY_FOCUS_META = {
     continue: { label: "▶️ Continue", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
