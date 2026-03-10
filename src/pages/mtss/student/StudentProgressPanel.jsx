@@ -54,6 +54,13 @@ const formatReviewDate = (value, fallback = "Awaiting schedule") => {
     }
 };
 
+const toReadableToken = (value = "") =>
+    String(value || "")
+        .replace(/_/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+
 const resolveInterventionGoal = (intervention, fallback) => {
     if (!intervention) return fallback;
     if (intervention.goal) return intervention.goal;
@@ -179,6 +186,9 @@ const StudentProgressPanel = ({
         const growthCards = Array.isArray(growthBoard.cards) ? growthBoard.cards : [];
         const moodOptions = Array.isArray(moodCheckin.options) ? moodCheckin.options : [];
         const regulationOptions = Array.isArray(moodCheckin.regulationOptions) ? moodCheckin.regulationOptions : [];
+        const moodHistoryEntries = Array.isArray(moodCheckin.recent) ? moodCheckin.recent.slice(0, 7) : [];
+        const moodOptionMap = new Map(moodOptions.map((option) => [option.value, option]));
+        const regulationOptionMap = new Map(regulationOptions.map((option) => [option.value, option]));
         const moodLocked = portalViewMode === "parent_proxy";
 
         return (
@@ -325,6 +335,64 @@ const StudentProgressPanel = ({
                                 {isSubmittingMood ? "Saving..." : "Save Daily Mood"}
                             </button>
                         </>
+                    )}
+                </div>
+
+                <div className="rounded-[30px] border border-white/80 bg-white/90 p-5 shadow-md backdrop-blur-xl dark:border-white/20 dark:bg-slate-900/82 space-y-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-xs uppercase tracking-[0.35em] text-slate-600 dark:text-slate-200">Mood History</p>
+                            <h3 className="text-lg font-black text-slate-800 dark:text-white">Last 7 Days</h3>
+                        </div>
+                        <span className="rounded-full border border-white/70 bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 dark:border-white/20 dark:bg-slate-800/70 dark:text-slate-100">
+                            {moodHistoryEntries.length} records
+                        </span>
+                    </div>
+
+                    {moodHistoryEntries.length > 0 ? (
+                        <div className="space-y-2">
+                            {moodHistoryEntries.map((entry, idx) => {
+                                const moodMeta = moodOptionMap.get(entry?.mood);
+                                const regulationMeta = regulationOptionMap.get(entry?.regulationChoice);
+                                const sourceLabel = entry?.source === "parent_proxy" ? "Parent Proxy" : "Student";
+                                return (
+                                    <div
+                                        key={entry?.id || `${entry?.date || "mood"}-${idx}`}
+                                        className="rounded-2xl border border-white/80 bg-white/92 p-3 dark:border-white/20 dark:bg-slate-800/72"
+                                    >
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <p className="text-xs font-semibold text-slate-500 dark:text-slate-300">
+                                                {entry?.dateLabel || "-"}
+                                            </p>
+                                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-200">
+                                                {sourceLabel}
+                                            </span>
+                                        </div>
+
+                                        <div className="mt-2 flex flex-wrap gap-2">
+                                            <span className="rounded-full bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-700 dark:bg-violet-900/45 dark:text-violet-100">
+                                                {moodMeta?.icon || "🙂"} {moodMeta?.label || toReadableToken(entry?.mood || "Not set")}
+                                            </span>
+                                            {entry?.regulationChoice && (
+                                                <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
+                                                    {regulationMeta?.icon || "🌿"} {regulationMeta?.label || toReadableToken(entry.regulationChoice)}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {entry?.note && (
+                                            <p className="mt-2 text-sm text-slate-700 dark:text-slate-200">
+                                                {entry.note}
+                                            </p>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="rounded-2xl border border-white/80 bg-gradient-to-r from-violet-50 to-cyan-50 px-4 py-3 text-sm text-slate-700 dark:border-white/20 dark:from-violet-950/55 dark:to-cyan-950/55 dark:text-slate-200">
+                            No mood records yet. Save daily mood check-ins to build this 7-day history.
+                        </div>
                     )}
                 </div>
             </div>
