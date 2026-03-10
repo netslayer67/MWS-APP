@@ -49,9 +49,9 @@
 
 html.dark .shp-photo-veil {
     background:
-        radial-gradient(920px circle at 18% 24%, rgba(255, 255, 255, 0.08), transparent 62%),
-        radial-gradient(900px circle at 82% 16%, rgba(112, 149, 255, 0.16), transparent 58%),
-        linear-gradient(180deg, rgba(10, 18, 36, 0.76) 0%, rgba(11, 21, 41, 0.82) 48%, rgba(12, 23, 44, 0.86) 100%);
+        radial-gradient(920px circle at 18% 24%, rgba(255, 255, 255, 0.16), transparent 62%),
+        radial-gradient(900px circle at 82% 16%, rgba(214, 229, 255, 0.24), transparent 58%),
+        linear-gradient(180deg, rgba(241, 238, 252, 0.66) 0%, rgba(237, 243, 255, 0.74) 48%, rgba(242, 248, 255, 0.78) 100%);
 }
 
 /* ── Accent orbs ──────────────────────────────────────── */

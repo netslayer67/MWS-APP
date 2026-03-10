@@ -32,7 +32,7 @@
     <!-- Force-update stale service workers on version bump -->
     <script>
         (function () {
-            var SW_VERSION = '2';
+            var SW_VERSION = '3';
             if (localStorage.getItem('sw_version') !== SW_VERSION && 'serviceWorker' in navigator) {
                 localStorage.setItem('sw_version', SW_VERSION);
                 navigator.serviceWorker.getRegistrations().then(function (regs) {
