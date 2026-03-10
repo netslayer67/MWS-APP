@@ -9,6 +9,18 @@ import {
     getStatusLabel
 } from "../config/studentProfileConfig";
 
+const SIGNAL_META = {
+    emerging: { label: "Emerging", style: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
+    developing: { label: "Developing", style: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" },
+    consistent: { label: "Consistent", style: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
+};
+
+const WEEKLY_FOCUS_META = {
+    continue: { label: "Continue", style: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
+    try: { label: "Try", style: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300" },
+    support_needed: { label: "Support Needed", style: "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300" },
+};
+
 const InterventionCard = memo(({
     intervention,
     index,
@@ -18,10 +30,13 @@ const InterventionCard = memo(({
     const config = INTERVENTION_CONFIG[intervention.type] || INTERVENTION_CONFIG.SEL;
     const tierCfg = TIER_CONFIG[intervention.tier] || TIER_CONFIG.tier1;
     const isTier1 = intervention.tier === 'tier1' || !intervention.hasRealData;
+    const isQualitative = intervention.mode === "qualitative";
     const tierLabel = intervention.tierLabel || tierCfg.label;
     const statusLabel = getStatusLabel(intervention.status);
     const tierBadgeStyle = getTierBadgeStyle(intervention.tier);
     const statusBadgeStyle = getStatusBadgeStyle(intervention.status);
+    const signalMeta = intervention.latestSignal ? SIGNAL_META[intervention.latestSignal] : null;
+    const weeklyFocusMeta = intervention.latestWeeklyFocus ? WEEKLY_FOCUS_META[intervention.latestWeeklyFocus] : null;
 
     return (
         <div
@@ -89,27 +104,46 @@ const InterventionCard = memo(({
                         {intervention.strategyName || intervention.focusArea || "Core supports"}
                     </p>
 
-                    {/* Progress Bar */}
-                    <div className="space-y-1">
-                        <div className="flex justify-between items-center text-[10px] sm:text-xs">
-                            <span className="text-muted-foreground font-medium">Progress</span>
-                            <span className={`font-bold sm:text-sm ${config.text}`}>{intervention.progress || 0}%</span>
+                    {isQualitative ? (
+                        <div className="space-y-1.5">
+                            <div className="flex flex-wrap gap-1">
+                                {signalMeta && (
+                                    <span className={`inline-flex rounded-full px-2 py-0.5 text-[9px] sm:text-[10px] font-semibold ${signalMeta.style}`}>
+                                        Signal: {signalMeta.label}
+                                    </span>
+                                )}
+                                {weeklyFocusMeta && (
+                                    <span className={`inline-flex rounded-full px-2 py-0.5 text-[9px] sm:text-[10px] font-semibold ${weeklyFocusMeta.style}`}>
+                                        Focus: {weeklyFocusMeta.label}
+                                    </span>
+                                )}
+                            </div>
+                            <p className="text-[9px] sm:text-xs text-slate-600 dark:text-slate-300">
+                                Journal entries: <span className="font-semibold">{intervention.checkInsCount || 0}</span>
+                            </p>
                         </div>
-                        <div className="h-1.5 sm:h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${intervention.progress || 0}%` }}
-                                transition={{ delay: 0.3 + index * 0.1, duration: 0.8, ease: "easeOut" }}
-                                className={`h-full rounded-full bg-gradient-to-r ${config.gradient}`}
-                            />
+                    ) : (
+                        <div className="space-y-1">
+                            <div className="flex justify-between items-center text-[10px] sm:text-xs">
+                                <span className="text-muted-foreground font-medium">Progress</span>
+                                <span className={`font-bold sm:text-sm ${config.text}`}>{intervention.progress || 0}%</span>
+                            </div>
+                            <div className="h-1.5 sm:h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${intervention.progress || 0}%` }}
+                                    transition={{ delay: 0.3 + index * 0.1, duration: 0.8, ease: "easeOut" }}
+                                    className={`h-full rounded-full bg-gradient-to-r ${config.gradient}`}
+                                />
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Footer */}
                     <div className="flex items-center justify-between pt-1.5 sm:pt-2 border-t border-slate-200/60 dark:border-slate-700/40">
                         <span className="text-[9px] sm:text-xs text-muted-foreground flex items-center gap-1">
                             <CalendarDays className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                            {intervention.checkInsCount || 0} check-ins
+                            {intervention.checkInsCount || 0} {isQualitative ? "observations" : "check-ins"}
                         </span>
                         {intervention.hasRealData && (
                             <span className={`inline-flex items-center gap-0.5 sm:gap-1 text-[9px] sm:text-xs font-semibold ${config.text} group-hover:translate-x-1 transition-transform`}>

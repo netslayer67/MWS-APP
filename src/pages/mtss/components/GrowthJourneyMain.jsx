@@ -77,6 +77,41 @@ const formatLogDate = (dateValue) => {
     return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
 };
 
+const SIGNAL_META = {
+    emerging: {
+        label: "Emerging",
+        chip: "bg-amber-100 text-amber-700 dark:bg-amber-900/35 dark:text-amber-300",
+        text: "text-amber-700 dark:text-amber-300",
+        bar: "bg-amber-500",
+    },
+    developing: {
+        label: "Developing",
+        chip: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/35 dark:text-emerald-300",
+        text: "text-emerald-700 dark:text-emerald-300",
+        bar: "bg-emerald-500",
+    },
+    consistent: {
+        label: "Consistent",
+        chip: "bg-green-100 text-green-700 dark:bg-green-900/35 dark:text-green-300",
+        text: "text-green-700 dark:text-green-300",
+        bar: "bg-green-500",
+    },
+};
+
+const WEEKLY_FOCUS_META = {
+    continue: { label: "Continue", chip: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
+    try: { label: "Try", chip: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300" },
+    support_needed: { label: "Support Needed", chip: "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300" },
+};
+
+const DOMAIN_LABELS = {
+    emotional_regulation: "Emotional Regulation",
+    language: "Language",
+    social: "Social",
+    motor: "Motor Skills",
+    independence: "Independence",
+};
+
 const InfoCard = ({ icon: Icon, label, value, gradient, shortLabel, onClick }) => (
     <button
         type="button"
@@ -240,6 +275,19 @@ const GrowthJourneyMain = ({
     const hasCompactRow = hasStrategy || hasDuration || hasFrequency || hasMentor;
     const toneKey = intervention?.type?.toUpperCase?.() || "DEFAULT";
     const monitoringTone = MONITORING_TONES[toneKey] || MONITORING_TONES.DEFAULT;
+    const isQualitative = intervention?.mode === "qualitative";
+    const latestSignal = intervention?.latestSignal || null;
+    const latestWeeklyFocus = intervention?.latestWeeklyFocus || null;
+    const latestTags = Array.isArray(intervention?.latestTags) ? intervention.latestTags : [];
+    const latestContext = intervention?.latestContext || null;
+    const latestObservation = intervention?.latestObservation || null;
+    const latestResponse = intervention?.latestResponse || null;
+    const latestNextStep = intervention?.latestNextStep || null;
+    const signalDistribution = intervention?.signalDistribution || {};
+    const signalKeys = ["emerging", "developing", "consistent"];
+    const totalSignals = signalKeys.reduce((sum, key) => sum + Number(signalDistribution[key] || 0), 0);
+    const latestHistory = Array.isArray(intervention?.history) ? intervention.history[0] : null;
+    const lastObservationDate = latestHistory?.date || "-";
     const [notesSheetOpen, setNotesSheetOpen] = useState(false);
     const [detailSheet, setDetailSheet] = useState(null);
 
@@ -248,14 +296,16 @@ const GrowthJourneyMain = ({
 
     return (
         <div className="flex-1 space-y-3 sm:space-y-5">
-            {/* Header: Icon + Label + Progress */}
+            {/* Header: Icon + Label */}
             <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                     <div className={`w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br ${config.gradient} flex items-center justify-center shadow-lg flex-shrink-0`}>
                         <TrendingUp className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
                     </div>
                     <div className="min-w-0">
-                        <p className="text-[8px] sm:text-xs uppercase tracking-wider text-muted-foreground">Growth Journey</p>
+                        <p className="text-[8px] sm:text-xs uppercase tracking-wider text-muted-foreground">
+                            {isQualitative ? "Learning Story" : "Growth Journey"}
+                        </p>
                         <h3 className="text-sm sm:text-xl font-bold text-foreground dark:text-white flex items-center gap-1.5 sm:gap-2">
                             <div className={`w-6 h-6 sm:w-10 sm:h-10 rounded-lg sm:rounded-2xl bg-gradient-to-br ${config.gradient} flex items-center justify-center shadow-lg flex-shrink-0`}>
                                 <CurrentIcon className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-white" />
@@ -264,124 +314,225 @@ const GrowthJourneyMain = ({
                         </h3>
                     </div>
                 </div>
-                <span className={`text-2xl sm:text-5xl font-black bg-gradient-to-r ${config.gradient} text-transparent bg-clip-text flex-shrink-0`}>
-                    {intervention.progress || 0}%
-                </span>
-            </div>
-
-            {/* Chart */}
-            <div className="relative rounded-xl sm:rounded-2xl p-2.5 sm:p-4 bg-white/80 dark:bg-slate-800/60 border border-white/60 dark:border-slate-700/40">
-                <div className="h-40 sm:h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={intervention.chart || []} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
-                            <defs>
-                                <linearGradient id={`gradient-${intervention.id}`} x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor={config.chartColor} stopOpacity={0.35} />
-                                    <stop offset="95%" stopColor={config.chartColor} stopOpacity={0.02} />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" vertical={false} />
-                            {intervention.target != null && (
-                                <ReferenceLine
-                                    y={Number(intervention.target) || 0}
-                                    stroke="#f59e0b"
-                                    strokeDasharray="8 4"
-                                    strokeWidth={1.5}
-                                    label={{ value: `Target: ${intervention.target}`, position: "insideTopRight", fill: "#f59e0b", fontSize: 9, fontWeight: 600 }}
-                                />
-                            )}
-                            {intervention.baseline != null && (
-                                <ReferenceLine
-                                    y={Number(intervention.baseline) || 0}
-                                    stroke="#f472b6"
-                                    strokeDasharray="4 4"
-                                    strokeWidth={1}
-                                    label={{ value: `Baseline: ${intervention.baseline}`, position: "insideBottomRight", fill: "#f472b6", fontSize: 9, fontWeight: 600 }}
-                                />
-                            )}
-                            <XAxis
-                                dataKey="label"
-                                tick={{ fill: "rgba(148,163,184,1)", fontSize: 9, fontWeight: 500 }}
-                                stroke="rgba(148,163,184,0.3)"
-                                tickLine={false}
-                                dy={4}
-                            />
-                            <YAxis
-                                tick={{ fill: "rgba(148,163,184,1)", fontSize: 9, fontWeight: 500 }}
-                                stroke="rgba(148,163,184,0.3)"
-                                tickLine={false}
-                                axisLine={false}
-                            />
-                            <Tooltip
-                                contentStyle={{
-                                    borderRadius: 14,
-                                    border: "1px solid rgba(148,163,184,0.2)",
-                                    backdropFilter: "blur(16px)",
-                                    background: "rgba(255,255,255,0.95)",
-                                    boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
-                                    fontSize: 12,
-                                    padding: "8px 12px",
-                                }}
-                                labelStyle={{ fontWeight: 700, marginBottom: 4, color: "#334155" }}
-                                formatter={(value, name) => {
-                                    const label = name === "reading" ? "Score" : name === "goal" ? "Goal Line" : name;
-                                    return [value, label];
-                                }}
-                                cursor={{ stroke: config.chartColor, strokeWidth: 1, strokeDasharray: "4 4" }}
-                            />
-                            <Legend
-                                verticalAlign="top"
-                                align="right"
-                                iconType="circle"
-                                iconSize={7}
-                                wrapperStyle={{ fontSize: 10, fontWeight: 600, paddingBottom: 4 }}
-                                formatter={(value) => {
-                                    if (value === "reading") return "Progress";
-                                    if (value === "goal") return "Goal Line";
-                                    return value;
-                                }}
-                            />
-                            <Area
-                                type="monotone"
-                                dataKey="reading"
-                                name="reading"
-                                stroke={config.chartColor}
-                                strokeWidth={2.5}
-                                fill={`url(#gradient-${intervention.id})`}
-                                dot={{ r: 3, fill: config.chartColor, stroke: "#fff", strokeWidth: 1.5 }}
-                                activeDot={{ r: 5, fill: config.chartColor, stroke: "#fff", strokeWidth: 2 }}
-                            />
-                            <Line
-                                type="monotone"
-                                dataKey="goal"
-                                name="goal"
-                                stroke="#0ea5e9"
-                                strokeWidth={2}
-                                strokeDasharray="6 4"
-                                dot={false}
-                                activeDot={{ r: 4, fill: "#0ea5e9", stroke: "#fff", strokeWidth: 2 }}
-                            />
-                        </AreaChart>
-                    </ResponsiveContainer>
-                </div>
-            </div>
-
-            {/* Baseline / Current / Target — always 3-col */}
-            <div className="grid grid-cols-3 gap-1.5 sm:gap-3 max-w-2xl mx-auto">
-                {[
-                    { label: "Baseline", value: intervention.baseline, color: "from-pink-500 to-rose-500", bg: "bg-pink-50 dark:bg-pink-900/20" },
-                    { label: "Current", value: intervention.current, color: "from-emerald-500 to-teal-500", bg: "bg-emerald-50 dark:bg-emerald-900/20" },
-                    { label: "Target", value: intervention.target, color: "from-amber-500 to-orange-500", bg: "bg-amber-50 dark:bg-amber-900/20" },
-                ].map((stat) => (
-                    <div key={stat.label} className={`${stat.bg} rounded-lg sm:rounded-2xl p-2 sm:p-4 text-center`}>
-                        <p className="text-[8px] sm:text-xs uppercase tracking-wider text-muted-foreground mb-0.5 sm:mb-1">{stat.label}</p>
-                        <p className={`text-base sm:text-2xl font-black bg-gradient-to-r ${stat.color} text-transparent bg-clip-text`}>
-                            {stat.value ?? "-"}
-                        </p>
-                        <p className="text-[8px] sm:text-xs text-muted-foreground">{intervention.progressUnit || "pts"}</p>
+                {isQualitative ? (
+                    <div className="flex flex-col items-end gap-1">
+                        {latestSignal && (
+                            <span className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold ${SIGNAL_META[latestSignal]?.chip || "bg-slate-100 text-slate-700"}`}>
+                                Signal: {SIGNAL_META[latestSignal]?.label || latestSignal}
+                            </span>
+                        )}
+                        {!latestSignal && (
+                            <span className="px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800/80 dark:text-slate-300">
+                                Signal not logged
+                            </span>
+                        )}
+                        <span className="text-[10px] sm:text-xs text-muted-foreground">
+                            {intervention.checkInsCount || 0} observations
+                        </span>
                     </div>
-                ))}
+                ) : (
+                    <span className={`text-2xl sm:text-5xl font-black bg-gradient-to-r ${config.gradient} text-transparent bg-clip-text flex-shrink-0`}>
+                        {intervention.progress ?? 0}%
+                    </span>
+                )}
             </div>
+
+            {isQualitative ? (
+                <div className="relative rounded-xl sm:rounded-2xl p-2.5 sm:p-4 bg-white/80 dark:bg-slate-800/60 border border-white/60 dark:border-slate-700/40 space-y-3">
+                    <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
+                        <div className="rounded-lg sm:rounded-2xl p-2 sm:p-4 text-center bg-emerald-50 dark:bg-emerald-900/20">
+                            <p className="text-[8px] sm:text-xs uppercase tracking-wider text-muted-foreground mb-0.5 sm:mb-1">Observations</p>
+                            <p className="text-base sm:text-2xl font-black text-emerald-600 dark:text-emerald-300">{intervention.checkInsCount || 0}</p>
+                            <p className="text-[8px] sm:text-xs text-muted-foreground">journal logs</p>
+                        </div>
+                        <div className="rounded-lg sm:rounded-2xl p-2 sm:p-4 text-center bg-violet-50 dark:bg-violet-900/20">
+                            <p className="text-[8px] sm:text-xs uppercase tracking-wider text-muted-foreground mb-0.5 sm:mb-1">Last Logged</p>
+                            <p className="text-[11px] sm:text-base font-bold text-violet-700 dark:text-violet-300">{lastObservationDate}</p>
+                            <p className="text-[8px] sm:text-xs text-muted-foreground">latest update</p>
+                        </div>
+                        <div className="rounded-lg sm:rounded-2xl p-2 sm:p-4 text-center bg-amber-50 dark:bg-amber-900/20">
+                            <p className="text-[8px] sm:text-xs uppercase tracking-wider text-muted-foreground mb-0.5 sm:mb-1">Weekly Focus</p>
+                            <p className="text-[11px] sm:text-base font-bold text-amber-700 dark:text-amber-300">
+                                {WEEKLY_FOCUS_META[latestWeeklyFocus]?.label || "Not set"}
+                            </p>
+                            <p className="text-[8px] sm:text-xs text-muted-foreground">teacher intent</p>
+                        </div>
+                    </div>
+
+                    <div className="rounded-lg sm:rounded-xl border border-white/60 dark:border-slate-700/40 bg-white/70 dark:bg-slate-900/50 p-2 sm:p-3">
+                        <p className="text-[8px] sm:text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Signal Distribution</p>
+                        <div className="space-y-1.5">
+                            {signalKeys.map((signalKey) => {
+                                const count = Number(signalDistribution[signalKey] || 0);
+                                const ratio = totalSignals > 0 ? Math.round((count / totalSignals) * 100) : 0;
+                                return (
+                                    <div key={signalKey} className="space-y-0.5">
+                                        <div className="flex items-center justify-between text-[10px] sm:text-xs">
+                                            <span className={`font-semibold ${SIGNAL_META[signalKey].text}`}>
+                                                {SIGNAL_META[signalKey].label}
+                                            </span>
+                                            <span className="text-muted-foreground">{count}</span>
+                                        </div>
+                                        <div className="h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                                            <div
+                                                className={`h-full rounded-full transition-all duration-500 ${SIGNAL_META[signalKey].bar}`}
+                                                style={{ width: `${ratio}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div className="rounded-lg sm:rounded-xl border border-white/60 dark:border-slate-700/40 bg-white/70 dark:bg-slate-900/50 p-2.5 sm:p-3">
+                        <p className="text-[8px] sm:text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">CORN Observation Snapshot</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                            <div className="rounded-lg border border-slate-200/70 dark:border-slate-700/50 p-2">
+                                <p className="text-[8px] uppercase tracking-wider text-muted-foreground">Context</p>
+                                <p className="text-[10px] sm:text-xs text-foreground dark:text-slate-100 leading-snug">{latestContext || "-"}</p>
+                            </div>
+                            <div className="rounded-lg border border-slate-200/70 dark:border-slate-700/50 p-2">
+                                <p className="text-[8px] uppercase tracking-wider text-muted-foreground">Observation</p>
+                                <p className="text-[10px] sm:text-xs text-foreground dark:text-slate-100 leading-snug">{latestObservation || "-"}</p>
+                            </div>
+                            <div className="rounded-lg border border-slate-200/70 dark:border-slate-700/50 p-2">
+                                <p className="text-[8px] uppercase tracking-wider text-muted-foreground">Response</p>
+                                <p className="text-[10px] sm:text-xs text-foreground dark:text-slate-100 leading-snug">{latestResponse || "-"}</p>
+                            </div>
+                            <div className="rounded-lg border border-slate-200/70 dark:border-slate-700/50 p-2">
+                                <p className="text-[8px] uppercase tracking-wider text-muted-foreground">Next Step</p>
+                                <p className="text-[10px] sm:text-xs text-foreground dark:text-slate-100 leading-snug">{latestNextStep || "-"}</p>
+                            </div>
+                        </div>
+                        {latestTags.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                                {latestTags.map((tag) => (
+                                    <span key={tag} className="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800/80 dark:text-slate-300">
+                                        {DOMAIN_LABELS[tag] || tag}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            ) : (
+                <>
+                    {/* Chart */}
+                    <div className="relative rounded-xl sm:rounded-2xl p-2.5 sm:p-4 bg-white/80 dark:bg-slate-800/60 border border-white/60 dark:border-slate-700/40">
+                        <div className="h-40 sm:h-64">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={intervention.chart || []} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id={`gradient-${intervention.id}`} x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor={config.chartColor} stopOpacity={0.35} />
+                                            <stop offset="95%" stopColor={config.chartColor} stopOpacity={0.02} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" vertical={false} />
+                                    {intervention.target != null && (
+                                        <ReferenceLine
+                                            y={Number(intervention.target) || 0}
+                                            stroke="#f59e0b"
+                                            strokeDasharray="8 4"
+                                            strokeWidth={1.5}
+                                            label={{ value: `Target: ${intervention.target}`, position: "insideTopRight", fill: "#f59e0b", fontSize: 9, fontWeight: 600 }}
+                                        />
+                                    )}
+                                    {intervention.baseline != null && (
+                                        <ReferenceLine
+                                            y={Number(intervention.baseline) || 0}
+                                            stroke="#f472b6"
+                                            strokeDasharray="4 4"
+                                            strokeWidth={1}
+                                            label={{ value: `Baseline: ${intervention.baseline}`, position: "insideBottomRight", fill: "#f472b6", fontSize: 9, fontWeight: 600 }}
+                                        />
+                                    )}
+                                    <XAxis
+                                        dataKey="label"
+                                        tick={{ fill: "rgba(148,163,184,1)", fontSize: 9, fontWeight: 500 }}
+                                        stroke="rgba(148,163,184,0.3)"
+                                        tickLine={false}
+                                        dy={4}
+                                    />
+                                    <YAxis
+                                        tick={{ fill: "rgba(148,163,184,1)", fontSize: 9, fontWeight: 500 }}
+                                        stroke="rgba(148,163,184,0.3)"
+                                        tickLine={false}
+                                        axisLine={false}
+                                    />
+                                    <Tooltip
+                                        contentStyle={{
+                                            borderRadius: 14,
+                                            border: "1px solid rgba(148,163,184,0.2)",
+                                            backdropFilter: "blur(16px)",
+                                            background: "rgba(255,255,255,0.95)",
+                                            boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
+                                            fontSize: 12,
+                                            padding: "8px 12px",
+                                        }}
+                                        labelStyle={{ fontWeight: 700, marginBottom: 4, color: "#334155" }}
+                                        formatter={(value, name) => {
+                                            const label = name === "reading" ? "Score" : name === "goal" ? "Goal Line" : name;
+                                            return [value, label];
+                                        }}
+                                        cursor={{ stroke: config.chartColor, strokeWidth: 1, strokeDasharray: "4 4" }}
+                                    />
+                                    <Legend
+                                        verticalAlign="top"
+                                        align="right"
+                                        iconType="circle"
+                                        iconSize={7}
+                                        wrapperStyle={{ fontSize: 10, fontWeight: 600, paddingBottom: 4 }}
+                                        formatter={(value) => {
+                                            if (value === "reading") return "Progress";
+                                            if (value === "goal") return "Goal Line";
+                                            return value;
+                                        }}
+                                    />
+                                    <Area
+                                        type="monotone"
+                                        dataKey="reading"
+                                        name="reading"
+                                        stroke={config.chartColor}
+                                        strokeWidth={2.5}
+                                        fill={`url(#gradient-${intervention.id})`}
+                                        dot={{ r: 3, fill: config.chartColor, stroke: "#fff", strokeWidth: 1.5 }}
+                                        activeDot={{ r: 5, fill: config.chartColor, stroke: "#fff", strokeWidth: 2 }}
+                                    />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="goal"
+                                        name="goal"
+                                        stroke="#0ea5e9"
+                                        strokeWidth={2}
+                                        strokeDasharray="6 4"
+                                        dot={false}
+                                        activeDot={{ r: 4, fill: "#0ea5e9", stroke: "#fff", strokeWidth: 2 }}
+                                    />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    {/* Baseline / Current / Target */}
+                    <div className="grid grid-cols-3 gap-1.5 sm:gap-3 max-w-2xl mx-auto">
+                        {[
+                            { label: "Baseline", value: intervention.baseline, color: "from-pink-500 to-rose-500", bg: "bg-pink-50 dark:bg-pink-900/20" },
+                            { label: "Current", value: intervention.current, color: "from-emerald-500 to-teal-500", bg: "bg-emerald-50 dark:bg-emerald-900/20" },
+                            { label: "Target", value: intervention.target, color: "from-amber-500 to-orange-500", bg: "bg-amber-50 dark:bg-amber-900/20" },
+                        ].map((stat) => (
+                            <div key={stat.label} className={`${stat.bg} rounded-lg sm:rounded-2xl p-2 sm:p-4 text-center`}>
+                                <p className="text-[8px] sm:text-xs uppercase tracking-wider text-muted-foreground mb-0.5 sm:mb-1">{stat.label}</p>
+                                <p className={`text-base sm:text-2xl font-black bg-gradient-to-r ${stat.color} text-transparent bg-clip-text`}>
+                                    {stat.value ?? "-"}
+                                </p>
+                                <p className="text-[8px] sm:text-xs text-muted-foreground">{intervention.progressUnit || "pts"}</p>
+                            </div>
+                        ))}
+                    </div>
+                </>
+            )}
 
             {/* Info Cards — 2-col grid on mobile */}
             {(hasCompactRow || hasGoal || hasMonitoring || hasStartDate || hasNotes) && (

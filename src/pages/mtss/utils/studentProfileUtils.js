@@ -3,6 +3,13 @@ import { formatDate } from "./teacherCommonUtils";
 import { formatMentorDisplay } from "./mentorNameUtils";
 
 const hasValue = (value) => value !== null && value !== undefined && value !== "";
+const KINDERGARTEN_PATTERN = /(kindergarten|pre[-\s]?k|\bk\s*1\b|\bk\s*2\b|kindy)/i;
+
+const isKindergartenStudentRecord = (student = {}) => {
+    const gradePool = `${student?.grade || ""} ${student?.currentGrade || ""} ${student?.className || ""}`;
+    if (KINDERGARTEN_PATTERN.test(gradePool)) return true;
+    return Boolean(student?.kindergartenPortal?.isKindergarten);
+};
 
 const resolveGoalLabel = (intervention) => {
     if (!intervention) return null;
@@ -20,6 +27,16 @@ const resolveGoalLabel = (intervention) => {
 
 const buildMergedInterventions = (student) => {
     const { interventionDetails = [] } = student;
+    const isKindergartenStudent = isKindergartenStudentRecord(student);
+    if (isKindergartenStudent) {
+        const kindergartenDetails = interventionDetails.filter((detail) => detail?.mode !== "quantitative");
+        return kindergartenDetails.map((detail, index) => ({
+            ...detail,
+            hasRealData: true,
+            type: detail.type || `KINDERGARTEN_${index + 1}`,
+        }));
+    }
+
     const allInterventions = ensureStudentInterventions(student.interventions);
 
     return allInterventions.map((intervention) => {
@@ -67,13 +84,14 @@ export const buildStudentProfileView = (student, selectedIntervention) => {
             monitoringMethodLabel: null,
             startDateLabel: null,
             notesLabel: null,
+            isKindergartenQualitative: false,
+            latestSignal: null,
         };
     }
 
     const { profile = {} } = student;
+    const isKindergartenStudent = isKindergartenStudentRecord(student);
     const mergedInterventions = buildMergedInterventions(student);
-    const allInterventions = ensureStudentInterventions(student.interventions);
-    const highlight = pickPrimaryIntervention(allInterventions);
 
     const sortedInterventions = [...mergedInterventions].sort((a, b) => {
         const tierOrder = { tier3: 0, tier2: 1, tier1: 2 };
@@ -82,9 +100,21 @@ export const buildStudentProfileView = (student, selectedIntervention) => {
         return (tierOrder[aTier] ?? 2) - (tierOrder[bTier] ?? 2);
     });
 
+    const hasQualitativeIntervention = sortedInterventions.some((item) => item?.mode === "qualitative");
+    const isKindergartenQualitative = Boolean(
+        student?.kindergartenPortal?.isQualitative || (isKindergartenStudent && hasQualitativeIntervention),
+    );
+    const allInterventions = isKindergartenQualitative ? [] : ensureStudentInterventions(student.interventions);
     const escalatedInterventions = sortedInterventions.filter((item) => item.tier === "tier2" || item.tier === "tier3");
     const defaultSelected = escalatedInterventions[0] || sortedInterventions[0] || null;
     const currentIntervention = selectedIntervention || defaultSelected;
+    const highlight = isKindergartenQualitative
+        ? {
+            label: currentIntervention?.label || "Learning Story",
+            tierCode: currentIntervention?.tier || "tier1",
+            tier: currentIntervention?.tierLabel || "Tier 1",
+        }
+        : pickPrimaryIntervention(allInterventions);
 
     const strategyLabel = currentIntervention?.strategyName || currentIntervention?.focusArea || null;
     const durationLabel = currentIntervention?.duration || null;
@@ -105,6 +135,7 @@ export const buildStudentProfileView = (student, selectedIntervention) => {
         ? formatDate(currentIntervention.startDate, { month: "short", day: "numeric", year: "numeric" })
         : null;
     const notesLabel = hasValue(currentIntervention?.notes) ? currentIntervention.notes : null;
+    const latestSignal = currentIntervention?.latestSignal || null;
 
     return {
         profile,
@@ -119,5 +150,7 @@ export const buildStudentProfileView = (student, selectedIntervention) => {
         monitoringMethodLabel,
         startDateLabel,
         notesLabel,
+        isKindergartenQualitative,
+        latestSignal,
     };
 };

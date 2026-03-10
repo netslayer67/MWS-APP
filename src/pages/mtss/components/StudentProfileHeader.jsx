@@ -2,11 +2,19 @@ import { memo } from "react";
 import { ProgressBadge } from "./StatusPills";
 import { TIER_CONFIG } from "../config/studentProfileConfig";
 
+const SIGNAL_META = {
+    emerging: { label: "Signal: Emerging", style: "bg-amber-500/85 text-white" },
+    developing: { label: "Signal: Developing", style: "bg-emerald-500/85 text-white" },
+    consistent: { label: "Signal: Consistent", style: "bg-green-500/85 text-white" },
+};
+
 const StudentProfileHeader = memo(({
     student,
     highlight,
     currentTier,
-    currentInterventionLabel
+    currentInterventionLabel,
+    isKindergartenQualitative = false,
+    latestSignal = null
 }) => {
     const tierConfig = TIER_CONFIG[currentTier] || TIER_CONFIG.tier1;
     const classLabel = student.className && student.className !== student.grade ? student.className : null;
@@ -44,7 +52,20 @@ const StudentProfileHeader = memo(({
                         <span className="px-2.5 py-1 sm:px-4 sm:py-2 rounded-full text-[10px] sm:text-sm font-semibold bg-white/15 backdrop-blur-sm">
                             {currentInterventionLabel || highlight?.label || "Universal"}
                         </span>
-                        <ProgressBadge status={student.progress} />
+                        {isKindergartenQualitative ? (
+                            <>
+                                <span className="px-2.5 py-1 sm:px-4 sm:py-2 rounded-full text-[10px] sm:text-sm font-semibold bg-white/20 backdrop-blur-sm">
+                                    Qualitative MTSS
+                                </span>
+                                {latestSignal && (
+                                    <span className={`px-2.5 py-1 sm:px-4 sm:py-2 rounded-full text-[10px] sm:text-sm font-semibold ${SIGNAL_META[latestSignal]?.style || "bg-white/20 text-white"}`}>
+                                        {SIGNAL_META[latestSignal]?.label || `Signal: ${latestSignal}`}
+                                    </span>
+                                )}
+                            </>
+                        ) : (
+                            <ProgressBadge status={student.progress} />
+                        )}
                     </div>
                 </div>
             </div>
