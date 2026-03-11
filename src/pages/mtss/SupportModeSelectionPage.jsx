@@ -454,14 +454,25 @@ const SupportModeSelectionPage = memo(() => {
     };
   }, []);
 
+  const OBSERVER_EMAILS = new Set(["mahrukh@millennia21.id", "faisal@millennia21.id"]);
+  const ADMIN_ROLES = new Set(['admin', 'superadmin', 'directorate', 'head_unit']);
+  const TEACHER_ROLES = new Set(['teacher', 'se_teacher', 'staff', 'support_staff', 'nurse']);
+
   const handleMtssClick = useCallback(() => {
     const normalizedRole = (user?.role || '').toLowerCase();
-    if (['teacher'].includes(normalizedRole)) {
+    const userEmail = (user?.email || '').toLowerCase().trim();
+
+    if (OBSERVER_EMAILS.has(userEmail) || ADMIN_ROLES.has(normalizedRole)) {
+      navigate('/mtss/admin');
+      return;
+    }
+    if (TEACHER_ROLES.has(normalizedRole)) {
       navigate('/mtss/teacher');
       return;
     }
-    navigate('/mtss');
-  }, [navigate, user?.role]);
+    // fallback — admin dashboard is safer than a 404
+    navigate('/mtss/admin');
+  }, [navigate, user?.role, user?.email]);
 
   return (
     <div ref={pageRef} className="shp-parallax-shell mtss-theme mtss-animated-bg min-h-screen relative overflow-hidden text-foreground dark:text-white transition-colors">
