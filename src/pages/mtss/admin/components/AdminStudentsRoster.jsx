@@ -16,6 +16,7 @@ const AdminStudentsRoster = ({
     onUpdateStudent,
     loadMoreRef,
     hasMoreStudents,
+    isReadOnly = false,
 }) => (
     <div
         className="glass glass-card mtss-card-surface p-6 rounded-[36px] border border-white/20 bg-gradient-to-br from-white/90 via-white/70 to-white/60 dark:from-white/10 dark:via-white/5 dark:to-white/5 backdrop-blur-2xl"
@@ -32,55 +33,57 @@ const AdminStudentsRoster = ({
                     Highlight tiers, next updates, and progress streaks so principals can triage faster.
                 </p>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end" data-aos="fade-left" data-aos-delay="180">
-                <div className="flex items-center gap-3 w-full sm:w-auto px-4 py-2 rounded-2xl bg-gradient-to-r from-white/90 via-white/70 to-white/50 dark:from-white/10 dark:via-white/5 dark:to-white/0 border border-white/60 dark:border-white/10 shadow-inner shadow-white/40 dark:shadow-none">
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#f472b6] to-[#facc15] dark:from-[#1d4ed8] dark:to-[#a855f7] text-white flex items-center justify-center shadow-lg shadow-rose-200/60 dark:shadow-none">
-                        <Users className="w-4 h-4" />
+            {!isReadOnly && (
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end" data-aos="fade-left" data-aos-delay="180">
+                    <div className="flex items-center gap-3 w-full sm:w-auto px-4 py-2 rounded-2xl bg-gradient-to-r from-white/90 via-white/70 to-white/50 dark:from-white/10 dark:via-white/5 dark:to-white/0 border border-white/60 dark:border-white/10 shadow-inner shadow-white/40 dark:shadow-none">
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#f472b6] to-[#facc15] dark:from-[#1d4ed8] dark:to-[#a855f7] text-white flex items-center justify-center shadow-lg shadow-rose-200/60 dark:shadow-none">
+                            <Users className="w-4 h-4" />
+                        </div>
+                        <div className="text-sm font-semibold leading-tight text-slate-700 dark:text-white">
+                            <span className="block">{selectedCount} selected</span>
+                            <span className="text-xs font-normal text-slate-500 dark:text-white/60">
+                                {mentorCount} mentors available
+                            </span>
+                        </div>
                     </div>
-                    <div className="text-sm font-semibold leading-tight text-slate-700 dark:text-white">
-                        <span className="block">{selectedCount} selected</span>
-                        <span className="text-xs font-normal text-slate-500 dark:text-white/60">
-                            {mentorCount} mentors available
-                        </span>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <button
+                            onClick={onResetSelection}
+                            disabled={selectedCount === 0}
+                            className={`flex-1 sm:flex-none px-4 py-2 rounded-full border text-sm font-semibold transition ${
+                                selectedCount === 0
+                                    ? "border-white/40 dark:border-white/10 text-slate-400 dark:text-white/30 cursor-not-allowed"
+                                    : "border-white/70 dark:border-white/30 text-foreground dark:text-white bg-white/80 dark:bg-white/5 shadow-inner hover:-translate-y-0.5"
+                            }`}
+                        >
+                            Clear selection
+                        </button>
+                        <button
+                            disabled={disableAssignment}
+                            onClick={onOpenAssign}
+                            className={`flex-1 sm:flex-none px-4 py-2 rounded-full text-sm font-semibold text-white flex items-center justify-center gap-2 transition ${
+                                disableAssignment
+                                    ? "bg-gradient-to-r from-slate-200 to-slate-100 dark:from-white/10 dark:to-white/5 text-slate-400 dark:text-white/40 cursor-not-allowed"
+                                    : "bg-gradient-to-r from-[#34d399] via-[#3b82f6] to-[#a855f7] shadow-lg shadow-primary/30 hover:-translate-y-0.5"
+                            }`}
+                        >
+                            <Sparkles className="w-4 h-4" />
+                            Assign Selected
+                        </button>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <button
-                        onClick={onResetSelection}
-                        disabled={selectedCount === 0}
-                        className={`flex-1 sm:flex-none px-4 py-2 rounded-full border text-sm font-semibold transition ${
-                            selectedCount === 0
-                                ? "border-white/40 dark:border-white/10 text-slate-400 dark:text-white/30 cursor-not-allowed"
-                                : "border-white/70 dark:border-white/30 text-foreground dark:text-white bg-white/80 dark:bg-white/5 shadow-inner hover:-translate-y-0.5"
-                        }`}
-                    >
-                        Clear selection
-                    </button>
-                    <button
-                        disabled={disableAssignment}
-                        onClick={onOpenAssign}
-                        className={`flex-1 sm:flex-none px-4 py-2 rounded-full text-sm font-semibold text-white flex items-center justify-center gap-2 transition ${
-                            disableAssignment
-                                ? "bg-gradient-to-r from-slate-200 to-slate-100 dark:from-white/10 dark:to-white/5 text-slate-400 dark:text-white/40 cursor-not-allowed"
-                                : "bg-gradient-to-r from-[#34d399] via-[#3b82f6] to-[#a855f7] shadow-lg shadow-primary/30 hover:-translate-y-0.5"
-                        }`}
-                    >
-                        <Sparkles className="w-4 h-4" />
-                        Assign Selected
-                    </button>
-                </div>
-            </div>
+            )}
         </div>
         <StudentsTable
             students={visibleStudents}
             TierPill={TierPill}
             ProgressBadge={ProgressBadge}
-            showActions
+            showActions={!isReadOnly}
             onView={onViewStudent}
-            onUpdate={onUpdateStudent}
-            selectable
-            selectedIds={selectedIds}
-            onSelect={onToggleSelect}
+            onUpdate={isReadOnly ? undefined : onUpdateStudent}
+            selectable={!isReadOnly}
+            selectedIds={isReadOnly ? [] : selectedIds}
+            onSelect={isReadOnly ? undefined : onToggleSelect}
         />
         <div
             ref={loadMoreRef}

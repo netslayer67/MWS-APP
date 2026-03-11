@@ -1,6 +1,7 @@
 import React, { memo, Suspense, lazy, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
+import useMtssObserver from "./hooks/useMtssObserver";
 import { adminTabs, heroCard, overviewIcons } from "./data/adminDashboardContent";
 import useAdminDashboardData from "./hooks/useAdminDashboardData";
 import { useAdminDashboardState } from "./hooks/useAdminDashboardState";
@@ -22,6 +23,7 @@ const PanelFallback = () => (
 
 const AdminDashboardPage = memo(() => {
     const { user } = useSelector((state) => state.auth);
+    const { isObserver } = useMtssObserver();
 
     const {
         students,
@@ -114,7 +116,8 @@ const AdminDashboardPage = memo(() => {
                         filteredStudents={filteredStudents}
                         allStudents={students}
                         onViewStudent={handleViewStudent}
-                        onUpdateStudent={handleQuickUpdate}
+                        onUpdateStudent={isObserver ? undefined : handleQuickUpdate}
+                        isReadOnly={isObserver}
                         selectedIds={selectedIds}
                         onToggleSelect={toggleSelection}
                         onResetSelection={resetSelection}

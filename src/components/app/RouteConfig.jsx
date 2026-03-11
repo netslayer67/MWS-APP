@@ -76,7 +76,7 @@ const AdminProtectedRoute = memo(({ children }) => {
 });
 AdminProtectedRoute.displayName = 'AdminProtectedRoute';
 
-const previewEmails = new Set(["faisal@millennia21.id"]);
+const previewEmails = new Set(["faisal@millennia21.id", "mahrukh@millennia21.id"]);
 const mtssRoleAccess = new Set(['staff', 'support_staff', 'nurse', 'teacher', 'directorate', 'head_unit', 'admin', 'superadmin']);
 
 const MtssPreviewGate = memo(({ children }) => {

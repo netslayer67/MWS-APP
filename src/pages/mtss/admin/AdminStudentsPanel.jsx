@@ -21,6 +21,7 @@ const AdminStudentsPanel = ({
     onResetSelection,
     mentorDirectory,
     onRefresh,
+    isReadOnly = false,
 }) => {
     const [assignmentOpen, setAssignmentOpen] = useState(false);
     const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
@@ -88,9 +89,10 @@ const AdminStudentsPanel = ({
                 onUpdateStudent={onUpdateStudent}
                 loadMoreRef={loadMoreRef}
                 hasMoreStudents={hasMoreStudents}
+                isReadOnly={isReadOnly}
             />
 
-            {assignmentOpen && (
+            {assignmentOpen && !isReadOnly && (
                 <AdminAssignmentModal
                     open={assignmentOpen}
                     onClose={() => setAssignmentOpen(false)}

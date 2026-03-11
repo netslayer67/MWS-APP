@@ -12,12 +12,14 @@ import TeacherDashboardPanels from "./components/TeacherDashboardPanels";
 import TeacherDashboardStatus from "./components/TeacherDashboardStatus";
 import useTeacherDashboardActions from "./hooks/useTeacherDashboardActions";
 import { canUserEditPlanForStudent, resolveEditableAssignmentForUser } from "./utils/editPlanAccess";
+import useMtssObserver from "./hooks/useMtssObserver";
 
 const CheckinCollageLayer = lazy(() => import("@/components/emotion-staff/CheckinCollageLayer"));
 
 const TeacherDashboardPage = memo(() => {
     const { toast } = useToast();
     const authUser = useSelector((state) => state.auth?.user);
+    const { isObserver } = useMtssObserver();
     const navigate = useNavigate();
     const pageRef = useRef(null);
     const {
@@ -98,7 +100,10 @@ const TeacherDashboardPage = memo(() => {
         cancelEditingPlan();
         setActiveTab("students");
     }, [cancelEditingPlan, setActiveTab]);
-    const heroTabs = useMemo(() => tabs.filter((tab) => tab.key !== "edit"), []);
+    const heroTabs = useMemo(() => {
+        const hiddenKeys = isObserver ? ["edit", "create", "submit"] : ["edit"];
+        return tabs.filter((tab) => !hiddenKeys.includes(tab.key));
+    }, [isObserver]);
     const handleHeroTabChange = useCallback(
         (nextTab) => {
             if (nextTab === "edit" && !isEditingPlan) {
@@ -186,15 +191,15 @@ const TeacherDashboardPage = memo(() => {
                     submittingPlan={submittingPlan}
                     submittingProgress={submittingProgress}
                     onViewStudent={handleViewStudent}
-                    onQuickUpdate={handleOpenQuickUpdate}
-                    onEditPlan={handleEditPlan}
-                    canEditPlanForStudent={canEditPlanForStudent}
+                    onQuickUpdate={isObserver ? undefined : handleOpenQuickUpdate}
+                    onEditPlan={isObserver ? undefined : handleEditPlan}
+                    canEditPlanForStudent={isObserver ? () => false : canEditPlanForStudent}
                     editingPlan={editingPlan}
                     onCancelEditPlan={handleCancelEditPlan}
                     refresh={refresh}
                 />
             </div>
-            {quickUpdateStudent && (
+            {quickUpdateStudent && !isObserver && (
                 <QuickUpdateModal
                     student={quickUpdateStudent}
                     onClose={handleCloseQuickUpdate}
