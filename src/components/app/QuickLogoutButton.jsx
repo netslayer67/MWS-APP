@@ -28,7 +28,7 @@ const NAV_ITEMS = [
 
 /* ── Component ─────────────────────────────────────────── */
 const QuickMenu = memo(() => {
-    const { isAuthenticated } = useSelector((s) => s.auth);
+    const { isAuthenticated, user } = useSelector((s) => s.auth);
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const location = useLocation();
@@ -140,6 +140,14 @@ const QuickMenu = memo(() => {
 
     useEffect(() => () => clearTimeout(confirmTimer.current), []);
 
+    /* Reset logout state whenever the logged-in user changes (e.g. re-login
+       after logout) — prevents stale "Signing out…" from a previous session */
+    useEffect(() => {
+        setLoading(false);
+        setConfirming(false);
+        clearTimeout(confirmTimer.current);
+    }, [user?.email]);
+
     /* Nav item click */
     const handleNav = useCallback((e, path) => {
         animate(e.currentTarget, {
@@ -189,7 +197,11 @@ const QuickMenu = memo(() => {
         dispatch(logoutUser())
             .unwrap()
             .catch(() => { })
-            .finally(() => navigate("/"));
+            .finally(() => {
+                setLoading(false);
+                setConfirming(false);
+                navigate("/");
+            });
     }, [confirming, dispatch, navigate]);
 
     if (!isAuthenticated) return null;
