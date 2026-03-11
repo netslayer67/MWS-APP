@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
  * They can view any dashboard/student but cannot create, edit, or
  * submit any intervention data.
  */
-const OBSERVER_EMAILS = new Set([
+export const OBSERVER_EMAILS = new Set([
     "mahrukh@millennia21.id",
     "faisal@millennia21.id",
 ]);

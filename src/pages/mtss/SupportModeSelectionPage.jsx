@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useRef } from "react";
+import { OBSERVER_EMAILS } from "./hooks/useMtssObserver";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Brain, Handshake, ArrowRight, Sparkles, Shield, Users } from "lucide-react";
@@ -454,7 +455,6 @@ const SupportModeSelectionPage = memo(() => {
     };
   }, []);
 
-  const OBSERVER_EMAILS = new Set(["mahrukh@millennia21.id", "faisal@millennia21.id"]);
   const ADMIN_ROLES = new Set(['admin', 'superadmin', 'directorate', 'head_unit']);
   const TEACHER_ROLES = new Set(['teacher', 'se_teacher', 'staff', 'support_staff', 'nurse']);
 
@@ -462,7 +462,11 @@ const SupportModeSelectionPage = memo(() => {
     const normalizedRole = (user?.role || '').toLowerCase();
     const userEmail = (user?.email || '').toLowerCase().trim();
 
-    if (OBSERVER_EMAILS.has(userEmail) || ADMIN_ROLES.has(normalizedRole)) {
+    if (OBSERVER_EMAILS.has(userEmail)) {
+      navigate('/mtss/observer');
+      return;
+    }
+    if (ADMIN_ROLES.has(normalizedRole)) {
       navigate('/mtss/admin');
       return;
     }
@@ -470,7 +474,7 @@ const SupportModeSelectionPage = memo(() => {
       navigate('/mtss/teacher');
       return;
     }
-    // fallback — admin dashboard is safer than a 404
+    // fallback
     navigate('/mtss/admin');
   }, [navigate, user?.role, user?.email]);
 
