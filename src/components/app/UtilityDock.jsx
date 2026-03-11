@@ -1108,7 +1108,7 @@ const UtilityDock = memo(() => {
         <div
             className="utility-dock fixed z-50 flex items-end gap-2"
             style={{
-                bottom: dockPos ? `calc(4rem + ${-(dockPos.y || 0)}px)` : '4rem',
+                bottom: dockPos ? `calc(4rem + ${-(dockPos.y || 0)}px)` : (window.innerWidth < 768 ? '1.25rem' : '4rem'),
                 right: dockPos ? `calc(1.25rem + ${-(dockPos.x || 0)}px)` : '1.25rem',
                 transition: dragStartRef.current ? 'none' : 'bottom 0.3s, right 0.3s',
             }}
@@ -1121,7 +1121,7 @@ const UtilityDock = memo(() => {
                         animate={lowMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
                         exit={lowMotion ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.96 }}
                         transition={lowMotion ? { duration: 0.12 } : { duration: 0.2, ease: "easeOut" }}
-                        className="w-[288px] rounded-3xl border border-violet-200/55 dark:border-violet-200/25 bg-[linear-gradient(150deg,rgba(255,255,255,0.95),rgba(236,250,255,0.9),rgba(244,236,255,0.9))] dark:bg-[linear-gradient(150deg,rgba(15,20,42,0.94),rgba(18,34,60,0.92),rgba(36,22,58,0.9))] shadow-[0_20px_46px_rgba(56,189,248,0.23)] backdrop-blur-xl p-3"
+                        className="hidden md:block w-[296px] rounded-2xl border border-white/30 dark:border-white/[0.07] bg-white/80 dark:bg-[rgba(13,15,23,0.90)] backdrop-blur-xl shadow-[0_4px_24px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.7)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.05)] p-3"
                     >
                         <div className="flex items-start gap-2">
                             <div className="mt-0.5 w-8 h-8 rounded-full bg-gradient-to-r from-cyan-500 to-violet-500 text-white flex items-center justify-center shadow-sm">
@@ -1177,48 +1177,48 @@ const UtilityDock = memo(() => {
                         animate={lowMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
                         exit={lowMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.96 }}
                         transition={lowMotion ? { duration: 0.12 } : { duration: 0.22, ease: "easeOut" }}
-                        className="w-[290px] rounded-3xl border border-cyan-200/55 dark:border-cyan-200/25 bg-[linear-gradient(155deg,rgba(255,255,255,0.94),rgba(241,249,255,0.9),rgba(252,239,251,0.9))] dark:bg-[linear-gradient(155deg,rgba(9,20,38,0.94),rgba(14,26,52,0.92),rgba(38,20,48,0.9))] shadow-[0_26px_60px_rgba(14,116,144,0.22)] backdrop-blur-xl p-3"
+                        className="hidden md:block w-[300px] rounded-2xl border border-white/30 dark:border-white/[0.07] bg-white/80 dark:bg-[rgba(13,15,23,0.90)] backdrop-blur-xl shadow-[0_4px_24px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.7)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.05)] p-3"
                     >
                         <div className="flex items-start justify-between gap-2">
                             <div>
-                                <p className="text-sm font-extrabold text-cyan-700 dark:text-cyan-200 flex items-center gap-1.5">
-                                    <Sparkles className="w-4 h-4" />
+                                <p className="text-[13px] font-semibold text-slate-800 dark:text-white flex items-center gap-1.5">
+                                    <Sparkles className="w-3.5 h-3.5 text-cyan-500" />
                                     {buttonLabel}
                                 </p>
-                                <p className="text-[11px] mt-0.5 text-slate-600 dark:text-slate-200">
-                                    {isStudent ? "Personal helper on every student page." : "Personal helper across your workspace."}
+                                <p className="text-[11px] mt-0.5 text-slate-400 dark:text-slate-500">
+                                    {isStudent ? "Personal helper on every page." : "Personal helper across your workspace."}
                                 </p>
                             </div>
                             <button
                                 type="button"
                                 onClick={() => setIsOpen(false)}
                                 aria-label="Close assistant dock"
-                                className="p-1.5 rounded-lg bg-white/88 dark:bg-slate-800/85 border border-cyan-200/55 dark:border-cyan-300/30 text-slate-800 dark:text-slate-100 hover:brightness-105 transition-all"
+                                className="p-1.5 rounded-full bg-black/[0.06] dark:bg-white/[0.08] text-slate-400 dark:text-slate-400 hover:bg-black/10 dark:hover:bg-white/[0.14] transition-colors"
                             >
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
 
                         {!shouldHideQuickLinks && (
-                            <div className="mt-2.5 space-y-2">
+                            <div className="mt-2.5 rounded-xl overflow-hidden border border-black/[0.05] dark:border-white/[0.06] divide-y divide-black/[0.04] dark:divide-white/[0.05]">
                                 {quickActionItems.map((entry) => (
                                     <button
                                         key={entry.label}
                                         type="button"
                                         onClick={() => handleQuickAction(entry.navigateTo)}
-                                        className="w-full rounded-2xl px-3 py-2 text-left bg-white/88 dark:bg-slate-800/75 border border-cyan-100/80 dark:border-cyan-300/25 hover:bg-cyan-50/95 dark:hover:bg-cyan-400/12 transition-all"
+                                        className="w-full px-3 py-2.5 text-left bg-white/50 dark:bg-white/[0.03] hover:bg-white/90 dark:hover:bg-white/[0.07] active:bg-white/70 dark:active:bg-white/[0.05] transition-colors"
                                     >
-                                        <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 flex items-center justify-between gap-2">
+                                        <p className="text-[12px] font-semibold text-slate-700 dark:text-slate-100 flex items-center justify-between gap-2">
                                             <span>{entry.label}</span>
-                                            <ArrowUpRight className="w-3.5 h-3.5 text-cyan-500" />
+                                            <ArrowUpRight className="w-3 h-3 text-slate-400 dark:text-slate-500 flex-shrink-0" />
                                         </p>
-                                        <p className="text-[11px] text-slate-600 dark:text-slate-200 mt-0.5">{entry.description}</p>
+                                        <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 leading-snug">{entry.description}</p>
                                     </button>
                                 ))}
                             </div>
                         )}
 
-                        <div className="mt-3 rounded-2xl border border-cyan-200/55 dark:border-cyan-300/20 bg-white/78 dark:bg-slate-950/42 backdrop-blur-sm">
+                        <div className="mt-3 rounded-xl border border-black/[0.05] dark:border-white/[0.06] bg-black/[0.02] dark:bg-white/[0.02]">
                             <div
                                 ref={dockViewportRef}
                                 className="max-h-44 overflow-y-auto px-2.5 py-2 space-y-1.5"
@@ -1232,8 +1232,8 @@ const UtilityDock = memo(() => {
                                     <div
                                         key={message.id}
                                         className={`max-w-[92%] rounded-2xl px-2.5 py-1.5 text-[11px] leading-relaxed ${message.role === "user"
-                                                ? "ml-auto bg-gradient-to-r from-cyan-500 via-indigo-500 to-pink-500 text-white shadow-sm"
-                                                : "mr-auto bg-white/90 dark:bg-slate-900/70 border border-cyan-200/55 dark:border-cyan-300/22 text-slate-800 dark:text-slate-100"
+                                                ? "ml-auto bg-gradient-to-br from-cyan-500 to-violet-500 text-white shadow-[0_2px_8px_rgba(6,182,212,0.28)]"
+                                                : "mr-auto bg-white/80 dark:bg-white/[0.06] border border-black/[0.05] dark:border-white/[0.07] text-slate-700 dark:text-slate-100"
                                             }`}
                                     >
                                         {message.role === "assistant" ? (
@@ -1263,7 +1263,7 @@ const UtilityDock = memo(() => {
                                                         onClick={() => {
                                                             void handleDockAction(entry.action, { source: "message_action" });
                                                         }}
-                                                        className="rounded-full border border-cyan-300/65 dark:border-cyan-300/35 bg-white/95 dark:bg-slate-900/70 px-2 py-1 text-[10px] font-semibold text-cyan-700 dark:text-cyan-200 hover:bg-cyan-50/95 dark:hover:bg-cyan-400/15 transition-colors"
+                                                        className="rounded-full border border-black/[0.08] dark:border-white/[0.10] bg-white/90 dark:bg-white/[0.06] px-2 py-1 text-[10px] font-semibold text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-white/[0.10] transition-colors"
                                                     >
                                                         {entry.label}
                                                     </button>
@@ -1387,7 +1387,7 @@ const UtilityDock = memo(() => {
                             </form>
                         )}
 
-                        <form onSubmit={handleSendQuickMessage} className="mt-3 flex gap-2">
+                        <form onSubmit={handleSendQuickMessage} className="mt-3 pt-2.5 border-t border-black/[0.05] dark:border-white/[0.06] flex gap-1.5">
                             <input
                                 ref={quickInputRef}
                                 type="text"
@@ -1397,13 +1397,13 @@ const UtilityDock = memo(() => {
                                     if (event.key === "Enter" && event.shiftKey) return;
                                 }}
                                 placeholder={`Message ${assistantName}...`}
-                                className="flex-1 px-3 py-2.5 rounded-xl !bg-white !text-slate-900 !placeholder:text-slate-500 dark:!bg-slate-900 dark:!text-slate-100 dark:!placeholder:text-slate-400 border border-cyan-300/55 dark:border-cyan-200/45 text-sm caret-cyan-700 dark:caret-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/75 dark:focus:ring-cyan-300/70 shadow-[inset_0_1px_2px_rgba(15,23,42,0.08)] dark:shadow-[inset_0_1px_2px_rgba(15,23,42,0.42)]"
+                                className="flex-1 px-3 py-2 rounded-xl !bg-white/80 !text-slate-900 !placeholder:text-slate-400 dark:!bg-white/[0.07] dark:!text-slate-100 dark:!placeholder:text-slate-500 border border-black/[0.07] dark:border-white/[0.08] text-[12px] focus:outline-none focus:ring-2 focus:ring-cyan-500/25 dark:focus:ring-cyan-400/25 transition-shadow"
                                 style={{ WebkitTextFillColor: "currentColor" }}
                             />
                             <button
                                 ref={quickSendButtonRef}
                                 type="submit"
-                                className="px-3 py-2 rounded-xl bg-gradient-to-r from-cyan-500 via-indigo-500 to-pink-500 text-white hover:brightness-105 transition-all disabled:opacity-50"
+                                className="px-3 py-2 rounded-xl bg-gradient-to-br from-cyan-500 to-violet-500 text-white hover:brightness-110 active:brightness-95 transition-all disabled:opacity-35 shadow-[0_2px_8px_rgba(6,182,212,0.30)] flex-shrink-0"
                                 disabled={!quickMessage.trim() || isDockSending}
                                 aria-label="Send quick message to assistant"
                             >
@@ -1430,7 +1430,7 @@ const UtilityDock = memo(() => {
                 whileHover={lowMotion ? {} : { scale: 1.05 }}
                 animate={lowMotion ? {} : { y: [0, -2, 0] }}
                 transition={lowMotion ? { duration: 0.12 } : { duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
-                className="relative h-14 w-14 rounded-full border border-cyan-200/60 dark:border-cyan-200/25 bg-[linear-gradient(145deg,rgba(255,255,255,0.96),rgba(230,247,255,0.88),rgba(253,236,252,0.86))] dark:bg-[linear-gradient(145deg,rgba(11,26,48,0.94),rgba(20,38,66,0.92),rgba(44,22,52,0.9))] shadow-[0_18px_40px_rgba(6,182,212,0.24)] text-cyan-700 dark:text-cyan-200 backdrop-blur-xl cursor-grab active:cursor-grabbing"
+                className="relative h-10 w-10 md:h-14 md:w-14 rounded-full border border-cyan-200/60 dark:border-cyan-200/25 bg-[linear-gradient(145deg,rgba(255,255,255,0.96),rgba(230,247,255,0.88),rgba(253,236,252,0.86))] dark:bg-[linear-gradient(145deg,rgba(11,26,48,0.94),rgba(20,38,66,0.92),rgba(44,22,52,0.9))] shadow-[0_18px_40px_rgba(6,182,212,0.24)] text-cyan-700 dark:text-cyan-200 backdrop-blur-xl cursor-grab active:cursor-grabbing"
             >
                 <motion.span
                     className="pointer-events-none absolute -inset-1 rounded-full border border-cyan-300/50 dark:border-cyan-300/35"
@@ -1439,7 +1439,7 @@ const UtilityDock = memo(() => {
                 />
                 <span className="absolute inset-0 rounded-full bg-grid-small/[0.08] dark:bg-grid-small-dark/[0.16] pointer-events-none" />
                 <div className="relative flex items-center justify-center">
-                    <MessageCircle className="w-6 h-6" />
+                    <MessageCircle className="w-4 h-4 md:w-6 md:h-6" />
                     <span className="absolute -top-2.5 -right-3 rounded-full px-1.5 py-0.5 text-[9px] font-extrabold bg-gradient-to-r from-pink-500 to-violet-500 text-white shadow-sm">
                         AI
                     </span>

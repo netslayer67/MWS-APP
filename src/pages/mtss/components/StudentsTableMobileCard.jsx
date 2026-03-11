@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Eye, TrendingUp, FilePenLine } from "lucide-react";
+import { TrendingUp, FilePenLine } from "lucide-react";
 import { ensureStudentInterventions, getMostCriticalForDisplay } from "../utils/interventionUtils";
 import { formatPlanAuditDate } from "../utils/editPlanAccess";
 
@@ -51,20 +51,12 @@ const StudentsTableMobileCard = memo(
                 ? canEditPlanForStudent(student)
                 : Boolean(primaryAssignment?.assignmentId || student.assignmentId)
         );
-        const actionButtons = [
-            {
-                key: "view",
-                label: "View Details",
-                onClick: () => onView?.(student),
-                icon: Eye,
-                className: "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border-indigo-200/50 dark:border-indigo-700/40",
-            },
-        ];
+        const actionButtons = [];
         if (hasInterventionPlan) {
             actionButtons.push({
                 key: "progress",
                 label: "Progress Update",
-                onClick: () => onUpdate?.(student),
+                onClick: (e) => { e.stopPropagation(); onUpdate?.(student); },
                 icon: TrendingUp,
                 className: "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200/50 dark:border-amber-700/40",
             });
@@ -73,7 +65,7 @@ const StudentsTableMobileCard = memo(
             actionButtons.push({
                 key: "edit",
                 label: "Edit Plan",
-                onClick: () => onEditPlan?.(student),
+                onClick: (e) => { e.stopPropagation(); onEditPlan?.(student); },
                 icon: FilePenLine,
                 className: "bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-300 border-cyan-200/50 dark:border-cyan-700/40",
             });
@@ -83,7 +75,8 @@ const StudentsTableMobileCard = memo(
 
         return (
             <div
-                className="relative overflow-hidden rounded-2xl bg-white/90 dark:bg-slate-900/70 backdrop-blur-lg border border-slate-200/60 dark:border-slate-700/50 shadow-[0_8px_30px_rgba(15,23,42,0.08)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.25)]"
+                onClick={() => onView?.(student)}
+                className="relative overflow-hidden rounded-2xl bg-white/90 dark:bg-slate-900/70 backdrop-blur-lg border border-slate-200/60 dark:border-slate-700/50 shadow-[0_8px_30px_rgba(15,23,42,0.08)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.25)] cursor-pointer active:scale-[0.99] transition-transform duration-100"
             >
                 {/* Top accent bar */}
                 <div className={`h-1 w-full bg-gradient-to-r ${accent}`} />
@@ -92,20 +85,14 @@ const StudentsTableMobileCard = memo(
                     {/* Name row */}
                     <div className="flex items-start justify-between gap-2.5">
                         <div className="flex-1 min-w-0">
-                            <button
-                                type="button"
-                                onClick={() => onView?.(student)}
-                                className="text-left"
-                            >
-                                <span className="font-bold text-[13px] text-slate-800 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors block truncate">
-                                    {student.name}
-                                </span>
-                            </button>
+                            <span className="font-bold text-[13px] text-slate-800 dark:text-white block truncate">
+                                {student.name}
+                            </span>
                             <span className="text-[10px] text-slate-500 dark:text-slate-300 mt-0.5 block truncate">
                                 {student.grade} · {student.className || "\u2014"}
                             </span>
                         </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
+                        <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
                             {selectable && (
                                 <input
                                     type="checkbox"

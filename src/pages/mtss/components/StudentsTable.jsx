@@ -86,7 +86,7 @@ const StudentsTable = memo(
                                     </th>
                                 ))}
                                 {showActions && (
-                                    <th className="py-3.5 w-[14%] font-semibold text-center tracking-[0.14em] uppercase text-[10px] text-slate-500 dark:text-slate-300 whitespace-nowrap">
+                                    <th className="py-3.5 w-[10%] font-semibold text-center tracking-[0.14em] uppercase text-[10px] text-slate-500 dark:text-slate-300 whitespace-nowrap">
                                         Action
                                     </th>
                                 )}

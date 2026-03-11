@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Eye, TrendingUp, FilePenLine } from "lucide-react";
+import { TrendingUp, FilePenLine } from "lucide-react";
 import { ensureStudentInterventions, getMostCriticalForDisplay } from "../utils/interventionUtils";
 import { formatPlanAuditDate } from "../utils/editPlanAccess";
 
@@ -76,20 +76,12 @@ const StudentsTableDesktopRow = memo(
                 ? canEditPlanForStudent(student)
                 : Boolean(primaryAssignment?.assignmentId || student.assignmentId)
         );
-        const actionButtons = [
-            {
-                key: "view",
-                label: "View Details",
-                onClick: () => onView?.(student),
-                icon: Eye,
-                className: "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border-indigo-200/60 dark:border-indigo-700/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 hover:shadow-indigo-200/30 dark:hover:shadow-indigo-900/20",
-            },
-        ];
+        const actionButtons = [];
         if (hasInterventionPlan) {
             actionButtons.push({
                 key: "progress",
                 label: "Progress Update",
-                onClick: () => onUpdate?.(student),
+                onClick: (e) => { e.stopPropagation(); onUpdate?.(student); },
                 icon: TrendingUp,
                 className: "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200/60 dark:border-amber-700/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 hover:shadow-amber-200/30 dark:hover:shadow-amber-900/20",
             });
@@ -98,7 +90,7 @@ const StudentsTableDesktopRow = memo(
             actionButtons.push({
                 key: "edit",
                 label: "Edit Plan",
-                onClick: () => onEditPlan?.(student),
+                onClick: (e) => { e.stopPropagation(); onEditPlan?.(student); },
                 icon: FilePenLine,
                 className: "bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-300 border-cyan-200/60 dark:border-cyan-700/40 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 hover:shadow-cyan-200/30 dark:hover:shadow-cyan-900/20",
             });
@@ -108,7 +100,8 @@ const StudentsTableDesktopRow = memo(
 
         return (
             <tr
-                className="group border-b border-slate-100/80 dark:border-slate-700/40 last:border-none hover:bg-gradient-to-r hover:from-indigo-50/50 hover:via-purple-50/30 hover:to-transparent dark:hover:from-white/[0.04] dark:hover:via-white/[0.02] dark:hover:to-transparent transition-colors duration-200"
+                onClick={() => onView?.(student)}
+                className="group border-b border-slate-100/80 dark:border-slate-700/40 last:border-none hover:bg-gradient-to-r hover:from-indigo-50/50 hover:via-purple-50/30 hover:to-transparent dark:hover:from-white/[0.04] dark:hover:via-white/[0.02] dark:hover:to-transparent transition-colors duration-200 cursor-pointer"
             >
                 {/* Accent bar */}
                 <td className="w-1.5 py-0">
@@ -116,7 +109,7 @@ const StudentsTableDesktopRow = memo(
                 </td>
 
                 {selectable && (
-                    <td className="py-3.5 pl-2 align-top">
+                    <td className="py-3.5 pl-2 align-top" onClick={(e) => e.stopPropagation()}>
                         <input
                             type="checkbox"
                             className="w-4 h-4 rounded-md border-slate-300 dark:border-slate-600 text-indigo-500 focus:ring-indigo-400 transition"
@@ -128,19 +121,15 @@ const StudentsTableDesktopRow = memo(
 
                 {/* Student name */}
                 <td className="py-3.5 pl-3 pr-2 align-top w-[23%]">
-                    <button
-                        type="button"
-                        onClick={() => onView?.(student)}
-                        className="text-left group/name"
-                    >
+                    <div>
                         <span
-                            className="block truncate max-w-[220px] font-semibold text-sm text-slate-800 dark:text-white group-hover/name:text-indigo-600 dark:group-hover/name:text-indigo-400 transition-colors"
+                            className="block truncate max-w-[220px] font-semibold text-sm text-slate-800 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors"
                             title={student.name}
                         >
                             {student.name}
                         </span>
                         <span className="block text-[10px] text-slate-500 dark:text-slate-300 mt-0.5">{student.grade}</span>
-                    </button>
+                    </div>
                 </td>
 
                 {/* Class / Mentor */}
@@ -204,29 +193,21 @@ const StudentsTableDesktopRow = memo(
 
                 {/* Actions */}
                 {showActions && (
-                    <td className="py-3.5 pr-3 align-top w-[14%]">
-                        <div
-                            className={`ml-auto grid gap-1 ${
-                                actionButtons.length === 3
-                                    ? "grid-cols-3"
-                                    : actionButtons.length === 2
-                                        ? "grid-cols-2"
-                                        : "grid-cols-1"
-                            } max-w-[250px]`}
-                        >
+                    <td className="py-3.5 pr-4 align-middle w-[10%]">
+                        <div className="flex items-center justify-center gap-1.5">
                             {actionButtons.map((action) => {
                                 const Icon = action.icon;
                                 return (
-                                <button
-                                    key={action.key}
-                                    type="button"
-                                    onClick={action.onClick}
-                                    title={action.label}
-                                    aria-label={action.label}
-                                    className={`w-8 h-8 inline-flex items-center justify-center rounded-lg border hover:shadow-sm hover:-translate-y-0.5 transition-all duration-150 ${action.className}`}
-                                >
-                                    <Icon className="w-3.5 h-3.5" />
-                                </button>
+                                    <button
+                                        key={action.key}
+                                        type="button"
+                                        onClick={action.onClick}
+                                        title={action.label}
+                                        aria-label={action.label}
+                                        className={`w-7 h-7 inline-flex items-center justify-center rounded-lg border hover:shadow-sm hover:-translate-y-0.5 transition-all duration-150 ${action.className}`}
+                                    >
+                                        <Icon className="w-3.5 h-3.5" />
+                                    </button>
                                 );
                             })}
                         </div>
