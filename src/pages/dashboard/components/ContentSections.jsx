@@ -1,19 +1,11 @@
-import React, { memo, Suspense, lazy } from "react";
+import { memo, Suspense, lazy } from "react";
 
-const ThoughtsSection = lazy(() => import("../ThoughtsSection"));
 const FlaggedUsers = lazy(() => import("../FlaggedStudents"));
 const CheckInRequests = lazy(() => import("../CheckInRequests"));
 const InsightsPanel = lazy(() => import("./InsightsPanel"));
-const RoleBreakdownChart = lazy(() => import("./RoleBreakdownChart"));
-const ExportButton = lazy(() => import("./ExportButton"));
 const RecentActivitySection = lazy(() => import("./RecentActivitySection"));
-const DepartmentAnalytics = lazy(() => import("./DepartmentAnalytics"));
 const PercentageAnalytics = lazy(() => import("./PercentageAnalytics"));
 const UserTrendChart = lazy(() => import("./UserTrendChart"));
-const MoodTrendAnalysis = lazy(() => import("./MoodTrendAnalysis"));
-const WeatherPatternAnalysis = lazy(() => import("./WeatherPatternAnalysis"));
-const PredictiveAnalytics = lazy(() => import("./PredictiveAnalytics"));
-const ComparativeAnalysis = lazy(() => import("./ComparativeAnalysis"));
 const UserHistorySection = lazy(() => import("./UserHistorySection"));
 const HeadUnitStaffPanel = lazy(() => import("./HeadUnitStaffPanel"));
 
@@ -31,7 +23,7 @@ const ContentFallback = memo(() => (
 
 ContentFallback.displayName = 'ContentFallback';
 
-const ContentSections = memo(({ realData, loading, selectedPeriod, userId, isHeadUnit, isDirectorate }) => {
+const ContentSections = memo(({ realData, selectedPeriod, userId, isHeadUnit, isDirectorate }) => {
     const data = realData || {};
     const canViewStaffExplorer = (isHeadUnit || isDirectorate) && Array.isArray(data?.unitStaffDetails) && data.unitStaffDetails.length > 0;
 
@@ -87,12 +79,12 @@ const ContentSections = memo(({ realData, loading, selectedPeriod, userId, isHea
 
             {/* Comparative Analysis (Organization Trends) temporarily removed as requested */}
 
-            <Suspense fallback={<ContentFallback />}>
-                {/* User Trend Analysis */}
-                <div className="mb-4 md:mb-6">
-                    <UserTrendChart userData={data?.recentActivity || []} period={selectedPeriod} />
-                </div>
-            </Suspense>
+                <Suspense fallback={<ContentFallback />}>
+                    {/* User Trend Analysis */}
+                    <div className="mb-4 md:mb-6">
+                    <UserTrendChart trendData={data?.periodTimeline || []} period={selectedPeriod} />
+                    </div>
+                </Suspense>
 
             {/* AI Insights Panel - Trigger-based loading */}
             <Suspense fallback={<ContentFallback />}>

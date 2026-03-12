@@ -81,11 +81,23 @@ export const mapAssignmentsToStudents = (assignments = [], teacherName = "MTSS M
                             customFrequencyNote: assignment.customFrequencyNote || null,
                             goal: goalDescription,
                             goals: Array.isArray(assignment.goals) ? assignment.goals : [],
+                            history,
                             weeklyFocusOverview: assignment.weeklyFocusOverview || null,
                             baselineScore: assignment.baselineScore || null,
                             targetScore: assignment.targetScore || null,
                             notes: assignment.notes || null,
-                            planChangeLog: Array.isArray(assignment.planChangeLog) ? assignment.planChangeLog : [],
+                            mentor: assignment.mentorId?.name || null,
+                            mentorNickname: assignment.mentorId?.username || null,
+                            mentorEmail: assignment.mentorId?.email || null,
+                            createdAt: assignment.createdAt || assignment.startDate || null,
+                            updatedAt: assignment.updatedAt || null,
+                            planChangeLog: Array.isArray(assignment.planChangeLog)
+                                ? assignment.planChangeLog.map((entry) => ({
+                                    ...entry,
+                                    changedByName: entry?.changedByName || entry?.changedBy?.name || entry?.changedBy?.username || null,
+                                    changedByEmail: entry?.changedByEmail || entry?.changedBy?.email || null,
+                                }))
+                                : [],
                             viewerPermissions: assignment.viewerPermissions || null,
                             viewerCanEditPlan:
                                 typeof assignment.viewerCanEditPlan === "boolean"

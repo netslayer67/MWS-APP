@@ -24,8 +24,8 @@ import gsap from "gsap";
 import { animate, stagger } from "animejs";
 import {
     Eye, Users2, TrendingUp, Sparkles, LayoutDashboard,
-    UserCheck, LineChart as LineChartIcon, Shield, Star,
-    Activity, Brain, CheckCircle2, ArrowUpRight, Minus,
+    UserCheck, LineChart as LineChartIcon,
+    Activity, Brain, ArrowUpRight, Minus,
     ArrowDownRight, AlertCircle,
 } from "lucide-react";
 import useAdminDashboardData from "./hooks/useAdminDashboardData";
@@ -58,9 +58,9 @@ const TierChip = ({ label, count, total }) => {
     const pct = total > 0 ? Math.round((count / total) * 100) : 0;
 
     const styles = {
-        "Tier 1": { pill: "bg-emerald-400/20 text-emerald-300 border-emerald-400/30", bar: "#34d399" },
-        "Tier 2": { pill: "bg-amber-400/20  text-amber-300  border-amber-400/30",  bar: "#fbbf24" },
-        "Tier 3": { pill: "bg-rose-400/20   text-rose-300   border-rose-400/30",   bar: "#fb7185" },
+        "Tier 1": { pill: "bg-emerald-300/18 text-emerald-50 border-emerald-300/38 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]", bar: "#34d399" },
+        "Tier 2": { pill: "bg-amber-300/16 text-amber-50 border-amber-300/34 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]", bar: "#fbbf24" },
+        "Tier 3": { pill: "bg-rose-300/16 text-rose-50 border-rose-300/34 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]", bar: "#fb7185" },
     };
     const s = styles[label] || { pill: "bg-white/10 text-white/60 border-white/20", bar: "#94a3b8" };
 
@@ -80,10 +80,10 @@ const TierChip = ({ label, count, total }) => {
                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">{label}</span>
                 <span className="text-base font-black tabular-nums">{count}</span>
             </div>
-            <div className="h-1 w-full rounded-full bg-white/10 overflow-hidden">
+            <div className="h-1 w-full rounded-full bg-white/18 overflow-hidden">
                 <div ref={barRef} className="h-full rounded-full" style={{ width: 0, background: s.bar }} />
             </div>
-            <span className="text-[9px] font-semibold opacity-60">{pct}% of total</span>
+            <span className="text-[9px] font-semibold text-white/78">{pct}% of total</span>
         </div>
     );
 };
@@ -123,7 +123,7 @@ const StatCounter = memo(({ targetValue, suffix = "", label, icon: Icon, accentC
             >
                 0{suffix}
             </span>
-            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.18em] text-white/55 leading-tight text-center">
+            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.18em] text-white/78 leading-tight text-center">
                 {label}
             </span>
         </div>
@@ -140,11 +140,11 @@ const TrendBadge = ({ item }) => {
     };
     const { Icon, cls } = iconMap[item.label] || { Icon: Minus, cls: "text-white/50" };
     return (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.06] border border-white/10">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-950/18 border border-white/16 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
             <Icon className={`w-4 h-4 flex-shrink-0 ${cls}`} />
             <div className="min-w-0">
-                <p className="text-xs font-bold text-white/90 truncate">{item.label}</p>
-                <p className="text-[10px] text-white/45 truncate">{item.detail}</p>
+                <p className="text-xs font-bold text-white truncate">{item.label}</p>
+                <p className="text-[10px] text-white/72 truncate">{item.detail}</p>
             </div>
         </div>
     );
@@ -153,18 +153,18 @@ const TrendBadge = ({ item }) => {
 /* ── Recent activity mini-item ────────────────────────────────────── */
 const ActivityItem = ({ item, index }) => (
     <div
-        className="flex gap-3 py-2.5 border-b border-white/[0.06] last:border-none"
+        className="flex gap-3 py-2.5 border-b border-slate-200/80 dark:border-white/[0.08] last:border-none"
         data-activity-item
         style={{ opacity: 0 }}
     >
-        <div className="flex-shrink-0 w-7 h-7 rounded-xl bg-indigo-500/20 border border-indigo-400/20 flex items-center justify-center text-[11px]">
+        <div className="flex-shrink-0 w-7 h-7 rounded-xl bg-indigo-100 border border-indigo-200 text-indigo-700 dark:bg-indigo-500/20 dark:border-indigo-400/25 dark:text-indigo-100 flex items-center justify-center text-[11px] font-bold">
             {index + 1}
         </div>
         <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-white/85 truncate">{item.student}</p>
-            <p className="text-[10px] text-white/45 truncate mt-0.5">{item.activity}</p>
+            <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">{item.student}</p>
+            <p className="text-[10px] text-slate-600 dark:text-white/62 truncate mt-0.5">{item.activity}</p>
         </div>
-        <span className="flex-shrink-0 text-[9px] font-medium text-white/30 whitespace-nowrap pt-0.5">{item.date}</span>
+        <span className="flex-shrink-0 text-[9px] font-medium text-slate-500 dark:text-white/42 whitespace-nowrap pt-0.5">{item.date}</span>
     </div>
 );
 
@@ -191,7 +191,7 @@ const ObserverDashboardPage = memo(() => {
     const {
         filters, handleFilterChange,
         filteredStudents, gradeOptions, tierOptions, typeOptions, mentorOptions,
-        handleViewStudent, selectedIds, toggleSelection, resetSelection,
+        handleViewStudent,
     } = useAdminDashboardState(students);
 
     /* ── Computed values ──────────────────────────────────────────── */
@@ -335,44 +335,45 @@ const ObserverDashboardPage = memo(() => {
                     HERO CARD — iOS Liquid Glass gradient panel
                 ════════════════════════════════════════════════ */}
                 <div ref={heroRef} style={{ opacity: 0 }}>
-                    <div className="relative overflow-hidden rounded-[32px] sm:rounded-[40px] border border-white/25 dark:border-white/10 bg-gradient-to-br from-[#4f46e5]/85 via-[#7c3aed]/75 to-[#0ea5e9]/65 dark:from-[#1e1b4b]/92 dark:via-[#2e1065]/85 dark:to-[#0c4a6e]/80 shadow-[0_28px_72px_rgba(99,102,241,0.28),0_8px_24px_rgba(0,0,0,0.18)] dark:shadow-[0_28px_72px_rgba(99,102,241,0.16)]">
+                    <div className="relative overflow-hidden rounded-[32px] sm:rounded-[40px] border border-white/30 dark:border-white/10 bg-gradient-to-br from-[#312e81]/95 via-[#5b21b6]/92 to-[#075985]/88 dark:from-[#1e1b4b]/96 dark:via-[#3b0764]/90 dark:to-[#082f49]/86 shadow-[0_32px_82px_rgba(76,29,149,0.34),0_10px_28px_rgba(15,23,42,0.24)] dark:shadow-[0_28px_72px_rgba(99,102,241,0.16)]">
 
                         {/* Glass specular highlight */}
                         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-                            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/45 to-transparent" />
-                            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-                            <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-white/[0.07] blur-[70px]" />
+                            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/55 to-transparent" />
+                            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/16 to-transparent" />
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.14),transparent_38%),linear-gradient(135deg,rgba(15,23,42,0.14),transparent_46%,rgba(15,23,42,0.22))]" />
+                            <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-white/[0.09] blur-[70px]" />
                         </div>
 
                         <div className="relative p-6 sm:p-8 lg:p-10 space-y-7">
 
                             {/* ── Badge row ── */}
                             <div className="flex flex-wrap items-center justify-between gap-3">
-                                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/12 border border-white/22 text-white">
-                                    <Eye className="w-3.5 h-3.5 opacity-80" />
+                                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/14 border border-white/28 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.16)]">
+                                    <Eye className="w-3.5 h-3.5 opacity-95" />
                                     <span className="text-[10px] font-black uppercase tracking-[0.28em]">Observer Mode</span>
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] animate-pulse" />
                                 </div>
-                                <span className="text-[10px] font-semibold text-white/40 uppercase tracking-widest">
+                                <span className="text-[10px] font-semibold text-white/72 uppercase tracking-widest">
                                     Millennia World School · MTSS
                                 </span>
                             </div>
 
                             {/* ── Title ── */}
                             <div>
-                                <p className="text-[11px] font-black uppercase tracking-[0.35em] text-white/50 mb-1.5">
+                                <p className="text-[11px] font-black uppercase tracking-[0.35em] text-white/76 mb-1.5">
                                     Welcome back, {displayName}
                                 </p>
                                 <h1 className="text-2xl sm:text-3xl lg:text-[2.25rem] font-black text-white leading-tight tracking-tight">
                                     MTSS Executive Overview
                                 </h1>
-                                <p className="text-sm text-white/55 mt-1.5 font-medium">
+                                <p className="text-sm text-white/82 mt-1.5 font-medium">
                                     All units · Kindergarten → Junior High · View-only access
                                 </p>
                             </div>
 
                             {/* ── Stat Counters (4 columns) ── */}
-                            <div ref={statsRef} className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-0 sm:divide-x sm:divide-white/10 pb-1">
+                            <div ref={statsRef} className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-0 sm:divide-x sm:divide-white/16 pb-1">
                                 <StatCounter
                                     targetValue={totalStudents}
                                     label="Students in MTSS"
@@ -421,7 +422,7 @@ const ObserverDashboardPage = memo(() => {
                             {/* ── Tier Movement snapshot (if available) ── */}
                             {tierMovement?.length > 0 && (
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/40 mb-2">
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/72 mb-2">
                                         30-day Tier Movement
                                     </p>
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -446,7 +447,7 @@ const ObserverDashboardPage = memo(() => {
                                             className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all duration-200 border focus:outline-none ${
                                                 active
                                                     ? "bg-white text-indigo-700 border-white shadow-[0_4px_14px_rgba(255,255,255,0.25)]"
-                                                    : "bg-white/10 text-white/70 border-white/18 hover:bg-white/18 hover:text-white hover:border-white/30 active:scale-95"
+                                                    : "bg-white/12 text-white/86 border-white/24 hover:bg-white/22 hover:text-white hover:border-white/36 active:scale-95"
                                             }`}
                                         >
                                             <Icon className="w-3.5 h-3.5 flex-shrink-0" />
@@ -468,10 +469,10 @@ const ObserverDashboardPage = memo(() => {
 
                         {/* Recent activity feed */}
                         {recentActivity?.length > 0 && (
-                            <div className="rounded-[24px] border border-white/20 dark:border-white/10 bg-white/[0.06] dark:bg-white/[0.04] backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.10)] p-5">
+                            <div className="rounded-[24px] border border-slate-200/90 dark:border-white/10 bg-white/88 dark:bg-white/[0.05] backdrop-blur-xl shadow-[0_14px_36px_rgba(15,23,42,0.10)] p-5">
                                 <div className="flex items-center gap-2 mb-4">
                                     <Activity className="w-4 h-4 text-indigo-400" />
-                                    <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-600 dark:text-slate-300">
+                                    <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-700 dark:text-slate-300">
                                         Recent Activity
                                     </p>
                                 </div>
@@ -485,10 +486,10 @@ const ObserverDashboardPage = memo(() => {
 
                         {/* Strategy highlights */}
                         {strategyHighlights?.length > 0 && (
-                            <div className="rounded-[24px] border border-white/20 dark:border-white/10 bg-white/[0.06] dark:bg-white/[0.04] backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.10)] p-5">
+                            <div className="rounded-[24px] border border-slate-200/90 dark:border-white/10 bg-white/88 dark:bg-white/[0.05] backdrop-blur-xl shadow-[0_14px_36px_rgba(15,23,42,0.10)] p-5">
                                 <div className="flex items-center gap-2 mb-4">
                                     <Sparkles className="w-4 h-4 text-violet-400" />
-                                    <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-600 dark:text-slate-300">
+                                    <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-700 dark:text-slate-300">
                                         Active Strategies
                                     </p>
                                 </div>

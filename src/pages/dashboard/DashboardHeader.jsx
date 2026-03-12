@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import { memo } from "react";
 import { Calendar } from "lucide-react";
 import { periodOptions } from "./utils";
 
@@ -17,11 +17,32 @@ const DashboardHeader = memo(({
     const formatDate = (dateString) => {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', {
-            weekday: 'long',
             year: 'numeric',
-            month: 'long',
+            month: 'short',
             day: 'numeric'
         });
+    };
+
+    const getDateHelperText = () => {
+        if (isDatePickerDisabled) {
+            return 'Showing entire emotional history.';
+        }
+
+        const dateLabel = selectedDate ? formatDate(selectedDate) : 'the selected date';
+        const prefix = isApplyDisabled ? 'Showing' : 'Apply to show';
+
+        switch (selectedPeriod) {
+            case 'today':
+                return `${prefix} metrics for ${dateLabel}.`;
+            case 'week':
+                return `${prefix} the 7-day trend ending on ${dateLabel}.`;
+            case 'month':
+                return `${prefix} the 30-day trend ending on ${dateLabel}.`;
+            case 'semester':
+                return `${prefix} the semester trend ending on ${dateLabel}.`;
+            default:
+                return `${prefix} metrics for ${dateLabel}.`;
+        }
     };
 
     const isDatePickerDisabled = selectedPeriod === 'all';
@@ -101,9 +122,7 @@ const DashboardHeader = memo(({
                             )}
                         </div>
                         <p className="text-[10px] text-muted-foreground">
-                            {isDatePickerDisabled
-                                ? 'Showing entire emotional history.'
-                                : 'Use apply to refresh metrics for the chosen date.'}
+                            {getDateHelperText()}
                         </p>
                     </section>
 

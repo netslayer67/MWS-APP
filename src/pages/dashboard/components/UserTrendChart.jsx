@@ -1,5 +1,5 @@
-import React, { memo, useMemo, useState } from "react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { memo, useMemo, useState } from "react";
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { TrendingUp, User } from "lucide-react";
 import UserListModal from "./UserListModal";
 
@@ -10,7 +10,7 @@ const normalizeDateKey = (value) => {
     return parsed.toISOString().split("T")[0];
 };
 
-const UserTrendChart = memo(({ userData = [], selectedUser = null, period = 'week' }) => {
+const UserTrendChart = memo(({ trendData = [], userData = [], selectedUser = null, period = 'week' }) => {
     const [modalState, setModalState] = useState({
         isOpen: false,
         title: '',
@@ -20,6 +20,19 @@ const UserTrendChart = memo(({ userData = [], selectedUser = null, period = 'wee
     });
 
     const chartData = useMemo(() => {
+        if (Array.isArray(trendData) && trendData.length > 0) {
+            return trendData
+                .map((entry) => ({
+                    date: entry.date,
+                    presence: typeof entry.avgPresence === "number" ? entry.avgPresence : 0,
+                    capacity: typeof entry.avgCapacity === "number" ? entry.avgCapacity : 0,
+                    submissions: entry.totalCheckins ?? entry.submissions ?? 0,
+                    users: Array.isArray(entry.users) ? entry.users : [],
+                }))
+                .filter((entry) => entry.date)
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+        }
+
         if (!userData || userData.length === 0) return [];
 
         // Group data by date and calculate averages
@@ -50,7 +63,10 @@ const UserTrendChart = memo(({ userData = [], selectedUser = null, period = 'wee
             submissions: group.count,
             users: group.users || [] // Store users for each date
         })).sort((a, b) => new Date(a.date) - new Date(b.date));
-    }, [userData]);
+    }, [trendData, userData]);
+
+    const xAxisMinTickGap = period === "today" ? 48 : period === "week" ? 24 : 12;
+    const hasAnySubmissions = chartData.some((entry) => entry.submissions > 0);
 
     const handleSubmissionsClick = (data) => {
         if (data && data.users) {
@@ -94,7 +110,7 @@ const UserTrendChart = memo(({ userData = [], selectedUser = null, period = 'wee
         return null;
     };
 
-    if (chartData.length === 0) {
+    if (chartData.length === 0 || !hasAnySubmissions) {
         return (
             <div className="glass glass-card p-6 text-center">
                 <User className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
@@ -134,6 +150,7 @@ const UserTrendChart = memo(({ userData = [], selectedUser = null, period = 'wee
                                 dataKey="date"
                                 className="text-xs"
                                 tick={{ fill: 'currentColor' }}
+                                minTickGap={xAxisMinTickGap}
                                 tickFormatter={(value) => {
                                     const parsed = new Date(value);
                                     if (Number.isNaN(parsed.getTime())) return value;

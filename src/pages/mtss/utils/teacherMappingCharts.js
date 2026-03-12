@@ -32,8 +32,13 @@ export const buildHistory = (assignment = {}) =>
         .reverse()
         .map((entry) => ({
             date: formatDate(entry.date, { month: "short", day: "numeric", year: "numeric" }),
+            timestamp: entry.date || null,
             score: entry.value ?? "-",
+            unit: entry.unit || assignment.targetScore?.unit || assignment.baselineScore?.unit || assignment.metricLabel || null,
             notes: entry.summary || entry.nextSteps || "Check-in recorded",
+            performed: entry.performed !== false,
+            skipReason: entry.skipReason || null,
+            skipReasonNote: entry.skipReasonNote || null,
             celebration: entry.celebration || null,
             evidence: entry.evidence || [],
             signal: entry.signal || null,

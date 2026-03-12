@@ -6,6 +6,7 @@ import { TYPE_LOOKUP } from "../utils/interventionConstants";
 import { getProgressAssignmentOptions } from "../utils/editPlanAccess";
 import { SKIP_REASONS } from "../config/interventionFormConfig";
 import EvidenceUploader from "./EvidenceUploader";
+import InterventionActivityLog from "./InterventionActivityLog";
 import { fetchKindergartenInterventionBank } from "@/services/mtssService";
 import {
     FALLBACK_INTERVENTION_BANK,
@@ -97,6 +98,14 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
     const [bankLoading, setBankLoading] = useState(false);
 
     const selectedOption = assignmentOptions.find((opt) => opt.assignmentId === formState.assignmentId);
+    const selectedLogIntervention = useMemo(() => {
+        if (!selectedOption) return null;
+        return {
+            ...selectedOption,
+            label: formatSubjectLabel(selectedOption),
+            mentor: selectedOption.mentor || student?.profile?.mentor || student?.mentor || null,
+        };
+    }, [selectedOption, student]);
     const lockedUnit = selectedOption?.metricLabel || formState.scoreUnit || "score";
     const gradeLabel = student?.grade || student?.currentGrade || "Grade";
     const selectedSignal = formState.signal || null;
@@ -339,6 +348,20 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                                 </select>
                             </div>
                         </section>
+
+                        {selectedLogIntervention && (
+                            <section className="rounded-2xl border border-primary/15 bg-white/70 dark:bg-slate-900/40 p-4 sm:p-5 space-y-4">
+                                <p className="text-xs font-semibold uppercase tracking-[0.22em] sm:tracking-[0.3em] text-muted-foreground">
+                                    Intervention Activity
+                                </p>
+                                <InterventionActivityLog
+                                    intervention={selectedLogIntervention}
+                                    title={`${selectedLogIntervention.label} Log`}
+                                    emptyTitle="No intervention activity yet"
+                                    emptyMessage="Plan revisions and progress updates for this subject will appear here."
+                                />
+                            </section>
+                        )}
 
                         <section className="rounded-2xl border border-primary/15 bg-white/70 dark:bg-slate-900/40 p-4 sm:p-5 space-y-4">
                             <div className="flex items-center gap-2">

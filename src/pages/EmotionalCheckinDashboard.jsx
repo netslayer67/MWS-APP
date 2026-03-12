@@ -1,4 +1,4 @@
-import React, { useState, memo, useMemo, useCallback, Suspense, lazy, useEffect, useRef } from "react";
+import { useState, memo, useMemo, useCallback, Suspense, lazy, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { ShieldCheck } from "lucide-react";
@@ -14,9 +14,6 @@ import {
 } from "@/utils/accessControl";
 
 // Optimized imports - split into logical components
-const PrimaryNavButtons = lazy(() =>
-    import(/* webpackChunkName: "nav-buttons" */ "./dashboard/PrimaryNavButtons")
-);
 const DashboardHeader = lazy(() =>
     import(/* webpackChunkName: "dashboard-header" */ "./dashboard/DashboardHeader")
 );
@@ -36,7 +33,7 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { user } = useSelector((state) => state.auth);
-    const { stats, loading, error, selectedPeriod, selectedDate } = useSelector((state) => state.dashboard);
+    const { stats, loading, selectedPeriod, selectedDate } = useSelector((state) => state.dashboard);
 
     const todayISO = useMemo(() => new Date().toISOString().split('T')[0], []);
     const [pendingDate, setPendingDate] = useState(selectedDate || todayISO);
@@ -49,15 +46,8 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
     // Check if user is head_unit for special UI elements
     const isHeadUnit = dashboardRole === 'head_unit';
     const isDirectorate = ['directorate', 'admin', 'superadmin'].includes(dashboardRole || '');
-    const [isLoaded, setIsLoaded] = useState(false);
     const [filters, setFilters] = useState({});
     const directorateAutoPeriodApplied = useRef(false);
-
-    // Performance optimization: Defer heavy operations
-    useEffect(() => {
-        const timer = setTimeout(() => setIsLoaded(true), 100);
-        return () => clearTimeout(timer);
-    }, []);
 
     useEffect(() => {
         if (selectedDate) {
@@ -145,14 +135,6 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
     // console.log('Stats data:', stats);
     // console.log('Dashboard stats:', stats);
 
-    const handleMTSSClick = useCallback(() => {
-        navigate('/mtss');
-    }, [navigate]);
-
-    const handleDailyCheckinClick = useCallback(() => {
-        navigate('/support-hub');
-    }, [navigate]);
-
     // Optimized loading fallback component - reduced animations for performance
     const LoadingFallback = memo(() => (
         <div className="glass glass-card">
@@ -182,16 +164,14 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
     const handleApplyDate = useCallback(() => {
         if (!pendingDate) return;
         dispatch(setSelectedDate(pendingDate));
-        if (selectedPeriod !== 'all') {
-            dispatch(fetchDashboardStats({ period: selectedPeriod, date: pendingDate }));
-        }
-    }, [dispatch, pendingDate, selectedPeriod]);
+    }, [dispatch, pendingDate]);
 
     const isApplyDisabled = useMemo(() => {
         if (selectedPeriod === "all") return true;
         if (!pendingDate) return true;
-        return pendingDate === selectedDate;
-    }, [pendingDate, selectedDate, selectedPeriod]);
+        const activeDate = selectedDate || todayISO;
+        return pendingDate === activeDate;
+    }, [pendingDate, selectedDate, selectedPeriod, todayISO]);
 
     return (
         <div className="min-h-screen text-foreground relative overflow-hidden">
