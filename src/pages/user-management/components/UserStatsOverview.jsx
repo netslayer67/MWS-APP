@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from "react";
+import { memo, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Users, UserCheck, Building, GraduationCap, Briefcase, Crown } from "lucide-react";
 
@@ -202,6 +202,10 @@ const UserStatsOverview = memo(({ organizationStructure, totalUsers, lastUpdated
                                         </div>
                                         <div className="flex justify-between text-muted-foreground">
                                             <span>Finance</span>
+                                            <span>0</span>
+                                        </div>
+                                        <div className="flex justify-between text-muted-foreground">
+                                            <span>CARE</span>
                                             <span>0</span>
                                         </div>
                                     </>

@@ -1,15 +1,14 @@
 import { memo } from "react";
-import { TrendingUp, FilePenLine } from "lucide-react";
-import { ensureStudentInterventions, getMostCriticalForDisplay } from "../utils/interventionUtils";
-import { formatPlanAuditDate } from "../utils/editPlanAccess";
+import { TrendingUp, FilePenLine, Calendar, User } from "lucide-react";
+import { ensureStudentInterventions } from "../utils/interventionUtils";
+import { formatPlanAuditDate, resolveProgressAssignmentForStudent } from "../utils/editPlanAccess";
+import InterventionChips, { getAccentColor, getMaxTierCode } from "./InterventionChips";
 
-const CARD_ACCENT = [
-    "from-indigo-500 to-purple-500",
-    "from-cyan-500 to-blue-500",
-    "from-amber-500 to-orange-500",
-    "from-emerald-500 to-teal-500",
-    "from-pink-500 to-rose-500",
-];
+const TIER_CARD_RING = {
+    tier3: "ring-1 ring-rose-300/40 dark:ring-rose-600/25",
+    tier2: "ring-1 ring-amber-300/40 dark:ring-amber-600/25",
+    tier1: "",
+};
 
 const StudentsTableMobileCard = memo(
     ({
@@ -24,18 +23,12 @@ const StudentsTableMobileCard = memo(
         selectable,
         selected,
         onSelect,
-        tierBadgeStyles,
-        interventionIcons,
-        defaultIcon,
-        universalIcon,
     }) => {
         const interventions = ensureStudentInterventions(student.interventions);
-        const profile = student.profile || {};
-        const criticalInfo = getMostCriticalForDisplay(interventions, profile, student);
-        const tierStyle = tierBadgeStyles[criticalInfo.tierCode] || tierBadgeStyles.tier1;
-        const icon = criticalInfo.intervention
-            ? interventionIcons[criticalInfo.intervention.type] || defaultIcon
-            : universalIcon;
+        const maxTier = getMaxTierCode(interventions);
+        const mentorLabel = student.mentor || student.profile?.mentor || "";
+
+        /* ── Assignment & action logic ─────────────────────────── */
         const assignmentOptions = Array.isArray(student.assignmentOptions) ? student.assignmentOptions : [];
         const primaryAssignment = assignmentOptions[0] || null;
         const hasInterventionPlan = Boolean(
@@ -51,11 +44,14 @@ const StudentsTableMobileCard = memo(
                 ? canEditPlanForStudent(student)
                 : Boolean(primaryAssignment?.assignmentId || student.assignmentId)
         );
+        const progressAssignment = resolveProgressAssignmentForStudent(student);
+        const canSubmitProgress = Boolean(progressAssignment?.assignmentId);
+
         const actionButtons = [];
-        if (hasInterventionPlan) {
+        if (canSubmitProgress) {
             actionButtons.push({
                 key: "progress",
-                label: "Progress Update",
+                label: "Update",
                 onClick: (e) => { e.stopPropagation(); onUpdate?.(student); },
                 icon: TrendingUp,
                 className: "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200/50 dark:border-amber-700/40",
@@ -71,28 +67,49 @@ const StudentsTableMobileCard = memo(
             });
         }
 
-        const accent = CARD_ACCENT[index % CARD_ACCENT.length];
+        const accent = getAccentColor(interventions, index);
+        const cardRing = TIER_CARD_RING[maxTier] || "";
+
+        /* Smarter subtitle: avoid "Grade 7 · Grade 7 - Helix" redundancy */
+        const classLabel = student.className || "";
+        const gradeLabel = student.grade || "";
+        const subtitle = classLabel
+            ? (classLabel.toLowerCase().includes(gradeLabel.toLowerCase().replace("grade ", ""))
+                ? classLabel
+                : `${gradeLabel} · ${classLabel}`)
+            : gradeLabel;
 
         return (
             <div
                 onClick={() => onView?.(student)}
-                className="relative overflow-hidden rounded-2xl bg-white/90 dark:bg-slate-900/70 backdrop-blur-lg border border-slate-200/60 dark:border-slate-700/50 shadow-[0_8px_30px_rgba(15,23,42,0.08)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.25)] cursor-pointer active:scale-[0.99] transition-transform duration-100"
+                className={`relative overflow-hidden rounded-2xl bg-white/90 dark:bg-slate-900/70 backdrop-blur-lg border border-slate-200/60 dark:border-slate-700/50 shadow-[0_6px_24px_rgba(15,23,42,0.07)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.22)] cursor-pointer active:scale-[0.99] transition-transform duration-100 ${cardRing}`}
             >
                 {/* Top accent bar */}
                 <div className={`h-1 w-full bg-gradient-to-r ${accent}`} />
 
-                <div className="p-3 space-y-2.5">
-                    {/* Name row */}
-                    <div className="flex items-start justify-between gap-2.5">
+                <div className="px-3.5 pt-3 pb-2.5">
+                    {/* ── Section 1: Header (name + meta) ───────────── */}
+                    <div className="flex items-start justify-between gap-2 mb-2.5">
                         <div className="flex-1 min-w-0">
-                            <span className="font-bold text-[13px] text-slate-800 dark:text-white block truncate">
+                            <span className="font-bold text-[14px] leading-tight text-slate-800 dark:text-white block truncate">
                                 {student.name}
                             </span>
-                            <span className="text-[10px] text-slate-500 dark:text-slate-300 mt-0.5 block truncate">
-                                {student.grade} · {student.className || "\u2014"}
-                            </span>
+                            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[140px]">
+                                    {subtitle}
+                                </span>
+                                {mentorLabel && (
+                                    <>
+                                        <span className="w-px h-2.5 bg-slate-300 dark:bg-slate-600 shrink-0" />
+                                        <span className="inline-flex items-center gap-0.5 text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[100px]">
+                                            <User className="w-2.5 h-2.5 shrink-0 opacity-60" />
+                                            {mentorLabel}
+                                        </span>
+                                    </>
+                                )}
+                            </div>
                         </div>
-                        <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center gap-1.5 shrink-0 pt-0.5" onClick={(e) => e.stopPropagation()}>
                             {selectable && (
                                 <input
                                     type="checkbox"
@@ -101,45 +118,40 @@ const StudentsTableMobileCard = memo(
                                     onChange={() => onSelect?.(student)}
                                 />
                             )}
-                            {/* Tier badge in top-right */}
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-bold ${tierStyle.bg} ${tierStyle.text}`}>
-                                {criticalInfo.tier}
-                            </span>
                         </div>
                     </div>
 
-                    {/* Focus + Progress row */}
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                        {criticalInfo.mode === "universal" ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/25 border border-emerald-200/60 dark:border-emerald-700/40 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
-                                <span className="text-[11px]">{universalIcon}</span>
-                                Universal
-                            </span>
-                        ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/40 text-[9px] font-semibold text-slate-700 dark:text-slate-200">
-                                <span className="text-[11px]">{icon}</span>
-                                {criticalInfo.label}
-                            </span>
-                        )}
-                        <ProgressBadge status={student.progress} compact />
+                    {/* ── Section 2: Interventions (scroll strip) + Progress ─ */}
+                    <div className="flex items-center justify-between gap-2 mb-2.5">
+                        <div className="flex-1 min-w-0">
+                            <InterventionChips interventions={interventions} scroll />
+                        </div>
+                        <div className="shrink-0">
+                            <ProgressBadge status={student.progress} compact />
+                        </div>
                     </div>
 
-                    {/* Bottom row: date + actions */}
-                    <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800/60">
-                        <span className="block text-[10px] text-slate-500 dark:text-slate-300 font-medium truncate">
-                            {student.nextUpdate}
-                        </span>
+                    {/* ── Section 3: Footer (date + actions) ────────── */}
+                    <div className="pt-2 border-t border-slate-100/80 dark:border-slate-800/50">
+                        {/* Date info */}
+                        <div className="flex items-center gap-1 mb-1">
+                            <Calendar className="w-2.5 h-2.5 text-slate-400 dark:text-slate-500 shrink-0" />
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate">
+                                {student.nextUpdate}
+                            </span>
+                        </div>
                         {lastModifiedAt && (
-                            <span
-                                className="block text-[9px] text-cyan-600 dark:text-cyan-300 truncate"
+                            <p
+                                className="text-[9px] text-slate-400 dark:text-slate-500 truncate mb-1.5 pl-[14px]"
                                 title={`Last modified: ${lastModifiedBy} · ${lastModifiedAt}`}
                             >
-                                Last modified: {lastModifiedBy} · {lastModifiedAt}
-                            </span>
+                                Updated by {lastModifiedBy} · {lastModifiedAt}
+                            </p>
                         )}
 
-                        {showActions && (
-                            <div className="flex flex-wrap gap-1.5">
+                        {/* Action buttons */}
+                        {showActions && actionButtons.length > 0 && (
+                            <div className="flex gap-2 mt-1.5">
                                 {actionButtons.map((action) => {
                                     const Icon = action.icon;
                                     return (
@@ -148,7 +160,7 @@ const StudentsTableMobileCard = memo(
                                             type="button"
                                             onClick={action.onClick}
                                             aria-label={action.label}
-                                            className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[10px] font-semibold active:scale-95 transition-all ${action.className}`}
+                                            className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border text-[10px] font-semibold active:scale-95 transition-all ${action.className}`}
                                         >
                                             <Icon className="w-3 h-3 shrink-0" />
                                             {action.label}

@@ -1,12 +1,10 @@
-import React, { memo, useMemo } from "react";
+import { memo, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Building, Users, User, Crown, GraduationCap, Briefcase } from "lucide-react";
 
 const OrganizationChart = memo(({ organizationStructure, users }) => {
     const orgData = useMemo(() => {
         if (!organizationStructure?.stats) return null;
-
-        const { stats } = organizationStructure;
 
         // Group users by department and role
         const departmentGroups = {};
@@ -21,7 +19,8 @@ const OrganizationChart = memo(({ organizationStructure, users }) => {
             'Operational',
             'MAD Lab',
             'Finance',
-            'Pelangi'
+            'Pelangi',
+            'CARE'
         ];
 
         departments.forEach(dept => {

@@ -1,7 +1,7 @@
-import React, { memo, useMemo } from "react";
+import { memo, useMemo } from "react";
 import { motion } from "framer-motion";
 import { ClipboardCheck, Loader2 } from "lucide-react";
-import { normalizeTierCode } from "../utils/teacherMappingHelpers";
+import { getProgressAssignmentOptions } from "../utils/editPlanAccess";
 import { SKIP_REASONS } from "../config/interventionFormConfig";
 
 const readonlyField =
@@ -47,18 +47,9 @@ const buildBaselineTargetLabel = (option) => {
 
 const getAssignmentOptions = (student) => {
     if (!student) return [];
-    const raw = Array.isArray(student.assignmentOptions) ? student.assignmentOptions : [];
+    const raw = getProgressAssignmentOptions(student);
     if (raw.length) return raw;
-    if (!student.assignmentId) return [];
-    return [
-        {
-            assignmentId: student.assignmentId,
-            focus: student.type || "Focused Support",
-            tier: student.tier || "Tier 1",
-            tierCode: normalizeTierCode(student.tier) || "tier1",
-            metricLabel: null,
-        },
-    ];
+    return [];
 };
 
 const getEscalatedOptions = (options = []) => {
@@ -174,7 +165,7 @@ const ProgressFormPanel = memo(
                                     </option>
                                 ))
                             ) : (
-                                <option value="">Select a student first</option>
+                                <option value="">No subjects you can update</option>
                             )}
                         </select>
                     </div>

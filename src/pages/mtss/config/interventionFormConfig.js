@@ -13,7 +13,7 @@ export const INTERVENTION_TYPES = [
 ];
 
 export const STRATEGY_TYPE_ALIASES = {
-    english: ["english", "ela", "literacy", "reading", "ela/reading", "ela & reading", "sight words"],
+    english: ["english", "bahasa inggris", "ela", "literacy", "reading", "ela/reading", "ela & reading", "sight words"],
     math: ["math", "mathematics", "numeracy", "stem"],
     behavior: ["behavior", "behaviour", "conduct", "regulation", "sel"],
     sel: ["sel", "social emotional", "social-emotional", "behavior", "wellness"],

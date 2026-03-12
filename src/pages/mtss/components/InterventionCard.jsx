@@ -1,4 +1,4 @@
-import { memo, useRef, useEffect } from "react";
+import { memo, useRef, useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { animate } from "animejs";
 import {
@@ -27,31 +27,47 @@ const InterventionCard = memo(({ intervention, index, isSelected, onSelect }) =>
     const badgeStyle   = getTierBadgeStyle(intervention.tier);
     const stripe       = TIER_STRIPE[intervention.tier] || TIER_STRIPE.tier1;
     const signalMeta   = intervention.latestSignal ? SIGNAL_META[intervention.latestSignal] : null;
+    const cardRef      = useRef(null);
     const barRef       = useRef(null);
+    const [visible, setVisible] = useState(false);
+
+    /* anime.js — card entrance on mount (replaces AOS to avoid re-trigger bug) */
+    useEffect(() => {
+        const el = cardRef.current;
+        if (!el) return;
+        animate(el, {
+            opacity:    [0, 1],
+            translateY: [16, 0],
+            duration:   420,
+            delay:      60 + index * 50,
+            ease:       "outExpo",
+        });
+        const t = setTimeout(() => setVisible(true), 80 + index * 50);
+        return () => clearTimeout(t);
+    }, [index]);
 
     /* anime.js — fill progress bar after mount */
     useEffect(() => {
-        if (!barRef.current || isQualitative) return;
+        if (!barRef.current || isQualitative || !visible) return;
         const pct = intervention.progress || 0;
         animate(barRef.current, {
             width: ["0%", `${pct}%`],
             duration: 900,
-            delay: 380 + index * 65,
+            delay: 200,
             ease: "outExpo",
         });
-    }, [intervention.progress, index, isQualitative]);
+    }, [intervention.progress, visible, isQualitative]);
 
     return (
         <div
-            data-aos="fade-up"
-            data-aos-delay={index * 55}
-            data-aos-duration="400"
+            ref={cardRef}
+            style={{ opacity: 0 }}
             onClick={() => intervention.hasRealData && onSelect?.(intervention)}
             className={[
                 /* iOS Liquid Glass base */
-                "group relative flex items-center gap-3",
-                "rounded-[18px] overflow-hidden",
-                "pl-3 pr-3 py-3",
+                "group relative flex items-center gap-2.5 sm:gap-3",
+                "rounded-2xl sm:rounded-[18px] overflow-hidden",
+                "pl-2.5 pr-2.5 py-2 sm:pl-3 sm:pr-3 sm:py-3",
                 "backdrop-blur-xl",
                 "bg-white/70 dark:bg-white/[0.04]",
                 "border border-white/60 dark:border-white/[0.08]",
@@ -69,7 +85,7 @@ const InterventionCard = memo(({ intervention, index, isSelected, onSelect }) =>
             <div className={`absolute left-0 top-0 w-[3px] h-full bg-gradient-to-b ${stripe}`} />
 
             {/* Subject emoji icon */}
-            <div className={`flex-shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br ${config.gradient} flex items-center justify-center shadow-sm text-[15px]`}>
+            <div className={`flex-shrink-0 w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-gradient-to-br ${config.gradient} flex items-center justify-center shadow-sm text-[13px] sm:text-[15px]`}>
                 {config.emoji}
             </div>
 
@@ -86,7 +102,7 @@ const InterventionCard = memo(({ intervention, index, isSelected, onSelect }) =>
                 </div>
 
                 {/* Row 2 — Focus area */}
-                <p className="text-[9px] sm:text-[10px] text-muted-foreground leading-snug truncate mb-1.5">
+                <p className="text-[9px] sm:text-[10px] text-muted-foreground leading-snug truncate mb-1">
                     {intervention.focusArea || intervention.strategyName || "Core support"}
                 </p>
 

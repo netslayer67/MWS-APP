@@ -7,6 +7,9 @@ class SocketService {
         this.personalUserId = null;
         this.dashboardUserId = null;
         this.notificationUserId = null;
+        this.mtssAdminJoined = false;
+        this.mtssMentorId = null;
+        this.mtssLiveScope = null;
     }
 
     canEmit() {
@@ -31,6 +34,27 @@ class SocketService {
         }
     }
 
+    rejoinTrackedRooms() {
+        if (this.dashboardUserId) {
+            this.emit('join-dashboard', this.dashboardUserId);
+        }
+        if (this.personalUserId) {
+            this.emit('join-personal', this.personalUserId);
+        }
+        if (this.notificationUserId) {
+            this.emit('join-notifications', this.notificationUserId);
+        }
+        if (this.mtssAdminJoined) {
+            this.emit('join-mtss-admin');
+        }
+        if (this.mtssMentorId) {
+            this.emit('join-mtss-mentor', this.mtssMentorId);
+        }
+        if (this.mtssLiveScope) {
+            this.emit('join-mtss-live', this.mtssLiveScope);
+        }
+    }
+
     connect() {
         if (this.socket) {
             return this.socket;
@@ -47,6 +71,7 @@ class SocketService {
         this.socket.on('connect', () => {
             console.log('Connected to Socket.io server');
             this.isConnected = true;
+            this.rejoinTrackedRooms();
         });
 
         this.socket.on('disconnect', () => {
@@ -120,10 +145,38 @@ class SocketService {
     onSupportRequestHandled(callback) { this.on('support_request_handled', callback); }
     onPersonalNewCheckin(callback) { this.on('personal:new-checkin', callback); }
 
-    joinMtssAdmin() { this.emit('join-mtss-admin'); }
-    leaveMtssAdmin() { this.emit('leave-mtss-admin'); }
-    joinMtssMentor(mentorId) { if (mentorId) this.emit('join-mtss-mentor', mentorId); }
-    leaveMtssMentor(mentorId) { if (mentorId) this.emit('leave-mtss-mentor', mentorId); }
+    joinMtssAdmin() {
+        this.mtssAdminJoined = true;
+        this.emit('join-mtss-admin');
+    }
+    leaveMtssAdmin() {
+        this.emit('leave-mtss-admin');
+        this.mtssAdminJoined = false;
+    }
+    joinMtssMentor(mentorId) {
+        if (!mentorId) return;
+        this.mtssMentorId = mentorId;
+        this.emit('join-mtss-mentor', mentorId);
+    }
+    leaveMtssMentor(mentorId) {
+        const targetMentorId = mentorId || this.mtssMentorId;
+        if (!targetMentorId) return;
+        this.emit('leave-mtss-mentor', targetMentorId);
+        if (String(targetMentorId) === String(this.mtssMentorId || '')) {
+            this.mtssMentorId = null;
+        }
+    }
+    joinMtssLive(scope = 'all') {
+        this.mtssLiveScope = scope || 'all';
+        this.emit('join-mtss-live', this.mtssLiveScope);
+    }
+    leaveMtssLive(scope) {
+        const targetScope = scope || this.mtssLiveScope || 'all';
+        this.emit('leave-mtss-live', targetScope);
+        if (String(targetScope) === String(this.mtssLiveScope || '')) {
+            this.mtssLiveScope = null;
+        }
+    }
     joinDevTopology() { this.emit('join-dev-topology'); }
     leaveDevTopology() { this.emit('leave-dev-topology'); }
 
@@ -131,6 +184,8 @@ class SocketService {
     offMtssStudentsChanged(callback) { this.off('mtss:students:changed', callback); }
     onMtssAssignment(callback) { this.on('mtss:assignment', callback); }
     offMtssAssignment(callback) { this.off('mtss:assignment', callback); }
+    onMtssRefresh(callback) { this.on('mtss:refresh', callback); }
+    offMtssRefresh(callback) { this.off('mtss:refresh', callback); }
     onDevTopologyUpdate(callback) { this.on('dev-topology:update', callback); }
     offDevTopologyUpdate(callback) { this.off('dev-topology:update', callback); }
     onDevTopologySnapshot(callback) { this.on('dev-topology:snapshot', callback); }

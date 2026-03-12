@@ -76,12 +76,12 @@ const StudentProfilePage = memo(() => {
                 <div className="absolute -bottom-32 left-1/4 hidden sm:block w-72 h-72 bg-gradient-to-br from-amber-400/15 to-orange-400/15 dark:from-amber-600/10 dark:to-orange-600/10 rounded-full blur-3xl" />
             </div>
 
-            <div className="relative z-10 container max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-8 space-y-3 sm:space-y-6">
+            <div className="relative z-10 container max-w-7xl mx-auto px-2.5 sm:px-6 py-2 sm:py-8 space-y-2 sm:space-y-6">
                 <motion.button
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     onClick={() => (window.history.length > 2 ? navigate(-1) : navigate("/mtss/teacher?tab=students"))}
-                    className={`${glassStyles.card} ${glassStyles.hover} inline-flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold shadow-lg`}
+                    className={`${glassStyles.card} ${glassStyles.hover} inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-4 sm:py-2.5 rounded-full text-[11px] sm:text-sm font-semibold shadow-lg`}
                 >
                     <ArrowLeft className="w-4 h-4" />
                     <span className="hidden sm:inline">Back to Students</span>
@@ -103,7 +103,7 @@ const StudentProfilePage = memo(() => {
                         latestSignal={latestSignal}
                     />
 
-                    <div className="p-2.5 sm:p-6 lg:p-8 space-y-3 sm:space-y-6">
+                    <div className="p-2 sm:p-6 lg:p-8 space-y-2.5 sm:space-y-6">
                         <QuickFactsGrid student={student} profile={profile} mentorLabel={mentorLabel} />
 
                         <StudentInterventionsSection

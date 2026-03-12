@@ -5,6 +5,7 @@ import StudentsTable from "./StudentsTable";
 import QuickUpdateModal from "./QuickUpdateModal";
 import KindergartenWeeklyFocusOverview from "./KindergartenWeeklyFocusOverview";
 import { updateMentorAssignment, uploadEvidence } from "@/services/mtssService";
+import { canUserSubmitProgressForAssignment } from "../utils/editPlanAccess";
 import { ensureStudentInterventions, getMostCriticalForDisplay } from "../utils/interventionUtils";
 import { FilterBar, RosterHeader, LoadMore, STUDENTS_PANEL_BATCH } from "./StudentsPanelParts";
 
@@ -58,6 +59,17 @@ const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh, onEd
                 toast({
                     title: "No active intervention",
                     description: `${student?.name || "Student"} isn't linked to an active intervention yet.`,
+                    variant: "destructive",
+                });
+                return;
+            }
+            const selectedOption = Array.isArray(student?.assignmentOptions)
+                ? student.assignmentOptions.find((option) => option?.assignmentId === assignmentId)
+                : null;
+            if (!canUserSubmitProgressForAssignment(selectedOption)) {
+                toast({
+                    title: "Progress permission denied",
+                    description: "You can only submit progress for subjects assigned to you.",
                     variant: "destructive",
                 });
                 return;

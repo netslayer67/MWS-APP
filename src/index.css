@@ -1586,6 +1586,30 @@ html.dark .mtss-orb-7 { opacity: 0.30; }
     }
 }
 
+/* Slim horizontal scrollbar for iOS-style strips */
+.scrollbar-slim {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.12) transparent;
+}
+html.dark .scrollbar-slim {
+    scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+.scrollbar-slim::-webkit-scrollbar {
+    height: 2px;
+    width: 2px;
+    display: block;
+}
+.scrollbar-slim::-webkit-scrollbar-track {
+    background: transparent;
+}
+.scrollbar-slim::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+}
+html.dark .scrollbar-slim::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
 /* Styling for React Big Calendar */
 .rbc-pro-style .rbc-toolbar {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);

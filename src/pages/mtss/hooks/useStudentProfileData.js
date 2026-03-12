@@ -1,5 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchMentorAssignments, fetchMtssStudentById } from "@/services/mtssService";
+import socketService from "@/services/socketService";
+import {
+    MTSS_REALTIME_ADMIN_ROLES,
+    MTSS_REALTIME_MENTOR_ROLES,
+    resolveMtssRealtimeScope,
+} from "../utils/mtssRealtimeScope";
 import { getStoredUser, mapAssignmentsToStudents } from "../utils/teacherDashboardUtils";
 
 const useStudentProfileData = (slug) => {
@@ -10,51 +16,92 @@ const useStudentProfileData = (slug) => {
 
     const mentor = useMemo(() => getStoredUser(), []);
 
-    useEffect(() => {
-        let mounted = true;
-        const controller = new AbortController();
-
-        const loadStudent = async () => {
+    const loadStudent = useCallback(async ({ signal, silent = false } = {}) => {
+        if (!silent) {
             setLoading(true);
-            setError(null);
+        }
+        setError(null);
+        try {
+            const requestConfig = signal ? { signal } : {};
+            const payload = await fetchMtssStudentById(slug, requestConfig);
+            const nextStudent = payload?.student || null;
+            setStudent(nextStudent);
+
+            const details = nextStudent?.interventionDetails || [];
+            setSelectedIntervention((previousSelection) => {
+                if (!details.length) return null;
+                if (!previousSelection) return details[0];
+
+                return details.find((detail) => String(detail?.id || "") === String(previousSelection?.id || ""))
+                    || details.find((detail) => (
+                        String(detail?.type || "") === String(previousSelection?.type || "")
+                        && String(detail?.label || "") === String(previousSelection?.label || "")
+                    ))
+                    || details[0];
+            });
+        } catch (err) {
+            if (err?.name === "CanceledError" || err?.name === "AbortError") return;
             try {
-                const payload = await fetchMtssStudentById(slug, { signal: controller.signal });
-                if (!mounted) return;
-                setStudent(payload?.student || null);
-
-                const details = payload?.student?.interventionDetails || [];
-                if (details.length > 0) {
-                    setSelectedIntervention(details[0]);
+                const requestConfig = signal ? { signal } : {};
+                const { assignments = [] } = await fetchMentorAssignments({}, requestConfig);
+                const { students: normalized } = mapAssignmentsToStudents(
+                    assignments,
+                    mentor?.username || mentor?.name || "MTSS Mentor",
+                );
+                const assigned = normalized.find((item) => item.slug === slug);
+                if (assigned) {
+                    setStudent(assigned);
+                    return;
                 }
-            } catch (err) {
-                if (!mounted || err?.name === "CanceledError" || err?.name === "AbortError") return;
-                try {
-                    const { assignments = [] } = await fetchMentorAssignments({}, { signal: controller.signal });
-                    if (!mounted) return;
-                    const { students: normalized } = mapAssignmentsToStudents(
-                        assignments,
-                        mentor?.username || mentor?.name || "MTSS Mentor",
-                    );
-                    const assigned = normalized.find((item) => item.slug === slug);
-                    if (assigned) {
-                        setStudent(assigned);
-                        return;
-                    }
-                } catch (fallbackError) {
-                    if (!mounted) return;
-                }
-                setError(err.response?.data?.message || err.message || "Unable to load student profile");
-            } finally {
-                if (mounted) setLoading(false);
+            } catch (fallbackError) {
+                // Fallback intentionally ignored; surface the original profile load error below.
             }
-        };
+            setError(err.response?.data?.message || err.message || "Unable to load student profile");
+        } finally {
+            if (!silent) {
+                setLoading(false);
+            }
+        }
+    }, [slug, mentor]);
 
-        loadStudent();
+    useEffect(() => {
+        const controller = new AbortController();
+        loadStudent({ signal: controller.signal });
         return () => {
-            mounted = false;
             controller.abort();
         };
-    }, [slug, mentor]);
+    }, [loadStudent]);
+
+    useEffect(() => {
+        const userId = mentor?.id || mentor?._id;
+        const role = String(mentor?.role || "").trim().toLowerCase();
+        const liveScope = resolveMtssRealtimeScope(mentor);
+        if (!userId || !role) return;
+
+        socketService.connect();
+        socketService.joinMtssLive(liveScope);
+        if (MTSS_REALTIME_ADMIN_ROLES.has(role)) {
+            socketService.joinMtssAdmin();
+        } else if (MTSS_REALTIME_MENTOR_ROLES.has(role)) {
+            socketService.joinMtssMentor(userId);
+        }
+
+        const handleMtssRefresh = () => {
+            loadStudent({ silent: true });
+        };
+
+        socketService.onMtssRefresh(handleMtssRefresh);
+
+        return () => {
+            socketService.offMtssRefresh(handleMtssRefresh);
+            socketService.leaveMtssLive(liveScope);
+            if (MTSS_REALTIME_ADMIN_ROLES.has(role)) {
+                socketService.leaveMtssAdmin();
+            } else if (MTSS_REALTIME_MENTOR_ROLES.has(role)) {
+                socketService.leaveMtssMentor(userId);
+            }
+        };
+    }, [loadStudent, mentor]);
 
     return {
         student,

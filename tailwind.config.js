@@ -106,11 +106,16 @@ module.exports = {
                     '0%': { transform: 'translateX(-110%)' },
                     '100%': { transform: 'translateX(110%)' },
                 },
+                chipIn: {
+                    '0%': { opacity: '0', transform: 'translateY(6px) scale(0.92)' },
+                    '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+                },
             },
             animation: {
                 'blob-left': 'blobFloatLeft 12s ease-in-out infinite',
                 'blob-right': 'blobFloatRight 10s ease-in-out infinite',
                 'shimmer': 'shimmerMove 1.2s ease-in-out infinite',
+                'chip-in': 'chipIn 0.35s cubic-bezier(.34,1.56,.64,1) both',
             },
             // global transition timing & easing (useable via utilities)
             transitionTimingFunction: {

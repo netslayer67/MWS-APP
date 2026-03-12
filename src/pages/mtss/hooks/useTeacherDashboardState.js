@@ -7,7 +7,7 @@ import { createMentorAssignment, updateMentorAssignment } from "@/services/mtssS
 import { resolveEditableAssignmentOption } from "../utils/editPlanAccess";
 
 const TYPE_ALIAS_MAP = {
-    english: ["english", "ela", "reading", "literacy"],
+    english: ["english", "bahasa inggris", "ela", "reading", "literacy"],
     math: ["math", "mathematics", "numeracy"],
     behavior: ["behavior", "behaviour", "conduct"],
     sel: ["sel", "social emotional", "social-emotional"],

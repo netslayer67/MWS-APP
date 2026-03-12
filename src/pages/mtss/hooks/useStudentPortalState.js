@@ -3,6 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import socketService from "@/services/socketService";
 import {
+    MTSS_REALTIME_ADMIN_ROLES,
+    MTSS_REALTIME_MENTOR_ROLES,
+    resolveMtssRealtimeScope,
+} from "../utils/mtssRealtimeScope";
+import {
     fetchMtssStudentById,
     fetchMtssStudents,
     submitKindergartenMoodCheckin,
@@ -13,9 +18,6 @@ import {
     filterStudentsForViewer,
     mapStudentCard,
 } from "../student/portal/studentPortalStateUtils";
-
-const ADMIN_ROLES = new Set(["directorate", "admin", "superadmin", "head_unit"]);
-const MENTOR_ROLES = new Set(["teacher", "staff", "support_staff"]);
 
 export const useStudentPortalState = () => {
     const navigate = useNavigate();
@@ -30,9 +32,11 @@ export const useStudentPortalState = () => {
     const [isSubmittingMood, setIsSubmittingMood] = useState(false);
     const [isSubmittingHomeObservation, setIsSubmittingHomeObservation] = useState(false);
 
-    const loadStudents = useCallback(async () => {
+    const loadStudents = useCallback(async ({ silent = false } = {}) => {
         try {
-            setIsLoadingList(true);
+            if (!silent) {
+                setIsLoadingList(true);
+            }
             setError(null);
             const payload = await fetchMtssStudents({ limit: 500 });
             const rawStudents = Array.isArray(payload?.students) ? payload.students : [];
@@ -50,24 +54,30 @@ export const useStudentPortalState = () => {
             setError(err?.response?.data?.message || err?.message || "Failed to load student portal");
             setStudents([]);
         } finally {
-            setIsLoadingList(false);
+            if (!silent) {
+                setIsLoadingList(false);
+            }
         }
     }, [selectedStudent, user]);
 
     const loadStudentDetails = useCallback(
-        async (studentId) => {
+        async (studentId, { silent = false } = {}) => {
             if (!studentId) {
                 setStudentDetails(null);
                 return;
             }
             try {
-                setIsLoadingDetail(true);
+                if (!silent) {
+                    setIsLoadingDetail(true);
+                }
                 const payload = await fetchMtssStudentById(studentId);
                 setStudentDetails(payload?.student || null);
             } catch (err) {
                 setStudentDetails(null);
             } finally {
-                setIsLoadingDetail(false);
+                if (!silent) {
+                    setIsLoadingDetail(false);
+                }
             }
         },
         [],
@@ -84,9 +94,9 @@ export const useStudentPortalState = () => {
 
     useEffect(() => {
         const refreshPortal = () => {
-            loadStudents();
+            loadStudents({ silent: true });
             if (selectedStudent) {
-                loadStudentDetails(selectedStudent);
+                loadStudentDetails(selectedStudent, { silent: true });
             }
         };
 
@@ -96,38 +106,33 @@ export const useStudentPortalState = () => {
 
     useEffect(() => {
         const userId = user?.id || user?._id;
-        const role = user?.role;
+        const role = String(user?.role || "").trim().toLowerCase();
+        const liveScope = resolveMtssRealtimeScope(user);
         if (!userId || !role) return;
 
         socketService.connect();
-        if (ADMIN_ROLES.has(role)) {
+        socketService.joinMtssLive(liveScope);
+        if (MTSS_REALTIME_ADMIN_ROLES.has(role)) {
             socketService.joinMtssAdmin();
-        } else if (MENTOR_ROLES.has(role)) {
+        } else if (MTSS_REALTIME_MENTOR_ROLES.has(role)) {
             socketService.joinMtssMentor(userId);
         }
 
-        const handleStudentsChanged = () => {
-            loadStudents();
+        const handleMtssRefresh = () => {
+            loadStudents({ silent: true });
             if (selectedStudent) {
-                loadStudentDetails(selectedStudent);
-            }
-        };
-        const handleAssignmentChanged = () => {
-            loadStudents();
-            if (selectedStudent) {
-                loadStudentDetails(selectedStudent);
+                loadStudentDetails(selectedStudent, { silent: true });
             }
         };
 
-        socketService.onMtssStudentsChanged(handleStudentsChanged);
-        socketService.onMtssAssignment(handleAssignmentChanged);
+        socketService.onMtssRefresh(handleMtssRefresh);
 
         return () => {
-            socketService.offMtssStudentsChanged(handleStudentsChanged);
-            socketService.offMtssAssignment(handleAssignmentChanged);
-            if (ADMIN_ROLES.has(role)) {
+            socketService.offMtssRefresh(handleMtssRefresh);
+            socketService.leaveMtssLive(liveScope);
+            if (MTSS_REALTIME_ADMIN_ROLES.has(role)) {
                 socketService.leaveMtssAdmin();
-            } else if (MENTOR_ROLES.has(role)) {
+            } else if (MTSS_REALTIME_MENTOR_ROLES.has(role)) {
                 socketService.leaveMtssMentor(userId);
             }
         };

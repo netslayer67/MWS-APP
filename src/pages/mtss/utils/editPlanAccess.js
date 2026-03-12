@@ -1,5 +1,5 @@
 const SUBJECT_ALIAS_MAP = {
-    english: ["english", "ela", "reading", "literacy", "ela/reading"],
+    english: ["english", "bahasa inggris", "ela", "reading", "literacy", "ela/reading"],
     math: ["math", "mathematics", "numeracy"],
     behavior: ["behavior", "behaviour", "conduct"],
     sel: ["sel", "social emotional", "social-emotional", "behavior"],
@@ -8,6 +8,14 @@ const SUBJECT_ALIAS_MAP = {
     universal: ["universal", "all", "schoolwide", "whole school"],
 };
 const EDITABLE_STATUSES = new Set(["active", "paused", "monitoring", "on track"]);
+
+const readBooleanFlag = (assignmentOption = {}, directKey = "", nestedKey = "") => {
+    if (typeof assignmentOption?.[directKey] === "boolean") return assignmentOption[directKey];
+    if (typeof assignmentOption?.viewerPermissions?.[nestedKey] === "boolean") {
+        return assignmentOption.viewerPermissions[nestedKey];
+    }
+    return undefined;
+};
 
 const normalizeText = (value = "") =>
     value
@@ -159,6 +167,24 @@ const getCandidateAssignmentOptions = (student = {}) =>
         ? student.assignmentOptions.filter((option) => option?.assignmentId && isEditableAssignmentStatus(option?.statusKey || option?.status))
         : [];
 
+export const canUserSubmitProgressForAssignment = (assignmentOption = {}) => {
+    if (!assignmentOption?.assignmentId) return false;
+    if (!isEditableAssignmentStatus(assignmentOption?.statusKey || assignmentOption?.status)) return false;
+    const explicit = readBooleanFlag(assignmentOption, "viewerCanSubmitProgress", "canSubmitProgress");
+    return explicit === true;
+};
+
+export const getProgressAssignmentOptions = (student = {}) =>
+    getCandidateAssignmentOptions(student).filter((option) => canUserSubmitProgressForAssignment(option));
+
+export const resolveProgressAssignmentForStudent = (student = {}) => {
+    const options = getProgressAssignmentOptions(student);
+    if (!options.length) return null;
+
+    const escalated = options.filter((option) => isEscalatedAssignment(option));
+    return escalated[0] || options[0];
+};
+
 export const resolveEditableAssignmentOption = (student = {}) => {
     const options = getCandidateAssignmentOptions(student);
     if (options.length) {
@@ -178,6 +204,9 @@ export const resolveEditableAssignmentOption = (student = {}) => {
 
 export const canUserEditPlanForStudent = (user = {}, student = {}, assignmentOption = resolveEditableAssignmentOption(student)) => {
     if (!assignmentOption?.assignmentId) return false;
+
+    const explicit = readBooleanFlag(assignmentOption, "viewerCanEditPlan", "canEditPlan");
+    if (typeof explicit === "boolean") return explicit;
 
     const assignments = Array.isArray(user?.classes) ? user.classes : [];
     if (!assignments.length) return false;

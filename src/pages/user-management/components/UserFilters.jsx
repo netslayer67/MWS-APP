@@ -1,6 +1,6 @@
-import React, { memo, useState } from "react";
+import { memo, useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Filter, X, Plus, Download, GraduationCap, User } from "lucide-react";
+import { Search, Filter, X, Plus, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -207,6 +207,7 @@ const UserFilters = memo(({ filters, onFiltersChange, onAddUser }) => {
                                 <SelectItem value="MAD Lab">MAD Lab</SelectItem>
                                 <SelectItem value="Finance">Finance</SelectItem>
                                 <SelectItem value="Pelangi">Pelangi</SelectItem>
+                                <SelectItem value="CARE">CARE</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -231,6 +232,7 @@ const UserFilters = memo(({ filters, onFiltersChange, onAddUser }) => {
                                 <SelectItem value="MAD Lab">MAD Lab</SelectItem>
                                 <SelectItem value="Finance">Finance</SelectItem>
                                 <SelectItem value="Pelangi">Pelangi</SelectItem>
+                                <SelectItem value="CARE">CARE</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

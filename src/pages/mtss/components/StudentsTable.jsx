@@ -4,42 +4,12 @@ import StudentsTableMobileCard from "./StudentsTableMobileCard";
 
 const MAX_RENDER = 50;
 
-const tierBadgeStyles = {
-    tier1: {
-        bg: "bg-gradient-to-r from-emerald-400 to-teal-500",
-        text: "text-white",
-        shadow: "shadow-emerald-200/50",
-    },
-    tier2: {
-        bg: "bg-gradient-to-r from-amber-400 to-orange-500",
-        text: "text-white",
-        shadow: "shadow-amber-200/50",
-    },
-    tier3: {
-        bg: "bg-gradient-to-r from-rose-400 to-pink-500",
-        text: "text-white",
-        shadow: "shadow-rose-200/50",
-    },
-};
-
-const interventionIcons = {
-    SEL: "\uD83D\uDC96",
-    ENGLISH: "\uD83D\uDCDA",
-    MATH: "\uD83D\uDD22",
-    BEHAVIOR: "\u2B50",
-    ATTENDANCE: "\uD83D\uDCDD",
-};
-
-const DEFAULT_ICON = "\uD83D\uDCCB";
-const UNIVERSAL_ICON = "\uD83C\uDF1F";
-
 const HEADER_COLS = [
-    { label: "Student", align: "text-left", width: "w-[23%]" },
-    { label: "Class / Mentor", align: "text-left", width: "w-[16%]" },
-    { label: "Focus Area", align: "text-left", width: "w-[15%]" },
-    { label: "Tier", align: "text-left", width: "w-[8%]" },
-    { label: "Progress", align: "text-left", width: "w-[11%]" },
-    { label: "Next Update", align: "text-left", width: "w-[17%]" },
+    { label: "Student", align: "text-left", width: "w-[19%]" },
+    { label: "Class / Mentor", align: "text-left", width: "w-[14%]" },
+    { label: "Interventions", align: "text-left", width: "w-[25%]" },
+    { label: "Progress", align: "text-left", width: "w-[10%]" },
+    { label: "Next Update", align: "text-left", width: "w-[16%]" },
 ];
 
 const StudentsTable = memo(
@@ -68,6 +38,9 @@ const StudentsTable = memo(
                     data-aos-delay="120"
                     data-aos-duration="500"
                 >
+                    {/* Liquid glass top highlight */}
+                    <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/60 dark:via-white/15 to-transparent pointer-events-none" />
+
                     <table className="w-full table-fixed text-sm">
                         <thead>
                             <tr className="border-b border-slate-100 dark:border-slate-800/80">
@@ -110,10 +83,6 @@ const StudentsTable = memo(
                                         selectable={selectable}
                                         selected={selected}
                                         onSelect={onSelect}
-                                        tierBadgeStyles={tierBadgeStyles}
-                                        interventionIcons={interventionIcons}
-                                        defaultIcon={DEFAULT_ICON}
-                                        universalIcon={UNIVERSAL_ICON}
                                     />
                                 );
                             })}
@@ -140,10 +109,6 @@ const StudentsTable = memo(
                                 selectable={selectable}
                                 selected={selected}
                                 onSelect={onSelect}
-                                tierBadgeStyles={tierBadgeStyles}
-                                interventionIcons={interventionIcons}
-                                defaultIcon={DEFAULT_ICON}
-                                universalIcon={UNIVERSAL_ICON}
                             />
                         );
                     })}

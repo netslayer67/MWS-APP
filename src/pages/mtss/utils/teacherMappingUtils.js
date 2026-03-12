@@ -86,6 +86,15 @@ export const mapAssignmentsToStudents = (assignments = [], teacherName = "MTSS M
                             targetScore: assignment.targetScore || null,
                             notes: assignment.notes || null,
                             planChangeLog: Array.isArray(assignment.planChangeLog) ? assignment.planChangeLog : [],
+                            viewerPermissions: assignment.viewerPermissions || null,
+                            viewerCanEditPlan:
+                                typeof assignment.viewerCanEditPlan === "boolean"
+                                    ? assignment.viewerCanEditPlan
+                                    : undefined,
+                            viewerCanSubmitProgress:
+                                typeof assignment.viewerCanSubmitProgress === "boolean"
+                                    ? assignment.viewerCanSubmitProgress
+                                    : undefined,
                             lastPlanUpdatedAt: assignment.lastPlanUpdatedAt || assignment.updatedAt || null,
                             lastPlanUpdatedByName:
                                 assignment.lastPlanUpdatedBy?.name ||

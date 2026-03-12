@@ -18,6 +18,7 @@ const SUBJECT_EMOJI_MAP = {
     SEL: "💚",
     BEHAVIOR: "🧠",
     ATTENDANCE: "🕒",
+    INDONESIAN: "🇮🇩",
 };
 
 const SIGNAL_BADGE_MAP = {

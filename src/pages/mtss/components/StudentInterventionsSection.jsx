@@ -120,22 +120,19 @@ const StudentInterventionsSection = memo(({
     return (
         <section
             ref={sectionRef}
-            className={`${glassStyles.inner} rounded-2xl sm:rounded-3xl p-4 sm:p-6`}
+            className={`${glassStyles.inner} rounded-2xl sm:rounded-3xl p-3 sm:p-6`}
         >
             {/* ── Header ──────────────────────────────────────── */}
-            <div className="flex items-start justify-between gap-3 mb-4">
-                <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg flex-shrink-0">
-                        <Activity className="w-4 h-4 text-white" />
+            <div className="flex items-center justify-between gap-2 mb-2.5 sm:mb-4">
+                <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg flex-shrink-0">
+                        <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                     </div>
                     <div>
-                        <p className="text-[9px] uppercase tracking-[0.15em] text-muted-foreground font-semibold">
-                            Support Map
-                        </p>
-                        <h3 className="text-sm sm:text-base font-black text-foreground dark:text-white leading-tight">
-                            {isKindergartenQualitative ? "Observation Plans" : "All Interventions"}
+                        <h3 className="text-xs sm:text-base font-black text-foreground dark:text-white leading-tight">
+                            {isKindergartenQualitative ? "Observation Plans" : "Interventions"}
                             {total > 0 && (
-                                <span className="text-xs font-semibold text-muted-foreground ml-1.5">
+                                <span className="text-[10px] sm:text-xs font-semibold text-muted-foreground ml-1">
                                     · {total}
                                 </span>
                             )}
@@ -145,23 +142,23 @@ const StudentInterventionsSection = memo(({
 
                 {/* Tier count pills — top-right summary */}
                 {total > 0 && (
-                    <div className="flex items-center gap-1 flex-shrink-0 flex-wrap justify-end">
+                    <div className="flex items-center gap-1 flex-shrink-0">
                         {tierCounts.tier3 > 0 && (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-[9px] font-bold">
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-[8px] sm:text-[9px] font-bold">
                                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                                {tierCounts.tier3} T3
+                                {tierCounts.tier3}
                             </span>
                         )}
                         {tierCounts.tier2 > 0 && (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 text-[9px] font-bold">
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 text-[8px] sm:text-[9px] font-bold">
                                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                                {tierCounts.tier2} T2
+                                {tierCounts.tier2}
                             </span>
                         )}
                         {tierCounts.tier1 > 0 && (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 text-[9px] font-bold">
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 text-[8px] sm:text-[9px] font-bold">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                {tierCounts.tier1} T1
+                                {tierCounts.tier1}
                             </span>
                         )}
                     </div>
@@ -172,7 +169,7 @@ const StudentInterventionsSection = memo(({
                 <>
                     {/* ── Tier proportion bar ──────────────────── */}
                     {total > 1 && (
-                        <div className="flex rounded-full overflow-hidden h-[3px] mb-4 bg-black/[0.05] dark:bg-white/[0.06]">
+                        <div className="flex rounded-full overflow-hidden h-[3px] mb-2.5 sm:mb-4 bg-black/[0.05] dark:bg-white/[0.06]">
                             {tierCounts.tier3 > 0 && (
                                 <div
                                     ref={barT3Ref}
@@ -198,7 +195,7 @@ const StudentInterventionsSection = memo(({
                     )}
 
                     {/* ── Filter chips ─────────────────────────── */}
-                    <div className="flex items-center gap-1.5 mb-4 overflow-x-auto pb-0.5 scrollbar-none">
+                    <div className="flex items-center gap-1 sm:gap-1.5 mb-2.5 sm:mb-4 overflow-x-auto pb-1 scrollbar-slim">
                         {visibleFilters.map((f, i) => (
                             <button
                                 key={f.key ?? "all"}
@@ -206,8 +203,8 @@ const StudentInterventionsSection = memo(({
                                 style={{ opacity: 0 }}
                                 onClick={() => setActiveFilter(f.key)}
                                 className={[
-                                    "flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full",
-                                    "text-[10px] font-bold transition-all duration-200",
+                                    "flex-shrink-0 inline-flex items-center gap-1 sm:gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full",
+                                    "text-[9px] sm:text-[10px] font-bold transition-all duration-200",
                                     activeFilter === f.key ? f.active : f.inactive,
                                 ].join(" ")}
                             >
@@ -226,7 +223,7 @@ const StudentInterventionsSection = memo(({
 
             {/* ── Card grid ────────────────────────────────────── */}
             {displayed.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-1.5 sm:gap-2.5">
                     {displayed.map((intervention, idx) => (
                         <InterventionCard
                             key={intervention.id || idx}

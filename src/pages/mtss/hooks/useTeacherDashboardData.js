@@ -7,6 +7,10 @@ import {
     resolveStaffGender,
 } from "@/utils/staffIdentity";
 import {
+    MTSS_REALTIME_ADMIN_ROLES,
+    resolveMtssRealtimeScope,
+} from "../utils/mtssRealtimeScope";
+import {
     buildStatCards,
     buildGradeQueryValues,
     buildClassQueryValues,
@@ -15,8 +19,6 @@ import {
     mapAssignmentsToStudents,
     mergeRosterWithAssignments,
 } from "../utils/teacherDashboardUtils";
-
-const ADMIN_ROLES = new Set(["directorate", "admin", "superadmin", "head_unit"]);
 
 const buildGreeting = (name) =>
     buildStaffGreeting(name, {
@@ -140,30 +142,28 @@ const useTeacherDashboardData = () => {
 
     useEffect(() => {
         const userId = storedUser?.id || storedUser?._id;
-        const role = storedUser?.role;
+        const role = String(storedUser?.role || "").trim().toLowerCase();
+        const liveScope = resolveMtssRealtimeScope(storedUser);
         if (!userId || !role) return;
 
         socketService.connect();
-        if (ADMIN_ROLES.has(role)) {
+        socketService.joinMtssLive(liveScope);
+        if (MTSS_REALTIME_ADMIN_ROLES.has(role)) {
             socketService.joinMtssAdmin();
         } else {
             socketService.joinMtssMentor(userId);
         }
 
-        const handleStudentsChanged = () => {
-            loadDashboard({ silent: true });
-        };
-        const handleAssignmentChanged = () => {
+        const handleMtssRefresh = () => {
             loadDashboard({ silent: true });
         };
 
-        socketService.onMtssStudentsChanged(handleStudentsChanged);
-        socketService.onMtssAssignment(handleAssignmentChanged);
+        socketService.onMtssRefresh(handleMtssRefresh);
 
         return () => {
-            socketService.offMtssStudentsChanged(handleStudentsChanged);
-            socketService.offMtssAssignment(handleAssignmentChanged);
-            if (ADMIN_ROLES.has(role)) {
+            socketService.offMtssRefresh(handleMtssRefresh);
+            socketService.leaveMtssLive(liveScope);
+            if (MTSS_REALTIME_ADMIN_ROLES.has(role)) {
                 socketService.leaveMtssAdmin();
             } else {
                 socketService.leaveMtssMentor(userId);

@@ -1,7 +1,9 @@
-import React, { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { X, History, ChevronDown } from "lucide-react";
-import { normalizeTierCode } from "../utils/teacherMappingHelpers";
+import { X } from "lucide-react";
+import { resolveTypeKey } from "../utils/interventionNormalize";
+import { TYPE_LOOKUP } from "../utils/interventionConstants";
+import { getProgressAssignmentOptions } from "../utils/editPlanAccess";
 import { SKIP_REASONS } from "../config/interventionFormConfig";
 import EvidenceUploader from "./EvidenceUploader";
 import { fetchKindergartenInterventionBank } from "@/services/mtssService";
@@ -15,71 +17,12 @@ const baseField =
     "w-full px-4 py-3 rounded-2xl bg-white/80 dark:bg-white/10 border border-primary/20 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all";
 const readonlyField =
     "px-4 py-3 rounded-2xl bg-white/70 dark:bg-white/10 border border-primary/10 text-sm text-muted-foreground min-h-[46px] flex items-center";
-const hasValue = (value) => value !== null && value !== undefined && value !== "";
-
-const resolveGoalValue = (option) => {
-    if (!option) return null;
-    if (hasValue(option.goal)) return option.goal;
-    const goals = option.goals;
-    if (typeof goals === "string") return goals;
-    if (!Array.isArray(goals) || goals.length === 0) return null;
-    const entry = goals.find((goal) => goal);
-    if (!entry) return null;
-    if (typeof entry === "string") return entry;
-    return entry.description || entry.goal || entry.title || entry.name || null;
-};
-
-const formatScoreValue = (score, fallbackUnit) => {
-    if (score === null || score === undefined || score === "") return null;
-    if (typeof score === "number" || typeof score === "string") {
-        const text = `${score}`.trim();
-        if (!text) return null;
-        return `${text}${fallbackUnit ? ` ${fallbackUnit}` : ""}`;
-    }
-    const value = score?.value ?? score?.score ?? score?.amount;
-    if (value === null || value === undefined || value === "") return null;
-    const unit = score?.unit || fallbackUnit;
-    return `${value}${unit ? ` ${unit}` : ""}`;
-};
-
-const buildMonitoringLabel = (option) => {
-    const parts = [option?.monitoringMethod, option?.monitoringFrequency].filter((part) => hasValue(part));
-    return parts.length ? parts.join(" / ") : "Not set";
-};
-
-const buildBaselineTargetLabel = (option) => {
-    const baseline = formatScoreValue(option?.baselineScore, option?.metricLabel);
-    const target = formatScoreValue(option?.targetScore, option?.metricLabel);
-    if (!baseline && !target) return "Not set";
-    return `${baseline || "Not set"} to ${target || "Not set"}`;
-};
-
-const formatMethodShort = (method) => {
-    if (!method) return "Not set";
-    return method.replace(/^Option \d+ - /, "");
-};
-
-const formatChangeDate = (dateValue) => {
-    if (!dateValue) return "";
-    const d = new Date(dateValue);
-    if (Number.isNaN(d.getTime())) return "";
-    return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
-};
 
 const getAssignmentOptions = (student) => {
     if (!student) return [];
-    const rawOptions = Array.isArray(student.assignmentOptions) ? student.assignmentOptions : [];
+    const rawOptions = getProgressAssignmentOptions(student);
     if (rawOptions.length) return rawOptions;
-    if (!student.assignmentId) return [];
-    return [
-        {
-            assignmentId: student.assignmentId,
-            focus: student.type || "Focused Support",
-            tier: student.tier || "Tier 1",
-            tierCode: normalizeTierCode(student.tier) || "tier1",
-            statusLabel: student.progress || "On Track",
-        },
-    ];
+    return [];
 };
 
 const getEscalatedOptions = (options = []) => {
@@ -88,89 +31,14 @@ const getEscalatedOptions = (options = []) => {
 };
 
 const formatSubjectLabel = (option) => {
-    return option.focus || option.label || "Focused Support";
-};
-
-/* ── iOS-style Plan Change Log for modal ── */
-const ModalPlanChangeLog = ({ entries }) => {
-    const [open, setOpen] = useState(false);
-    const sorted = useMemo(
-        () => [...entries].sort((a, b) => new Date(b.changedAt) - new Date(a.changedAt)),
-        [entries]
-    );
-
-    return (
-        <div className="sm:col-span-2 rounded-2xl border border-primary/10 overflow-hidden" style={{ background: "hsl(var(--card) / 0.6)" }}>
-            <button
-                type="button"
-                onClick={() => setOpen((v) => !v)}
-                className="flex items-center gap-2 w-full px-4 py-3 text-left active:bg-primary/5 transition-colors duration-150"
-                style={{ WebkitTapHighlightColor: "transparent" }}
-            >
-                <History className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                <span
-                    className="flex-1 text-[13px] font-semibold text-foreground"
-                    style={{ fontFamily: "-apple-system, 'SF Pro Text', system-ui, sans-serif" }}
-                >
-                    Update Log
-                    <span className="ml-1.5 text-[11px] font-normal text-muted-foreground/50">{entries.length}</span>
-                </span>
-                <ChevronDown
-                    className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0 transition-transform duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]"
-                    style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
-                />
-            </button>
-
-            <div
-                className="grid transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]"
-                style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
-            >
-                <div className="overflow-hidden">
-                    <div className="px-4 pb-3 max-h-40 overflow-y-auto overscroll-contain">
-                        <div className="h-px bg-primary/10 mb-2.5" />
-                        <div className="space-y-1.5">
-                            {sorted.map((entry, idx) => (
-                                <div
-                                    key={idx}
-                                    className="flex items-start gap-2.5 px-3 py-2 rounded-xl transition-all duration-200"
-                                    style={{
-                                        background: "hsl(var(--muted) / 0.3)",
-                                        opacity: open ? 1 : 0,
-                                        transform: open ? "translateY(0)" : "translateY(-4px)",
-                                        transitionDelay: open ? `${Math.min(idx * 35, 180)}ms` : "0ms",
-                                    }}
-                                >
-                                    <div className="flex flex-col items-center shrink-0 pt-0.5">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_0_2px_hsl(var(--card))]" />
-                                        {idx < sorted.length - 1 && (
-                                            <div className="w-px flex-1 mt-1 bg-amber-300/25 dark:bg-amber-500/15 min-h-[10px]" />
-                                        )}
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <div className="flex items-center justify-between gap-2 mb-0.5">
-                                            <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">{entry.label}</span>
-                                            {entry.changedAt && (
-                                                <span className="text-[9px] text-muted-foreground/40 whitespace-nowrap">{formatChangeDate(entry.changedAt)}</span>
-                                            )}
-                                        </div>
-                                        <div className="text-[11px] leading-relaxed">
-                                            <span className="text-muted-foreground/60 line-through decoration-muted-foreground/20">
-                                                {formatMethodShort(entry.fromValue) || "Not set"}
-                                            </span>
-                                            <span className="mx-1 text-muted-foreground/30">&rarr;</span>
-                                            <span className="font-semibold text-foreground">
-                                                {formatMethodShort(entry.toValue) || "Not set"}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
+    const raw = option.focus || option.label || "Focused Support";
+    // Resolve raw focus area (e.g. "Bahasa Indonesia") to known intervention type label
+    const typeKey = resolveTypeKey(raw);
+    if (typeKey) {
+        const meta = TYPE_LOOKUP.get(typeKey);
+        if (meta) return meta.label;
+    }
+    return raw;
 };
 
 const DOMAIN_TAGS = [
@@ -230,11 +98,6 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
 
     const selectedOption = assignmentOptions.find((opt) => opt.assignmentId === formState.assignmentId);
     const lockedUnit = selectedOption?.metricLabel || formState.scoreUnit || "score";
-    const strategyDetail = selectedOption?.strategyName || selectedOption?.strategy || selectedOption?.focus || "Not set";
-    const goalDetail = resolveGoalValue(selectedOption) || "Not set";
-    const durationDetail = selectedOption?.duration || "Ongoing";
-    const monitoringDetail = buildMonitoringLabel(selectedOption);
-    const baselineTargetDetail = buildBaselineTargetLabel(selectedOption);
     const gradeLabel = student?.grade || student?.currentGrade || "Grade";
     const selectedSignal = formState.signal || null;
     const hasSelectedTags = Array.isArray(formState.tags) && formState.tags.length > 0;
@@ -471,7 +334,7 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                                             </option>
                                         ))
                                     ) : (
-                                        <option value="">No Tier 2/3 subjects available</option>
+                                        <option value="">No subjects you can update</option>
                                     )}
                                 </select>
                             </div>

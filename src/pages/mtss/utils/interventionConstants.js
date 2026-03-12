@@ -10,6 +10,7 @@ export const INTERVENTION_TYPES = [
     { key: "MATH", label: "Math", accent: "from-[#dcfce7]/95 to-[#86efac]/90 text-emerald-900 dark:from-[#14532d]/45 dark:to-[#047857]/35 dark:text-emerald-100" },
     { key: "BEHAVIOR", label: "Behavior", accent: "from-[#ffedd5]/95 to-[#fdba74]/90 text-amber-900 dark:from-[#78350f]/45 dark:to-[#b45309]/35 dark:text-amber-100" },
     { key: "ATTENDANCE", label: "Attendance", accent: "from-[#ede9fe]/95 to-[#c4b5fd]/90 text-indigo-900 dark:from-[#312e81]/45 dark:to-[#4f46e5]/35 dark:text-indigo-100" },
+    { key: "INDONESIAN", label: "Bahasa Indonesia", accent: "from-[#ffe4e6]/95 to-[#fb7185]/90 text-rose-900 dark:from-[#881337]/45 dark:to-[#be123c]/35 dark:text-rose-100" },
 ];
 
 export const TYPE_LOOKUP = new Map(INTERVENTION_TYPES.map((type) => [type.key, type]));
@@ -27,7 +28,8 @@ export const FOCUS_TYPE_MATCHERS = [
     { key: "ATTENDANCE", pattern: /attendance|absen|present|presence/i },
     { key: "BEHAVIOR", pattern: /behavior|behaviour|conduct|discipline/i },
     { key: "MATH", pattern: /math|mathematics|numeracy|algebra|geometry/i },
-    { key: "ENGLISH", pattern: /english|ela|literacy|reading|writing|fluency/i },
+    { key: "ENGLISH", pattern: /english|bahasa inggris|ela|literacy|reading|writing|fluency/i },
+    { key: "INDONESIAN", pattern: /indonesian|bahasa indonesia|\bbahasa\b|\bbi\b/i },
     { key: "SEL", pattern: /sel|social|emotional|wellbeing|well-being/i },
 ];
 

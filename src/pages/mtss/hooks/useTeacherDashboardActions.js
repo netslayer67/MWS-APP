@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { updateMentorAssignment, uploadEvidence } from "@/services/mtssService";
+import { canUserSubmitProgressForAssignment } from "../utils/editPlanAccess";
 
 const useTeacherDashboardActions = ({
     students,
@@ -36,6 +37,17 @@ const useTeacherDashboardActions = ({
                 toast({
                     title: "No active intervention",
                     description: `${selectedStudent.name} is not linked to an active intervention yet.`,
+                    variant: "destructive",
+                });
+                return;
+            }
+            const selectedOption = Array.isArray(selectedStudent.assignmentOptions)
+                ? selectedStudent.assignmentOptions.find((option) => option?.assignmentId === assignmentId)
+                : null;
+            if (!canUserSubmitProgressForAssignment(selectedOption)) {
+                toast({
+                    title: "Progress permission denied",
+                    description: "You can only submit progress for subjects assigned to you.",
                     variant: "destructive",
                 });
                 return;
@@ -84,6 +96,17 @@ const useTeacherDashboardActions = ({
                 toast({
                     title: "No active intervention",
                     description: `${student?.name || "Student"} isn't linked to an active intervention yet.`,
+                    variant: "destructive",
+                });
+                return;
+            }
+            const selectedOption = Array.isArray(student?.assignmentOptions)
+                ? student.assignmentOptions.find((option) => option?.assignmentId === assignmentId)
+                : null;
+            if (!canUserSubmitProgressForAssignment(selectedOption)) {
+                toast({
+                    title: "Progress permission denied",
+                    description: "You can only submit progress for subjects assigned to you.",
                     variant: "destructive",
                 });
                 return;

@@ -1,15 +1,8 @@
 import { memo } from "react";
 import { TrendingUp, FilePenLine } from "lucide-react";
-import { ensureStudentInterventions, getMostCriticalForDisplay } from "../utils/interventionUtils";
-import { formatPlanAuditDate } from "../utils/editPlanAccess";
-
-const ROW_ACCENT_COLORS = [
-    "from-indigo-500 to-purple-500",
-    "from-cyan-500 to-blue-500",
-    "from-amber-500 to-orange-500",
-    "from-emerald-500 to-teal-500",
-    "from-pink-500 to-rose-500",
-];
+import { ensureStudentInterventions } from "../utils/interventionUtils";
+import { formatPlanAuditDate, resolveProgressAssignmentForStudent } from "../utils/editPlanAccess";
+import InterventionChips, { getAccentColor } from "./InterventionChips";
 
 const formatAuditDateCompact = (value) => {
     if (!value) return null;
@@ -44,21 +37,12 @@ const StudentsTableDesktopRow = memo(
         selectable,
         selected,
         onSelect,
-        tierBadgeStyles,
-        interventionIcons,
-        defaultIcon,
-        universalIcon,
     }) => {
         const interventions = ensureStudentInterventions(student.interventions);
-        const profile = student.profile || {};
-        const criticalInfo = getMostCriticalForDisplay(interventions, profile, student);
-
         const classLabel = student.className || "\u2014";
         const mentorLabel = student.mentor || student.profile?.mentor || "-";
-        const tierStyle = tierBadgeStyles[criticalInfo.tierCode] || tierBadgeStyles.tier1;
-        const icon = criticalInfo.intervention
-            ? interventionIcons[criticalInfo.intervention.type] || defaultIcon
-            : universalIcon;
+
+        /* ── Assignment & action logic ─────────────────────────── */
         const assignmentOptions = Array.isArray(student.assignmentOptions) ? student.assignmentOptions : [];
         const primaryAssignment = assignmentOptions[0] || null;
         const hasInterventionPlan = Boolean(
@@ -76,8 +60,11 @@ const StudentsTableDesktopRow = memo(
                 ? canEditPlanForStudent(student)
                 : Boolean(primaryAssignment?.assignmentId || student.assignmentId)
         );
+        const progressAssignment = resolveProgressAssignmentForStudent(student);
+        const canSubmitProgress = Boolean(progressAssignment?.assignmentId);
+
         const actionButtons = [];
-        if (hasInterventionPlan) {
+        if (canSubmitProgress) {
             actionButtons.push({
                 key: "progress",
                 label: "Progress Update",
@@ -96,14 +83,15 @@ const StudentsTableDesktopRow = memo(
             });
         }
 
-        const accentColor = ROW_ACCENT_COLORS[index % ROW_ACCENT_COLORS.length];
+        /* Accent bar: tier-based for escalated, decorative for universal */
+        const accentColor = getAccentColor(interventions, index);
 
         return (
             <tr
                 onClick={() => onView?.(student)}
                 className="group border-b border-slate-100/80 dark:border-slate-700/40 last:border-none hover:bg-gradient-to-r hover:from-indigo-50/50 hover:via-purple-50/30 hover:to-transparent dark:hover:from-white/[0.04] dark:hover:via-white/[0.02] dark:hover:to-transparent transition-colors duration-200 cursor-pointer"
             >
-                {/* Accent bar */}
+                {/* Accent bar — color reflects highest tier */}
                 <td className="w-1.5 py-0">
                     <div className={`w-1 h-8 my-auto rounded-full bg-gradient-to-b ${accentColor} opacity-60 group-hover:opacity-100 group-hover:h-10 transition-all duration-200`} />
                 </td>
@@ -120,10 +108,10 @@ const StudentsTableDesktopRow = memo(
                 )}
 
                 {/* Student name */}
-                <td className="py-3.5 pl-3 pr-2 align-top w-[23%]">
+                <td className="py-3.5 pl-3 pr-2 align-top w-[19%]">
                     <div>
                         <span
-                            className="block truncate max-w-[220px] font-semibold text-sm text-slate-800 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors"
+                            className="block truncate max-w-[200px] font-semibold text-sm text-slate-800 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors"
                             title={student.name}
                         >
                             {student.name}
@@ -133,57 +121,31 @@ const StudentsTableDesktopRow = memo(
                 </td>
 
                 {/* Class / Mentor */}
-                <td className="py-3.5 pr-2 align-top w-[16%]">
+                <td className="py-3.5 pr-2 align-top w-[14%]">
                     <span className="block text-sm font-medium text-slate-700 dark:text-slate-200 truncate" title={classLabel}>
                         {classLabel}
                     </span>
                     <span className="block text-[10px] text-slate-500 dark:text-slate-300 mt-0.5 truncate" title={`Mentor: ${mentorLabel}`}>
-                        Mentor: {mentorLabel}
+                        {mentorLabel}
                     </span>
                 </td>
 
-                {/* Focus Area */}
-                <td className="py-3.5 pr-2 align-top w-[15%]">
-                    {criticalInfo.mode === "universal" ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/25 border border-emerald-200/70 dark:border-emerald-700/40 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                            <span className="text-[12px]">{universalIcon}</span>
-                            Universal
-                        </span>
-                    ) : (
-                        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/40 max-w-full">
-                            <span className="text-[13px] leading-none">{icon}</span>
-                            <div className="flex flex-col">
-                                <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 truncate max-w-[120px]" title={criticalInfo.label}>
-                                    {criticalInfo.label}
-                                </span>
-                                {criticalInfo.strategy && (
-                                    <span className="text-[9px] text-slate-500 dark:text-slate-300 truncate max-w-[120px]" title={criticalInfo.strategy}>
-                                        {criticalInfo.strategy}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-                    )}
-                </td>
-
-                {/* Tier */}
-                <td className="py-3.5 pr-2 align-top w-[8%]">
-                    <span className={`inline-flex items-center whitespace-nowrap px-2.5 py-1 rounded-lg text-[10px] font-bold tracking-wide ${tierStyle.bg} ${tierStyle.text} shadow-sm`}>
-                        {criticalInfo.tier}
-                    </span>
+                {/* Interventions — top 2 inline, rest collapsed */}
+                <td className="py-3.5 pr-2 align-top w-[25%]">
+                    <InterventionChips interventions={interventions} />
                 </td>
 
                 {/* Progress */}
-                <td className="py-3.5 pr-2 align-top w-[11%]">
+                <td className="py-3.5 pr-2 align-top w-[10%]">
                     <ProgressBadge status={student.progress} />
                 </td>
 
                 {/* Next Update */}
-                <td className="py-3.5 pr-2 align-top w-[17%] text-[12px] text-slate-600 dark:text-slate-300 font-medium">
+                <td className="py-3.5 pr-2 align-top w-[16%] text-[12px] text-slate-600 dark:text-slate-300 font-medium">
                     <div className="whitespace-nowrap">{student.nextUpdate}</div>
                     {lastModifiedAtCompact && (
                         <div
-                            className="text-[10px] text-cyan-600 dark:text-cyan-300 mt-1 truncate max-w-[220px]"
+                            className="text-[10px] text-cyan-600 dark:text-cyan-300 mt-1 truncate max-w-[200px]"
                             title={`Last modified: ${lastModifiedBy} · ${lastModifiedAtFull || lastModifiedAtCompact}`}
                         >
                             Updated {lastModifiedAtCompact} by {lastModifiedByCompact}
