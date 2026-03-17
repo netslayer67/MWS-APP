@@ -143,9 +143,14 @@ const StudentsTableDesktopRow = memo(
                 {/* Next Update */}
                 <td className="py-3.5 pr-2 align-top w-[16%] text-[12px] text-slate-600 dark:text-slate-300 font-medium">
                     <div className="whitespace-nowrap">{student.nextUpdate}</div>
+                    {primaryAssignment?.focus && (
+                        <div className="text-[10px] text-indigo-500 dark:text-indigo-400 mt-0.5 truncate max-w-[200px]">
+                            {primaryAssignment.focus}
+                        </div>
+                    )}
                     {lastModifiedAtCompact && (
                         <div
-                            className="text-[10px] text-cyan-600 dark:text-cyan-300 mt-1 truncate max-w-[200px]"
+                            className="text-[10px] text-cyan-600 dark:text-cyan-300 mt-0.5 truncate max-w-[200px]"
                             title={`Last modified: ${lastModifiedBy} · ${lastModifiedAtFull || lastModifiedAtCompact}`}
                         >
                             Updated {lastModifiedAtCompact} by {lastModifiedByCompact}

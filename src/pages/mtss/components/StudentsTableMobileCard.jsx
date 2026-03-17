@@ -124,7 +124,7 @@ const StudentsTableMobileCard = memo(
                     {/* ── Section 2: Interventions (scroll strip) + Progress ─ */}
                     <div className="flex items-center justify-between gap-2 mb-2.5">
                         <div className="flex-1 min-w-0">
-                            <InterventionChips interventions={interventions} scroll />
+                            <InterventionChips interventions={interventions} compact />
                         </div>
                         <div className="shrink-0">
                             <ProgressBadge status={student.progress} compact />
@@ -139,6 +139,11 @@ const StudentsTableMobileCard = memo(
                             <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate">
                                 {student.nextUpdate}
                             </span>
+                            {primaryAssignment?.focus && (
+                                <span className="text-[9px] text-indigo-500 dark:text-indigo-400 font-medium truncate">
+                                    · {primaryAssignment.focus}
+                                </span>
+                            )}
                         </div>
                         {lastModifiedAt && (
                             <p
