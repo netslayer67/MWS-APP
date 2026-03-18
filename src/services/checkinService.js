@@ -16,11 +16,11 @@ export const getCheckinResults = async (checkinId) => {
     return response;
 };
 
-export const getCheckinHistory = async (page = 1, limit = 10, userId = null) => {
+export const getCheckinHistory = async (page = 1, limit = 10, userId = null, { startDate, endDate } = {}) => {
     const params = { page, limit };
-    if (userId) {
-        params.userId = userId;
-    }
+    if (userId) params.userId = userId;
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
     const response = await api.get('/checkin/history', { params });
     return response;
 };

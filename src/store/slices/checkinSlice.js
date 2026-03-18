@@ -49,9 +49,9 @@ export const getCheckinResults = createAsyncThunk(
 
 export const getCheckinHistory = createAsyncThunk(
     'checkin/getCheckinHistory',
-    async ({ page = 1, limit = 10, userId = null } = {}, { rejectWithValue }) => {
+    async ({ page = 1, limit = 10, userId = null, startDate, endDate } = {}, { rejectWithValue }) => {
         try {
-            const response = await getCheckinHistoryApi(page, limit, userId);
+            const response = await getCheckinHistoryApi(page, limit, userId, { startDate, endDate });
             return response.data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to fetch check-in history');

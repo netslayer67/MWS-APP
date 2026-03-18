@@ -1,24 +1,278 @@
-import React, { memo, useEffect, useMemo } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getCheckinHistory } from "../../../store/slices/checkinSlice";
-import { User, TrendingUp, Calendar, MessageCircle, Heart, Activity, BarChart3, Brain } from "lucide-react";
+import {
+    User, TrendingUp, Calendar, Heart, Activity, ChevronDown, ChevronUp,
+    AlertTriangle, Brain, MessageCircle, Shield, Clock, Sun, Cloud, CloudRain, Zap
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
 import { Badge } from "../../../components/ui/badge";
 import { Progress } from "../../../components/ui/progress";
+import { Button } from "../../../components/ui/button";
 
+/* ── helpers ── */
+const WEATHER_ICONS = { sunny: Sun, cloudy: Cloud, rainy: CloudRain, stormy: Zap };
+const WEATHER_COLORS = {
+    sunny: "text-amber-500", cloudy: "text-slate-400",
+    rainy: "text-blue-400", stormy: "text-purple-500"
+};
+
+const fmt = (d) => {
+    const dt = new Date(d);
+    return dt.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+};
+
+const fmtFull = (d) => {
+    const dt = new Date(d);
+    return dt.toLocaleDateString("id-ID", {
+        weekday: "long", day: "numeric", month: "long", year: "numeric"
+    });
+};
+
+const fmtTime = (d) => {
+    if (!d) return "";
+    const dt = new Date(d);
+    return dt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+};
+
+const getDateRange = (period) => {
+    const now = new Date();
+    const end = new Date(now);
+    end.setHours(23, 59, 59, 999);
+
+    const start = new Date(now);
+    if (period === "week") {
+        const day = start.getDay();
+        start.setDate(start.getDate() - (day === 0 ? 6 : day - 1));
+    } else {
+        start.setDate(1);
+    }
+    start.setHours(0, 0, 0, 0);
+
+    return {
+        startDate: start.toISOString(),
+        endDate: end.toISOString(),
+        label: period === "week" ? "This Week" : "This Month"
+    };
+};
+
+const presenceColor = (v) => v >= 7 ? "text-emerald-600" : v >= 4 ? "text-amber-600" : "text-rose-600";
+const capacityColor = (v) => v >= 7 ? "text-blue-600" : v >= 4 ? "text-amber-600" : "text-rose-600";
+
+/* ── Expandable CheckIn Row ── */
+const CheckInRow = memo(({ checkin, isLast }) => {
+    const [open, setOpen] = useState(false);
+
+    const WeatherIcon = WEATHER_ICONS[checkin.weatherType] || Sun;
+    const weatherColor = WEATHER_COLORS[checkin.weatherType] || "text-amber-500";
+    const needsSupport = checkin.aiAnalysis?.needsSupport;
+
+    return (
+        <div className={`${!isLast ? "border-b border-border/40" : ""}`}>
+            {/* Row summary — always visible */}
+            <button
+                onClick={() => setOpen(!open)}
+                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-muted/30 transition-colors text-left"
+            >
+                {/* Date */}
+                <div className="min-w-[90px]">
+                    <span className="text-sm font-medium">{fmt(checkin.date)}</span>
+                    {checkin.submittedAt && (
+                        <span className="block text-[10px] text-muted-foreground">{fmtTime(checkin.submittedAt)}</span>
+                    )}
+                </div>
+
+                {/* Weather */}
+                <WeatherIcon className={`w-4 h-4 flex-shrink-0 ${weatherColor}`} />
+
+                {/* Presence / Capacity inline */}
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <span className={`text-sm font-semibold ${presenceColor(checkin.presenceLevel)}`}>
+                        P:{checkin.presenceLevel}
+                    </span>
+                    <span className={`text-sm font-semibold ${capacityColor(checkin.capacityLevel)}`}>
+                        C:{checkin.capacityLevel}
+                    </span>
+                    {/* Moods preview */}
+                    <div className="hidden sm:flex gap-1 overflow-hidden">
+                        {(checkin.selectedMoods || []).slice(0, 2).map((m) => (
+                            <Badge key={m} variant="secondary" className="text-[10px] px-1.5 py-0">
+                                {m}
+                            </Badge>
+                        ))}
+                        {(checkin.selectedMoods?.length || 0) > 2 && (
+                            <span className="text-[10px] text-muted-foreground">+{checkin.selectedMoods.length - 2}</span>
+                        )}
+                    </div>
+                </div>
+
+                {/* Flags */}
+                {needsSupport && (
+                    <AlertTriangle className="w-4 h-4 text-rose-500 flex-shrink-0" />
+                )}
+
+                {/* Expand indicator */}
+                {open
+                    ? <ChevronUp className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                    : <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
+            </button>
+
+            {/* Expanded detail */}
+            {open && (
+                <div className="px-3 pb-3 space-y-3 bg-muted/10 border-t border-border/30">
+                    <div className="pt-3">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
+                            {fmtFull(checkin.date)}
+                        </p>
+                    </div>
+
+                    {/* Presence & Capacity bars */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                                <span>Presence</span>
+                                <span className={`font-semibold ${presenceColor(checkin.presenceLevel)}`}>
+                                    {checkin.presenceLevel}/10
+                                </span>
+                            </div>
+                            <Progress value={checkin.presenceLevel * 10} className="h-1.5" />
+                        </div>
+                        <div>
+                            <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                                <span>Capacity</span>
+                                <span className={`font-semibold ${capacityColor(checkin.capacityLevel)}`}>
+                                    {checkin.capacityLevel}/10
+                                </span>
+                            </div>
+                            <Progress value={checkin.capacityLevel * 10} className="h-1.5" />
+                        </div>
+                    </div>
+
+                    {/* Moods */}
+                    {checkin.selectedMoods?.length > 0 && (
+                        <div>
+                            <p className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                                <Heart className="w-3 h-3" /> Moods
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                                {checkin.selectedMoods.map((mood) => (
+                                    <Badge key={mood} variant="secondary" className="text-xs">{mood}</Badge>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* User Comment / Details */}
+                    {checkin.details && (
+                        <div>
+                            <p className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
+                                <MessageCircle className="w-3 h-3" /> Comment
+                            </p>
+                            <p className="text-sm bg-card/60 rounded-lg p-2.5 border border-border/30 leading-relaxed">
+                                {checkin.details}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* User Reflection */}
+                    {checkin.userReflection && (
+                        <div>
+                            <p className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
+                                <Brain className="w-3 h-3" /> Reflection
+                            </p>
+                            <p className="text-sm bg-card/60 rounded-lg p-2.5 border border-border/30 leading-relaxed">
+                                {checkin.userReflection}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* AI Analysis */}
+                    {checkin.aiAnalysis && (
+                        <div>
+                            <p className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                                <Brain className="w-3 h-3" /> AI Analysis
+                            </p>
+                            <div className="grid grid-cols-3 gap-2 text-xs">
+                                {checkin.aiAnalysis.emotionalState && (
+                                    <div className="bg-card/60 rounded-lg p-2 border border-border/30 text-center">
+                                        <span className="text-muted-foreground block">Emotional</span>
+                                        <span className="font-medium capitalize">{checkin.aiAnalysis.emotionalState}</span>
+                                    </div>
+                                )}
+                                {checkin.aiAnalysis.presenceState && (
+                                    <div className="bg-card/60 rounded-lg p-2 border border-border/30 text-center">
+                                        <span className="text-muted-foreground block">Presence</span>
+                                        <span className="font-medium capitalize">{checkin.aiAnalysis.presenceState}</span>
+                                    </div>
+                                )}
+                                {checkin.aiAnalysis.capacityState && (
+                                    <div className="bg-card/60 rounded-lg p-2 border border-border/30 text-center">
+                                        <span className="text-muted-foreground block">Capacity</span>
+                                        <span className="font-medium capitalize">{checkin.aiAnalysis.capacityState}</span>
+                                    </div>
+                                )}
+                            </div>
+                            {checkin.aiAnalysis.psychologicalInsights && (
+                                <p className="text-xs text-muted-foreground mt-2 italic">
+                                    {checkin.aiAnalysis.psychologicalInsights}
+                                </p>
+                            )}
+                            {checkin.aiAnalysis.motivationalMessage && (
+                                <p className="text-xs text-primary mt-1">
+                                    {checkin.aiAnalysis.motivationalMessage}
+                                </p>
+                            )}
+                            {checkin.aiAnalysis.recommendations?.length > 0 && (
+                                <div className="mt-2 space-y-1">
+                                    <p className="text-xs font-medium text-muted-foreground">Recommendations:</p>
+                                    {checkin.aiAnalysis.recommendations.map((rec, i) => (
+                                        <div key={i} className="text-xs bg-card/60 rounded p-1.5 border border-border/20">
+                                            <span className="font-medium">{rec.title}</span>
+                                            {rec.description && <span className="text-muted-foreground"> — {rec.description}</span>}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Needs Support flag */}
+                    {needsSupport && (
+                        <div className="flex items-center gap-2 bg-rose-50 dark:bg-rose-950/30 rounded-lg p-2.5 border border-rose-200/50 dark:border-rose-800/40">
+                            <Shield className="w-4 h-4 text-rose-500" />
+                            <span className="text-xs font-medium text-rose-700 dark:text-rose-300">Needs Support</span>
+                        </div>
+                    )}
+
+                    {/* Support Contact */}
+                    {(checkin.supportContactUserId || checkin.supportContactLegacyLabel) && (
+                        <div className="text-xs text-muted-foreground">
+                            <span className="font-medium">Support Contact:</span>{" "}
+                            {checkin.supportContactUserId?.name || checkin.supportContactLegacyLabel || "—"}
+                            {checkin.supportContactResponse?.status && (
+                                <Badge variant="outline" className="ml-2 text-[10px]">
+                                    {checkin.supportContactResponse.status}
+                                </Badge>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+});
+CheckInRow.displayName = "CheckInRow";
+
+/* ── Main Component ── */
 const IndividualView = memo(({ selectedUser, targetUserId }) => {
     const dispatch = useDispatch();
     const { user: currentUser } = useSelector((state) => state.auth);
-    const { checkinHistory } = useSelector((state) => state.checkin);
+    const { checkinHistory, loading } = useSelector((state) => state.checkin);
+
+    const [period, setPeriod] = useState("week");
 
     const resolvedUser = useMemo(() => {
-        if (selectedUser) {
-            return selectedUser;
-        }
-        if (targetUserId) {
-            return { id: targetUserId };
-        }
-        return currentUser || null;
+        return selectedUser || (targetUserId ? { id: targetUserId } : currentUser) || null;
     }, [selectedUser, targetUserId, currentUser]);
 
     const resolvedUserId = useMemo(() => {
@@ -28,250 +282,223 @@ const IndividualView = memo(({ selectedUser, targetUserId }) => {
             targetUserId?.toString() ||
             currentUser?._id?.toString() ||
             currentUser?.id?.toString() ||
-            ''
+            ""
         );
     }, [resolvedUser, targetUserId, currentUser]);
 
-    useEffect(() => {
-        if (resolvedUserId) {
-            dispatch(getCheckinHistory({
-                page: 1,
-                limit: 100,
-                userId: resolvedUserId
-            }));
-        }
-    }, [dispatch, resolvedUserId]);
+    const dateRange = useMemo(() => getDateRange(period), [period]);
 
-    const userCheckins = useMemo(() => {
-        if (!resolvedUserId || !checkinHistory) return [];
+    const fetchData = useCallback(() => {
+        if (!resolvedUserId) return;
+        dispatch(getCheckinHistory({
+            page: 1,
+            limit: 200,
+            userId: resolvedUserId,
+            startDate: dateRange.startDate,
+            endDate: dateRange.endDate
+        }));
+    }, [dispatch, resolvedUserId, dateRange.startDate, dateRange.endDate]);
+
+    useEffect(() => { fetchData(); }, [fetchData]);
+
+    const checkins = useMemo(() => {
+        if (!checkinHistory) return [];
         const data = checkinHistory.data || checkinHistory;
-        return Array.isArray(data) ? data : (data.checkins || []);
-    }, [resolvedUserId, checkinHistory]);
+        const arr = Array.isArray(data) ? data : (data.checkins || []);
+        return arr.sort((a, b) => new Date(b.date) - new Date(a.date));
+    }, [checkinHistory]);
 
-    const weeklyTrends = useMemo(() => {
-        if (userCheckins.length === 0) return null;
+    /* ── Wellness Snapshot (computed from filtered period) ── */
+    const snapshot = useMemo(() => {
+        if (!checkins.length) return null;
 
-        const last7Days = userCheckins.slice(0, 7);
-        const avgPresence = last7Days.reduce((sum, c) => sum + c.presenceLevel, 0) / last7Days.length;
-        const avgCapacity = last7Days.reduce((sum, c) => sum + c.capacityLevel, 0) / last7Days.length;
+        let totalP = 0, totalC = 0, supportFlags = 0;
+        const moodFreq = {};
 
-        const moodFrequency = {};
-        last7Days.forEach(checkin => {
-            checkin.selectedMoods?.forEach(mood => {
-                moodFrequency[mood] = (moodFrequency[mood] || 0) + 1;
+        checkins.forEach((c) => {
+            totalP += c.presenceLevel || 0;
+            totalC += c.capacityLevel || 0;
+            if (c.aiAnalysis?.needsSupport) supportFlags++;
+            (c.selectedMoods || []).forEach((m) => {
+                moodFreq[m] = (moodFreq[m] || 0) + 1;
             });
         });
 
-        const topMoods = Object.entries(moodFrequency)
-            .sort(([, a], [, b]) => b - a)
-            .slice(0, 3);
+        const n = checkins.length;
+        const avgP = Math.round((totalP / n) * 10) / 10;
+        const avgC = Math.round((totalC / n) * 10) / 10;
+        const topMoods = Object.entries(moodFreq).sort(([, a], [, b]) => b - a).slice(0, 5);
 
-        return {
-            avgPresence: Math.round(avgPresence * 10) / 10,
-            avgCapacity: Math.round(avgCapacity * 10) / 10,
-            topMoods,
-            checkinCount: last7Days.length,
-            trend: avgPresence > 6 ? 'improving' : avgPresence < 4 ? 'concerning' : 'stable'
-        };
-    }, [userCheckins]);
+        return { total: n, avgP, avgC, supportFlags, topMoods };
+    }, [checkins]);
 
-    const recentReflections = useMemo(() => {
-        return userCheckins
-            .filter(checkin => checkin.details)
-            .slice(0, 5)
-            .map(checkin => ({
-                date: new Date(checkin.date).toLocaleDateString(),
-                details: checkin.details,
-                weatherType: checkin.weatherType,
-                moods: checkin.selectedMoods
-            }));
-    }, [userCheckins]);
-
+    /* ── Empty states ── */
     if (!resolvedUser) {
         return (
             <Card>
                 <CardContent className="text-center py-16">
-                    <div className="w-20 h-20 rounded-full bg-muted/30 flex items-center justify-center mx-auto mb-6">
-                        <BarChart3 className="w-10 h-10 text-muted-foreground" />
-                    </div>
-                    <h3 className="text-xl font-semibold mb-3">Individual User Analytics</h3>
-                    <p className="text-muted-foreground text-base leading-relaxed">
-                        Unable to load the requested user report. Please try again from the dashboard.
-                    </p>
-                </CardContent>
-            </Card>
-        );
-    }
-
-    if (userCheckins.length === 0) {
-        return (
-            <Card>
-                <CardContent className="text-center py-16">
-                    <div className="w-20 h-20 rounded-full bg-muted/30 flex items-center justify-center mx-auto mb-6">
-                        <BarChart3 className="w-10 h-10 text-muted-foreground" />
-                    </div>
-                    <h3 className="text-xl font-semibold mb-3">Individual User Analytics</h3>
-                    <p className="text-muted-foreground text-base leading-relaxed">
-                        {`${resolvedUser?.name || 'This user'} belum memiliki catatan check-in emosional.`}
-                    </p>
-                    <div className="mt-6 p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                        <p className="text-sm text-primary font-medium">
-                            Tip: Dorong pengguna ini untuk melakukan check-in pertama mereka agar dapat memantau kesejahteraan emosionalnya.
-                        </p>
-                    </div>
+                    <User className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Unable to load user report.</p>
                 </CardContent>
             </Card>
         );
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
+            {/* ── Period Filter ── */}
+            <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-muted-foreground">Period:</span>
+                <div className="flex gap-1">
+                    {[
+                        { key: "week", label: "This Week" },
+                        { key: "month", label: "This Month" }
+                    ].map((opt) => (
+                        <Button
+                            key={opt.key}
+                            size="sm"
+                            variant={period === opt.key ? "default" : "outline"}
+                            className="h-7 text-xs px-3"
+                            onClick={() => setPeriod(opt.key)}
+                        >
+                            {opt.label}
+                        </Button>
+                    ))}
+                </div>
+                {loading && (
+                    <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin ml-2" />
+                )}
+            </div>
+
+            {/* ── Stats + Wellness Snapshot Card ── */}
             <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <User className="w-5 h-5" />
-                        {resolvedUser.name}
+                <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                        <User className="w-4 h-4" />
+                        {resolvedUser.name || "User"}
                     </CardTitle>
-                    <p className="text-sm text-muted-foreground">Detailed emotional wellness analysis for this user</p>
+                    <p className="text-xs text-muted-foreground">
+                        Emotional wellness analysis — {dateRange.label}
+                    </p>
                 </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <CardContent className="space-y-4">
+                    {/* Quick Stats */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <div className="text-center p-3 bg-primary/5 rounded-lg">
-                            <div className="text-xl font-bold text-primary">{userCheckins.length}</div>
-                            <div className="text-xs text-muted-foreground">Total Check-ins</div>
+                            <div className="text-xl font-bold text-primary">{snapshot?.total ?? 0}</div>
+                            <div className="text-[11px] text-muted-foreground">Total Check-ins</div>
                         </div>
-                        <div className="text-center p-3 bg-green-50 rounded-lg">
-                            <div className="text-xl font-bold text-green-600">{weeklyTrends?.avgPresence || 0}</div>
-                            <div className="text-xs text-muted-foreground">Avg Presence</div>
-                        </div>
-                        <div className="text-center p-3 bg-blue-50 rounded-lg">
-                            <div className="text-xl font-bold text-blue-600">{weeklyTrends?.avgCapacity || 0}</div>
-                            <div className="text-xs text-muted-foreground">Avg Capacity</div>
-                        </div>
-                        <div className="text-center p-3 bg-purple-50 rounded-lg">
-                            <div className="text-xl font-bold text-purple-600">
-                                {userCheckins.filter(c => c.aiAnalysis?.needsSupport).length}
+                        <div className="text-center p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg">
+                            <div className={`text-xl font-bold ${presenceColor(snapshot?.avgP ?? 0)}`}>
+                                {snapshot?.avgP ?? 0}
                             </div>
-                            <div className="text-xs text-muted-foreground">Support Flags</div>
+                            <div className="text-[11px] text-muted-foreground">Avg Presence</div>
+                        </div>
+                        <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+                            <div className={`text-xl font-bold ${capacityColor(snapshot?.avgC ?? 0)}`}>
+                                {snapshot?.avgC ?? 0}
+                            </div>
+                            <div className="text-[11px] text-muted-foreground">Avg Capacity</div>
+                        </div>
+                        <div className="text-center p-3 bg-rose-50 dark:bg-rose-950/30 rounded-lg">
+                            <div className="text-xl font-bold text-rose-600">{snapshot?.supportFlags ?? 0}</div>
+                            <div className="text-[11px] text-muted-foreground">Support Flags</div>
                         </div>
                     </div>
 
-                    <div className="border-t pt-4">
-                        <h4 className="font-medium mb-3 flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
-                            Latest Check-in
-                        </h4>
-                        {userCheckins[0] && (
-                            <div className="bg-muted/30 p-3 rounded-lg">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-medium">
-                                        {new Date(userCheckins[0].date).toLocaleDateString()}
-                                    </span>
-                                    <Badge variant="outline" className="text-xs">
-                                        {userCheckins[0].weatherType}
-                                    </Badge>
+                    {/* Wellness Snapshot — Presence & Capacity trends */}
+                    {snapshot && (
+                        <>
+                            <div className="border-t pt-3">
+                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                                    <TrendingUp className="w-3.5 h-3.5" />
+                                    {period === "week" ? "Weekly" : "Monthly"} Wellness Snapshot
+                                </p>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div>
+                                        <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                                            <span>Presence trend</span>
+                                            <span className={`font-semibold ${presenceColor(snapshot.avgP)}`}>
+                                                {snapshot.avgP}/10
+                                            </span>
+                                        </div>
+                                        <Progress value={snapshot.avgP * 10} className="h-2" />
+                                    </div>
+                                    <div>
+                                        <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                                            <span>Capacity trend</span>
+                                            <span className={`font-semibold ${capacityColor(snapshot.avgC)}`}>
+                                                {snapshot.avgC}/10
+                                            </span>
+                                        </div>
+                                        <Progress value={snapshot.avgC * 10} className="h-2" />
+                                    </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div>Presence: <span className="font-medium">{userCheckins[0].presenceLevel}/10</span></div>
-                                    <div>Capacity: <span className="font-medium">{userCheckins[0].capacityLevel}/10</span></div>
-                                </div>
-                                {userCheckins[0].selectedMoods?.length > 0 && (
-                                    <div className="mt-2 flex gap-1">
-                                        {userCheckins[0].selectedMoods.slice(0, 3).map((mood) => (
-                                            <Badge key={mood} variant="secondary" className="text-xs">
-                                                {mood}
+                            </div>
+
+                            {/* Top Moods */}
+                            {snapshot.topMoods.length > 0 && (
+                                <div>
+                                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                        <Heart className="w-3.5 h-3.5" />
+                                        Dominant Moods
+                                    </p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {snapshot.topMoods.map(([mood, count]) => (
+                                            <Badge key={mood} variant="outline" className="text-xs">
+                                                {mood} — {count}x
                                             </Badge>
                                         ))}
                                     </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <TrendingUp className="w-5 h-5" />
-                        Weekly Wellness Snapshot
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="grid md:grid-cols-2 gap-4">
-                        <div>
-                            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                                <span>Presence trend</span>
-                                <span>{weeklyTrends?.avgPresence || 0}/10</span>
-                            </div>
-                            <Progress value={(weeklyTrends?.avgPresence || 0) * 10} className="h-2" />
-                        </div>
-                        <div>
-                            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                                <span>Capacity trend</span>
-                                <span>{weeklyTrends?.avgCapacity || 0}/10</span>
-                            </div>
-                            <Progress value={(weeklyTrends?.avgCapacity || 0) * 10} className="h-2" />
-                        </div>
-                    </div>
-
-                    {weeklyTrends?.topMoods?.length > 0 && (
-                        <div className="pt-2">
-                            <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-2">
-                                <Heart className="w-3.5 h-3.5" />
-                                Dominant moods this week
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                                {weeklyTrends.topMoods.map(([mood, count]) => (
-                                    <Badge key={mood} variant="outline" className="text-xs">
-                                        {mood} - {count}x
-                                    </Badge>
-                                ))}
-                            </div>
-                        </div>
+                                </div>
+                            )}
+                        </>
                     )}
                 </CardContent>
             </Card>
 
-            {recentReflections.length > 0 && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <MessageCircle className="w-5 h-5" />
-                            Recent Reflections
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {recentReflections.map((reflection, index) => (
-                            <div key={index} className="p-3 rounded-lg border border-border/40 bg-card/30">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-medium">{reflection.date}</span>
-                                    {reflection.weatherType && (
-                                        <Badge variant="outline" className="text-xs">{reflection.weatherType}</Badge>
-                                    )}
-                                </div>
-                                <p className="text-sm text-muted-foreground leading-relaxed">{reflection.details}</p>
-                                {reflection.moods?.length > 0 && (
-                                    <div className="mt-2 flex flex-wrap gap-1">
-                                        {reflection.moods.map((mood) => (
-                                            <Badge key={mood} variant="secondary" className="text-xs">
-                                                {mood}
-                                            </Badge>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </CardContent>
-                </Card>
-            )}
+            {/* ── Check-in History ── */}
+            <Card>
+                <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center justify-between text-base">
+                        <span className="flex items-center gap-2">
+                            <Activity className="w-4 h-4" />
+                            Check-in History
+                        </span>
+                        <span className="text-xs font-normal text-muted-foreground">
+                            {checkins.length} record{checkins.length !== 1 ? "s" : ""}
+                        </span>
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                        Tap a row to see full details — comment, AI analysis, support status
+                    </p>
+                </CardHeader>
+                <CardContent className="p-0">
+                    {checkins.length === 0 ? (
+                        <div className="text-center py-10 px-4">
+                            <Clock className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+                            <p className="text-sm text-muted-foreground">
+                                {loading ? "Loading..." : `No check-ins found for ${dateRange.label.toLowerCase()}.`}
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="divide-y-0">
+                            {checkins.map((checkin, i) => (
+                                <CheckInRow
+                                    key={checkin._id || checkin.id || i}
+                                    checkin={checkin}
+                                    isLast={i === checkins.length - 1}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
         </div>
     );
 });
 
-IndividualView.displayName = 'IndividualView';
+IndividualView.displayName = "IndividualView";
 
 export default IndividualView;
-
-
-
