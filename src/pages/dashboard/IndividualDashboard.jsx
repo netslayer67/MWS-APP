@@ -64,7 +64,7 @@ const IndividualDashboard = memo(() => {
                 if (isMounted) {
                     console.error('Error loading targeted user:', error);
                     if (isHeadUnit) {
-                        setUserAccessError('Anda hanya dapat melihat laporan anggota dalam unit Anda.');
+                        setUserAccessError('You can only view reports for members within your unit.');
                     }
                 }
             } finally {
@@ -155,7 +155,7 @@ const IndividualDashboard = memo(() => {
                             <CardContent className="py-5">
                                 <p className="text-sm text-destructive mb-3">{userAccessError}</p>
                                 <Button variant="outline" size="sm" onClick={handleBackToPersonal}>
-                                    Kembali ke laporan saya
+                                    Back to my report
                                 </Button>
                             </CardContent>
                         </Card>

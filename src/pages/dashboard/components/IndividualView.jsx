@@ -19,12 +19,12 @@ const WEATHER_COLORS = {
 
 const fmt = (d) => {
     const dt = new Date(d);
-    return dt.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+    return dt.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
 };
 
 const fmtFull = (d) => {
     const dt = new Date(d);
-    return dt.toLocaleDateString("id-ID", {
+    return dt.toLocaleDateString("en-US", {
         weekday: "long", day: "numeric", month: "long", year: "numeric"
     });
 };
@@ -32,7 +32,7 @@ const fmtFull = (d) => {
 const fmtTime = (d) => {
     if (!d) return "";
     const dt = new Date(d);
-    return dt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+    return dt.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 };
 
 const PERIOD_OPTIONS = [
