@@ -75,7 +75,9 @@ const CheckInRow = memo(({ checkin, isLast }) => {
 
     const WeatherIcon = WEATHER_ICONS[checkin.weatherType] || Sun;
     const weatherColor = WEATHER_COLORS[checkin.weatherType] || "text-amber-500";
-    const needsSupport = checkin.aiAnalysis?.needsSupport;
+    const aiNeedsSupport = checkin.aiAnalysis?.needsSupport;
+    const userRequestedSupport = !!(checkin.supportContactUserId || checkin.supportContactLegacyLabel);
+    const hasAnySupportFlag = aiNeedsSupport || userRequestedSupport;
 
     return (
         <div className={`${!isLast ? "border-b border-border/40" : ""}`}>
@@ -117,8 +119,11 @@ const CheckInRow = memo(({ checkin, isLast }) => {
                 </div>
 
                 {/* Flags */}
-                {needsSupport && (
-                    <AlertTriangle className="w-4 h-4 text-rose-500 flex-shrink-0" />
+                {userRequestedSupport && (
+                    <Shield className="w-4 h-4 text-rose-500 flex-shrink-0" title="Requested support" />
+                )}
+                {aiNeedsSupport && !userRequestedSupport && (
+                    <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" title="AI flagged" />
                 )}
 
                 {/* Expand indicator */}
@@ -246,23 +251,50 @@ const CheckInRow = memo(({ checkin, isLast }) => {
                         </div>
                     )}
 
-                    {/* Needs Support flag */}
-                    {needsSupport && (
-                        <div className="flex items-center gap-2 bg-rose-50 dark:bg-rose-950/30 rounded-lg p-2.5 border border-rose-200/50 dark:border-rose-800/40">
-                            <Shield className="w-4 h-4 text-rose-500" />
-                            <span className="text-xs font-medium text-rose-700 dark:text-rose-300">Needs Support</span>
-                        </div>
-                    )}
+                    {/* Support Section */}
+                    {hasAnySupportFlag && (
+                        <div className="space-y-2">
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                                <Shield className="w-3 h-3" /> Support Status
+                            </p>
 
-                    {/* Support Contact */}
-                    {(checkin.supportContactUserId || checkin.supportContactLegacyLabel) && (
-                        <div className="text-xs text-muted-foreground">
-                            <span className="font-medium">Support Contact:</span>{" "}
-                            {checkin.supportContactUserId?.name || checkin.supportContactLegacyLabel || "—"}
-                            {checkin.supportContactResponse?.status && (
-                                <Badge variant="outline" className="ml-2 text-[10px]">
-                                    {checkin.supportContactResponse.status}
-                                </Badge>
+                            {userRequestedSupport && (
+                                <div className="bg-rose-50 dark:bg-rose-950/30 rounded-lg p-2.5 border border-rose-200/50 dark:border-rose-800/40">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <Shield className="w-3.5 h-3.5 text-rose-500" />
+                                        <span className="text-xs font-medium text-rose-700 dark:text-rose-300">
+                                            User Requested Support
+                                        </span>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground ml-5">
+                                        <span className="font-medium">Contact:</span>{" "}
+                                        {checkin.supportContactUserId?.name || checkin.supportContactLegacyLabel || "—"}
+                                        {checkin.supportContactResponse?.status && (
+                                            <Badge variant="outline" className="ml-2 text-[10px] capitalize">
+                                                {checkin.supportContactResponse.status}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    {checkin.supportContactResponse?.details && (
+                                        <p className="text-xs text-muted-foreground ml-5 mt-1 italic">
+                                            Response: {checkin.supportContactResponse.details}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
+                            {aiNeedsSupport && !userRequestedSupport && (
+                                <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-2.5 border border-amber-200/50 dark:border-amber-800/40">
+                                    <div className="flex items-center gap-2">
+                                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                                        <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                                            AI Detected Support Need
+                                        </span>
+                                    </div>
+                                    <p className="text-[11px] text-muted-foreground ml-5 mt-0.5">
+                                        User did not select a support contact
+                                    </p>
+                                </div>
                             )}
                         </div>
                     )}
@@ -322,13 +354,14 @@ const IndividualView = memo(({ selectedUser, targetUserId }) => {
     const snapshot = useMemo(() => {
         if (!checkins.length) return null;
 
-        let totalP = 0, totalC = 0, supportFlags = 0;
+        let totalP = 0, totalC = 0, supportRequests = 0, aiFlags = 0;
         const moodFreq = {};
 
         checkins.forEach((c) => {
             totalP += c.presenceLevel || 0;
             totalC += c.capacityLevel || 0;
-            if (c.aiAnalysis?.needsSupport) supportFlags++;
+            if (c.supportContactUserId || c.supportContactLegacyLabel) supportRequests++;
+            else if (c.aiAnalysis?.needsSupport) aiFlags++;
             (c.selectedMoods || []).forEach((m) => {
                 moodFreq[m] = (moodFreq[m] || 0) + 1;
             });
@@ -339,7 +372,7 @@ const IndividualView = memo(({ selectedUser, targetUserId }) => {
         const avgC = Math.round((totalC / n) * 10) / 10;
         const topMoods = Object.entries(moodFreq).sort(([, a], [, b]) => b - a).slice(0, 5);
 
-        return { total: n, avgP, avgC, supportFlags, topMoods };
+        return { total: n, avgP, avgC, supportRequests, aiFlags, topMoods };
     }, [checkins]);
 
     /* ── Empty states ── */
@@ -409,8 +442,8 @@ const IndividualView = memo(({ selectedUser, targetUserId }) => {
                             <div className="text-[11px] text-muted-foreground">Avg Capacity</div>
                         </div>
                         <div className="text-center p-3 bg-rose-50 dark:bg-rose-950/30 rounded-lg">
-                            <div className="text-xl font-bold text-rose-600">{snapshot?.supportFlags ?? 0}</div>
-                            <div className="text-[11px] text-muted-foreground">Support Flags</div>
+                            <div className="text-xl font-bold text-rose-600">{snapshot?.supportRequests ?? 0}</div>
+                            <div className="text-[11px] text-muted-foreground">Support Requests</div>
                         </div>
                     </div>
 
