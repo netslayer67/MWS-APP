@@ -72,8 +72,7 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
                 return;
             }
 
-            console.log('Fetching dashboard stats for period:', selectedPeriod, 'User:', user);
-            dispatch(fetchDashboardStats({ period: selectedPeriod, date: resolvedDateFilter }));
+            dispatch(fetchDashboardStats({ period: selectedPeriod, date: resolvedDateFilter, force: true }));
 
             socketService.connect();
             socketService.joinDashboard(user.id);
