@@ -315,7 +315,7 @@ const IndividualView = memo(({ selectedUser, targetUserId }) => {
         if (!checkinHistory) return [];
         const data = checkinHistory.data || checkinHistory;
         const arr = Array.isArray(data) ? data : (data.checkins || []);
-        return arr.sort((a, b) => new Date(b.date) - new Date(a.date));
+        return [...arr].sort((a, b) => new Date(b.date) - new Date(a.date));
     }, [checkinHistory]);
 
     /* ── Wellness Snapshot (computed from filtered period) ── */
