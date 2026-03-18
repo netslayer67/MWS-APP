@@ -35,7 +35,17 @@ const fmtTime = (d) => {
     return dt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
 };
 
+const PERIOD_OPTIONS = [
+    { key: "week", label: "This Week" },
+    { key: "month", label: "This Month" },
+    { key: "all", label: "All Time" }
+];
+
 const getDateRange = (period) => {
+    if (period === "all") {
+        return { startDate: null, endDate: null, label: "All Time" };
+    }
+
     const now = new Date();
     const end = new Date(now);
     end.setHours(23, 59, 59, 999);
@@ -269,7 +279,7 @@ const IndividualView = memo(({ selectedUser, targetUserId }) => {
     const { user: currentUser } = useSelector((state) => state.auth);
     const { checkinHistory, loading } = useSelector((state) => state.checkin);
 
-    const [period, setPeriod] = useState("week");
+    const [period, setPeriod] = useState("all");
 
     const resolvedUser = useMemo(() => {
         return selectedUser || (targetUserId ? { id: targetUserId } : currentUser) || null;
@@ -351,10 +361,7 @@ const IndividualView = memo(({ selectedUser, targetUserId }) => {
                 <Calendar className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm font-medium text-muted-foreground">Period:</span>
                 <div className="flex gap-1">
-                    {[
-                        { key: "week", label: "This Week" },
-                        { key: "month", label: "This Month" }
-                    ].map((opt) => (
+                    {PERIOD_OPTIONS.map((opt) => (
                         <Button
                             key={opt.key}
                             size="sm"
@@ -413,7 +420,7 @@ const IndividualView = memo(({ selectedUser, targetUserId }) => {
                             <div className="border-t pt-3">
                                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5">
                                     <TrendingUp className="w-3.5 h-3.5" />
-                                    {period === "week" ? "Weekly" : "Monthly"} Wellness Snapshot
+                                    {period === "week" ? "Weekly" : period === "month" ? "Monthly" : "Overall"} Wellness Snapshot
                                 </p>
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div>
