@@ -11,7 +11,8 @@ const DashboardHeader = memo(({
     isApplyDisabled,
     isHeadUnit,
     userUnit,
-    isDirectorate
+    isDirectorate,
+    onSummaryClick
 }) => {
 
     const formatDate = (dateString) => {
@@ -128,7 +129,10 @@ const DashboardHeader = memo(({
 
                     <section className="rounded-2xl border border-border/70 bg-background/60 p-4 space-y-3">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-muted-foreground">View</p>
-                        <button className="w-full px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/25">
+                        <button
+                            onClick={onSummaryClick}
+                            className="w-full px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/25 hover:bg-primary/90 active:scale-[0.98] transition-all"
+                        >
                             {isHeadUnit ? 'Unit Summary' : isDirectorate ? 'Organization Summary' : 'Summary'}
                         </button>
                         <p className="text-[10px] text-muted-foreground">

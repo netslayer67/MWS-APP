@@ -54,8 +54,15 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
         // Calculate percentages for different metrics
         const rawFlaggedPercentage = totalUsers > 0 ? (flaggedUsersCount / totalUsers) * 100 : 0;
         const flaggedPercentage = Math.round(Math.min(100, Math.max(0, rawFlaggedPercentage)));
-        const readinessPercentage = Math.round(Math.max(0, 100 - flaggedPercentage));
-        const readyUsersCount = Math.max(0, Math.min(totalUsers, totalUsers - flaggedUsersCount));
+
+        // Emotional Readiness: only users who checked in AND are not flagged count as "ready"
+        // Users who haven't checked in are unknown — they can't be considered ready
+        const notSubmittedUsers = Array.isArray(data.notSubmittedUsers) ? data.notSubmittedUsers : [];
+        const estimatedNonSubmittersRaw = notSubmittedUsers.length || Math.max(0, totalUsers - Math.round(totalCheckins / safeWorkdayCount));
+        const estimatedNonSubmitters = Math.min(totalUsers, Math.max(0, estimatedNonSubmittersRaw));
+        const checkedInUsersCount = Math.max(0, totalUsers - estimatedNonSubmitters);
+        const readyUsersCount = Math.max(0, checkedInUsersCount - flaggedUsersCount);
+        const readinessPercentage = totalUsers > 0 ? Math.round((readyUsersCount / totalUsers) * 100) : 0;
 
         // Mood distribution percentages (including AI-detected moods)
         const moodDistribution = data.moodDistribution || {};
@@ -134,10 +141,6 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
             });
         }
 
-        const notSubmittedUsers = Array.isArray(data.notSubmittedUsers) ? data.notSubmittedUsers : [];
-        const estimatedNonSubmittersRaw = notSubmittedUsers.length || Math.max(0, totalUsers - Math.round(totalCheckins / safeWorkdayCount));
-        const estimatedNonSubmitters = Math.min(totalUsers, Math.max(0, estimatedNonSubmittersRaw));
-
         return {
             participationRate,
             rawSubmissionRate: submissionRate,
@@ -159,7 +162,8 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
             notSubmittedCount: estimatedNonSubmitters,
             workdayCount: safeWorkdayCount,
             expectedSubmissions,
-            readinessUserCount: readyUsersCount
+            readinessUserCount: readyUsersCount,
+            checkedInUsersCount
         };
     }, [data, period]);
 
@@ -281,6 +285,9 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
                             {analytics.readinessUserCount} of {analytics.totalUsers} users ready
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            {analytics.checkedInUsersCount} checked in · {analytics.flaggedUsersCount} flagged
                         </p>
                     </div>
 

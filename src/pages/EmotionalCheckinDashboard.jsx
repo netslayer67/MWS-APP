@@ -6,6 +6,7 @@ import { fetchDashboardStats, setSelectedPeriod, setSelectedDate, removeFlaggedU
 import socketService from "../services/socketService";
 import AdvancedFilters from "./dashboard/components/AdvancedFilters";
 import RealTimeNotifications from "./dashboard/components/RealTimeNotifications";
+import SummaryModal from "./dashboard/components/SummaryModal";
 import {
     getEmotionalDashboardRole,
     hasEmotionalDashboardAccess,
@@ -172,6 +173,10 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
         return pendingDate === activeDate;
     }, [pendingDate, selectedDate, selectedPeriod, todayISO]);
 
+    const [summaryOpen, setSummaryOpen] = useState(false);
+    const handleSummaryClick = useCallback(() => setSummaryOpen(true), []);
+    const handleSummaryClose = useCallback(() => setSummaryOpen(false), []);
+
     return (
         <div className="min-h-screen text-foreground relative overflow-hidden">
             {/* Optimized Decorative Elements */}
@@ -208,6 +213,7 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
                             isHeadUnit={isHeadUnit}
                             userUnit={user?.unit || user?.department}
                             isDirectorate={isDirectorate}
+                            onSummaryClick={handleSummaryClick}
                         />
                 </Suspense>
 
@@ -253,6 +259,17 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
             <Suspense fallback={null}>
                 <PerformanceMonitor />
             </Suspense>
+
+            {/* Summary Modal */}
+            <SummaryModal
+                isOpen={summaryOpen}
+                onClose={handleSummaryClose}
+                data={stats}
+                period={selectedPeriod}
+                isHeadUnit={isHeadUnit}
+                isDirectorate={isDirectorate}
+                userUnit={user?.unit || user?.department}
+            />
         </div>
     );
 });

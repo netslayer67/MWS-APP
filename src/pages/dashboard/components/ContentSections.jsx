@@ -57,7 +57,9 @@ const ContentSections = memo(({ realData, selectedPeriod, userId, isHeadUnit, is
 
                 <Suspense fallback={<ContentFallback />}>
                     {/* Flagged Users - Need Support - Prioritized for immediate attention */}
-                    <FlaggedUsers users={data?.flaggedUsers || []} />
+                    <div data-section="flagged-users">
+                        <FlaggedUsers users={data?.flaggedUsers || []} />
+                    </div>
                 </Suspense>
             </div>
 
