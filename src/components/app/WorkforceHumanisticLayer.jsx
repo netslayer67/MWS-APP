@@ -701,7 +701,7 @@ const WorkforceHumanisticLayer = memo(() => {
                     data-aos-duration={700}
                     data-aos-easing="ease-out-cubic"
                 >
-                    <img src={slot.src} alt="" className="whl-item-img" loading="lazy" decoding="async" />
+                    <img src={slot.src} alt="" className="whl-item-img" loading="eager" decoding="async" />
                 </div>
             ))}
         </div>

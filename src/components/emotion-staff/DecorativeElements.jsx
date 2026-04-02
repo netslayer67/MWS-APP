@@ -102,7 +102,7 @@ const DecorativeElements = memo(() => {
                                     <img
                                         src={cardPhoto(assetId, dimensions.w, dimensions.h)}
                                         alt=""
-                                        loading="lazy"
+                                        loading="eager"
                                         decoding="async"
                                         onError={applyFallback}
                                     />
@@ -130,7 +130,7 @@ const DecorativeElements = memo(() => {
                                     <img
                                         src={cardPhoto(assetId, dimensions.w, dimensions.h)}
                                         alt=""
-                                        loading="lazy"
+                                        loading="eager"
                                         decoding="async"
                                         onError={applyFallback}
                                     />
@@ -145,7 +145,7 @@ const DecorativeElements = memo(() => {
                 <img
                     src={cutoutPhoto(cutoutDeck[0] || MWS_STUDENT_CUTOUT_ASSET_IDS[0], 300)}
                     alt=""
-                    loading="lazy"
+                    loading="eager"
                     decoding="async"
                     onError={applyFallback}
                 />
@@ -154,7 +154,7 @@ const DecorativeElements = memo(() => {
                 <img
                     src={cutoutPhoto(cutoutDeck[1] || MWS_STUDENT_CUTOUT_ASSET_IDS[1], 300)}
                     alt=""
-                    loading="lazy"
+                    loading="eager"
                     decoding="async"
                     onError={applyFallback}
                 />
@@ -169,7 +169,7 @@ const DecorativeElements = memo(() => {
                         <img
                             src={cardPhoto(assetId, 132, 132)}
                             alt=""
-                            loading="lazy"
+                            loading="eager"
                             decoding="async"
                             onError={applyFallback}
                         />

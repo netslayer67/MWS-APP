@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import HeroSection from "../components/ui/HeroSection";
@@ -45,7 +45,6 @@ const MinimalPhotoLayer = memo(() => {
   const dayKey = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const daySeed = useMemo(() => hashString(`landing-minimal:${dayKey}`), [dayKey]);
 
-  // All 117+ card photos are used — Cloudinary AI removes backgrounds on the fly
   const bgDeck = useMemo(
     () => seededShuffle(MWS_STUDENT_CARD_ASSET_IDS, daySeed + 11),
     [daySeed],
@@ -55,36 +54,75 @@ const MinimalPhotoLayer = memo(() => {
     [daySeed],
   );
 
-  // Pick 3 different photos: 1 background + 2 cutouts (avoid overlap)
   const backgroundSrc = useMemo(() => bgPhoto(bgDeck[0], 1920, 1080), [bgDeck]);
   const cutoutLeftSrc = useMemo(() => cutoutPhoto(cutoutDeck[0], 480), [cutoutDeck]);
   const cutoutRightSrc = useMemo(() => cutoutPhoto(cutoutDeck[1], 480), [cutoutDeck]);
 
-  const handleImgError = useCallback((e) => {
+  const [leftLoaded, setLeftLoaded] = useState(false);
+  const [rightLoaded, setRightLoaded] = useState(false);
+  const leftRef = useRef(null);
+  const rightRef = useRef(null);
+
+  // Kick off Cloudinary processing early — before React even attaches the <img> elements.
+  // This warms the CDN cache so bg-removal is ready when the real <img> fires its request.
+  useEffect(() => {
+    const preload = (src) => { const img = new Image(); img.src = src; };
+    preload(backgroundSrc);
+    preload(cutoutLeftSrc);
+    preload(cutoutRightSrc);
+  }, [backgroundSrc, cutoutLeftSrc, cutoutRightSrc]);
+
+  // Handle images that are already cached and fire `load` before React attaches onLoad
+  useEffect(() => {
+    if (leftRef.current?.complete) setLeftLoaded(true);
+    if (rightRef.current?.complete) setRightLoaded(true);
+  }, []);
+
+  const handleLeftError = useCallback((e) => {
     const img = e.currentTarget;
-    if (img.dataset.fb === "1") { img.style.display = "none"; return; }
+    if (img.dataset.fb === "1") { setLeftLoaded(true); return; }
     img.dataset.fb = "1";
-    // Fallback: try without background removal
+    img.src = img.src.replace("e_background_removal/", "");
+  }, []);
+
+  const handleRightError = useCallback((e) => {
+    const img = e.currentTarget;
+    if (img.dataset.fb === "1") { setRightLoaded(true); return; }
+    img.dataset.fb = "1";
     img.src = img.src.replace("e_background_removal/", "");
   }, []);
 
   return (
     <div className="lm-photo-layer" aria-hidden="true">
-      {/* Full background photo */}
-      <div
-        className="lm-bg"
-        style={{ backgroundImage: `url(${backgroundSrc})` }}
-      />
+      <div className="lm-bg" style={{ backgroundImage: `url(${backgroundSrc})` }} />
       <div className="lm-bg-overlay" />
 
-      {/* Left cutout figure */}
-      <figure className="lm-cutout lm-cutout--left" data-aos="fade-up-right" data-aos-delay="200" data-aos-duration="800">
-        <img src={cutoutLeftSrc} alt="" loading="lazy" decoding="async" onError={handleImgError} />
+      <figure className="lm-cutout lm-cutout--left">
+        <img
+          ref={leftRef}
+          src={cutoutLeftSrc}
+          alt=""
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
+          className={leftLoaded ? "lm-img--loaded" : ""}
+          onLoad={() => setLeftLoaded(true)}
+          onError={handleLeftError}
+        />
       </figure>
 
-      {/* Right cutout figure */}
-      <figure className="lm-cutout lm-cutout--right" data-aos="fade-up-left" data-aos-delay="300" data-aos-duration="800">
-        <img src={cutoutRightSrc} alt="" loading="lazy" decoding="async" onError={handleImgError} />
+      <figure className="lm-cutout lm-cutout--right">
+        <img
+          ref={rightRef}
+          src={cutoutRightSrc}
+          alt=""
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
+          className={rightLoaded ? "lm-img--loaded" : ""}
+          onLoad={() => setRightLoaded(true)}
+          onError={handleRightError}
+        />
       </figure>
     </div>
   );

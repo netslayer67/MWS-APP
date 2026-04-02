@@ -83,6 +83,13 @@ html.dark .lm-bg-overlay {
     object-fit: contain;
     object-position: bottom center;
     filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.15));
+    /* Fade-in on load — avoids pop-in and hides Cloudinary processing delay */
+    opacity: 0;
+    transition: opacity 0.6s ease;
+}
+
+.lm-cutout img.lm-img--loaded {
+    opacity: 1;
 }
 
 html.dark .lm-cutout img {

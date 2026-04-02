@@ -85,7 +85,7 @@ const PhotoMosaicBg = ({ ids }) => {
             <div className="ecd-mosaic-grid">
                 {repeatedPhotos.map((src, i) => (
                     <div key={`mosaic-${i}`} className="ecd-mosaic-cell">
-                        <img src={src} alt="" loading="lazy" decoding="async" />
+                        <img src={src} alt="" loading="eager" decoding="async" />
                     </div>
                 ))}
             </div>
@@ -102,7 +102,7 @@ const Filmstrip = ({ ids, side, className }) => {
             <div className="ecd-filmstrip__track" data-ecd-track={side}>
                 {[...photos, ...photos].map((src, i) => (
                     <div key={`${side}-${i}`} className="ecd-filmstrip__frame">
-                        <img src={src} alt="" loading="lazy" decoding="async" />
+                        <img src={src} alt="" loading="eager" decoding="async" />
                     </div>
                 ))}
             </div>
@@ -135,7 +135,7 @@ const HybridPhotoWall = ({ ids }) => {
                             "--ecd-hybrid-tilt": `${tile.tilt}deg`,
                         }}
                     >
-                        <img src={tile.src} alt="" loading="lazy" decoding="async" />
+                        <img src={tile.src} alt="" loading="eager" decoding="async" />
                     </figure>
                 ))}
             </div>
@@ -158,7 +158,7 @@ const HybridPhotoCluster = ({ ids, positionClass, rotations }) => {
                         "--ecd-card-delay": `${i * 1.7}s`,
                     }}
                 >
-                    <img src={photo(id, 260, 330)} alt="" loading="lazy" decoding="async" />
+                    <img src={photo(id, 260, 330)} alt="" loading="eager" decoding="async" />
                 </figure>
             ))}
         </div>
@@ -176,7 +176,7 @@ const HybridPortraitRow = ({ ids }) => {
                     className="ecd-hybrid-portrait-chip"
                     style={{ "--ecd-chip-delay": `${i * 0.45}s` }}
                 >
-                    <img src={photo(id, 140, 140)} alt="" loading="lazy" decoding="async" />
+                    <img src={photo(id, 140, 140)} alt="" loading="eager" decoding="async" />
                 </figure>
             ))}
         </div>

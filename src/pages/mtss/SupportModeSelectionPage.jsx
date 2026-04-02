@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { OBSERVER_EMAILS } from "./hooks/useMtssObserver";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -48,9 +48,35 @@ const SupportHubPhotoLayer = memo(() => {
   const cutoutLeftSrc = useMemo(() => cutoutPhoto(cutoutDeck[0], 480), [cutoutDeck]);
   const cutoutRightSrc = useMemo(() => cutoutPhoto(cutoutDeck[1], 480), [cutoutDeck]);
 
-  const handleImgError = useCallback((e) => {
+  const [leftLoaded, setLeftLoaded] = useState(false);
+  const [rightLoaded, setRightLoaded] = useState(false);
+  const leftRef = useRef(null);
+  const rightRef = useRef(null);
+
+  // Warm up Cloudinary CDN — kick off bg-removal processing before <img> mounts
+  useEffect(() => {
+    const preload = (src) => { const img = new Image(); img.src = src; };
+    preload(backgroundSrc);
+    preload(cutoutLeftSrc);
+    preload(cutoutRightSrc);
+  }, [backgroundSrc, cutoutLeftSrc, cutoutRightSrc]);
+
+  // Handle images already in browser cache (onLoad fires before React attaches handler)
+  useEffect(() => {
+    if (leftRef.current?.complete) setLeftLoaded(true);
+    if (rightRef.current?.complete) setRightLoaded(true);
+  }, []);
+
+  const handleLeftError = useCallback((e) => {
     const img = e.currentTarget;
-    if (img.dataset.fb === "1") { img.style.display = "none"; return; }
+    if (img.dataset.fb === "1") { setLeftLoaded(true); return; }
+    img.dataset.fb = "1";
+    img.src = img.src.replace("e_background_removal/", "");
+  }, []);
+
+  const handleRightError = useCallback((e) => {
+    const img = e.currentTarget;
+    if (img.dataset.fb === "1") { setRightLoaded(true); return; }
     img.dataset.fb = "1";
     img.src = img.src.replace("e_background_removal/", "");
   }, []);
@@ -59,11 +85,31 @@ const SupportHubPhotoLayer = memo(() => {
     <div className="lm-photo-layer" aria-hidden="true">
       <div className="lm-bg" style={{ backgroundImage: `url(${backgroundSrc})` }} />
       <div className="lm-bg-overlay" />
-      <figure className="lm-cutout lm-cutout--left" data-aos="fade-up-right" data-aos-delay="200" data-aos-duration="800">
-        <img src={cutoutLeftSrc} alt="" loading="lazy" decoding="async" onError={handleImgError} />
+      <figure className="lm-cutout lm-cutout--left">
+        <img
+          ref={leftRef}
+          src={cutoutLeftSrc}
+          alt=""
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
+          className={leftLoaded ? "lm-img--loaded" : ""}
+          onLoad={() => setLeftLoaded(true)}
+          onError={handleLeftError}
+        />
       </figure>
-      <figure className="lm-cutout lm-cutout--right" data-aos="fade-up-left" data-aos-delay="300" data-aos-duration="800">
-        <img src={cutoutRightSrc} alt="" loading="lazy" decoding="async" onError={handleImgError} />
+      <figure className="lm-cutout lm-cutout--right">
+        <img
+          ref={rightRef}
+          src={cutoutRightSrc}
+          alt=""
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
+          className={rightLoaded ? "lm-img--loaded" : ""}
+          onLoad={() => setRightLoaded(true)}
+          onError={handleRightError}
+        />
       </figure>
     </div>
   );

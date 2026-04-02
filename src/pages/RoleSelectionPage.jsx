@@ -116,7 +116,7 @@ const RoleSelectionPhotoLayer = memo(() => (
           data-aos-duration={740}
           data-aos-easing="ease-out-cubic"
         >
-          <img src={item.src} alt="" className="rs-photo-card-img" loading="lazy" decoding="async" />
+          <img src={item.src} alt="" className="rs-photo-card-img" loading="eager" decoding="async" />
         </div>
       ))}
     </div>
@@ -135,7 +135,7 @@ const RoleSelectionPhotoLayer = memo(() => (
               data-aos-duration={760}
               data-aos-easing="ease-out-cubic"
             >
-              <img src={item.src} alt="" className="rs-photo-card-img" loading="lazy" decoding="async" />
+              <img src={item.src} alt="" className="rs-photo-card-img" loading="eager" decoding="async" />
             </div>
           ))}
         </div>
@@ -152,7 +152,7 @@ const RoleSelectionPhotoLayer = memo(() => (
               data-aos-duration={760}
               data-aos-easing="ease-out-cubic"
             >
-              <img src={item.src} alt="" className="rs-photo-card-img" loading="lazy" decoding="async" />
+              <img src={item.src} alt="" className="rs-photo-card-img" loading="eager" decoding="async" />
             </div>
           ))}
         </div>
@@ -169,7 +169,7 @@ const RoleSelectionPhotoLayer = memo(() => (
         data-aos-duration={item.duration}
         data-aos-easing="ease-out-cubic"
       >
-        <img src={item.src} alt="" className="rs-body-cutout-img" loading="lazy" decoding="async" />
+        <img src={item.src} alt="" className="rs-body-cutout-img" loading="eager" decoding="async" />
       </div>
     ))}
 
@@ -180,7 +180,7 @@ const RoleSelectionPhotoLayer = memo(() => (
           className="rs-avatar-chip"
           style={{ "--rs-chip-delay": `${index * 0.36}s` }}
         >
-          <img src={src} alt="" loading="lazy" decoding="async" />
+          <img src={src} alt="" loading="eager" decoding="async" />
         </div>
       ))}
     </div>
