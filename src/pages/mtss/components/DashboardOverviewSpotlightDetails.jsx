@@ -16,17 +16,23 @@ const DashboardOverviewSpotlightDetails = ({
     const baselineValue = parseNumber(spotlightProfile?.baseline);
     const currentValue = parseNumber(spotlightProfile?.current);
     const targetValue = parseNumber(spotlightProfile?.target);
-    const baseline = baselineValue ?? spotlightProfile?.baseline ?? "-";
-    const current = currentValue ?? spotlightProfile?.current ?? "-";
-    const target = targetValue ?? spotlightProfile?.target ?? "-";
-    const gap = targetValue != null && currentValue != null ? Math.max(0, targetValue - currentValue) : "-";
-    const progressValue = Math.min(100, Math.max(0, spotlightStatus || 0));
-    const formatValue = (value) => (value === "-" || value === null || value === undefined ? "-" : `${value} ${progressUnit}`);
+    const baseline = baselineValue ?? spotlightProfile?.baseline ?? null;
+    const current = currentValue ?? spotlightProfile?.current ?? null;
+    const target = targetValue ?? spotlightProfile?.target ?? null;
+    const gap = target != null && current != null ? Math.max(0, target - current) : null;
+    const progressValue = (() => {
+        if (current == null || target == null || target === 0) return spotlightStatus || 0;
+        const base = baseline ?? 0;
+        const denom = target - base;
+        if (denom === 0) return current >= target ? 100 : 0;
+        return Math.min(100, Math.max(0, Math.round(((current - base) / denom) * 100)));
+    })();
+    const formatValue = (value) => (value == null ? "-" : `${value} ${progressUnit}`);
     const classLabel = spotlightStudent?.className || spotlightStudent?.class || "-";
     const lastCheckIn = history?.[0]?.date || "No recent updates";
 
     return (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" data-aos="fade-up" data-aos-delay="80">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" data-aos="fade-up" data-aos-delay="80">
             <div className="rounded-2xl border border-sky-200/60 dark:border-sky-800/40 bg-gradient-to-br from-sky-50/90 via-white/80 to-white/70 dark:from-sky-950/40 dark:via-slate-900/40 dark:to-slate-900/30 p-4 space-y-3 shadow-inner">
                 <div className="flex items-center justify-between">
                     <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.35em] text-slate-500 dark:text-white/60">
@@ -78,9 +84,11 @@ const DashboardOverviewSpotlightDetails = ({
                     <li><strong>Duration:</strong> {spotlightProfile.duration ?? "-"}</li>
                 </ul>
                 <div className="flex flex-wrap gap-2 text-[11px] font-semibold">
-                    <span className="px-2.5 py-1 rounded-full bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-200">
-                        Focus: {spotlightProfile.type ?? "-"}
-                    </span>
+                    {spotlightProfile.strategy && spotlightProfile.strategy !== spotlightProfile.type && (
+                        <span className="px-2.5 py-1 rounded-full bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-200 truncate max-w-full">
+                            {spotlightProfile.strategy}
+                        </span>
+                    )}
                     <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800/50 dark:text-slate-300">
                         Last update: {lastCheckIn}
                     </span>
@@ -107,13 +115,13 @@ const DashboardOverviewSpotlightDetails = ({
                     </div>
                     <div className="rounded-xl bg-white/70 dark:bg-white/5 border border-white/40 px-3 py-2">
                         <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">Gap</p>
-                        <p className="text-base font-bold">{gap === "-" ? "-" : `${gap} ${progressUnit}`}</p>
+                        <p className="text-base font-bold">{gap == null ? "-" : `${gap} ${progressUnit}`}</p>
                     </div>
                 </div>
                 <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
                         <span>Status</span>
-                        <span className="text-emerald-600 dark:text-emerald-300">{progressValue}% to target</span>
+                        <span className="text-emerald-600 dark:text-emerald-300">{Math.round(progressValue)}% to target</span>
                     </div>
                     <div className="h-2.5 rounded-full bg-emerald-100/80 dark:bg-emerald-900/40 overflow-hidden">
                         <div

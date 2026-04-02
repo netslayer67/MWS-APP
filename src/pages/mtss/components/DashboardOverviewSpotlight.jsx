@@ -89,16 +89,16 @@ const DashboardOverviewSpotlight = ({ students, progressData, TierPill }) => {
                     </div>
                 </div>
                 <div className="flex flex-col gap-3 items-start lg:items-end">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
                         <button
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/80 dark:bg-white/10 border border-white/60 dark:border-white/20 shadow-sm hover:-translate-y-0.5 transition"
+                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/80 dark:bg-white/10 border border-white/60 dark:border-white/20 shadow-sm hover:-translate-y-0.5 transition"
                             onClick={setPrev}
                             aria-label="Previous student"
                         >
                             <ChevronLeft className="w-4 h-4" />
                         </button>
                         <select
-                            className="min-w-[220px] px-4 py-2 rounded-full bg-white/90 dark:bg-white/10 border border-white/60 dark:border-white/20 text-sm font-semibold text-foreground dark:text-white shadow-sm"
+                            className="flex-1 min-w-0 sm:flex-none sm:min-w-[200px] sm:max-w-xs px-4 py-2 rounded-full bg-white/90 dark:bg-white/10 border border-white/60 dark:border-white/20 text-sm font-semibold text-foreground dark:text-white shadow-sm"
                             value={spotlightStudent?.id || ""}
                             onChange={(e) => {
                                 const idx = students.findIndex((s) => (s.id || s._id) === e.target.value);
@@ -112,7 +112,7 @@ const DashboardOverviewSpotlight = ({ students, progressData, TierPill }) => {
                             ))}
                         </select>
                         <button
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/80 dark:bg-white/10 border border-white/60 dark:border-white/20 shadow-sm hover:-translate-y-0.5 transition"
+                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/80 dark:bg-white/10 border border-white/60 dark:border-white/20 shadow-sm hover:-translate-y-0.5 transition"
                             onClick={setNext}
                             aria-label="Next student"
                         >
@@ -142,7 +142,7 @@ const DashboardOverviewSpotlight = ({ students, progressData, TierPill }) => {
                 TierPill={TierPill}
             />
 
-            <DashboardOverviewSpotlightChart chartSeries={chartSeries} />
+            <DashboardOverviewSpotlightChart chartSeries={chartSeries} progressUnit={progressUnit} />
         </section>
     );
 };

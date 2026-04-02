@@ -2,12 +2,13 @@
 
 export const buildChartSeries = (assignment = {}) => {
     const checkIns = assignment.checkIns || [];
+    const targetVal = assignment.targetScore?.value != null ? Number(assignment.targetScore.value) : null;
+
     if (checkIns.length) {
-        const total = checkIns.length;
-        return checkIns.map((entry, index) => {
-            const value = Math.round(((index + 1) / total) * 100);
+        return checkIns.map((entry) => {
             const label = formatDate(entry.date);
-            return { label, date: label, reading: value, goal: 100, value };
+            const reading = entry.value != null ? Number(entry.value) : null;
+            return { label, date: label, reading, goal: targetVal, value: reading };
         });
     }
     const goals = assignment.goals || [];
@@ -23,7 +24,7 @@ export const buildChartSeries = (assignment = {}) => {
     }
     const value = assignment.status === "completed" ? 100 : 0;
     const label = formatDate(assignment.startDate);
-    return [{ label, date: label, reading: value, goal: 100, value }];
+    return [{ label, date: label, reading: value, goal: targetVal ?? 100, value }];
 };
 
 export const buildHistory = (assignment = {}) =>

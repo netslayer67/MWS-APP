@@ -44,6 +44,7 @@ const DOCK_MESSAGE_LIMIT = 18;
 const DOCK_WIDGET_LIMIT = 2;
 const DOCK_ACTION_LIMIT = 4;
 const DOCK_API_MESSAGE_MAX_LENGTH = 2000;
+const COMPACT_DOCK_BREAKPOINT = 768;
 
 const safeList = (value) => (Array.isArray(value) ? value : []);
 const safeText = (value, max = 220) =>
@@ -51,6 +52,9 @@ const safeText = (value, max = 220) =>
         .replace(/\s+/g, " ")
         .trim()
         .slice(0, max);
+
+const getIsCompactViewport = () =>
+    typeof window !== "undefined" && window.innerWidth < COMPACT_DOCK_BREAKPOINT;
 
 const preprocessDockMarkdown = (content = "") =>
     String(content || "")
@@ -429,6 +433,7 @@ const UtilityDock = memo(() => {
     const [dockOperationError, setDockOperationError] = useState("");
     const [activeNudge, setActiveNudge] = useState(null);
     const [isNudgeVisible, setIsNudgeVisible] = useState(false);
+    const [isCompactViewport, setIsCompactViewport] = useState(() => getIsCompactViewport());
     const hasLoadedProfileRef = useRef(false);
     const quickSendButtonRef = useRef(null);
     const quickInputRef = useRef(null);
@@ -443,6 +448,7 @@ const UtilityDock = memo(() => {
     const wasDragRef = useRef(false);
 
     const handleDragStart = useCallback((e) => {
+        if (isCompactViewport || e?.type === "touchstart") return;
         const touch = e.touches ? e.touches[0] : e;
         dragStartRef.current = {
             x: touch.clientX,
@@ -452,7 +458,7 @@ const UtilityDock = memo(() => {
             moved: false,
         };
         wasDragRef.current = false;
-    }, [dockPos]);
+    }, [dockPos, isCompactViewport]);
 
     const handleDragMove = useCallback((e) => {
         if (!dragStartRef.current) return;
@@ -487,17 +493,31 @@ const UtilityDock = memo(() => {
     }, [dockPos]);
 
     useEffect(() => {
+        if (typeof window === "undefined") return undefined;
+        const handleResize = () => {
+            setIsCompactViewport(getIsCompactViewport());
+        };
+        handleResize();
+        window.addEventListener("resize", handleResize);
+        return () => {
+            window.removeEventListener("resize", handleResize);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!isCompactViewport) return;
+        dragStartRef.current = null;
+        wasDragRef.current = false;
+    }, [isCompactViewport]);
+
+    useEffect(() => {
         const onMove = (e) => handleDragMove(e);
         const onEnd = () => handleDragEnd();
         window.addEventListener("mousemove", onMove);
         window.addEventListener("mouseup", onEnd);
-        window.addEventListener("touchmove", onMove, { passive: false });
-        window.addEventListener("touchend", onEnd);
         return () => {
             window.removeEventListener("mousemove", onMove);
             window.removeEventListener("mouseup", onEnd);
-            window.removeEventListener("touchmove", onMove);
-            window.removeEventListener("touchend", onEnd);
         };
     }, [handleDragMove, handleDragEnd]);
 
@@ -1103,14 +1123,15 @@ const UtilityDock = memo(() => {
     const hasQuickDraft = String(quickMessage || "").trim().length > 0;
     const hasDockConversation = dockMessages.length > 0;
     const shouldHideQuickLinks = hasQuickDraft || hasDockConversation || isDockSending;
+    const effectiveDockPos = isCompactViewport ? null : dockPos;
 
     return (
         <div
             className="utility-dock fixed z-50 flex items-end gap-2"
             style={{
-                bottom: dockPos ? `calc(4rem + ${-(dockPos.y || 0)}px)` : (window.innerWidth < 768 ? '1.25rem' : '4rem'),
-                right: dockPos ? `calc(1.25rem + ${-(dockPos.x || 0)}px)` : '1.25rem',
-                transition: dragStartRef.current ? 'none' : 'bottom 0.3s, right 0.3s',
+                bottom: effectiveDockPos ? `calc(4rem + ${-(effectiveDockPos.y || 0)}px)` : (isCompactViewport ? "1.25rem" : "4rem"),
+                right: effectiveDockPos ? `calc(1.25rem + ${-(effectiveDockPos.x || 0)}px)` : "1.25rem",
+                transition: dragStartRef.current ? "none" : "bottom 0.3s, right 0.3s",
             }}
         >
             <AnimatePresence>
@@ -1177,7 +1198,7 @@ const UtilityDock = memo(() => {
                         animate={lowMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
                         exit={lowMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.96 }}
                         transition={lowMotion ? { duration: 0.12 } : { duration: 0.22, ease: "easeOut" }}
-                        className="hidden md:block w-[300px] rounded-2xl border border-white/30 dark:border-white/[0.07] bg-white/80 dark:bg-[rgba(13,15,23,0.90)] backdrop-blur-xl shadow-[0_4px_24px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.7)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.05)] p-3"
+                        className="w-[300px] max-w-[calc(100vw-4.75rem)] rounded-2xl border border-white/30 dark:border-white/[0.07] bg-white/80 dark:bg-[rgba(13,15,23,0.90)] backdrop-blur-xl shadow-[0_4px_24px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.7)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.05)] p-3"
                     >
                         <div className="flex items-start justify-between gap-2">
                             <div>
@@ -1425,12 +1446,11 @@ const UtilityDock = memo(() => {
                     setIsNudgeVisible(false);
                 }}
                 onMouseDown={handleDragStart}
-                onTouchStart={handleDragStart}
                 whileTap={lowMotion ? {} : { scale: 0.94 }}
                 whileHover={lowMotion ? {} : { scale: 1.05 }}
                 animate={lowMotion ? {} : { y: [0, -2, 0] }}
                 transition={lowMotion ? { duration: 0.12 } : { duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
-                className="relative h-10 w-10 md:h-14 md:w-14 rounded-full border border-cyan-200/60 dark:border-cyan-200/25 bg-[linear-gradient(145deg,rgba(255,255,255,0.96),rgba(230,247,255,0.88),rgba(253,236,252,0.86))] dark:bg-[linear-gradient(145deg,rgba(11,26,48,0.94),rgba(20,38,66,0.92),rgba(44,22,52,0.9))] shadow-[0_18px_40px_rgba(6,182,212,0.24)] text-cyan-700 dark:text-cyan-200 backdrop-blur-xl cursor-grab active:cursor-grabbing"
+                className="relative h-10 w-10 md:h-14 md:w-14 rounded-full border border-cyan-200/60 dark:border-cyan-200/25 bg-[linear-gradient(145deg,rgba(255,255,255,0.96),rgba(230,247,255,0.88),rgba(253,236,252,0.86))] dark:bg-[linear-gradient(145deg,rgba(11,26,48,0.94),rgba(20,38,66,0.92),rgba(44,22,52,0.9))] shadow-[0_18px_40px_rgba(6,182,212,0.24)] text-cyan-700 dark:text-cyan-200 backdrop-blur-xl cursor-pointer md:cursor-grab md:active:cursor-grabbing"
             >
                 <motion.span
                     className="pointer-events-none absolute -inset-1 rounded-full border border-cyan-300/50 dark:border-cyan-300/35"

@@ -137,12 +137,24 @@ export const mapAssignmentsToStudents = (assignments = [], teacherName = "MTSS M
                     teacher: teacherName,
                     mentor: assignment.mentorId?.name || teacherName,
                     type: focus,
-                    strategy: assignment.focusAreas?.join(", ") || `Support focus - ${tier}`,
+                    strategy: strategyName || assignment.focusAreas?.join(", ") || `Support focus - ${tier}`,
                     started: formatDate(assignment.startDate),
                     duration: formatDuration(assignment.startDate, assignment.endDate),
-                    baseline: goals.length ? 0 : null,
-                    current: goals.length ? completedGoals : assignment.checkIns?.length || (statusKey === "completed" ? 1 : 0),
-                    target: goals.length || Math.max(assignment.checkIns?.length || 1, 1),
+                    baseline: (() => {
+                        const bs = assignment.baselineScore?.value;
+                        if (bs != null) return Number(bs);
+                        return goals.length ? 0 : null;
+                    })(),
+                    current: (() => {
+                        const lastCi = assignment.checkIns?.slice(-1)[0];
+                        if (lastCi?.value != null) return Number(lastCi.value);
+                        return goals.length ? completedGoals : (assignment.checkIns?.length || (statusKey === "completed" ? 1 : 0));
+                    })(),
+                    target: (() => {
+                        const ts = assignment.targetScore?.value;
+                        if (ts != null) return Number(ts);
+                        return goals.length ? goals.length : Math.max(assignment.checkIns?.length || 1, 1);
+                    })(),
                     progressUnit,
                     mode: assignment.mode || "quantitative",
                     weeklyFocusOverview: assignment.weeklyFocusOverview || null,
