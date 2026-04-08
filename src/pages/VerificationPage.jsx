@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useRef } from "react";
+import { memo, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
@@ -36,8 +36,7 @@ const EmotionalCheckinFaceScanPage = memo(() => {
         capturePhoto,
         handleRescanRequest,
         isRescanDisabled,
-        remainingRescans,
-        rescanCount
+        remainingRescans
     } = useCameraScanner({
         toast,
         maxRescanAttempts: MAX_AI_RESCAN_ATTEMPTS
@@ -66,11 +65,29 @@ const EmotionalCheckinFaceScanPage = memo(() => {
         }
     }, [analyzePhoto, capturePhoto]);
 
+    const handleCameraError = useCallback(() => {
+        toast({
+            title: "Camera Access Required",
+            description: "Please allow camera access so the AI scan can start.",
+            variant: "destructive"
+        });
+    }, [toast]);
+
     const handleRescan = useCallback(() => {
         setAnalysis(null);
         setSelectedSupportContact(null);
         handleRescanRequest();
     }, [handleRescanRequest, setAnalysis, setSelectedSupportContact]);
+
+    const handleReflectionChange = useCallback((reflection) => {
+        setAnalysis((prev) => {
+            if (!prev) return prev;
+            return {
+                ...prev,
+                userReflection: reflection
+            };
+        });
+    }, [setAnalysis]);
 
     useEffect(() => {
         if (supportContacts.length === 0 && isAuthenticated) {
@@ -128,6 +145,7 @@ const EmotionalCheckinFaceScanPage = memo(() => {
                                         scanProgress={scanProgress}
                                         detectedFeatures={detectedFeatures}
                                         onTakePhoto={handleTakePhoto}
+                                        onCameraError={handleCameraError}
                                         stage={stage}
                                     />
                                 )}
@@ -138,6 +156,7 @@ const EmotionalCheckinFaceScanPage = memo(() => {
                                         onReset={handleRescan}
                                         onComplete={completeCheckin}
                                         onSupportChange={setSelectedSupportContact}
+                                        onReflectionChange={handleReflectionChange}
                                         isRescanDisabled={isRescanDisabled}
                                         remainingRescans={remainingRescans}
                                         maxRescans={MAX_AI_RESCAN_ATTEMPTS}

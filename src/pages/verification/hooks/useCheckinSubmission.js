@@ -50,11 +50,14 @@ export const useCheckinSubmission = ({
                 }
             }
 
+            const userReflection = String(analysis.userReflection || "").trim();
+
             const checkInData = {
                 detectedEmotion: analysis.detectedEmotion,
                 confidence: analysis.confidence || 75,
                 selectedMoods: analysis.selfreportedEmotions || [],
-                details: analysis.psychologicalInsight || "",
+                details: userReflection,
+                userReflection,
                 presenceLevel: analysis.presenceCapacity?.estimatedPresence || 7,
                 capacityLevel: analysis.presenceCapacity?.estimatedCapacity || 7,
                 selectedSupportContact: selectedSupportContact || "No Need",
@@ -100,4 +103,3 @@ export const useCheckinSubmission = ({
 
     return { isSubmitting, completeCheckin };
 };
-

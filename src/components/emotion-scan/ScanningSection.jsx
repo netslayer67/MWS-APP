@@ -1,4 +1,4 @@
-import React, { memo, useState, useEffect } from "react";
+import React, { memo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Brain, CheckCircle } from "lucide-react";
 import Webcam from "react-webcam";
@@ -23,19 +23,18 @@ const ScanningOverlay = memo(() => (
     </motion.div>
 ));
 
-const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onEmotionDetected, onTakePhoto, stage }) => {
-    const [running, setRunning] = useState(false);
-    const [currentEmotion, setCurrentEmotion] = useState(null);
+const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onTakePhoto, stage, onCameraError }) => {
     const webcamRef = React.useRef(null);
-
-    useEffect(() => {
-        // Set the videoRef to point to the webcam's video element
-        if (webcamRef?.current && videoRef) {
+    const bindVideoElement = React.useCallback(() => {
+        if (webcamRef?.current?.video && videoRef) {
             videoRef.current = webcamRef.current.video;
-            setRunning(true);
             console.log('📹 Video element assigned to ref');
         }
-    }, []);
+    }, [videoRef]);
+
+    useEffect(() => {
+        bindVideoElement();
+    }, [bindVideoElement]);
 
     if (stage === 'preview') {
         return (
@@ -61,7 +60,9 @@ const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onEmot
                         ref={webcamRef}
                         mirrored
                         videoConstraints={{ facingMode: "user" }}
-                        onUserMedia={() => setRunning(true)}
+                        onUserMedia={bindVideoElement}
+                        onLoadedMetadata={bindVideoElement}
+                        onUserMediaError={onCameraError}
                         style={{ width: "100%", height: "100%" }}
                     />
                 </div>
@@ -96,16 +97,9 @@ const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onEmot
                 <p className="text-sm text-muted-foreground">
                     Advanced face scanning with real-time emotion detection
                 </p>
-                {currentEmotion && (
-                    <p className="text-xs text-primary font-medium">
-                        Detected: {currentEmotion.primaryEmotion} ({(currentEmotion.confidence * 100).toFixed(0)}% confidence)
-                    </p>
-                )}
-                {!currentEmotion && (
-                    <p className="text-xs text-muted-foreground">
-                        Analyzing facial expressions...
-                    </p>
-                )}
+                <p className="text-xs text-muted-foreground">
+                    Analyzing facial expressions...
+                </p>
             </div>
 
             <div className="relative aspect-square rounded-2xl overflow-hidden border-2 border-primary/50 shadow-xl shadow-primary/10">
@@ -114,7 +108,9 @@ const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onEmot
                     ref={webcamRef}
                     mirrored
                     videoConstraints={{ facingMode: "user" }}
-                    onUserMedia={() => setRunning(true)}
+                    onUserMedia={bindVideoElement}
+                    onLoadedMetadata={bindVideoElement}
+                    onUserMediaError={onCameraError}
                     style={{ width: "100%", height: "100%" }}
                 />
                 <ScanningOverlay />

@@ -162,6 +162,7 @@ const StudentResultsSection = memo(({
     onReset,
     onComplete,
     onSupportChange,
+    onReflectionChange,
     isRescanDisabled = false,
     remainingRescans = 0,
     maxRescans = 2
@@ -323,9 +324,7 @@ const StudentResultsSection = memo(({
                             onSupportChange={(contact) => onSupportChange?.(contact)}
                         />
                         <UserReflectionInput
-                            onReflectionChange={(reflection) => {
-                                if (analysis) analysis.userReflection = reflection;
-                            }}
+                            onReflectionChange={onReflectionChange}
                             onValidationChange={setHasReflection}
                         />
                     </div>

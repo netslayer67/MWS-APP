@@ -20,7 +20,7 @@ export const useCameraScanner = ({
     maxRescanAttempts = 2,
     autoStart = false
 }) => {
-    const initialStage = autoStart ? "loading" : DEFAULT_STAGE;
+    const initialStage = autoStart ? "preview" : DEFAULT_STAGE;
     const [stage, setStage] = useState(initialStage);
     const [stream, setStream] = useState(null);
     const [scanProgress, setScanProgress] = useState(0);
@@ -28,27 +28,21 @@ export const useCameraScanner = ({
     const [rescanCount, setRescanCount] = useState(0);
     const videoRef = useRef(null);
     const scanIntervalRef = useRef(null);
+    const stopActiveVideoTracks = useCallback(() => {
+        const activeStream = videoRef.current?.srcObject || stream;
+
+        if (activeStream?.getTracks) {
+            activeStream.getTracks().forEach((track) => track.stop());
+        }
+
+        setStream(null);
+    }, [stream]);
 
     const startScan = useCallback(async () => {
-        try {
-            const mediaStream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    facingMode: "user",
-                    width: { ideal: 640 },
-                    height: { ideal: 480 }
-                }
-            });
-            setStream(mediaStream);
-            setStage("preview");
-        } catch (error) {
-            console.error("Camera access error:", error);
-            toast?.({
-                title: "Camera Access Required",
-                description: "Please allow camera access for emotional analysis.",
-                variant: "destructive"
-            });
-        }
-    }, [toast]);
+        setScanProgress(0);
+        setDetectedFeatures([]);
+        setStage("preview");
+    }, []);
 
     // Auto-start camera when autoStart is true (skip intro)
     useEffect(() => {
@@ -70,10 +64,7 @@ export const useCameraScanner = ({
 
             const photoDataUrl = canvas.toDataURL("image/jpeg", 0.9);
 
-            if (stream) {
-                stream.getTracks().forEach((track) => track.stop());
-            }
-
+            stopActiveVideoTracks();
             setStage("analyzing");
             return photoDataUrl;
         } catch (error) {
@@ -85,7 +76,7 @@ export const useCameraScanner = ({
             });
             setStage(autoStart ? "preview" : initialStage);
         }
-    }, [autoStart, initialStage, stream, toast]);
+    }, [autoStart, initialStage, stopActiveVideoTracks, toast]);
 
     const resetScan = useCallback(async () => {
         try {
@@ -99,14 +90,11 @@ export const useCameraScanner = ({
             clearInterval(scanIntervalRef.current);
             scanIntervalRef.current = null;
         }
-        if (stream) {
-            stream.getTracks().forEach((track) => track.stop());
-        }
-        setStream(null);
+        stopActiveVideoTracks();
         setStage(initialStage);
         setScanProgress(0);
         setDetectedFeatures([]);
-    }, [initialStage, stream]);
+    }, [initialStage, stopActiveVideoTracks]);
 
     const handleRescanRequest = useCallback(() => {
         if (rescanCount >= maxRescanAttempts) {
@@ -135,15 +123,13 @@ export const useCameraScanner = ({
                     // Never loaded, nothing to dispose.
                 });
 
-            if (stream) {
-                stream.getTracks().forEach((track) => track.stop());
-            }
+            stopActiveVideoTracks();
             if (scanIntervalRef.current) {
                 clearInterval(scanIntervalRef.current);
                 scanIntervalRef.current = null;
             }
         };
-    }, [stream]);
+    }, [stopActiveVideoTracks]);
 
     return {
         stage,

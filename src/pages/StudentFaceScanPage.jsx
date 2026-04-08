@@ -84,6 +84,15 @@ const StudentFaceScanPage = memo(() => {
         }
     }, [videoRef]);
 
+    const handleCameraError = useCallback(() => {
+        setCameraReady(false);
+        toast({
+            title: "Camera Access Required",
+            description: "Please allow camera access so the AI scan can start.",
+            variant: "destructive"
+        });
+    }, [toast]);
+
     // Keep trying to bind video element when preview/scanning renders.
     useEffect(() => {
         if (stage === "preview" || stage === "scanning") {
@@ -115,6 +124,16 @@ const StudentFaceScanPage = memo(() => {
         setSelectedSupportContact(null);
         handleRescanRequest();
     }, [handleRescanRequest, setAnalysis, setSelectedSupportContact]);
+
+    const handleReflectionChange = useCallback((reflection) => {
+        setAnalysis((prev) => {
+            if (!prev) return prev;
+            return {
+                ...prev,
+                userReflection: reflection
+            };
+        });
+    }, [setAnalysis]);
 
     useEffect(() => {
         if (supportContacts.length === 0 && isAuthenticated) {
@@ -218,6 +237,7 @@ const StudentFaceScanPage = memo(() => {
                                         videoConstraints={{ facingMode: "user" }}
                                         onUserMedia={bindVideoElement}
                                         onLoadedMetadata={bindVideoElement}
+                                        onUserMediaError={handleCameraError}
                                         style={{ width: "100%", height: "100%" }}
                                     />
                                 </div>
@@ -261,6 +281,7 @@ const StudentFaceScanPage = memo(() => {
                                         videoConstraints={{ facingMode: "user" }}
                                         onUserMedia={bindVideoElement}
                                         onLoadedMetadata={bindVideoElement}
+                                        onUserMediaError={handleCameraError}
                                         style={{ width: "100%", height: "100%" }}
                                     />
                                     <StudentScanOverlay />
@@ -343,6 +364,7 @@ const StudentFaceScanPage = memo(() => {
                                 onReset={handleRescan}
                                 onComplete={completeCheckin}
                                 onSupportChange={setSelectedSupportContact}
+                                onReflectionChange={handleReflectionChange}
                                 isRescanDisabled={isRescanDisabled}
                                 remainingRescans={remainingRescans}
                                 maxRescans={MAX_AI_RESCAN_ATTEMPTS}
