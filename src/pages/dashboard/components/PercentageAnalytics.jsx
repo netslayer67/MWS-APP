@@ -1,10 +1,11 @@
-import React, { memo, useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { TrendingUp, Users, Target, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import ExportButton from "./ExportButton";
 import UserListModal from "./UserListModal";
 import { computeWorkdayCount, formatNumber } from "../utils/analyticsHelpers";
+import { INSIGHT_TONES } from "./insightCardTones";
 
 const PercentageAnalytics = memo(({ data = {}, period }) => {
     const navigate = useNavigate();
@@ -108,7 +109,7 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
                 title: 'High Support Need',
                 message: `${supportRate.toFixed(1)}% (${flaggedUsersCount} people) indicated they need support. Consider proactive outreach.`,
                 icon: AlertTriangle,
-                color: 'text-red-500'
+                color: INSIGHT_TONES.risk.icon
             });
         }
 
@@ -118,7 +119,7 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
                 title: 'Emotional Well-being Concerns',
                 message: 'Negative mood patterns detected. Monitor closely and consider additional support resources.',
                 icon: AlertTriangle,
-                color: 'text-yellow-500'
+                color: INSIGHT_TONES.warning.icon
             });
         }
 
@@ -128,7 +129,7 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
                 title: 'Strong Team Resilience',
                 message: 'Low support requests indicate good overall team well-being.',
                 icon: CheckCircle,
-                color: 'text-green-500'
+                color: INSIGHT_TONES.positive.icon
             });
         }
 
@@ -137,7 +138,7 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
                 title: 'Positive Team Dynamics',
                 message: 'Strong presence of positive moods suggests healthy team environment.',
                 icon: CheckCircle,
-                color: 'text-green-500'
+                color: INSIGHT_TONES.positive.icon
             });
         }
 
@@ -263,7 +264,7 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
                         <p className="text-xs text-muted-foreground">
                             Normalized across {analytics.workdayCount === 1 ? 'today' : `${analytics.workdayCount} workdays`}
                         </p>
-                        <p className="text-xs text-blue-600 mt-1 font-medium">
+                        <p className="text-xs text-blue-600 dark:text-sky-300 mt-1 font-medium">
                             Click to view not submitted users
                         </p>
                     </div>
@@ -341,27 +342,27 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
                     {/* Risk Factors */}
                     <div>
                         <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                            <AlertTriangle className="w-4 h-4 text-red-500" />
+                            <AlertTriangle className={`w-4 h-4 ${INSIGHT_TONES.risk.icon}`} />
                             Risk Factors
                         </h3>
                         <div className="space-y-2">
                             {analytics.riskFactors?.length > 0 ? (
                                 analytics.riskFactors.slice(0, 2).map((risk, index) => (
-                                    <div key={index} className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                                    <div key={index} className={`p-3 ${INSIGHT_TONES.risk.card}`}>
                                         <div className="flex items-start gap-2">
                                             <AlertTriangle className={`w-4 h-4 mt-0.5 ${risk.color}`} />
                                             <div>
-                                                <p className="text-sm font-medium text-foreground">{risk.title}</p>
-                                                <p className="text-xs text-muted-foreground mt-1">{risk.message}</p>
+                                                <p className={`text-sm font-medium ${INSIGHT_TONES.risk.title}`}>{risk.title}</p>
+                                                <p className={`text-xs mt-1 ${INSIGHT_TONES.risk.body}`}>{risk.message}</p>
                                             </div>
                                         </div>
                                     </div>
                                 ))
                             ) : (
-                                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <div className={`p-3 ${INSIGHT_TONES.positive.card}`}>
                                     <div className="flex items-center gap-2">
-                                        <CheckCircle className="w-4 h-4 text-green-500" />
-                                        <p className="text-sm text-green-700">No significant risk factors detected</p>
+                                        <CheckCircle className={`w-4 h-4 ${INSIGHT_TONES.positive.icon}`} />
+                                        <p className={`text-sm font-medium ${INSIGHT_TONES.positive.title}`}>No significant risk factors detected</p>
                                     </div>
                                 </div>
                             )}
@@ -371,27 +372,27 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
                     {/* Positive Indicators */}
                     <div>
                         <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4 text-green-500" />
+                            <CheckCircle className={`w-4 h-4 ${INSIGHT_TONES.positive.icon}`} />
                             Positive Indicators
                         </h3>
                         <div className="space-y-2">
                             {analytics.positiveIndicators?.length > 0 ? (
                                 analytics.positiveIndicators.slice(0, 2).map((indicator, index) => (
-                                    <div key={index} className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                    <div key={index} className={`p-3 ${INSIGHT_TONES.positive.card}`}>
                                         <div className="flex items-start gap-2">
                                             <CheckCircle className={`w-4 h-4 mt-0.5 ${indicator.color}`} />
                                             <div>
-                                                <p className="text-sm font-medium text-foreground">{indicator.title}</p>
-                                                <p className="text-xs text-muted-foreground mt-1">{indicator.message}</p>
+                                                <p className={`text-sm font-medium ${INSIGHT_TONES.positive.title}`}>{indicator.title}</p>
+                                                <p className={`text-xs mt-1 ${INSIGHT_TONES.positive.body}`}>{indicator.message}</p>
                                             </div>
                                         </div>
                                     </div>
                                 ))
                             ) : (
-                                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <div className={`p-3 ${INSIGHT_TONES.warning.card}`}>
                                     <div className="flex items-center gap-2">
-                                        <Clock className="w-4 h-4 text-yellow-500" />
-                                        <p className="text-sm text-yellow-700">Monitoring for positive indicators</p>
+                                        <Clock className={`w-4 h-4 ${INSIGHT_TONES.warning.icon}`} />
+                                        <p className={`text-sm font-medium ${INSIGHT_TONES.warning.title}`}>Monitoring for positive indicators</p>
                                     </div>
                                 </div>
                             )}
@@ -440,7 +441,7 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
                                         <span className="text-foreground capitalize">
                                             {item.mood}
                                             {item.isAIGenerated && (
-                                                <span className="ml-1 text-xs text-blue-600 font-medium">(AI)</span>
+                                                <span className="ml-1 text-xs text-blue-600 dark:text-sky-300 font-medium">(AI)</span>
                                             )}
                                         </span>
                                     </div>
@@ -491,7 +492,7 @@ const PercentageAnalytics = memo(({ data = {}, period }) => {
                                         <span className="text-foreground capitalize">
                                             {item.weather}
                                             {item.isAIGenerated && (
-                                                <span className="ml-1 text-xs text-blue-600 font-medium">(AI)</span>
+                                                <span className="ml-1 text-xs text-blue-600 dark:text-sky-300 font-medium">(AI)</span>
                                             )}
                                         </span>
                                     </div>

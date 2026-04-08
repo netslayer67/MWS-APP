@@ -1,7 +1,8 @@
-import React, { memo, useMemo } from "react";
+import { memo, useMemo } from "react";
 import { TrendingUp, AlertTriangle, CheckCircle, Clock, BarChart3 } from "lucide-react";
+import { INSIGHT_TONES } from "./insightCardTones";
 
-const PredictiveAnalytics = memo(({ data = {}, period = 'week' }) => {
+const PredictiveAnalytics = memo(({ data = {} }) => {
     const predictions = useMemo(() => {
         if (!data?.recentActivity || data.recentActivity.length === 0) return null;
 
@@ -61,7 +62,7 @@ const PredictiveAnalytics = memo(({ data = {}, period = 'week' }) => {
                 title: 'High Support Need',
                 message: `${supportRate.toFixed(1)}% of users indicated they need support. Consider proactive outreach.`,
                 icon: AlertTriangle,
-                color: 'text-red-500'
+                color: INSIGHT_TONES.risk.icon
             });
         }
 
@@ -71,7 +72,7 @@ const PredictiveAnalytics = memo(({ data = {}, period = 'week' }) => {
                 title: 'Emotional Well-being Concerns',
                 message: 'Negative mood patterns detected. Monitor closely and consider additional support resources.',
                 icon: AlertTriangle,
-                color: 'text-yellow-500'
+                color: INSIGHT_TONES.warning.icon
             });
         }
 
@@ -82,7 +83,7 @@ const PredictiveAnalytics = memo(({ data = {}, period = 'week' }) => {
                 title: 'Strong Team Resilience',
                 message: 'Low support requests indicate good overall team well-being.',
                 icon: CheckCircle,
-                color: 'text-green-500'
+                color: INSIGHT_TONES.positive.icon
             });
         }
 
@@ -91,7 +92,7 @@ const PredictiveAnalytics = memo(({ data = {}, period = 'week' }) => {
                 title: 'Positive Team Dynamics',
                 message: 'Strong presence of positive moods suggests healthy team environment.',
                 icon: CheckCircle,
-                color: 'text-green-500'
+                color: INSIGHT_TONES.positive.icon
             });
         }
 
@@ -173,7 +174,7 @@ const PredictiveAnalytics = memo(({ data = {}, period = 'week' }) => {
                     {/* Risk Factors */}
                     <div>
                         <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                            <AlertTriangle className="w-4 h-4 text-red-500" />
+                            <AlertTriangle className={`w-4 h-4 ${INSIGHT_TONES.risk.icon}`} />
                             Risk Factors
                         </h3>
                         <div className="space-y-3">
@@ -181,22 +182,22 @@ const PredictiveAnalytics = memo(({ data = {}, period = 'week' }) => {
                                 predictions.riskFactors.map((risk, index) => {
                                     const Icon = risk.icon;
                                     return (
-                                        <div key={index} className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                                        <div key={index} className={`p-3 ${INSIGHT_TONES.risk.card}`}>
                                             <div className="flex items-start gap-2">
                                                 <Icon className={`w-4 h-4 mt-0.5 ${risk.color}`} />
                                                 <div>
-                                                    <p className="text-sm font-medium text-foreground">{risk.title}</p>
-                                                    <p className="text-xs text-muted-foreground mt-1">{risk.message}</p>
+                                                    <p className={`text-sm font-medium ${INSIGHT_TONES.risk.title}`}>{risk.title}</p>
+                                                    <p className={`text-xs mt-1 ${INSIGHT_TONES.risk.body}`}>{risk.message}</p>
                                                 </div>
                                             </div>
                                         </div>
                                     );
                                 })
                             ) : (
-                                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <div className={`p-3 ${INSIGHT_TONES.positive.card}`}>
                                     <div className="flex items-center gap-2">
-                                        <CheckCircle className="w-4 h-4 text-green-500" />
-                                        <p className="text-sm text-green-700">No significant risk factors detected</p>
+                                        <CheckCircle className={`w-4 h-4 ${INSIGHT_TONES.positive.icon}`} />
+                                        <p className={`text-sm font-medium ${INSIGHT_TONES.positive.title}`}>No significant risk factors detected</p>
                                     </div>
                                 </div>
                             )}
@@ -206,7 +207,7 @@ const PredictiveAnalytics = memo(({ data = {}, period = 'week' }) => {
                     {/* Positive Indicators */}
                     <div>
                         <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4 text-green-500" />
+                            <CheckCircle className={`w-4 h-4 ${INSIGHT_TONES.positive.icon}`} />
                             Positive Indicators
                         </h3>
                         <div className="space-y-3">
@@ -214,22 +215,22 @@ const PredictiveAnalytics = memo(({ data = {}, period = 'week' }) => {
                                 predictions.positiveIndicators.map((indicator, index) => {
                                     const Icon = indicator.icon;
                                     return (
-                                        <div key={index} className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                        <div key={index} className={`p-3 ${INSIGHT_TONES.positive.card}`}>
                                             <div className="flex items-start gap-2">
                                                 <Icon className={`w-4 h-4 mt-0.5 ${indicator.color}`} />
                                                 <div>
-                                                    <p className="text-sm font-medium text-foreground">{indicator.title}</p>
-                                                    <p className="text-xs text-muted-foreground mt-1">{indicator.message}</p>
+                                                    <p className={`text-sm font-medium ${INSIGHT_TONES.positive.title}`}>{indicator.title}</p>
+                                                    <p className={`text-xs mt-1 ${INSIGHT_TONES.positive.body}`}>{indicator.message}</p>
                                                 </div>
                                             </div>
                                         </div>
                                     );
                                 })
                             ) : (
-                                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <div className={`p-3 ${INSIGHT_TONES.warning.card}`}>
                                     <div className="flex items-center gap-2">
-                                        <Clock className="w-4 h-4 text-yellow-500" />
-                                        <p className="text-sm text-yellow-700">Monitoring for positive indicators</p>
+                                        <Clock className={`w-4 h-4 ${INSIGHT_TONES.warning.icon}`} />
+                                        <p className={`text-sm font-medium ${INSIGHT_TONES.warning.title}`}>Monitoring for positive indicators</p>
                                     </div>
                                 </div>
                             )}

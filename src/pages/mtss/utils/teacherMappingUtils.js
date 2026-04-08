@@ -46,6 +46,7 @@ export const mapAssignmentsToStudents = (assignments = [], teacherName = "MTSS M
             assignment.strategy?.label ||
             assignment.strategy?.title ||
             null;
+        const lastUpdateAt = assignment.updatedAt || assignment.lastPlanUpdatedAt || assignment.createdAt || assignment.startDate || null;
         const duration = assignment.duration || formatDuration(assignment.startDate, assignment.endDate);
         const monitoringFrequency = assignment.monitoringFrequency || assignment.monitorFrequency || null;
         const monitoringMethod = assignment.monitoringMethod || assignment.monitorMethod || null;
@@ -91,6 +92,8 @@ export const mapAssignmentsToStudents = (assignments = [], teacherName = "MTSS M
                             mentorEmail: assignment.mentorId?.email || null,
                             createdAt: assignment.createdAt || assignment.startDate || null,
                             updatedAt: assignment.updatedAt || null,
+                            lastUpdateAt,
+                            lastUpdateSubject: focus || strategyName || null,
                             planChangeLog: Array.isArray(assignment.planChangeLog)
                                 ? assignment.planChangeLog.map((entry) => ({
                                     ...entry,
@@ -177,9 +180,18 @@ export const mapAssignmentsToStudents = (assignments = [], teacherName = "MTSS M
             if (tierDiff !== 0) return tierDiff;
             return (STATUS_PRIORITY[b.statusKey] || 0) - (STATUS_PRIORITY[a.statusKey] || 0);
         });
+        const latestUpdate = [...options]
+            .filter((option) => option?.lastUpdateAt)
+            .sort((a, b) => new Date(b.lastUpdateAt).getTime() - new Date(a.lastUpdateAt).getTime())[0] || null;
         return {
             ...student,
             assignmentOptions: sortedOptions,
+            lastUpdate: latestUpdate
+                ? {
+                    at: latestUpdate.lastUpdateAt,
+                    subject: latestUpdate.lastUpdateSubject || latestUpdate.focus || null,
+                }
+                : null,
         };
     });
     const sorted = students.sort((a, b) => STATUS_PRIORITY[b.statusKey] - STATUS_PRIORITY[a.statusKey]);

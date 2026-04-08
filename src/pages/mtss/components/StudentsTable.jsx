@@ -5,11 +5,12 @@ import StudentsTableMobileCard from "./StudentsTableMobileCard";
 const MAX_RENDER = 50;
 
 const HEADER_COLS = [
-    { label: "Student", align: "text-left", width: "w-[19%]" },
+    { label: "Student", align: "text-left", width: "w-[18%]" },
     { label: "Class / Mentor", align: "text-left", width: "w-[14%]" },
-    { label: "Interventions", align: "text-left", width: "w-[25%]" },
+    { label: "Interventions", align: "text-left", width: "w-[23%]" },
     { label: "Progress", align: "text-left", width: "w-[10%]" },
-    { label: "Next Update", align: "text-left", width: "w-[16%]" },
+    { label: "Last Update", align: "text-left", width: "w-[15%]" },
+    { label: "Next Update", align: "text-left", width: "w-[14%]" },
 ];
 
 const StudentsTable = memo(

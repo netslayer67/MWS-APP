@@ -1,28 +1,10 @@
 import { memo } from "react";
 import { TrendingUp, FilePenLine } from "lucide-react";
 import { ensureStudentInterventions } from "../utils/interventionUtils";
-import { formatPlanAuditDate, resolveProgressAssignmentForStudent } from "../utils/editPlanAccess";
+import { resolveProgressAssignmentForStudent } from "../utils/editPlanAccess";
+import { getStudentLastUpdateDisplay, getStudentNextUpdateDisplay } from "../utils/studentUpdateUtils";
 import InterventionChips, { getAccentColor } from "./InterventionChips";
-
-const formatAuditDateCompact = (value) => {
-    if (!value) return null;
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return null;
-    return new Intl.DateTimeFormat("en-US", {
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-    }).format(parsed);
-};
-
-const compactPersonName = (value = "Unknown") => {
-    const normalized = String(value || "Unknown").split(",")[0].trim();
-    if (!normalized) return "Unknown";
-    const words = normalized.split(/\s+/).filter(Boolean);
-    if (words.length <= 2) return normalized;
-    return `${words[0]} ${words[1]}`;
-};
+import StudentUpdateValue from "./StudentUpdateValue";
 
 const StudentsTableDesktopRow = memo(
     ({
@@ -51,10 +33,8 @@ const StudentsTableDesktopRow = memo(
             Number(student.activeAssignmentCount || 0) > 0 ||
             Number(student.assignmentCount || 0) > 0,
         );
-        const lastModifiedAtFull = formatPlanAuditDate(primaryAssignment?.lastPlanUpdatedAt);
-        const lastModifiedAtCompact = formatAuditDateCompact(primaryAssignment?.lastPlanUpdatedAt);
-        const lastModifiedBy = primaryAssignment?.lastPlanUpdatedByName || "Unknown";
-        const lastModifiedByCompact = compactPersonName(lastModifiedBy);
+        const lastUpdateDisplay = getStudentLastUpdateDisplay(student);
+        const nextUpdateDisplay = getStudentNextUpdateDisplay(student);
         const canEditPlan = hasInterventionPlan && Boolean(onEditPlan) && (
             typeof canEditPlanForStudent === "function"
                 ? canEditPlanForStudent(student)
@@ -108,7 +88,7 @@ const StudentsTableDesktopRow = memo(
                 )}
 
                 {/* Student name */}
-                <td className="py-3.5 pl-3 pr-2 align-top w-[19%]">
+                <td className="py-3.5 pl-3 pr-2 align-top w-[18%]">
                     <div>
                         <span
                             className="block truncate max-w-[200px] font-semibold text-sm text-slate-800 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors"
@@ -131,7 +111,7 @@ const StudentsTableDesktopRow = memo(
                 </td>
 
                 {/* Interventions — top 2 inline, rest collapsed */}
-                <td className="py-3.5 pr-2 align-top w-[25%]">
+                <td className="py-3.5 pr-2 align-top w-[23%]">
                     <InterventionChips interventions={interventions} />
                 </td>
 
@@ -140,22 +120,22 @@ const StudentsTableDesktopRow = memo(
                     <ProgressBadge status={student.progress} />
                 </td>
 
+                {/* Last Update */}
+                <td className="py-3.5 pr-2 align-top w-[15%]">
+                    <StudentUpdateValue
+                        dateLabel={lastUpdateDisplay.dateLabel}
+                        subjectLabel={lastUpdateDisplay.subjectLabel}
+                        emptyLabel="No updates yet"
+                    />
+                </td>
+
                 {/* Next Update */}
-                <td className="py-3.5 pr-2 align-top w-[16%] text-[12px] text-slate-600 dark:text-slate-300 font-medium">
-                    <div className="whitespace-nowrap">{student.nextUpdate}</div>
-                    {primaryAssignment?.focus && (
-                        <div className="text-[10px] text-indigo-500 dark:text-indigo-400 mt-0.5 truncate max-w-[200px]">
-                            {primaryAssignment.focus}
-                        </div>
-                    )}
-                    {lastModifiedAtCompact && (
-                        <div
-                            className="text-[10px] text-cyan-600 dark:text-cyan-300 mt-0.5 truncate max-w-[200px]"
-                            title={`Last modified: ${lastModifiedBy} · ${lastModifiedAtFull || lastModifiedAtCompact}`}
-                        >
-                            Updated {lastModifiedAtCompact} by {lastModifiedByCompact}
-                        </div>
-                    )}
+                <td className="py-3.5 pr-2 align-top w-[14%]">
+                    <StudentUpdateValue
+                        dateLabel={nextUpdateDisplay.dateLabel}
+                        subjectLabel={nextUpdateDisplay.subjectLabel}
+                        emptyLabel="Not scheduled"
+                    />
                 </td>
 
                 {/* Actions */}

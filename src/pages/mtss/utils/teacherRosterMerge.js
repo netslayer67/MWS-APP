@@ -68,6 +68,7 @@ export const mergeRosterWithAssignments = (
                 tier: displaySource?.tier || student.tier || "Tier 1",
                 progress: displaySource?.progress || student.progress || "Not Assigned",
                 nextUpdate: displaySource?.nextUpdate || student.nextUpdate || "Not scheduled",
+                lastUpdate: displaySource?.lastUpdate || student.lastUpdate || null,
                 assignmentId: assignment?.assignmentId || null,
                 assignmentOptions,
                 profile: displaySource?.profile || assignment?.profile || student.profile,

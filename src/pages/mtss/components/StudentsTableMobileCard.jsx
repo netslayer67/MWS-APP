@@ -1,8 +1,10 @@
 import { memo } from "react";
 import { TrendingUp, FilePenLine, Calendar, User } from "lucide-react";
 import { ensureStudentInterventions } from "../utils/interventionUtils";
-import { formatPlanAuditDate, resolveProgressAssignmentForStudent } from "../utils/editPlanAccess";
+import { resolveProgressAssignmentForStudent } from "../utils/editPlanAccess";
+import { getStudentLastUpdateDisplay, getStudentNextUpdateDisplay } from "../utils/studentUpdateUtils";
 import InterventionChips, { getAccentColor, getMaxTierCode } from "./InterventionChips";
+import StudentUpdateValue from "./StudentUpdateValue";
 
 const TIER_CARD_RING = {
     tier3: "ring-1 ring-rose-300/40 dark:ring-rose-600/25",
@@ -37,8 +39,8 @@ const StudentsTableMobileCard = memo(
             Number(student.activeAssignmentCount || 0) > 0 ||
             Number(student.assignmentCount || 0) > 0,
         );
-        const lastModifiedAt = formatPlanAuditDate(primaryAssignment?.lastPlanUpdatedAt);
-        const lastModifiedBy = primaryAssignment?.lastPlanUpdatedByName || "Unknown";
+        const lastUpdateDisplay = getStudentLastUpdateDisplay(student);
+        const nextUpdateDisplay = getStudentNextUpdateDisplay(student);
         const canEditPlan = hasInterventionPlan && Boolean(onEditPlan) && (
             typeof canEditPlanForStudent === "function"
                 ? canEditPlanForStudent(student)
@@ -133,26 +135,37 @@ const StudentsTableMobileCard = memo(
 
                     {/* ── Section 3: Footer (date + actions) ────────── */}
                     <div className="pt-2 border-t border-slate-100/80 dark:border-slate-800/50">
-                        {/* Date info */}
-                        <div className="flex items-center gap-1 mb-1">
-                            <Calendar className="w-2.5 h-2.5 text-slate-400 dark:text-slate-500 shrink-0" />
-                            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate">
-                                {student.nextUpdate}
-                            </span>
-                            {primaryAssignment?.focus && (
-                                <span className="text-[9px] text-indigo-500 dark:text-indigo-400 font-medium truncate">
-                                    · {primaryAssignment.focus}
-                                </span>
-                            )}
+                        <div className="grid grid-cols-2 gap-3 mb-1.5">
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-1 mb-1">
+                                    <Calendar className="w-2.5 h-2.5 text-slate-400 dark:text-slate-500 shrink-0" />
+                                    <span className="text-[9px] uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                                        Next Update
+                                    </span>
+                                </div>
+                                <StudentUpdateValue
+                                    dateLabel={nextUpdateDisplay.dateLabel}
+                                    subjectLabel={nextUpdateDisplay.subjectLabel}
+                                    emptyLabel="Not scheduled"
+                                    compact
+                                />
+                            </div>
+
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-1 mb-1">
+                                    <Calendar className="w-2.5 h-2.5 text-slate-400 dark:text-slate-500 shrink-0" />
+                                    <span className="text-[9px] uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                                        Last Update
+                                    </span>
+                                </div>
+                                <StudentUpdateValue
+                                    dateLabel={lastUpdateDisplay.dateLabel}
+                                    subjectLabel={lastUpdateDisplay.subjectLabel}
+                                    emptyLabel="No updates yet"
+                                    compact
+                                />
+                            </div>
                         </div>
-                        {lastModifiedAt && (
-                            <p
-                                className="text-[9px] text-slate-400 dark:text-slate-500 truncate mb-1.5 pl-[14px]"
-                                title={`Last modified: ${lastModifiedBy} · ${lastModifiedAt}`}
-                            >
-                                Updated by {lastModifiedBy} · {lastModifiedAt}
-                            </p>
-                        )}
 
                         {/* Action buttons */}
                         {showActions && actionButtons.length > 0 && (
