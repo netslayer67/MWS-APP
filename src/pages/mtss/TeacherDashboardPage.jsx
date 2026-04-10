@@ -6,7 +6,7 @@ import TeacherHeroSection from "./teacher/TeacherHeroSection";
 import { useToast } from "@/components/ui/use-toast";
 import { useSelector } from "react-redux";
 import PageLoader from "@/components/PageLoader";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import QuickUpdateModal from "./components/QuickUpdateModal";
 import TeacherDashboardPanels from "./components/TeacherDashboardPanels";
 import TeacherDashboardStatus from "./components/TeacherDashboardStatus";
@@ -21,6 +21,7 @@ const TeacherDashboardPage = memo(() => {
     const authUser = useSelector((state) => state.auth?.user);
     const { isObserver } = useMtssObserver();
     const navigate = useNavigate();
+    const location = useLocation();
     const pageRef = useRef(null);
     const {
         statCards,
@@ -55,9 +56,16 @@ const TeacherDashboardPage = memo(() => {
     const handleViewStudent = useCallback(
         (student) => {
             if (!student?.slug) return;
-            navigate(`/mtss/student/${student.slug}`);
+            navigate(`/mtss/student/${student.slug}`, {
+                state: {
+                    from: {
+                        pathname: location.pathname,
+                        search: location.search,
+                    },
+                },
+            });
         },
-        [navigate],
+        [location.pathname, location.search, navigate],
     );
 
     const handleOpenQuickUpdate = useCallback((student) => setQuickUpdateStudent(student), []);

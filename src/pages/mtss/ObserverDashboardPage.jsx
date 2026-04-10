@@ -18,7 +18,7 @@
  *   · requestIdleCallback for non-critical init
  * ─────────────────────────────────────────────────────────────────────────────
  */
-import { memo, Suspense, lazy, useMemo, useEffect, useRef, useState, useCallback } from "react";
+import { memo, Suspense, lazy, useMemo, useEffect, useRef, useCallback } from "react";
 import { useSelector } from "react-redux";
 import gsap from "gsap";
 import { animate, stagger } from "animejs";
@@ -177,8 +177,6 @@ const ObserverDashboardPage = memo(() => {
     const statsRef = useRef(null);
     const activityRef = useRef(null);
 
-    const [activeTab, setActiveTab] = useState("overview");
-
     /* ── Data ─────────────────────────────────────────────────────── */
     const {
         students, statCards, systemSnapshot, recentActivity,
@@ -189,8 +187,11 @@ const ObserverDashboardPage = memo(() => {
     } = useAdminDashboardData();
 
     const {
+        activeTab,
+        setActiveTab,
         filters, handleFilterChange,
         filteredStudents, gradeOptions, tierOptions, typeOptions, mentorOptions,
+        visibleCount, setVisibleCount,
         handleViewStudent,
     } = useAdminDashboardState(students);
 
@@ -252,7 +253,7 @@ const ObserverDashboardPage = memo(() => {
             delay: stagger(35),
             ease: "outExpo",
         });
-    }, []);
+    }, [setActiveTab]);
 
     /* ── Active panel ─────────────────────────────────────────────── */
     const activePanel = useMemo(() => {
@@ -278,6 +279,8 @@ const ObserverDashboardPage = memo(() => {
                         mentorOptions={mentorOptions}
                         filteredStudents={filteredStudents}
                         allStudents={students}
+                        visibleCount={visibleCount}
+                        onVisibleCountChange={setVisibleCount}
                         onViewStudent={handleViewStudent}
                         onUpdateStudent={undefined}
                         isReadOnly
@@ -312,7 +315,7 @@ const ObserverDashboardPage = memo(() => {
     }, [
         activeTab, statCards, systemSnapshot, recentActivity, mentorSpotlights,
         filters, handleFilterChange, gradeOptions, tierOptions, typeOptions,
-        mentorOptions, filteredStudents, students, handleViewStudent, mentors,
+        mentorOptions, filteredStudents, students, visibleCount, setVisibleCount, handleViewStudent, mentors,
         refresh, mentorRoster, successByType, trendPaths, trendData,
         strategyHighlights, tierMovement, kindergartenAnalytics,
     ]);

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import HeroSection from "../components/ui/HeroSection";
 import Footer from "../components/ui/Footer";
 import InstallButton from "../components/ui/InstallButton";
+import { consumePendingRedirect, getDefaultPostLoginPath } from "@/utils/authRedirect";
 import {
   MWS_STUDENT_CARD_ASSET_IDS,
 } from "@/data/mwsStudentsDesignAssets";
@@ -137,12 +138,11 @@ const LandingPage = memo(function LandingPage() {
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    const role = (user?.role || "").toLowerCase();
-    if (role === "student") {
-      navigate("/profile", { replace: true });
-      return;
-    }
-    navigate("/support-hub", { replace: true });
+    const pendingRedirect = consumePendingRedirect();
+    const fallbackPath = (user?.role || "").toLowerCase() === "student"
+      ? "/profile"
+      : getDefaultPostLoginPath(user?.role);
+    navigate(pendingRedirect || fallbackPath, { replace: true });
   }, [isAuthenticated, user, navigate]);
 
   return (

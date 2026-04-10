@@ -581,14 +581,7 @@ const ResultsSection = memo(({
                                 });
                             }, 250);
 
-                            if (analysis) {
-                                analysis.isSubmitting = true;
-                            }
-
-                            // Small delay to let confetti start before navigation
-                            setTimeout(() => {
-                                onComplete();
-                            }, 500);
+                            onComplete();
                         }}
                         disabled={analysis?.isSubmitting}
                         className={cn(

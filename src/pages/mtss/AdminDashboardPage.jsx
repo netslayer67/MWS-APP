@@ -1,4 +1,4 @@
-import React, { memo, Suspense, lazy, useMemo } from "react";
+import { memo, Suspense, lazy, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
 import useMtssObserver from "./hooks/useMtssObserver";
@@ -48,6 +48,8 @@ const AdminDashboardPage = memo(() => {
         activeTab,
         setActiveTab,
         filters,
+        visibleCount,
+        setVisibleCount,
         handleFilterChange,
         filteredStudents,
         gradeOptions,
@@ -115,6 +117,8 @@ const AdminDashboardPage = memo(() => {
                         mentorOptions={mentorOptions}
                         filteredStudents={filteredStudents}
                         allStudents={students}
+                        visibleCount={visibleCount}
+                        onVisibleCountChange={setVisibleCount}
                         onViewStudent={handleViewStudent}
                         onUpdateStudent={isObserver ? undefined : handleQuickUpdate}
                         isReadOnly={isObserver}
@@ -154,6 +158,8 @@ const AdminDashboardPage = memo(() => {
         typeOptions,
         mentorOptions,
         filteredStudents,
+        visibleCount,
+        setVisibleCount,
         handleFilterChange,
         handleViewStudent,
         handleQuickUpdate,
@@ -172,6 +178,9 @@ const AdminDashboardPage = memo(() => {
         trendPaths,
         strategyHighlights,
         tierMovement,
+        isObserver,
+        refresh,
+        students,
     ]);
 
     return (

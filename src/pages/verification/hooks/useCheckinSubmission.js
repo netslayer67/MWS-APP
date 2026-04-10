@@ -1,4 +1,50 @@
 import { useCallback, useState } from "react";
+import authService from "@/services/authService";
+
+const getSupportBand = (value) => {
+    const score = Number(value);
+    if (score >= 7) return "high";
+    if (score >= 4) return "moderate";
+    return "low";
+};
+
+const getEmotionalState = ({ detectedEmotion, valence, presenceLevel, capacityLevel, needsSupport }) => {
+    if (presenceLevel <= 3 || capacityLevel <= 3) return "depleted";
+    if (needsSupport || valence < -0.05) return "challenging";
+    if (valence > 0.2 && /happy|joy|calm|content|positive/i.test(detectedEmotion || "")) return "positive";
+    return "balanced";
+};
+
+const buildPreparedAiAnalysis = (analysis) => {
+    const presenceLevel = Number(analysis?.presenceCapacity?.estimatedPresence) || 7;
+    const capacityLevel = Number(analysis?.presenceCapacity?.estimatedCapacity) || 7;
+    const derivedNeedsSupport = presenceLevel < 5 || capacityLevel < 5;
+    const needsSupport = Boolean(analysis?.supportCompass?.needsSupport ?? derivedNeedsSupport);
+
+    return {
+        emotionalState: getEmotionalState({
+            detectedEmotion: analysis?.detectedEmotion,
+            valence: Number(analysis?.valence) || 0,
+            presenceLevel,
+            capacityLevel,
+            needsSupport
+        }),
+        presenceState: getSupportBand(presenceLevel),
+        capacityState: getSupportBand(capacityLevel),
+        recommendations: Array.isArray(analysis?.detailedRecommendations)
+            ? analysis.detailedRecommendations.slice(0, 5).map((rec) => ({
+                title: rec?.title || "Supportive next step",
+                description: rec?.description || "",
+                priority: rec?.priority || "medium",
+                category: rec?.category || "support"
+            }))
+            : [],
+        psychologicalInsights: String(analysis?.psychologicalInsight || "").trim(),
+        motivationalMessage: String(analysis?.personalizedRecommendation || "").trim(),
+        needsSupport,
+        confidence: Number(analysis?.confidence) || 75
+    };
+};
 
 export const useCheckinSubmission = ({
     analysis,
@@ -51,6 +97,7 @@ export const useCheckinSubmission = ({
             }
 
             const userReflection = String(analysis.userReflection || "").trim();
+            const preparedAiAnalysis = buildPreparedAiAnalysis(analysis);
 
             const checkInData = {
                 detectedEmotion: analysis.detectedEmotion,
@@ -65,26 +112,34 @@ export const useCheckinSubmission = ({
                 weatherType: analysis.internalWeather || analysis.weatherDesc || "AI Generated Weather",
                 weatherIcon: analysis.weatherIcon || "☀️",
                 weatherDescription: analysis.weatherDesc || "",
-                aiSummary: analysis.personalizedRecommendation || "",
-                aiInsights: analysis.detailedRecommendations || [],
-                aiGenerated: true,
-                personalizedGreeting: analysis.personalizedRecommendation || "",
-                needsSupport:
-                    (analysis.presenceCapacity?.estimatedPresence || 7) < 5 ||
-                    (analysis.presenceCapacity?.estimatedCapacity || 7) < 5
+                preparedAiAnalysis,
+                needsSupport: preparedAiAnalysis.needsSupport
             };
 
-            const authService = (await import("@/services/authService")).default;
             const response = await authService.post("/checkin/ai-submit", checkInData);
             const result = response.data;
+            const returnedCheckin = result.data?.checkin || result.checkin || null;
             const checkinId =
-                result.checkin?.id ||
-                result.checkin?._id ||
-                result.data?.checkin?.id ||
-                result.data?.checkin?._id;
+                returnedCheckin?.id ||
+                returnedCheckin?._id;
 
             if (checkinId) {
-                navigate(`/emotional-checkin/rate/${checkinId}`);
+                navigate(`/emotional-checkin/rate/${checkinId}`, {
+                    state: returnedCheckin
+                        ? {
+                            checkinId,
+                            checkInData: {
+                                ...returnedCheckin,
+                                aiDetected: true,
+                                userReflection,
+                                supportPerson: returnedCheckin.supportContact?.name || "No Need",
+                                emotionsDetails: returnedCheckin.details || "",
+                                emotions: returnedCheckin.selectedMoods || [],
+                                weatherValue: returnedCheckin.weatherType || "partly-cloudy"
+                            }
+                        }
+                        : undefined
+                });
             } else {
                 navigate("/emotional-checkin/rate");
             }

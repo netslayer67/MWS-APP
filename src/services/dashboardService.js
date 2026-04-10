@@ -55,3 +55,11 @@ export const getUnitMembers = async (unit = null) => {
     const response = await api.get('/dashboard/unit/members', { params });
     return response;
 };
+
+export const confirmSupportRequest = async (requestId, action, payload = {}) => {
+    const response = await api.post(`/dashboard/support-request/${requestId}/confirm`, {
+        action,
+        ...payload
+    });
+    return response;
+};

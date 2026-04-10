@@ -58,7 +58,23 @@ const RatingPage = memo(function RatingPage() {
             };
         }
 
-        // Second priority: Today's checkin from Redux
+        // Second priority: fresh navigation state right after submission
+        const locationData = location.state?.checkInData;
+        if (locationData) {
+            return {
+                ...locationData,
+                name: locationData.name || "Staff Member",
+                emotionsDetails: locationData.emotionsDetails || locationData.details || "",
+                supportPerson: locationData.supportPerson || locationData.supportContact?.name || "No Need",
+                emotions: locationData.selectedMoods || locationData.emotions || [],
+                userReflection: locationData.userReflection || "",
+                weatherReport: locationData.weatherReport || `${locationData.weatherType || 'partly-cloudy'} – AI analyzed`,
+                weatherType: locationData.weatherType || "partly-cloudy",
+                weatherValue: locationData.weatherValue || locationData.weatherType || "partly-cloudy"
+            };
+        }
+
+        // Third priority: Today's checkin from Redux
         if (todayCheckin) {
             console.log('Using todayCheckin data:', todayCheckin);
             return {
@@ -79,7 +95,7 @@ const RatingPage = memo(function RatingPage() {
             };
         }
 
-        // Third priority: Current checkin from Redux
+        // Fourth priority: Current checkin from Redux
         if (currentCheckin) {
             return {
                 name: currentCheckin.userId?.name || currentCheckin.name || "Staff Member",
@@ -96,22 +112,6 @@ const RatingPage = memo(function RatingPage() {
                 weatherReport: currentCheckin.weatherType ? `${currentCheckin.weatherType} – AI analyzed` : "⛅ Partly Cloudy – Doing alright",
                 weatherValue: currentCheckin.weatherType || "partly-cloudy",
                 emotions: currentCheckin.selectedMoods || []
-            };
-        }
-
-        // Fourth priority: Location state
-        const locationData = location.state?.checkInData;
-        if (locationData) {
-            return {
-                ...locationData,
-                name: locationData.name || "Staff Member",
-                emotionsDetails: locationData.emotionsDetails || "",
-                supportPerson: locationData.supportPerson || "No Need",
-                emotions: locationData.selectedMoods || locationData.emotions || [],
-                userReflection: locationData.userReflection || "",
-                weatherReport: locationData.weatherReport || `${locationData.weatherType || 'partly-cloudy'} – AI analyzed`,
-                weatherType: locationData.weatherType || "partly-cloudy",
-                weatherValue: locationData.weatherType || "partly-cloudy"
             };
         }
 
@@ -359,6 +359,11 @@ const RatingPage = memo(function RatingPage() {
     }
 
     useEffect(() => {
+        if (location.state?.checkInData) {
+            setIsLoading(false);
+            return;
+        }
+
         console.log('RatingPage useEffect triggered:', {
             checkinId,
             checkinResults: !!checkinResults,

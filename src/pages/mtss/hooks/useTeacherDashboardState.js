@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useToast } from "@/components/ui/use-toast";
 import { createDefaultInterventionForm, createDefaultProgressForm } from "../data/teacherDashboardContent";
 import { createMentorAssignment, updateMentorAssignment } from "@/services/mtssService";
 import { resolveEditableAssignmentOption } from "../utils/editPlanAccess";
+import useMtssPersistentState from "./useMtssPersistentState";
 
 const TYPE_ALIAS_MAP = {
     english: ["english", "bahasa inggris", "ela", "reading", "literacy"],
@@ -159,7 +160,13 @@ const buildScorePayload = (value, unit = "score", allowClear = false) => {
 export const useTeacherDashboardState = (tabs, { onSaveSuccess } = {}) => {
     const { toast } = useToast();
     const location = useLocation();
-    const [activeTab, setActiveTab] = useState("dashboard");
+    const tabStorageKey = useMemo(() => `mtss:teacher-tab:${location.pathname}`, [location.pathname]);
+    const requestedTab = useMemo(() => {
+        const params = new URLSearchParams(location.search);
+        const tab = params.get("tab");
+        return tab && tabs.some((entry) => entry.key === tab) ? tab : null;
+    }, [location.search, tabs]);
+    const [activeTab, setStoredActiveTab] = useMtssPersistentState(tabStorageKey, requestedTab || "dashboard");
     const [interventionForm, setInterventionForm] = useState(() => createDefaultInterventionForm());
     const [progressForm, setProgressForm] = useState(() => createDefaultProgressForm());
     const [editingPlan, setEditingPlan] = useState(null);
@@ -169,12 +176,14 @@ export const useTeacherDashboardState = (tabs, { onSaveSuccess } = {}) => {
     const user = useSelector((state) => state.auth?.user);
 
     useEffect(() => {
-        const params = new URLSearchParams(location.search);
-        const requestedTab = params.get("tab");
-        if (requestedTab && tabs.some((tab) => tab.key === requestedTab)) {
-            setActiveTab(requestedTab);
+        if (requestedTab && requestedTab !== activeTab) {
+            setStoredActiveTab(requestedTab);
         }
-    }, [location.search, tabs]);
+    }, [activeTab, requestedTab, setStoredActiveTab]);
+
+    const setActiveTab = useCallback((value) => {
+        setStoredActiveTab(value);
+    }, [setStoredActiveTab]);
 
     const handleInterventionChange = useCallback((field, value) => {
         setInterventionForm((prev) => ({ ...prev, [field]: value }));
@@ -196,7 +205,7 @@ export const useTeacherDashboardState = (tabs, { onSaveSuccess } = {}) => {
         setInterventionForm(buildInterventionFormFromAssignment(student, selectedOption));
         setActiveTab("edit");
         return true;
-    }, []);
+    }, [setActiveTab]);
 
     const cancelEditingPlan = useCallback(() => {
         setEditingPlan(null);
@@ -363,7 +372,7 @@ export const useTeacherDashboardState = (tabs, { onSaveSuccess } = {}) => {
                 setSubmittingPlan(false);
             }
         },
-        [editingPlan, interventionForm, onSaveSuccess, submittingPlan, toast, user],
+        [editingPlan, interventionForm, onSaveSuccess, setActiveTab, submittingPlan, toast, user],
     );
 
     const handleSubmitProgress = useCallback(

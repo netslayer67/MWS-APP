@@ -1,7 +1,7 @@
-import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { hasEmotionalDashboardAccess } from '@/utils/accessControl';
+import { storePendingRedirect } from '@/utils/authRedirect';
 
 const ProtectedRoute = ({
     children,
@@ -11,6 +11,7 @@ const ProtectedRoute = ({
     accessMatch = 'all',
 }) => {
     const { user, isAuthenticated, loading } = useSelector((state) => state.auth);
+    const location = useLocation();
 
     // Role-aware fallback: students go to student hub, eligible staff to support hub, others to role selection
     const supportHubRoles = ['staff', 'support_staff', 'nurse', 'teacher', 'head_unit', 'directorate', 'admin', 'superadmin'];
@@ -31,6 +32,7 @@ const ProtectedRoute = ({
 
     // If not authenticated, redirect to login
     if (!isAuthenticated) {
+        storePendingRedirect(`${location.pathname}${location.search}${location.hash}`);
         return <Navigate to="/" replace />;
     }
 

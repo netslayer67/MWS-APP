@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../store/slices/authSlice';
 import PageLoader from '../components/PageLoader';
+import { consumePendingRedirect, getDefaultPostLoginPath, sanitizeRedirectPath } from '@/utils/authRedirect';
 
 const AuthCallback = () => {
     const navigate = useNavigate();
@@ -41,18 +42,9 @@ const AuthCallback = () => {
 
                 const normalizedRole = (canonicalUser.role || '').toLowerCase();
                 const redirectParam = hashParams.get('redirect');
-                const safeRedirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : null;
-
-                // Role-based redirect logic
-                let target;
-                if (normalizedRole === 'student') {
-                    target = '/student/support-hub';
-                } else if (['teacher', 'head_unit', 'admin', 'superadmin'].includes(normalizedRole)) {
-                    target = safeRedirect || '/support-hub';
-                } else {
-                    // staff, support_staff, nurse, etc. → redirect to /select-role
-                    target = safeRedirect || '/select-role';
-                }
+                const safeRedirect = sanitizeRedirectPath(redirectParam);
+                const pendingRedirect = consumePendingRedirect();
+                const target = pendingRedirect || safeRedirect || getDefaultPostLoginPath(normalizedRole);
 
                 // Remove sensitive token/user params from URL before leaving callback route
                 window.history.replaceState({}, document.title, '/auth/callback');

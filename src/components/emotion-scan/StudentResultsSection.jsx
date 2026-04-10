@@ -401,8 +401,7 @@ const StudentResultsSection = memo(({
                                     confetti({ ...defaults, particleCount: count, origin: { x: rand(0.1, 0.3), y: Math.random() - 0.2 } });
                                     confetti({ ...defaults, particleCount: count, origin: { x: rand(0.7, 0.9), y: Math.random() - 0.2 } });
                                 }, 250);
-                                if (analysis) analysis.isSubmitting = true;
-                                setTimeout(() => onComplete(), 500);
+                                onComplete();
                             }}
                             disabled={analysis?.isSubmitting}
                             className={cn(

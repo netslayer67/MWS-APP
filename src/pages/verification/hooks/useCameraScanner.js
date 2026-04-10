@@ -56,17 +56,35 @@ export const useCameraScanner = ({
             if (!videoRef.current) {
                 throw new Error("Video element not available");
             }
+
+            const sourceWidth = videoRef.current.videoWidth || 640;
+            const sourceHeight = videoRef.current.videoHeight || 480;
+            const maxDimension = 960;
+            const scale = Math.min(1, maxDimension / Math.max(sourceWidth, sourceHeight));
+
             const canvas = document.createElement("canvas");
             const ctx = canvas.getContext("2d");
-            canvas.width = videoRef.current.videoWidth || 640;
-            canvas.height = videoRef.current.videoHeight || 480;
-            ctx.drawImage(videoRef.current, 0, 0);
+            canvas.width = Math.max(1, Math.round(sourceWidth * scale));
+            canvas.height = Math.max(1, Math.round(sourceHeight * scale));
+            ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
 
-            const photoDataUrl = canvas.toDataURL("image/jpeg", 0.9);
+            const photoBlob = await new Promise((resolve, reject) => {
+                canvas.toBlob(
+                    (blob) => {
+                        if (blob) {
+                            resolve(blob);
+                            return;
+                        }
+                        reject(new Error("Photo capture produced no image data"));
+                    },
+                    "image/jpeg",
+                    0.82
+                );
+            });
 
             stopActiveVideoTracks();
             setStage("analyzing");
-            return photoDataUrl;
+            return photoBlob;
         } catch (error) {
             console.error("Photo capture failed:", error);
             toast?.({

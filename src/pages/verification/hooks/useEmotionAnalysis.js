@@ -5,14 +5,40 @@ import { startGlobalLoading, stopGlobalLoading } from "@/lib/loadingManager";
 export const useEmotionAnalysis = ({ toast, setStage, fallbackStage = "intro" }) => {
     const [analysis, setAnalysis] = useState(null);
     const [selectedSupportContact, setSelectedSupportContact] = useState(null);
-    const [aiEmotionResult, setAiEmotionResult] = useState(null);
 
-    const analyzePhoto = useCallback(async (imageDataUrl) => {
+    const finalizeAnalysis = useCallback((emotionResult) => {
+        if (!emotionResult) {
+            return;
+        }
+
+        try {
+            const finalAnalysis = generateAIAnalysis(emotionResult);
+            finalAnalysis.selectedSupportContact = selectedSupportContact;
+            finalAnalysis.isSubmitting = false;
+            setAnalysis(finalAnalysis);
+            setStage("results");
+        } catch (error) {
+            console.error("Failed to generate AI analysis:", error);
+            toast?.({
+                title: "Analysis Failed",
+                description: "Unable to process AI emotion analysis. Please try again.",
+                variant: "destructive"
+            });
+            setStage(fallbackStage);
+        }
+    }, [fallbackStage, selectedSupportContact, setStage, toast]);
+
+    const analyzePhoto = useCallback(async (imageSource) => {
         startGlobalLoading();
         try {
             setStage("analyzing");
-            const response = await fetch(imageDataUrl);
-            const blob = await response.blob();
+
+            let blob = imageSource;
+            if (!(blob instanceof Blob)) {
+                const response = await fetch(imageSource);
+                blob = await response.blob();
+            }
+
             const formData = new FormData();
             formData.append("image", blob, "emotion_capture.jpg");
 
@@ -33,7 +59,7 @@ export const useEmotionAnalysis = ({ toast, setStage, fallbackStage = "intro" })
                 throw new Error("Invalid emotion analysis response format - no emotionResult found");
             }
 
-            setAiEmotionResult(emotionResult);
+            finalizeAnalysis(emotionResult);
         } catch (error) {
             console.error("Emotion analysis failed:", error);
             const isNetworkError =
@@ -50,37 +76,7 @@ export const useEmotionAnalysis = ({ toast, setStage, fallbackStage = "intro" })
         } finally {
             stopGlobalLoading();
         }
-    }, [fallbackStage, setStage, toast]);
-
-    const finalizeAnalysis = useCallback(() => {
-        if (!aiEmotionResult) {
-            return;
-        }
-
-        try {
-            const finalAnalysis = generateAIAnalysis(aiEmotionResult);
-            finalAnalysis.selectedSupportContact = selectedSupportContact;
-            finalAnalysis.isSubmitting = false;
-            setAnalysis(finalAnalysis);
-            setStage("results");
-        } catch (error) {
-            console.error("Failed to generate AI analysis:", error);
-            toast?.({
-                title: "Analysis Failed",
-                description: "Unable to process AI emotion analysis. Please try again.",
-                variant: "destructive"
-            });
-            setStage(fallbackStage);
-        }
-    }, [aiEmotionResult, fallbackStage, selectedSupportContact, setStage, toast]);
-
-    useEffect(() => {
-        if (!aiEmotionResult) {
-            return;
-        }
-        const timer = setTimeout(finalizeAnalysis, 100);
-        return () => clearTimeout(timer);
-    }, [aiEmotionResult, finalizeAnalysis]);
+    }, [fallbackStage, finalizeAnalysis, setStage, toast]);
 
     useEffect(() => {
         setAnalysis((prev) => {

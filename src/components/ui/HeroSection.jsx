@@ -6,6 +6,7 @@ import { useToast } from "../ui/use-toast";
 import HeroAuthCard from "@/components/ui/HeroAuthCard";
 import Logo from "./Millennia.webp";
 import { Sparkles, ShieldCheck, Smartphone } from "lucide-react";
+import { consumePendingRedirect, getDefaultPostLoginPath } from "@/utils/authRedirect";
 
 const FEATURES = [
   { icon: '🧠', label: 'AI Emotional Wellness' },
@@ -45,11 +46,7 @@ const HeroSection = memo(() => {
     try {
       const resultAction = await dispatch(loginUser({ email, password }));
       if (loginUser.fulfilled.match(resultAction)) {
-        const userRole = (resultAction.payload?.user?.role || '').toLowerCase();
-        let redirectPath;
-        if (userRole === 'student') redirectPath = '/student/support-hub';
-        else if (['teacher', 'head_unit', 'admin', 'superadmin'].includes(userRole)) redirectPath = '/support-hub';
-        else redirectPath = '/select-role';
+        const redirectPath = consumePendingRedirect() || getDefaultPostLoginPath(resultAction.payload?.user?.role);
         toast({ title: "Login Successful! 🎉", description: "Welcome back! Redirecting...", duration: 3000 });
         setEmail(""); setPassword("");
         setTimeout(() => navigate(redirectPath), 1000);

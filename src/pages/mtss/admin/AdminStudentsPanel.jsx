@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import AdminAssignmentModal from "./AdminAssignmentModal";
 import AdminStudentsFilters from "./components/AdminStudentsFilters";
 import AdminStudentsRoster from "./components/AdminStudentsRoster";
@@ -14,6 +14,8 @@ const AdminStudentsPanel = ({
     mentorOptions,
     filteredStudents,
     allStudents,
+    visibleCount = BATCH_SIZE,
+    onVisibleCountChange,
     onViewStudent,
     onUpdateStudent,
     selectedIds,
@@ -24,7 +26,6 @@ const AdminStudentsPanel = ({
     isReadOnly = false,
 }) => {
     const [assignmentOpen, setAssignmentOpen] = useState(false);
-    const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
     const loadMoreRef = useRef(null);
 
     const selectedStudents = useMemo(() => {
@@ -33,17 +34,13 @@ const AdminStudentsPanel = ({
     }, [selectedIds, allStudents]);
 
     useEffect(() => {
-        setVisibleCount(BATCH_SIZE);
-    }, [filteredStudents]);
-
-    useEffect(() => {
         if (!loadMoreRef.current) return;
         const sentinel = loadMoreRef.current;
         const observer = new IntersectionObserver(
             (entries) => {
                 const [entry] = entries;
                 if (entry.isIntersecting) {
-                    setVisibleCount((prev) => {
+                    onVisibleCountChange?.((prev) => {
                         if (prev >= filteredStudents.length) return prev;
                         return Math.min(filteredStudents.length, prev + BATCH_SIZE);
                     });
@@ -53,7 +50,7 @@ const AdminStudentsPanel = ({
         );
         observer.observe(sentinel);
         return () => observer.disconnect();
-    }, [filteredStudents.length]);
+    }, [filteredStudents.length, onVisibleCountChange]);
 
     const visibleStudents = useMemo(
         () => filteredStudents.slice(0, Math.min(visibleCount, filteredStudents.length)),

@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import AOS from "aos";
 import "aos/dist/aos.css";
@@ -17,6 +17,7 @@ import { buildStudentProfileView } from "./utils/studentProfileUtils";
 const StudentProfilePage = memo(() => {
     const { slug } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const { student, loading, error, selectedIntervention, setSelectedIntervention } = useStudentProfileData(slug);
 
     useEffect(() => {
@@ -38,6 +39,23 @@ const StudentProfilePage = memo(() => {
     const handleSelectIntervention = useCallback((intervention) => {
         setSelectedIntervention(intervention);
     }, [setSelectedIntervention]);
+
+    const handleBack = useCallback(() => {
+        const fromPath = location.state?.from?.pathname;
+        const fromSearch = location.state?.from?.search || "";
+
+        if (fromPath) {
+            navigate(`${fromPath}${fromSearch}`);
+            return;
+        }
+
+        if (window.history.length > 2) {
+            navigate(-1);
+            return;
+        }
+
+        navigate("/mtss/teacher?tab=students");
+    }, [location.state, navigate]);
 
     const {
         profile,
@@ -64,7 +82,7 @@ const StudentProfilePage = memo(() => {
     }
 
     if (error || !student) {
-        return <StudentProfileError error={error} onBack={() => navigate("/mtss?tab=students")} />;
+        return <StudentProfileError error={error} onBack={handleBack} />;
     }
 
     return (
@@ -80,7 +98,7 @@ const StudentProfilePage = memo(() => {
                 <motion.button
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    onClick={() => (window.history.length > 2 ? navigate(-1) : navigate("/mtss/teacher?tab=students"))}
+                    onClick={handleBack}
                     className={`${glassStyles.card} ${glassStyles.hover} inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-4 sm:py-2.5 rounded-full text-[11px] sm:text-sm font-semibold shadow-lg`}
                 >
                     <ArrowLeft className="w-4 h-4" />

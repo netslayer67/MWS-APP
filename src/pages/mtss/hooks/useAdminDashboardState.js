@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
-import { ensureStudentInterventions, pickPrimaryIntervention } from "../utils/interventionUtils";
+import { TYPE_LOOKUP, ensureStudentInterventions, pickPrimaryIntervention, resolveTypeKey } from "../utils/interventionUtils";
+import useMtssPersistentState from "./useMtssPersistentState";
 
 const buildOptions = (students = [], key) => {
     const values = new Set();
@@ -12,18 +13,65 @@ const buildOptions = (students = [], key) => {
     return ["all", ...Array.from(values)];
 };
 
+const DEFAULT_FILTERS = {
+    grade: "all",
+    tier: "all",
+    type: "all",
+    mentor: "all",
+    query: "",
+};
+
+const DEFAULT_VISIBLE_COUNT = 10;
+const DEFAULT_VIEW_STATE = {
+    activeTab: "overview",
+    filters: DEFAULT_FILTERS,
+    visibleCount: DEFAULT_VISIBLE_COUNT,
+};
+
+const toTitleCase = (value = "") =>
+    value
+        .split(" ")
+        .filter(Boolean)
+        .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1).toLowerCase())
+        .join(" ");
+
+const normalizeTypeOption = (value) => {
+    if (!value) return null;
+
+    const cleaned = value.toString().trim().replace(/\s+/g, " ");
+    if (!cleaned) return null;
+
+    const typeKey = resolveTypeKey(cleaned);
+    if (typeKey && TYPE_LOOKUP.has(typeKey)) {
+        const match = TYPE_LOOKUP.get(typeKey);
+        return { value: match.key, label: match.label };
+    }
+
+    return {
+        value: cleaned.toLowerCase(),
+        label: toTitleCase(cleaned),
+    };
+};
+
+const normalizeTypeFilterValue = (value) => {
+    if (!value || value === "all") return "all";
+    return normalizeTypeOption(value)?.value || value;
+};
+
 export const useAdminDashboardState = (students = []) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { toast } = useToast();
+    const storageKey = useMemo(() => `mtss:dashboard-view:${location.pathname}`, [location.pathname]);
+    const [viewState, setViewState] = useMtssPersistentState(storageKey, DEFAULT_VIEW_STATE);
 
-    const [activeTab, setActiveTab] = useState("overview");
-    const [filters, setFilters] = useState({
-        grade: "all",
-        tier: "all",
-        type: "all",
-        mentor: "all",
-        query: "",
-    });
+    const activeTab = typeof viewState?.activeTab === "string" ? viewState.activeTab : "overview";
+    const filters = useMemo(() => ({
+        ...DEFAULT_FILTERS,
+        ...(viewState?.filters || {}),
+        type: normalizeTypeFilterValue(viewState?.filters?.type),
+    }), [viewState?.filters]);
+    const visibleCount = Math.max(Number(viewState?.visibleCount) || DEFAULT_VISIBLE_COUNT, DEFAULT_VISIBLE_COUNT);
     const [selectedIds, setSelectedIds] = useState([]);
 
     const filteredStudents = useMemo(() => {
@@ -31,12 +79,16 @@ export const useAdminDashboardState = (students = []) => {
         return students.filter((student) => {
             const interventions = ensureStudentInterventions(student.interventions);
             const primarySupport = pickPrimaryIntervention(interventions);
+            const studentType = normalizeTypeOption(student.type)?.value;
+            const interventionTypes = interventions
+                .map((entry) => normalizeTypeOption(entry.label || entry.type)?.value)
+                .filter(Boolean);
             const matchesGrade = filters.grade === "all" || student.grade === filters.grade;
             const matchesTier = filters.tier === "all" || (primarySupport?.tier || student.tier) === filters.tier;
             const matchesType =
                 filters.type === "all" ||
-                student.type === filters.type ||
-                interventions.some((entry) => entry.label === filters.type);
+                studentType === filters.type ||
+                interventionTypes.includes(filters.type);
             const mentorLabel = student.mentor || student.profile?.mentor;
             const teacherRoster =
                 Array.isArray(student.teachers) && student.teachers.length
@@ -73,12 +125,20 @@ export const useAdminDashboardState = (students = []) => {
         return buildOptions(normalized, "tier");
     }, [students]);
     const typeOptions = useMemo(() => {
-        const values = new Set(["all"]);
+        const values = new Map([["all", { value: "all", label: "All Types" }]]);
         students.forEach((student) => {
-            if (student.type) values.add(student.type);
-            ensureStudentInterventions(student.interventions).forEach((entry) => values.add(entry.label));
+            const primaryType = normalizeTypeOption(student.type);
+            if (primaryType) {
+                values.set(primaryType.value, primaryType);
+            }
+            ensureStudentInterventions(student.interventions).forEach((entry) => {
+                const normalizedType = normalizeTypeOption(entry.label || entry.type);
+                if (normalizedType) {
+                    values.set(normalizedType.value, normalizedType);
+                }
+            });
         });
-        return Array.from(values);
+        return Array.from(values.values());
     }, [students]);
     const mentorOptions = useMemo(() => {
         const values = new Set();
@@ -101,9 +161,36 @@ export const useAdminDashboardState = (students = []) => {
         return ["all", ...Array.from(values)];
     }, [students]);
 
+    const setActiveTab = useCallback((value) => {
+        setViewState((prev) => ({
+            ...(prev || {}),
+            activeTab: value,
+        }));
+    }, [setViewState]);
+
     const handleFilterChange = useCallback((field, value) => {
-        setFilters((prev) => ({ ...prev, [field]: value }));
-    }, []);
+        const nextValue = field === "type" ? normalizeTypeFilterValue(value) : value;
+        setViewState((prev) => ({
+            ...(prev || {}),
+            filters: {
+                ...DEFAULT_FILTERS,
+                ...((prev && prev.filters) || {}),
+                [field]: nextValue,
+            },
+            visibleCount: DEFAULT_VISIBLE_COUNT,
+        }));
+    }, [setViewState]);
+
+    const setVisibleCount = useCallback((updater) => {
+        setViewState((prev) => {
+            const currentValue = Math.max(Number(prev?.visibleCount) || DEFAULT_VISIBLE_COUNT, DEFAULT_VISIBLE_COUNT);
+            const nextValue = typeof updater === "function" ? updater(currentValue) : updater;
+            return {
+                ...(prev || {}),
+                visibleCount: Math.max(Number(nextValue) || DEFAULT_VISIBLE_COUNT, DEFAULT_VISIBLE_COUNT),
+            };
+        });
+    }, [setViewState]);
 
     const toggleSelection = useCallback((student) => {
         const id = student.id || student._id;
@@ -119,9 +206,17 @@ export const useAdminDashboardState = (students = []) => {
 
     const handleViewStudent = useCallback(
         (student) => {
-            navigate(`/mtss/student/${student.slug}`);
+            if (!student?.slug) return;
+            navigate(`/mtss/student/${student.slug}`, {
+                state: {
+                    from: {
+                        pathname: location.pathname,
+                        search: location.search,
+                    },
+                },
+            });
         },
-        [navigate],
+        [location.pathname, location.search, navigate],
     );
 
     const handleQuickUpdate = useCallback(
@@ -138,6 +233,8 @@ export const useAdminDashboardState = (students = []) => {
         activeTab,
         setActiveTab,
         filters,
+        visibleCount,
+        setVisibleCount,
         handleFilterChange,
         filteredStudents,
         gradeOptions,

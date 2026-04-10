@@ -13,6 +13,8 @@ const AdminStudentsFilters = ({
     const filterClass =
         "w-full px-4 py-3 rounded-2xl bg-white/80 dark:bg-white/10 border border-white/60 dark:border-white/10 text-sm text-foreground dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 shadow-inner shadow-white/40 dark:shadow-none";
 
+    const getOptionValue = (option) => (typeof option === "object" ? option.value : option);
+
     const renderSelect = (value, options, field, labelFn, animation) => (
         <div
             data-aos={animation?.variant || "fade-up"}
@@ -22,7 +24,7 @@ const AdminStudentsFilters = ({
         >
             <select className={filterClass} value={value} onChange={(event) => onFilterChange(field, event.target.value)}>
                 {options.map((option) => (
-                    <option key={option} value={option}>
+                    <option key={getOptionValue(option)} value={getOptionValue(option)}>
                         {labelFn(option)}
                     </option>
                 ))}
@@ -67,7 +69,7 @@ const AdminStudentsFilters = ({
                     variant: "fade-up",
                     delay: 120,
                 })}
-                {renderSelect(filters.type, typeOptions, "type", (value) => (value === "all" ? "All Types" : value), {
+                {renderSelect(filters.type, typeOptions, "type", (option) => (option?.value === "all" ? "All Types" : option?.label || option), {
                     variant: "fade-up-left",
                     delay: 160,
                 })}

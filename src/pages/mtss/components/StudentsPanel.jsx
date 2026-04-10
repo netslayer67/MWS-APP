@@ -1,6 +1,6 @@
-import { memo, useMemo, useState, useCallback, useDeferredValue, useEffect } from "react";
+import { memo, useMemo, useState, useCallback, useDeferredValue } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import StudentsTable from "./StudentsTable";
 import QuickUpdateModal from "./QuickUpdateModal";
 import KindergartenWeeklyFocusOverview from "./KindergartenWeeklyFocusOverview";
@@ -8,15 +8,25 @@ import { updateMentorAssignment, uploadEvidence } from "@/services/mtssService";
 import { canUserSubmitProgressForAssignment } from "../utils/editPlanAccess";
 import { ensureStudentInterventions, getMostCriticalForDisplay } from "../utils/interventionUtils";
 import { FilterBar, RosterHeader, LoadMore, STUDENTS_PANEL_BATCH } from "./StudentsPanelParts";
+import useMtssPersistentState from "../hooks/useMtssPersistentState";
+
+const DEFAULT_VIEW_STATE = {
+    activeTier: "All",
+    query: "",
+    visibleCount: STUDENTS_PANEL_BATCH,
+};
 
 const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh, onEditPlan, canEditPlanForStudent }) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { toast } = useToast();
-    const [activeTier, setActiveTier] = useState("All");
-    const [query, setQuery] = useState("");
     const [modalState, setModalState] = useState({ type: null, student: null });
     const [savingUpdate, setSavingUpdate] = useState(false);
-    const [visibleCount, setVisibleCount] = useState(STUDENTS_PANEL_BATCH);
+    const storageKey = `mtss:students-panel:${location.pathname}`;
+    const [viewState, setViewState] = useMtssPersistentState(storageKey, DEFAULT_VIEW_STATE);
+    const activeTier = typeof viewState?.activeTier === "string" ? viewState.activeTier : "All";
+    const query = typeof viewState?.query === "string" ? viewState.query : "";
+    const visibleCount = Math.max(Number(viewState?.visibleCount) || STUDENTS_PANEL_BATCH, STUDENTS_PANEL_BATCH);
 
     const deferredQuery = useDeferredValue(query.trim().toLowerCase());
 
@@ -38,15 +48,46 @@ const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh, onEd
         [filteredStudents, visibleCount],
     );
 
-    useEffect(() => {
-        setVisibleCount(STUDENTS_PANEL_BATCH);
-    }, [activeTier, deferredQuery, students.length]);
+    const setActiveTier = useCallback((value) => {
+        setViewState((prev) => ({
+            ...(prev || {}),
+            activeTier: value,
+            visibleCount: STUDENTS_PANEL_BATCH,
+        }));
+    }, [setViewState]);
+
+    const setQuery = useCallback((value) => {
+        setViewState((prev) => ({
+            ...(prev || {}),
+            query: value,
+            visibleCount: STUDENTS_PANEL_BATCH,
+        }));
+    }, [setViewState]);
+
+    const setVisibleCount = useCallback((updater) => {
+        setViewState((prev) => {
+            const currentValue = Math.max(Number(prev?.visibleCount) || STUDENTS_PANEL_BATCH, STUDENTS_PANEL_BATCH);
+            const nextValue = typeof updater === "function" ? updater(currentValue) : updater;
+            return {
+                ...(prev || {}),
+                visibleCount: Math.max(Number(nextValue) || STUDENTS_PANEL_BATCH, STUDENTS_PANEL_BATCH),
+            };
+        });
+    }, [setViewState]);
 
     const handleView = useCallback(
         (student) => {
-            navigate(`/mtss/student/${student.slug}`);
+            if (!student?.slug) return;
+            navigate(`/mtss/student/${student.slug}`, {
+                state: {
+                    from: {
+                        pathname: location.pathname,
+                        search: location.search,
+                    },
+                },
+            });
         },
-        [navigate],
+        [location.pathname, location.search, navigate],
     );
 
     const handleOpen = useCallback((type, student) => setModalState({ type, student }), []);

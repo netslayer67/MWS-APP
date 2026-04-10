@@ -1,12 +1,14 @@
 import { useState, memo, useMemo, useCallback, Suspense, lazy, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ShieldCheck } from "lucide-react";
 import { fetchDashboardStats, setSelectedPeriod, setSelectedDate, removeFlaggedUser } from "../store/slices/dashboardSlice";
+import { confirmSupportRequest } from "../services/dashboardService";
 import socketService from "../services/socketService";
 import AdvancedFilters from "./dashboard/components/AdvancedFilters";
 import RealTimeNotifications from "./dashboard/components/RealTimeNotifications";
 import SummaryModal from "./dashboard/components/SummaryModal";
+import { useToast } from "@/components/ui/use-toast";
 import {
     getEmotionalDashboardRole,
     hasEmotionalDashboardAccess,
@@ -33,6 +35,8 @@ const PerformanceMonitor = lazy(() =>
 const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const location = useLocation();
+    const { toast } = useToast();
     const { user } = useSelector((state) => state.auth);
     const { stats, loading, selectedPeriod, selectedDate } = useSelector((state) => state.dashboard);
 
@@ -49,6 +53,7 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
     const isDirectorate = ['directorate', 'admin', 'superadmin'].includes(dashboardRole || '');
     const [filters, setFilters] = useState({});
     const directorateAutoPeriodApplied = useRef(false);
+    const emailActionHandledRef = useRef(null);
 
     useEffect(() => {
         if (selectedDate) {
@@ -61,6 +66,24 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
         if (selectedPeriod === 'all') return null;
         return selectedDate;
     }, [selectedDate, selectedPeriod]);
+
+    const pendingEmailAction = useMemo(() => {
+        const params = new URLSearchParams(location.search);
+        const requestId = params.get("requestId");
+        if (!requestId) return null;
+
+        const actionValues = params.getAll("action").filter(Boolean);
+        const mode = params.get("mode") || actionValues[0] || null;
+        const requestedAction = params.get("response")
+            || actionValues.find((value) => value === "handled" || value === "acknowledged")
+            || null;
+
+        if ((mode !== "confirm" && !requestedAction) || !["handled", "acknowledged"].includes(requestedAction)) {
+            return null;
+        }
+
+        return { requestId, action: requestedAction };
+    }, [location.search]);
 
     // Load dashboard data and set up real-time updates
     useEffect(() => {
@@ -115,6 +138,77 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
         console.log('User not authorized for dashboard:', { user });
         navigate('/support-hub', { replace: true });
     }, [canViewDashboard, dispatch, isDirectorate, navigate, selectedPeriod, resolvedDateFilter, user]);
+
+    useEffect(() => {
+        if (!canViewDashboard || !pendingEmailAction) {
+            return;
+        }
+
+        const requestKey = `${pendingEmailAction.requestId}:${pendingEmailAction.action}`;
+        if (emailActionHandledRef.current === requestKey) {
+            return;
+        }
+        emailActionHandledRef.current = requestKey;
+
+        let cancelled = false;
+
+        const clearEmailActionQuery = () => {
+            const params = new URLSearchParams(location.search);
+            params.delete("mode");
+            params.delete("requestId");
+            params.delete("response");
+            if (params.getAll("action").length > 0) {
+                params.delete("action");
+            }
+
+            const nextSearch = params.toString();
+            navigate(
+                {
+                    pathname: location.pathname,
+                    search: nextSearch ? `?${nextSearch}` : "",
+                },
+                { replace: true }
+            );
+        };
+
+        const runEmailAction = async () => {
+            try {
+                await confirmSupportRequest(pendingEmailAction.requestId, pendingEmailAction.action);
+
+                if (cancelled) return;
+
+                if (pendingEmailAction.action === "handled") {
+                    dispatch(removeFlaggedUser(pendingEmailAction.requestId));
+                }
+
+                toast({
+                    title: "Support Request Updated",
+                    description: `Request has been ${pendingEmailAction.action}.`,
+                });
+
+                dispatch(fetchDashboardStats({ period: selectedPeriod, date: resolvedDateFilter, force: true }));
+            } catch (error) {
+                if (cancelled) return;
+
+                emailActionHandledRef.current = null;
+                toast({
+                    title: "Action Failed",
+                    description: error?.response?.data?.message || "Failed to process support request action.",
+                    variant: "destructive",
+                });
+            } finally {
+                if (!cancelled) {
+                    clearEmailActionQuery();
+                }
+            }
+        };
+
+        runEmailAction();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [canViewDashboard, dispatch, location.pathname, location.search, navigate, pendingEmailAction, resolvedDateFilter, selectedPeriod, toast]);
 
     const handlePeriodChange = useCallback((period) => {
         dispatch(setSelectedPeriod(period));
