@@ -1,6 +1,8 @@
 import { memo, Suspense, lazy, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { ClipboardCheck } from "lucide-react";
 import useMtssObserver from "./hooks/useMtssObserver";
 import { adminTabs, heroCard, overviewIcons } from "./data/adminDashboardContent";
 import useAdminDashboardData from "./hooks/useAdminDashboardData";
@@ -24,6 +26,7 @@ const PanelFallback = () => (
 const AdminDashboardPage = memo(() => {
     const { user } = useSelector((state) => state.auth);
     const { isObserver } = useMtssObserver();
+    const navigate = useNavigate();
 
     const {
         students,
@@ -196,6 +199,17 @@ const AdminDashboardPage = memo(() => {
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} data-aos="fade-up">
                     <AdminHeroSection heroCard={adminHeroCard} tabs={adminTabs} activeTab={activeTab} onTabChange={setActiveTab} />
                 </motion.div>
+
+                <div className="flex justify-end" data-aos="fade-left" data-aos-delay="60">
+                    <button
+                        type="button"
+                        onClick={() => navigate("/mtss/pilot-testing")}
+                        className="inline-flex items-center gap-2 rounded-full border border-white/50 bg-white/85 px-4 py-2 text-sm font-semibold text-slate-700 shadow-lg transition hover:-translate-y-0.5 dark:border-white/10 dark:bg-white/10 dark:text-white"
+                    >
+                        <ClipboardCheck className="h-4 w-4 text-primary" />
+                        Open Pilot Testing Hub
+                    </button>
+                </div>
 
                 {(loading || error) && (
                     <div className="rounded-2xl border border-border/50 bg-white/70 dark:bg-white/10 px-4 py-3 flex items-center justify-between gap-4 text-sm text-muted-foreground">

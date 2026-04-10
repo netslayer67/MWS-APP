@@ -22,6 +22,7 @@ const DEFAULT_FILTERS = {
 };
 
 const DEFAULT_VISIBLE_COUNT = 10;
+const DASHBOARD_TABS = new Set(["overview", "students", "mentors", "analytics"]);
 const DEFAULT_VIEW_STATE = {
     activeTab: "overview",
     filters: DEFAULT_FILTERS,
@@ -62,6 +63,11 @@ export const useAdminDashboardState = (students = []) => {
     const navigate = useNavigate();
     const location = useLocation();
     const { toast } = useToast();
+    const requestedTab = useMemo(() => {
+        const params = new URLSearchParams(location.search);
+        const tab = params.get("tab");
+        return tab && DASHBOARD_TABS.has(tab) ? tab : null;
+    }, [location.search]);
     const storageKey = useMemo(() => `mtss:dashboard-view:${location.pathname}`, [location.pathname]);
     const [viewState, setViewState] = useMtssPersistentState(storageKey, DEFAULT_VIEW_STATE);
 
@@ -73,6 +79,15 @@ export const useAdminDashboardState = (students = []) => {
     }), [viewState?.filters]);
     const visibleCount = Math.max(Number(viewState?.visibleCount) || DEFAULT_VISIBLE_COUNT, DEFAULT_VISIBLE_COUNT);
     const [selectedIds, setSelectedIds] = useState([]);
+
+    useEffect(() => {
+        if (requestedTab && requestedTab !== activeTab) {
+            setViewState((prev) => ({
+                ...(prev || {}),
+                activeTab: requestedTab,
+            }));
+        }
+    }, [activeTab, requestedTab, setViewState]);
 
     const filteredStudents = useMemo(() => {
         const query = filters.query.trim().toLowerCase();

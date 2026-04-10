@@ -30,6 +30,7 @@ const SupportModeSelectionPage = lazy(() => import(/* webpackPrefetch: true */ '
 const MTSSTeacherDashboard = lazy(() => import(/* webpackPrefetch: true */ '@/pages/mtss/TeacherDashboardPage'));
 const MTSSAdminDashboard = lazy(() => import(/* webpackPrefetch: true */ '@/pages/mtss/AdminDashboardPage'));
 const MTSSObserverDashboard = lazy(() => import(/* webpackPrefetch: true */ '@/pages/mtss/ObserverDashboardPage'));
+const MTSSPilotTestingHubPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/mtss/MTSSPilotTestingHubPage'));
 const MTSSAdminAssignPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/mtss/admin/AdminMentorAssignPage'));
 const MTSSStudentPortalPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/mtss/StudentPortalPage'));
 const MTSSStudentProfilePage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/mtss/StudentProfilePage'));
@@ -152,6 +153,19 @@ const publicRoutes = [
     <Route key="mtss-teacher" path="/mtss/teacher" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSTeacherDashboard /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
     <Route key="mtss-admin" path="/mtss/admin" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSAdminDashboard /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
     <Route key="mtss-observer" path="/mtss/observer" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSObserverDashboard /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
+    <Route
+        key="mtss-pilot-testing"
+        path="/mtss/pilot-testing"
+        element={
+            <ProtectedRoute allowedRoles={['teacher', 'se_teacher', 'staff', 'support_staff', 'nurse', 'head_unit', 'directorate', 'admin', 'superadmin']}>
+                <MtssPreviewGate>
+                    <MemoizedPageTransition>
+                        <MTSSPilotTestingHubPage />
+                    </MemoizedPageTransition>
+                </MtssPreviewGate>
+            </ProtectedRoute>
+        }
+    />,
     <Route
         key="mtss-admin-assign"
         path="/mtss/admin/assign/:mentorId"

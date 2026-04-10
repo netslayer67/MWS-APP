@@ -20,13 +20,14 @@
  */
 import { memo, Suspense, lazy, useMemo, useEffect, useRef, useCallback } from "react";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import gsap from "gsap";
 import { animate, stagger } from "animejs";
 import {
     Eye, Users2, TrendingUp, Sparkles, LayoutDashboard,
     UserCheck, LineChart as LineChartIcon,
     Activity, Brain, ArrowUpRight, Minus,
-    ArrowDownRight, AlertCircle,
+    ArrowDownRight, AlertCircle, ClipboardCheck,
 } from "lucide-react";
 import useAdminDashboardData from "./hooks/useAdminDashboardData";
 import { useAdminDashboardState } from "./hooks/useAdminDashboardState";
@@ -171,6 +172,7 @@ const ActivityItem = ({ item, index }) => (
 /* ── Main Page ────────────────────────────────────────────────────── */
 const ObserverDashboardPage = memo(() => {
     const { user } = useSelector((state) => state.auth);
+    const navigate = useNavigate();
     const pageRef  = useRef(null);
     const heroRef  = useRef(null);
     const tabRefs  = useRef([]);
@@ -333,6 +335,16 @@ const ObserverDashboardPage = memo(() => {
             </div>
 
             <div className="relative z-20 container-tight px-4 sm:px-6 py-8 lg:py-12 space-y-7">
+                <div className="flex justify-end">
+                    <button
+                        type="button"
+                        onClick={() => navigate("/mtss/pilot-testing")}
+                        className="inline-flex items-center gap-2 rounded-full border border-white/35 bg-white/85 px-4 py-2 text-sm font-semibold text-slate-700 shadow-lg transition hover:-translate-y-0.5 dark:border-white/10 dark:bg-white/10 dark:text-white"
+                    >
+                        <ClipboardCheck className="h-4 w-4 text-primary" />
+                        Open Pilot Testing Hub
+                    </button>
+                </div>
 
                 {/* ════════════════════════════════════════════════
                     HERO CARD — iOS Liquid Glass gradient panel

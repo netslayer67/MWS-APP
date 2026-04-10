@@ -152,6 +152,9 @@ const TRUST_ITEMS = [
   { icon: Users, text: "Built for Schools" },
 ];
 
+const ADMIN_ROLES = new Set(['admin', 'superadmin', 'directorate', 'head_unit']);
+const TEACHER_ROLES = new Set(['teacher', 'se_teacher', 'staff', 'support_staff', 'nurse']);
+
 /* ── OptionCard ─────────────────────────────────────────── */
 const OptionCard = memo(({ card, onClick, index }) => (
   <button
@@ -230,9 +233,11 @@ const SupportModeSelectionPage = memo(() => {
     return () => ctx.revert();
   }, []);
 
-
-  const ADMIN_ROLES = new Set(['admin', 'superadmin', 'directorate', 'head_unit']);
-  const TEACHER_ROLES = new Set(['teacher', 'se_teacher', 'staff', 'support_staff', 'nurse']);
+  const canAccessPilotHub = useMemo(() => {
+    const normalizedRole = (user?.role || '').toLowerCase();
+    const userEmail = (user?.email || '').toLowerCase().trim();
+    return OBSERVER_EMAILS.has(userEmail) || ADMIN_ROLES.has(normalizedRole);
+  }, [user?.email, user?.role]);
 
   const handleMtssClick = useCallback(() => {
     const normalizedRole = (user?.role || '').toLowerCase();
@@ -317,9 +322,32 @@ const SupportModeSelectionPage = memo(() => {
         </div>
 
         {/* Footer hint */}
-        <p className="text-center text-[10px] text-foreground/30 dark:text-white/20 mt-10 font-medium" style={{ animation: 'smsp-fade-in 0.5s ease-out 1.2s both' }}>
-          Millennia World School — Empowering every learner
-        </p>
+        <div className="mt-10 space-y-4">
+          {canAccessPilotHub && (
+            <div className="mx-auto max-w-3xl rounded-[28px] border border-white/40 bg-white/80 p-5 text-left shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.32em] text-slate-500 dark:text-white/55">Pilot testing</p>
+                  <p className="mt-1 text-base font-bold text-slate-900 dark:text-white">
+                    Run the MTSS principal pilot with a guided checklist and built-in feedback
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate('/mtss/pilot-testing')}
+                  className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#f97316] via-[#ec4899] to-[#6366f1] px-5 py-2.5 text-sm font-black text-white shadow-lg transition hover:-translate-y-0.5"
+                >
+                  Open Testing Hub
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          <p className="text-center text-[10px] text-foreground/30 dark:text-white/20 font-medium" style={{ animation: 'smsp-fade-in 0.5s ease-out 1.2s both' }}>
+            Millennia World School — Empowering every learner
+          </p>
+        </div>
       </div>
 
       <style>{`
