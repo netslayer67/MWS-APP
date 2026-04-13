@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { Calendar } from "lucide-react";
 import { periodOptions } from "./utils";
+import { formatCalendarDateLabel } from "./utils/calendarDate";
 
 const DashboardHeader = memo(({
     selectedPeriod,
@@ -16,8 +17,7 @@ const DashboardHeader = memo(({
 }) => {
 
     const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
+        return formatCalendarDateLabel(dateString, {
             year: 'numeric',
             month: 'short',
             day: 'numeric'

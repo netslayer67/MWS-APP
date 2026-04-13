@@ -2,12 +2,12 @@ import { memo, useMemo, useState } from "react";
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { TrendingUp, User } from "lucide-react";
 import UserListModal from "./UserListModal";
+import { formatCalendarDateKey, formatCalendarDateLabel, parseCalendarDate } from "../utils/calendarDate";
 
-const normalizeDateKey = (value) => {
-    if (!value) return null;
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return null;
-    return parsed.toISOString().split("T")[0];
+const sortByCalendarDate = (left, right) => {
+    const leftTime = parseCalendarDate(left)?.getTime() || 0;
+    const rightTime = parseCalendarDate(right)?.getTime() || 0;
+    return leftTime - rightTime;
 };
 
 const UserTrendChart = memo(({ trendData = [], userData = [], selectedUser = null, period = 'week' }) => {
@@ -30,7 +30,7 @@ const UserTrendChart = memo(({ trendData = [], userData = [], selectedUser = nul
                     users: Array.isArray(entry.users) ? entry.users : [],
                 }))
                 .filter((entry) => entry.date)
-                .sort((a, b) => new Date(a.date) - new Date(b.date));
+                .sort((a, b) => sortByCalendarDate(a.date, b.date));
         }
 
         if (!userData || userData.length === 0) return [];
@@ -39,7 +39,7 @@ const UserTrendChart = memo(({ trendData = [], userData = [], selectedUser = nul
         const dateGroups = {};
 
         userData.forEach(checkin => {
-            const dateKey = normalizeDateKey(checkin.date || checkin.submittedAt);
+            const dateKey = formatCalendarDateKey(checkin.date || checkin.submittedAt);
             if (!dateKey) return;
             if (!dateGroups[dateKey]) {
                 dateGroups[dateKey] = {
@@ -62,7 +62,7 @@ const UserTrendChart = memo(({ trendData = [], userData = [], selectedUser = nul
             capacity: group.capacity.reduce((a, b) => a + b, 0) / group.capacity.length,
             submissions: group.count,
             users: group.users || [] // Store users for each date
-        })).sort((a, b) => new Date(a.date) - new Date(b.date));
+        })).sort((a, b) => sortByCalendarDate(a.date, b.date));
     }, [trendData, userData]);
 
     const xAxisMinTickGap = period === "today" ? 48 : period === "week" ? 24 : 12;
@@ -72,7 +72,7 @@ const UserTrendChart = memo(({ trendData = [], userData = [], selectedUser = nul
         if (data && data.users) {
             setModalState({
                 isOpen: true,
-                title: `Submissions on ${data.date}`,
+                title: `Submissions on ${formatCalendarDateLabel(data.date, { year: "numeric", month: "short", day: "numeric" })}`,
                 users: data.users,
                 totalUsers: data.submissions,
                 type: 'submissions'
@@ -89,7 +89,9 @@ const UserTrendChart = memo(({ trendData = [], userData = [], selectedUser = nul
             const data = chartData.find(d => d.date === label);
             return (
                 <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
-                    <p className="font-medium text-foreground mb-2">{label}</p>
+                    <p className="font-medium text-foreground mb-2">
+                        {formatCalendarDateLabel(label, { year: "numeric", month: "short", day: "numeric" })}
+                    </p>
                     {payload.map((entry, index) => (
                         <p key={index} className="text-sm" style={{ color: entry.color }}>
                             {entry.name}: {entry.value.toFixed(1)}
@@ -151,11 +153,7 @@ const UserTrendChart = memo(({ trendData = [], userData = [], selectedUser = nul
                                 className="text-xs"
                                 tick={{ fill: 'currentColor' }}
                                 minTickGap={xAxisMinTickGap}
-                                tickFormatter={(value) => {
-                                    const parsed = new Date(value);
-                                    if (Number.isNaN(parsed.getTime())) return value;
-                                    return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                                }}
+                                tickFormatter={(value) => formatCalendarDateLabel(value, { month: 'short', day: 'numeric' })}
                             />
                             <YAxis
                                 domain={[0, 10]}

@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useState, useCallback } from "react";
+import { memo, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Users, AlertTriangle, Search, ArrowUpRight, TrendingUp, Activity, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
@@ -6,6 +6,7 @@ import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import UserDetailModal from "./UserDetailModal";
+import { formatCalendarDateKey, formatCalendarDateLabel, getTodayCalendarDateKey } from "../utils/calendarDate";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
@@ -30,6 +31,13 @@ const HeadUnitStaffPanel = memo(({ staff = [], summary, isDirectorate = false })
     const [detailUser, setDetailUser] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
+    const activeReferenceLabel = useMemo(() => {
+        const referenceDateKey = summary?.referenceDateKey;
+        if (!referenceDateKey) return "Active Today";
+        if (referenceDateKey === getTodayCalendarDateKey()) return "Active Today";
+        return `Active on ${formatCalendarDateLabel(referenceDateKey, { month: "short", day: "numeric" })}`;
+    }, [summary?.referenceDateKey]);
+
     const computedSummary = useMemo(() => {
         if (summary) {
             return {
@@ -40,13 +48,13 @@ const HeadUnitStaffPanel = memo(({ staff = [], summary, isDirectorate = false })
             };
         }
 
-        const todayKey = new Date().toISOString().split('T')[0];
+        const todayKey = getTodayCalendarDateKey();
         const activeToday = staff.filter(member => {
             const lastDate = member.lastCheckin?.date;
             if (!lastDate) return false;
             const compare = new Date(lastDate);
             compare.setHours(0, 0, 0, 0);
-            return compare.toISOString().split('T')[0] === todayKey;
+            return formatCalendarDateKey(compare) === todayKey;
         }).length;
         const flagged = staff.filter(member =>
             member.lastCheckin?.needsSupport ||
@@ -137,7 +145,7 @@ const HeadUnitStaffPanel = memo(({ staff = [], summary, isDirectorate = false })
                         </div>
                         <div className="p-4 bg-card/40 border border-border/40 rounded-xl">
                             <p className="text-xs uppercase tracking-wide text-muted-foreground flex items-center gap-1">
-                                <Clock className="w-3.5 h-3.5" /> Active Today
+                                <Clock className="w-3.5 h-3.5" /> {activeReferenceLabel}
                             </p>
                             <p className="text-2xl font-semibold text-foreground mt-1">{computedSummary.activeToday}</p>
                         </div>
@@ -234,7 +242,4 @@ const HeadUnitStaffPanel = memo(({ staff = [], summary, isDirectorate = false })
 
 HeadUnitStaffPanel.displayName = 'HeadUnitStaffPanel';
 export default HeadUnitStaffPanel;
-
-
-
 

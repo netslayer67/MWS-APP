@@ -9,6 +9,7 @@ import AdvancedFilters from "./dashboard/components/AdvancedFilters";
 import RealTimeNotifications from "./dashboard/components/RealTimeNotifications";
 import SummaryModal from "./dashboard/components/SummaryModal";
 import { useToast } from "@/components/ui/use-toast";
+import { getTodayCalendarDateKey } from "./dashboard/utils/calendarDate";
 import {
     getEmotionalDashboardRole,
     hasEmotionalDashboardAccess,
@@ -40,7 +41,7 @@ const EmotionalCheckinDashboard = memo(function EmotionalCheckinDashboard() {
     const { user } = useSelector((state) => state.auth);
     const { stats, loading, selectedPeriod, selectedDate } = useSelector((state) => state.dashboard);
 
-    const todayISO = useMemo(() => new Date().toISOString().split('T')[0], []);
+    const todayISO = useMemo(() => getTodayCalendarDateKey(), []);
     const [pendingDate, setPendingDate] = useState(selectedDate || todayISO);
 
     const dashboardRole = useMemo(() => getEmotionalDashboardRole(user), [user]);

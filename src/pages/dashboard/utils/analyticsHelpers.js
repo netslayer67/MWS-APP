@@ -1,3 +1,5 @@
+import { formatCalendarDateKey, parseCalendarDate } from "./calendarDate";
+
 export const BUSINESS_DAYS_RATIO = 5 / 7;
 
 export const DEFAULT_WORKDAY_ESTIMATES = {
@@ -9,12 +11,7 @@ export const DEFAULT_WORKDAY_ESTIMATES = {
 };
 
 export const parseDateValue = (value) => {
-    if (!value) return null;
-    if (value instanceof Date) {
-        return Number.isNaN(value.getTime()) ? null : value;
-    }
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? null : date;
+    return parseCalendarDate(value);
 };
 
 const getTimelineDateCandidate = (entry) => {
@@ -44,7 +41,10 @@ export const countWorkdays = (timeline = []) => {
         if (!parsedDate) return;
         const day = parsedDate.getDay();
         if (day === 0 || day === 6) return;
-        uniqueBusinessDays.add(parsedDate.toDateString());
+        const dateKey = formatCalendarDateKey(parsedDate);
+        if (dateKey) {
+            uniqueBusinessDays.add(dateKey);
+        }
     });
 
     return uniqueBusinessDays.size;
