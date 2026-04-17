@@ -2,29 +2,8 @@ import { motion } from "framer-motion";
 import { Sparkles, CalendarDays, TrendingUp } from "lucide-react";
 import EvidenceViewer from "./EvidenceViewer";
 
-const SIGNAL_META = {
-    emerging: { label: "🌱 Emerging", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
-    developing: { label: "🌿 Developing", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" },
-    consistent: { label: "🌳 Consistent", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
-};
-
-const TAG_LABELS = {
-    emotional_regulation: "Emotional Regulation",
-    language: "Language",
-    social: "Social",
-    motor: "Motor Skills",
-    independence: "Independence",
-};
-
-const WEEKLY_FOCUS_META = {
-    continue: { label: "▶️ Continue", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
-    try: { label: "🔄 Try", color: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300" },
-    support_needed: { label: "🆘 Support Needed", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" },
-};
-
 const GrowthJourneyHistory = ({ intervention, config, glassStyles }) => {
     const history = Array.isArray(intervention?.history) ? intervention.history : [];
-    const isQualitative = intervention?.mode === "qualitative";
 
     return (
         <div className="lg:w-80 xl:w-96">
@@ -36,7 +15,7 @@ const GrowthJourneyHistory = ({ intervention, config, glassStyles }) => {
                     <div className="min-w-0">
                         <p className="text-[8px] sm:text-xs uppercase tracking-wider text-muted-foreground">Check-in History</p>
                         <h4 className="text-xs sm:text-base font-bold text-foreground dark:text-white">
-                            {isQualitative ? "Observation Journal" : "Recent Reflections"}
+                            Recent Reflections
                         </h4>
                     </div>
                 </div>
@@ -56,42 +35,22 @@ const GrowthJourneyHistory = ({ intervention, config, glassStyles }) => {
                                         <CalendarDays className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                                         {entry.date}
                                     </span>
-                                    {entry.signal ? (
-                                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] sm:text-xs font-semibold ${SIGNAL_META[entry.signal]?.color || ""}`}>
-                                            {SIGNAL_META[entry.signal]?.label}
-                                        </span>
-                                    ) : !isQualitative && entry.score != null && entry.score !== "-" && (
+                                    {entry.score != null && entry.score !== "-" && (
                                         <span className={`inline-flex items-center gap-0.5 sm:gap-1 px-1.5 py-0.5 rounded-full ${config.lightBg} ${config.text} text-[9px] sm:text-xs font-medium`}>
                                             <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                                             {entry.score} {intervention.progressUnit || "pts"}
                                         </span>
                                     )}
                                 </div>
-                                {entry.observation ? (
-                                    <div className="space-y-0.5 mt-0.5">
-                                        {entry.context && <p className="text-[9px] sm:text-[11px] text-muted-foreground italic">📍 {entry.context}</p>}
-                                        <p className="text-[10px] sm:text-sm text-foreground dark:text-white line-clamp-3 leading-snug">{entry.observation}</p>
-                                        {entry.response && <p className="text-[9px] sm:text-[11px] text-muted-foreground">↩ {entry.response}</p>}
-                                        {entry.nextStep && <p className="text-[9px] sm:text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">→ {entry.nextStep}</p>}
-                                    </div>
-                                ) : (
-                                    <p className="text-[10px] sm:text-sm text-foreground dark:text-white line-clamp-2 leading-snug">{entry.notes}</p>
+                                <p className="text-[10px] sm:text-sm text-foreground dark:text-white line-clamp-3 leading-snug">
+                                    {entry.summary || entry.notes || entry.observation || "Check-in recorded"}
+                                </p>
+                                {(entry.nextSteps || entry.nextStep) && (
+                                    <p className="mt-1 text-[9px] sm:text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
+                                        Next steps: {entry.nextSteps || entry.nextStep}
+                                    </p>
                                 )}
-                                {entry.tags?.length > 0 && (
-                                    <div className="mt-1 flex flex-wrap gap-1">
-                                        {entry.tags.map((tag) => (
-                                            <span key={`${entry.date || idx}-${tag}`} className="px-1.5 py-0.5 rounded-full text-[8px] sm:text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                                                {TAG_LABELS[tag] || tag}
-                                            </span>
-                                        ))}
-                                    </div>
-                                )}
-                                {entry.weeklyFocus && (
-                                    <div className={`mt-1 text-[9px] sm:text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full inline-flex items-center gap-0.5 sm:gap-1 ${WEEKLY_FOCUS_META[entry.weeklyFocus]?.color || ""}`}>
-                                        {WEEKLY_FOCUS_META[entry.weeklyFocus]?.label}
-                                    </div>
-                                )}
-                                {entry.celebration && !entry.signal && !isQualitative && (
+                                {entry.celebration && (
                                     <div className="mt-1 sm:mt-2 text-[9px] sm:text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full inline-flex items-center gap-0.5 sm:gap-1">
                                         {entry.celebration}
                                     </div>
@@ -102,12 +61,10 @@ const GrowthJourneyHistory = ({ intervention, config, glassStyles }) => {
                     ) : (
                         <div className="text-center py-4 sm:py-8 text-muted-foreground">
                             <p className="text-sm sm:text-base font-semibold text-foreground dark:text-white mb-1">
-                                {isQualitative ? "No observations yet" : "No check-ins yet"}
+                                No check-ins yet
                             </p>
                             <p className="text-[11px] sm:text-xs opacity-75">
-                                {isQualitative
-                                    ? "Add a CORN journal entry to start the Learning Story timeline."
-                                    : "Progress history will appear after the first check-in is logged."}
+                                Progress history will appear after the first check-in is logged.
                             </p>
                         </div>
                     )}

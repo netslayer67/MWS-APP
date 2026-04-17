@@ -2,19 +2,11 @@ import { memo } from "react";
 import { ProgressBadge } from "./StatusPills";
 import { TIER_CONFIG } from "../config/studentProfileConfig";
 
-const SIGNAL_META = {
-    emerging: { label: "Emerging", style: "bg-amber-500/85 text-white" },
-    developing: { label: "Developing", style: "bg-emerald-500/85 text-white" },
-    consistent: { label: "Consistent", style: "bg-green-500/85 text-white" },
-};
-
 const StudentProfileHeader = memo(({
     student,
     highlight,
     currentTier,
     currentInterventionLabel,
-    isKindergartenQualitative = false,
-    latestSignal = null
 }) => {
     const tierConfig = TIER_CONFIG[currentTier] || TIER_CONFIG.tier1;
     const classLabel = student.className && student.className !== student.grade ? student.className : null;
@@ -57,22 +49,9 @@ const StudentProfileHeader = memo(({
                         <span className="flex-shrink-0 px-2.5 py-1 sm:px-4 sm:py-2 rounded-full text-[10px] sm:text-sm font-semibold bg-white/15 backdrop-blur-sm">
                             {currentInterventionLabel || highlight?.label || "Universal"}
                         </span>
-                        {isKindergartenQualitative ? (
-                            <>
-                                <span className="flex-shrink-0 px-2.5 py-1 sm:px-4 sm:py-2 rounded-full text-[10px] sm:text-sm font-semibold bg-white/20 backdrop-blur-sm">
-                                    Qualitative
-                                </span>
-                                {latestSignal && (
-                                    <span className={`flex-shrink-0 px-2.5 py-1 sm:px-4 sm:py-2 rounded-full text-[10px] sm:text-sm font-semibold ${SIGNAL_META[latestSignal]?.style || "bg-white/20 text-white"}`}>
-                                        {SIGNAL_META[latestSignal]?.label || latestSignal}
-                                    </span>
-                                )}
-                            </>
-                        ) : (
-                            <div className="flex-shrink-0">
-                                <ProgressBadge status={student.progress} />
-                            </div>
-                        )}
+                        <div className="flex-shrink-0">
+                            <ProgressBadge status={student.progress} />
+                        </div>
                     </div>
                 </div>
             </div>

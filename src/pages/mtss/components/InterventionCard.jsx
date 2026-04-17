@@ -7,12 +7,6 @@ import {
     getTierBadgeStyle,
 } from "../config/studentProfileConfig";
 
-const SIGNAL_META = {
-    emerging:   { label: "Emerging",   dot: "bg-amber-400" },
-    developing: { label: "Developing", dot: "bg-blue-400" },
-    consistent: { label: "Consistent", dot: "bg-emerald-500" },
-};
-
 const TIER_STRIPE = {
     tier3: "from-rose-500   to-pink-500",
     tier2: "from-amber-400  to-orange-400",
@@ -22,11 +16,9 @@ const TIER_STRIPE = {
 const InterventionCard = memo(({ intervention, index, isSelected, onSelect }) => {
     const config       = INTERVENTION_CONFIG[intervention.type] || INTERVENTION_CONFIG.SEL;
     const tierCfg      = TIER_CONFIG[intervention.tier]          || TIER_CONFIG.tier1;
-    const isQualitative = intervention.mode === "qualitative";
     const tierLabel    = intervention.tierLabel || tierCfg.label;
     const badgeStyle   = getTierBadgeStyle(intervention.tier);
     const stripe       = TIER_STRIPE[intervention.tier] || TIER_STRIPE.tier1;
-    const signalMeta   = intervention.latestSignal ? SIGNAL_META[intervention.latestSignal] : null;
     const cardRef      = useRef(null);
     const barRef       = useRef(null);
     const [visible, setVisible] = useState(false);
@@ -48,7 +40,7 @@ const InterventionCard = memo(({ intervention, index, isSelected, onSelect }) =>
 
     /* anime.js — fill progress bar after mount */
     useEffect(() => {
-        if (!barRef.current || isQualitative || !visible) return;
+        if (!barRef.current || !visible) return;
         const pct = intervention.progress || 0;
         animate(barRef.current, {
             width: ["0%", `${pct}%`],
@@ -56,7 +48,7 @@ const InterventionCard = memo(({ intervention, index, isSelected, onSelect }) =>
             delay: 200,
             ease: "outExpo",
         });
-    }, [intervention.progress, visible, isQualitative]);
+    }, [intervention.progress, visible]);
 
     return (
         <div
@@ -106,35 +98,19 @@ const InterventionCard = memo(({ intervention, index, isSelected, onSelect }) =>
                     {intervention.focusArea || intervention.strategyName || "Core support"}
                 </p>
 
-                {/* Row 3 — Progress bar OR qualitative signal */}
-                {isQualitative ? (
-                    <div className="flex items-center gap-2">
-                        {signalMeta && (
-                            <span className="flex items-center gap-1 text-[9px] font-semibold text-muted-foreground">
-                                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${signalMeta.dot}`} />
-                                {signalMeta.label}
-                            </span>
-                        )}
-                        {!!intervention.checkInsCount && (
-                            <span className="text-[9px] text-muted-foreground">
-                                {intervention.checkInsCount} obs
-                            </span>
-                        )}
+                {/* Row 3 — Progress bar */}
+                <div className="flex items-center gap-1.5">
+                    <div className="flex-1 h-1 rounded-full bg-black/[0.06] dark:bg-white/10 overflow-hidden">
+                        <div
+                            ref={barRef}
+                            style={{ width: "0%" }}
+                            className={`h-full rounded-full bg-gradient-to-r ${config.gradient}`}
+                        />
                     </div>
-                ) : (
-                    <div className="flex items-center gap-1.5">
-                        <div className="flex-1 h-1 rounded-full bg-black/[0.06] dark:bg-white/10 overflow-hidden">
-                            <div
-                                ref={barRef}
-                                style={{ width: "0%" }}
-                                className={`h-full rounded-full bg-gradient-to-r ${config.gradient}`}
-                            />
-                        </div>
-                        <span className={`text-[9px] font-bold flex-shrink-0 w-6 text-right ${config.text}`}>
-                            {intervention.progress || 0}%
-                        </span>
-                    </div>
-                )}
+                    <span className={`text-[9px] font-bold flex-shrink-0 w-6 text-right ${config.text}`}>
+                        {intervention.progress || 0}%
+                    </span>
+                </div>
             </div>
 
             {/* Chevron — only when detail is available */}

@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
     ArrowRight,
+    Bot,
     CheckCircle2,
     ClipboardCheck,
     Copy,
     Download,
     Flag,
     Gauge,
+    Lightbulb,
     ListChecks,
     MessageSquareText,
     RotateCcw,
@@ -32,12 +34,15 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import { cn, sanitizeLight } from "@/lib/utils";
+import { upsertPilotFeedbackSession } from "@/services/mtssService";
 import {
     PILOT_PROGRESS_STORAGE_KEY,
+    aiTipsAndTricks,
     buildPilotStepRoute,
     createEmptyFinalFeedback,
     createEmptyStepFeedback,
     pilotFeatureCoverage,
+    principalBriefingChecklist,
     pilotSteps,
     ratingOptions,
     readinessOptions,
@@ -45,14 +50,49 @@ import {
     stepCompletionOptions,
 } from "./data/pilotTestingScenario";
 
-const readStoredPilotState = () => {
+const buildPilotStorageKey = (user) => {
+    const email = String(user?.email || "anonymous").trim().toLowerCase();
+    return `${PILOT_PROGRESS_STORAGE_KEY}:${email || "anonymous"}`;
+};
+
+const createPilotSessionKey = (user) => {
+    const emailSeed = String(user?.email || "principal")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)+/g, "")
+        .slice(0, 40) || "principal";
+
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+        return `${emailSeed}-${crypto.randomUUID()}`;
+    }
+
+    return `${emailSeed}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+};
+
+const readStoredPilotState = (user) => {
     if (typeof window === "undefined") {
         return null;
     }
 
     try {
-        const raw = window.localStorage.getItem(PILOT_PROGRESS_STORAGE_KEY);
-        return raw ? JSON.parse(raw) : null;
+        const scopedRaw = window.localStorage.getItem(buildPilotStorageKey(user));
+        if (scopedRaw) {
+            return JSON.parse(scopedRaw);
+        }
+
+        const legacyRaw = window.localStorage.getItem(PILOT_PROGRESS_STORAGE_KEY);
+        if (!legacyRaw) {
+            return null;
+        }
+
+        const parsedLegacy = JSON.parse(legacyRaw);
+        const legacyEmail = String(parsedLegacy?.tester?.email || "").trim().toLowerCase();
+        const currentEmail = String(user?.email || "").trim().toLowerCase();
+        if (!legacyEmail || !currentEmail || legacyEmail === currentEmail) {
+            return parsedLegacy;
+        }
+        return null;
     } catch {
         return null;
     }
@@ -72,8 +112,11 @@ const sanitizeFeedbackDraft = (draft = {}) => ({
     performance: clampRating(draft.performance, 4),
     helpfulNotes: sanitizeLight(draft.helpfulNotes || "", 1200),
     confusingNotes: sanitizeLight(draft.confusingNotes || "", 1200),
+    partialReason: sanitizeLight(draft.partialReason || "", 1200),
     bugFound: Boolean(draft.bugFound),
     bugSummary: sanitizeLight(draft.bugSummary || "", 1200),
+    expectedResult: sanitizeLight(draft.expectedResult || "", 1200),
+    reproductionSteps: sanitizeLight(draft.reproductionSteps || "", 1200),
     bugSeverity: severityOptions.some((option) => option.value === draft.bugSeverity) ? draft.bugSeverity : "medium",
     screenshotLink: sanitizeLight(draft.screenshotLink || "", 800),
 });
@@ -90,7 +133,7 @@ const sanitizeFinalDraft = (draft = {}) => ({
 });
 
 const hydratePilotState = (user) => {
-    const stored = readStoredPilotState();
+    const stored = readStoredPilotState(user);
     const feedbackByStep = Object.fromEntries(
         pilotSteps.map((step) => [
             step.id,
@@ -99,9 +142,11 @@ const hydratePilotState = (user) => {
     );
 
     return {
+        sessionKey: stored?.sessionKey || createPilotSessionKey(user),
         completedSteps: stored?.completedSteps || {},
         feedbackByStep,
         finalFeedback: sanitizeFinalDraft(stored?.finalFeedback || createEmptyFinalFeedback()),
+        finalFeedbackSavedAt: stored?.finalFeedbackSavedAt || null,
         tester: {
             name: user?.name || user?.nickname || "",
             email: user?.email || "",
@@ -112,14 +157,14 @@ const hydratePilotState = (user) => {
     };
 };
 
-const savePilotState = (state) => {
+const savePilotState = (user, state) => {
     if (typeof window === "undefined") {
         return;
     }
 
     try {
         window.localStorage.setItem(
-            PILOT_PROGRESS_STORAGE_KEY,
+            buildPilotStorageKey(user),
             JSON.stringify(state),
         );
     } catch {
@@ -132,7 +177,31 @@ const withTimestamp = (state) => ({
     lastUpdatedAt: new Date().toISOString(),
 });
 
+const hasMeaningfulPilotState = (state = {}) => {
+    const hasCompletedSteps = Object.values(state.completedSteps || {}).some(Boolean);
+    const hasStepNotes = Object.values(state.feedbackByStep || {}).some((entry) =>
+        Boolean(entry?.helpfulNotes || entry?.confusingNotes || entry?.partialReason || entry?.bugFound),
+    );
+    const hasFinalNotes = Boolean(
+        state.finalFeedback?.mostUsefulFeature
+        || state.finalFeedback?.mostConfusingFeature
+        || state.finalFeedback?.slowestPart
+        || state.finalFeedback?.missingFeature
+        || state.finalFeedback?.topImprovements
+        || state.finalFeedback?.additionalComments
+        || state.finalFeedbackSavedAt,
+    );
+
+    return Boolean(state.lastUpdatedAt || hasCompletedSteps || hasStepNotes || hasFinalNotes);
+};
+
 const formatRole = (value = "") =>
+    value
+        .toString()
+        .replace(/[_-]+/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+
+const formatFeatureKey = (value = "") =>
     value
         .toString()
         .replace(/[_-]+/g, " ")
@@ -148,6 +217,7 @@ const ratingLabels = {
 
 const readinessLabels = {
     yes: "Yes",
+    almost: "Almost",
     "not-yet": "Not yet",
 };
 
@@ -289,6 +359,21 @@ const StepFeedbackDialog = ({
                         />
                     </div>
 
+                    {(value.completionStatus === "partial" || value.completionStatus === "no") && (
+                        <div className="space-y-2">
+                            <Label htmlFor={`partial-reason-${step.id}`} className="text-sm font-semibold text-slate-700 dark:text-white">
+                                If this step failed or was partial, why?
+                            </Label>
+                            <Textarea
+                                id={`partial-reason-${step.id}`}
+                                value={value.partialReason}
+                                onChange={(event) => onChange({ ...value, partialReason: event.target.value })}
+                                className="min-h-[96px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
+                                placeholder="Explain what blocked completion: permission, data, unclear flow, bug, or time."
+                            />
+                        </div>
+                    )}
+
                     <div className="rounded-[24px] border border-dashed border-rose-200 bg-rose-50/80 p-4 dark:border-rose-400/30 dark:bg-rose-500/10">
                         <label className="flex items-center gap-3 text-sm font-semibold text-slate-800 dark:text-white">
                             <input
@@ -317,6 +402,32 @@ const StepFeedbackDialog = ({
                                         onChange={(event) => onChange({ ...value, bugSummary: event.target.value })}
                                         className="min-h-[96px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
                                         placeholder="Describe what happened, what you expected, and how to reproduce it."
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor={`expected-result-${step.id}`} className="text-sm font-semibold text-slate-700 dark:text-white">
+                                        Expected result
+                                    </Label>
+                                    <Textarea
+                                        id={`expected-result-${step.id}`}
+                                        value={value.expectedResult}
+                                        onChange={(event) => onChange({ ...value, expectedResult: event.target.value })}
+                                        className="min-h-[84px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
+                                        placeholder="What should have happened if the flow worked correctly?"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor={`reproduction-${step.id}`} className="text-sm font-semibold text-slate-700 dark:text-white">
+                                        Reproduction steps
+                                    </Label>
+                                    <Textarea
+                                        id={`reproduction-${step.id}`}
+                                        value={value.reproductionSteps}
+                                        onChange={(event) => onChange({ ...value, reproductionSteps: event.target.value })}
+                                        className="min-h-[84px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
+                                        placeholder="List short steps so the MTSS team can reproduce the issue."
                                     />
                                 </div>
 
@@ -480,9 +591,22 @@ const FinalFeedbackDialog = ({ open, onOpenChange, value, onChange, onSave }) =>
     </Dialog>
 );
 
-const buildFeedbackExport = ({ user, stepFeedback, finalFeedback, completedSteps, updatedAt }) => ({
+const buildFeedbackExport = ({
+    user,
+    sessionKey,
+    stepFeedback,
+    finalFeedback,
+    completedSteps,
+    updatedAt,
+    finalFeedbackSavedAt,
+    lastViewedRoute,
+    source,
+}) => ({
     exportedAt: new Date().toISOString(),
+    sessionKey,
+    scenarioKey: "mtss-principal-pilot",
     lastUpdatedAt: updatedAt,
+    finalFeedbackSavedAt: finalFeedbackSavedAt || null,
     tester: {
         name: user?.name || user?.nickname || "",
         email: user?.email || "",
@@ -493,19 +617,26 @@ const buildFeedbackExport = ({ user, stepFeedback, finalFeedback, completedSteps
     stepFeedback: pilotSteps.map((step) => ({
         id: step.id,
         title: step.title,
+        order: step.order,
         duration: step.duration,
         completed: Boolean(completedSteps?.[step.id]),
         feedback: stepFeedback[step.id],
     })),
     finalFeedback,
+    lastViewedRoute: lastViewedRoute || (typeof window !== "undefined" ? `${window.location.pathname}${window.location.search}` : "/mtss/pilot-testing"),
+    source: source || {
+        userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
+    },
 });
 
-const buildMarkdownSummary = ({ user, stepFeedback, finalFeedback, completedSteps, updatedAt }) => {
+const buildMarkdownSummary = ({ user, sessionKey, stepFeedback, finalFeedback, completedSteps, updatedAt, finalFeedbackSavedAt }) => {
     const lines = [
         "# MTSS Principal Pilot Feedback Summary",
         "",
+        `- Session key: ${sessionKey || "-"}`,
         `- Exported at: ${new Date().toLocaleString()}`,
         `- Last updated: ${updatedAt ? new Date(updatedAt).toLocaleString() : "Not saved yet"}`,
+        `- Final feedback saved at: ${finalFeedbackSavedAt ? new Date(finalFeedbackSavedAt).toLocaleString() : "Not submitted yet"}`,
         `- Tester: ${user?.name || user?.nickname || "-"}`,
         `- Email: ${user?.email || "-"}`,
         `- Role: ${formatRole(user?.role || "-")}`,
@@ -525,10 +656,13 @@ const buildMarkdownSummary = ({ user, stepFeedback, finalFeedback, completedStep
         lines.push(`- Performance: ${feedback.performance}/5`);
         lines.push(`- Helpful notes: ${feedback.helpfulNotes || "-"}`);
         lines.push(`- Confusing notes: ${feedback.confusingNotes || "-"}`);
+        lines.push(`- Partial or failed reason: ${feedback.partialReason || "-"}`);
         lines.push(`- Bug found: ${feedback.bugFound ? "Yes" : "No"}`);
         if (feedback.bugFound) {
             lines.push(`- Bug severity: ${feedback.bugSeverity}`);
             lines.push(`- Bug summary: ${feedback.bugSummary || "-"}`);
+            lines.push(`- Expected result: ${feedback.expectedResult || "-"}`);
+            lines.push(`- Reproduction steps: ${feedback.reproductionSteps || "-"}`);
             lines.push(`- Screenshot link: ${feedback.screenshotLink || "-"}`);
         }
         lines.push("");
@@ -555,23 +689,39 @@ const MTSSPilotTestingHubPage = memo(() => {
     const [pilotState, setPilotState] = useState(() => hydratePilotState(user));
     const [activeStepId, setActiveStepId] = useState(null);
     const [finalFeedbackOpen, setFinalFeedbackOpen] = useState(false);
+    const [syncState, setSyncState] = useState({
+        status: "idle",
+        lastSyncedAt: null,
+        error: null,
+    });
 
     useEffect(() => {
         setPilotState((previous) => {
             const nextState = hydratePilotState(user);
+            const previousTesterEmail = String(previous?.tester?.email || "").trim().toLowerCase();
+            const currentTesterEmail = String(user?.email || "").trim().toLowerCase();
+            if (previousTesterEmail && currentTesterEmail && previousTesterEmail !== currentTesterEmail) {
+                return nextState;
+            }
             return {
                 ...nextState,
                 completedSteps: previous?.completedSteps || nextState.completedSteps,
                 feedbackByStep: previous?.feedbackByStep || nextState.feedbackByStep,
                 finalFeedback: previous?.finalFeedback || nextState.finalFeedback,
+                finalFeedbackSavedAt: previous?.finalFeedbackSavedAt || nextState.finalFeedbackSavedAt,
                 lastUpdatedAt: previous?.lastUpdatedAt || nextState.lastUpdatedAt,
             };
+        });
+        setSyncState({
+            status: "idle",
+            lastSyncedAt: null,
+            error: null,
         });
     }, [user]);
 
     useEffect(() => {
-        savePilotState(pilotState);
-    }, [pilotState]);
+        savePilotState(user, pilotState);
+    }, [pilotState, user]);
 
     const completedCount = useMemo(
         () => pilotSteps.filter((step) => pilotState.completedSteps?.[step.id]).length,
@@ -586,6 +736,58 @@ const MTSSPilotTestingHubPage = memo(() => {
         }).length,
         [pilotState.completedSteps, pilotState.feedbackByStep],
     );
+
+    useEffect(() => {
+        if (!user?.email || !pilotState?.sessionKey || !hasMeaningfulPilotState(pilotState)) {
+            return undefined;
+        }
+
+        setSyncState((prev) => ({
+            ...prev,
+            status: prev.status === "synced" ? "synced" : "pending",
+            error: null,
+        }));
+
+        const timeoutId = window.setTimeout(async () => {
+            try {
+                setSyncState((prev) => ({
+                    ...prev,
+                    status: "syncing",
+                    error: null,
+                }));
+
+                const response = await upsertPilotFeedbackSession(
+                    buildFeedbackExport({
+                        user,
+                        sessionKey: pilotState.sessionKey,
+                        stepFeedback: pilotState.feedbackByStep,
+                        finalFeedback: pilotState.finalFeedback,
+                        completedSteps: pilotState.completedSteps,
+                        updatedAt: pilotState.lastUpdatedAt,
+                        finalFeedbackSavedAt: pilotState.finalFeedbackSavedAt,
+                    }),
+                );
+
+                const lastSyncedAt = response?.session?.updatedAt
+                    || response?.session?.clientUpdatedAt
+                    || new Date().toISOString();
+
+                setSyncState({
+                    status: "synced",
+                    lastSyncedAt,
+                    error: null,
+                });
+            } catch (error) {
+                setSyncState((prev) => ({
+                    status: "error",
+                    lastSyncedAt: prev.lastSyncedAt,
+                    error: error?.response?.data?.message || error?.message || "Failed to sync pilot feedback.",
+                }));
+            }
+        }, 900);
+
+        return () => window.clearTimeout(timeoutId);
+    }, [pilotState, user]);
 
     const updateStepFeedback = useCallback((stepId, nextValue) => {
         setPilotState((prev) =>
@@ -645,26 +847,31 @@ const MTSSPilotTestingHubPage = memo(() => {
     }, [activeStep, toast]);
 
     const handleSaveFinalFeedback = useCallback(() => {
+        const savedAt = new Date().toISOString();
         setPilotState((prev) =>
-            withTimestamp({
+            ({
                 ...prev,
                 finalFeedback: sanitizeFinalDraft(prev.finalFeedback),
+                finalFeedbackSavedAt: savedAt,
+                lastUpdatedAt: savedAt,
             }),
         );
         setFinalFeedbackOpen(false);
         toast({
             title: "Final feedback saved",
-            description: "Your pilot summary is now stored locally in this browser.",
+            description: "Your pilot summary is saved and will sync to the review dashboard automatically.",
         });
     }, [toast]);
 
     const handleCopySummary = useCallback(async () => {
         const summary = buildMarkdownSummary({
             user,
+            sessionKey: pilotState.sessionKey,
             stepFeedback: pilotState.feedbackByStep,
             finalFeedback: pilotState.finalFeedback,
             completedSteps: pilotState.completedSteps,
             updatedAt: pilotState.lastUpdatedAt,
+            finalFeedbackSavedAt: pilotState.finalFeedbackSavedAt,
         });
 
         try {
@@ -680,15 +887,26 @@ const MTSSPilotTestingHubPage = memo(() => {
                 variant: "destructive",
             });
         }
-    }, [pilotState.completedSteps, pilotState.feedbackByStep, pilotState.finalFeedback, pilotState.lastUpdatedAt, toast, user]);
+    }, [
+        pilotState.completedSteps,
+        pilotState.feedbackByStep,
+        pilotState.finalFeedback,
+        pilotState.lastUpdatedAt,
+        pilotState.finalFeedbackSavedAt,
+        pilotState.sessionKey,
+        toast,
+        user,
+    ]);
 
     const handleDownloadJson = useCallback(() => {
         const payload = buildFeedbackExport({
             user,
+            sessionKey: pilotState.sessionKey,
             stepFeedback: pilotState.feedbackByStep,
             finalFeedback: pilotState.finalFeedback,
             completedSteps: pilotState.completedSteps,
             updatedAt: pilotState.lastUpdatedAt,
+            finalFeedbackSavedAt: pilotState.finalFeedbackSavedAt,
         });
 
         const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -702,14 +920,20 @@ const MTSSPilotTestingHubPage = memo(() => {
             title: "JSON downloaded",
             description: "Pilot feedback export is ready to share with the MTSS team.",
         });
-    }, [pilotState.completedSteps, pilotState.feedbackByStep, pilotState.finalFeedback, pilotState.lastUpdatedAt, toast, user]);
+    }, [pilotState.completedSteps, pilotState.feedbackByStep, pilotState.finalFeedback, pilotState.lastUpdatedAt, pilotState.finalFeedbackSavedAt, pilotState.sessionKey, toast, user]);
 
     const handleResetPilot = useCallback(() => {
         if (typeof window !== "undefined") {
+            window.localStorage.removeItem(buildPilotStorageKey(user));
             window.localStorage.removeItem(PILOT_PROGRESS_STORAGE_KEY);
         }
         const nextState = hydratePilotState(user);
         setPilotState(nextState);
+        setSyncState({
+            status: "idle",
+            lastSyncedAt: null,
+            error: null,
+        });
         toast({
             title: "Pilot progress reset",
             description: "All saved step feedback and completion markers have been cleared.",
@@ -741,14 +965,15 @@ const MTSSPilotTestingHubPage = memo(() => {
                                     </span>
                                 </h1>
                                 <p className="max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-white/70 sm:text-base">
-                                    Use this hub to run a focused 35–50 minute MTSS pilot. Each step tells principals what to test,
-                                    where to go, what success looks like, and how to submit feedback without leaving the workflow.
+                                    Use this hub to run a comprehensive 50–60 minute MTSS pilot covering the full workflow — from mentor
+                                    assignment and intervention creation to AI-powered insights and analytics. Each step tells principals
+                                    what to test, where to go, what success looks like, and how to submit feedback.
                                 </p>
                             </div>
                             <div className="grid gap-3 sm:grid-cols-3">
                                 <div className="rounded-[24px] border border-white/50 bg-white/80 p-4 shadow-lg dark:border-white/10 dark:bg-white/5">
                                     <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500 dark:text-white/55">Time box</p>
-                                    <p className="mt-2 text-lg font-bold text-slate-900 dark:text-white">35–50 min</p>
+                                    <p className="mt-2 text-lg font-bold text-slate-900 dark:text-white">50–60 min</p>
                                 </div>
                                 <div className="rounded-[24px] border border-white/50 bg-white/80 p-4 shadow-lg dark:border-white/10 dark:bg-white/5">
                                     <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500 dark:text-white/55">Guided steps</p>
@@ -787,6 +1012,41 @@ const MTSSPilotTestingHubPage = memo(() => {
                                     <p className="text-xs font-semibold text-slate-500 dark:text-white/55">Tester</p>
                                     <p className="mt-1 text-sm font-bold text-slate-900 dark:text-white">{user?.name || user?.nickname || "Current user"}</p>
                                     <p className="text-xs text-slate-500 dark:text-white/55">{formatRole(user?.role || "principal")}</p>
+                                </div>
+                            </div>
+
+                            <div className="mt-4 rounded-2xl border border-white/50 bg-white/75 px-4 py-3 dark:border-white/10 dark:bg-white/5">
+                                <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+                                    <div>
+                                        <p className="font-semibold text-slate-700 dark:text-white">
+                                            Review sync:{" "}
+                                            <span
+                                                className={cn(
+                                                    syncState.status === "error"
+                                                        ? "text-rose-600 dark:text-rose-300"
+                                                        : syncState.status === "synced"
+                                                            ? "text-emerald-600 dark:text-emerald-300"
+                                                            : "text-amber-600 dark:text-amber-300",
+                                                )}
+                                            >
+                                                {syncState.status === "syncing"
+                                                    ? "syncing now"
+                                                    : syncState.status === "synced"
+                                                        ? "live in admin review"
+                                                        : syncState.status === "error"
+                                                            ? "sync issue"
+                                                            : "waiting for first change"}
+                                            </span>
+                                        </p>
+                                        <p className="mt-1 text-slate-500 dark:text-white/55">
+                                            {syncState.lastSyncedAt
+                                                ? `Last synced: ${new Date(syncState.lastSyncedAt).toLocaleString()}`
+                                                : "Your testing notes stay in this browser and sync automatically after changes."}
+                                        </p>
+                                    </div>
+                                    {syncState.error ? (
+                                        <span className="max-w-[18rem] text-right text-rose-600 dark:text-rose-300">{syncState.error}</span>
+                                    ) : null}
                                 </div>
                             </div>
 
@@ -885,14 +1145,47 @@ const MTSSPilotTestingHubPage = memo(() => {
                     </div>
                 </section>
 
+                <section className="rounded-[32px] border border-white/35 bg-white/85 p-6 shadow-[0_25px_80px_rgba(15,23,42,0.15)] dark:border-white/10 dark:bg-white/5">
+                    <div className="flex items-center gap-3">
+                        <div className="rounded-2xl bg-gradient-to-br from-[#0ea5e9] via-[#6366f1] to-[#ec4899] p-3 text-white shadow-lg">
+                            <ClipboardCheck className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500 dark:text-white/55">Principal briefing notes</p>
+                            <h2 className="text-2xl font-black text-slate-900 dark:text-white">What principals should be able to explain to teachers after this pilot</h2>
+                        </div>
+                    </div>
+
+                    <div className="mt-6 grid gap-4 lg:grid-cols-3">
+                        {principalBriefingChecklist.map((item) => (
+                            <div
+                                key={item.id}
+                                className="rounded-[24px] border border-white/45 bg-gradient-to-br from-[#eff6ff]/80 via-white to-[#fff7ed]/70 p-5 dark:border-white/10 dark:from-white/5 dark:via-white/10 dark:to-white/5"
+                            >
+                                <h3 className="text-sm font-black uppercase tracking-[0.18em] text-slate-800 dark:text-white">
+                                    {item.title}
+                                </h3>
+                                <ul className="mt-4 space-y-2 text-sm leading-relaxed text-slate-700 dark:text-white/75">
+                                    {item.points.map((point) => (
+                                        <li key={point} className="flex gap-2">
+                                            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-900 dark:bg-white" />
+                                            <span>{point}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+
                 <section className="space-y-5">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                         <div>
                             <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500 dark:text-white/55">Guided scenario document</p>
-                            <h2 className="text-3xl font-black text-slate-900 dark:text-white">8-step pilot checklist</h2>
+                            <h2 className="text-3xl font-black text-slate-900 dark:text-white">{pilotSteps.length}-step pilot checklist</h2>
                         </div>
                         <p className="max-w-2xl text-sm text-slate-600 dark:text-white/70">
-                            Each card gives the test goal, the action to perform, the expected outcome, and the feature coverage touched by that checkpoint.
+                            Each card gives the test goal, the principal task, the action to perform, the expected outcome, and the coaching notes that principal can reuse when explaining the feature to teachers.
                         </p>
                     </div>
 
@@ -957,13 +1250,58 @@ const MTSSPilotTestingHubPage = memo(() => {
                                                 </div>
                                             </div>
 
+                                            <div className="grid gap-5 lg:grid-cols-[0.9fr_1fr_1fr]">
+                                                <div className="space-y-2">
+                                                    <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500 dark:text-white/55">Principal task</p>
+                                                    <p className="text-sm leading-relaxed text-slate-700 dark:text-white/75">{step.principalTask}</p>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500 dark:text-white/55">Technical focus</p>
+                                                    <ul className="space-y-2 text-sm leading-relaxed text-slate-700 dark:text-white/75">
+                                                        {(step.technicalFocus || []).map((item) => (
+                                                            <li key={item} className="flex gap-2">
+                                                                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-900 dark:bg-white" />
+                                                                <span>{item}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500 dark:text-white/55">How to explain this to teachers</p>
+                                                    <ul className="space-y-2 text-sm leading-relaxed text-slate-700 dark:text-white/75">
+                                                        {(step.teacherTalkingPoints || []).map((item) => (
+                                                            <li key={item} className="flex gap-2">
+                                                                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-900 dark:bg-white" />
+                                                                <span>{item}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            </div>
+
+                                            {Array.isArray(step.pageHints) && step.pageHints.length > 0 && (
+                                                <div className="space-y-2">
+                                                    <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500 dark:text-white/55">Pages to open in this step</p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {step.pageHints.map((page) => (
+                                                            <span
+                                                                key={page}
+                                                                className="rounded-full border border-sky-200 bg-sky-50/90 px-3 py-1 text-[11px] font-semibold text-sky-700 dark:border-sky-400/20 dark:bg-sky-500/10 dark:text-sky-200"
+                                                            >
+                                                                {page}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             <div className="flex flex-wrap gap-2">
                                                 {step.featureKeys.map((feature) => (
                                                     <span
                                                         key={feature}
                                                         className="rounded-full border border-white/50 bg-white/85 px-3 py-1 text-[11px] font-semibold text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-white/70"
                                                     >
-                                                        {feature}
+                                                        {formatFeatureKey(feature)}
                                                     </span>
                                                 ))}
                                             </div>
@@ -981,6 +1319,9 @@ const MTSSPilotTestingHubPage = memo(() => {
                                             </div>
                                             <p className="text-xs leading-relaxed text-slate-500 dark:text-white/55">
                                                 Completion: <span className="font-semibold text-slate-800 dark:text-white">{feedback.completionStatus}</span>
+                                            </p>
+                                            <p className="text-xs leading-relaxed text-slate-500 dark:text-white/55">
+                                                Explainability to teachers: <span className="font-semibold text-slate-800 dark:text-white">{feedback.clarity}/5 clarity</span>
                                             </p>
 
                                             <div className="grid gap-2">
@@ -1002,6 +1343,43 @@ const MTSSPilotTestingHubPage = memo(() => {
                                 </article>
                             );
                         })}
+                    </div>
+                </section>
+
+                <section className="rounded-[32px] border border-white/35 bg-gradient-to-br from-[#eff6ff]/90 via-[#fdf4ff]/90 to-[#fff7ed]/90 p-6 shadow-[0_25px_80px_rgba(15,23,42,0.15)] dark:border-white/10 dark:from-[#0f1730]/90 dark:via-[#180d2f]/90 dark:to-[#08243b]/90">
+                    <div className="flex items-center gap-3">
+                        <div className="rounded-2xl bg-gradient-to-br from-[#6366f1] via-[#ec4899] to-[#f97316] p-3 text-white shadow-lg">
+                            <Bot className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500 dark:text-white/55">AI Assistant</p>
+                            <h2 className="text-2xl font-black text-slate-900 dark:text-white">Tips & Tricks for Using the AI Assistant</h2>
+                        </div>
+                    </div>
+                    <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-white/70">
+                        The MTSS system includes AI-powered features designed to save time and surface insights that might be missed manually.
+                        These tips will help you get the most out of each AI capability during the pilot and beyond.
+                    </p>
+                    <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        {aiTipsAndTricks.map((tip) => (
+                            <div
+                                key={tip.id}
+                                className="rounded-[24px] border border-white/45 bg-white/85 p-5 shadow-lg transition hover:shadow-xl dark:border-white/10 dark:bg-white/5"
+                            >
+                                <div className="flex items-start gap-3">
+                                    <div className="mt-0.5 rounded-xl bg-gradient-to-br from-[#6366f1] to-[#ec4899] p-2 text-white">
+                                        <Lightbulb className="h-4 w-4" />
+                                    </div>
+                                    <div className="flex-1 space-y-2">
+                                        <h3 className="text-sm font-black text-slate-800 dark:text-white">{tip.title}</h3>
+                                        <p className="text-xs leading-relaxed text-slate-600 dark:text-white/70">{tip.description}</p>
+                                        <span className="inline-block rounded-full border border-indigo-200 bg-indigo-50/80 px-3 py-1 text-[10px] font-semibold text-indigo-700 dark:border-indigo-400/30 dark:bg-indigo-500/10 dark:text-indigo-300">
+                                            {tip.applicableTo}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </section>
 

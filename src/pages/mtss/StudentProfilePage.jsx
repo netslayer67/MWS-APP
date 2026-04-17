@@ -70,8 +70,6 @@ const StudentProfilePage = memo(() => {
         monitoringMethodLabel,
         startDateLabel,
         notesLabel,
-        isKindergartenQualitative,
-        latestSignal,
     } = useMemo(
         () => buildStudentProfileView(student, selectedIntervention),
         [student, selectedIntervention],
@@ -117,8 +115,6 @@ const StudentProfilePage = memo(() => {
                         highlight={highlight}
                         currentTier={currentIntervention?.tier}
                         currentInterventionLabel={currentIntervention?.label}
-                        isKindergartenQualitative={isKindergartenQualitative}
-                        latestSignal={latestSignal}
                     />
 
                     <div className="p-2 sm:p-6 lg:p-8 space-y-2.5 sm:space-y-6">
@@ -129,7 +125,6 @@ const StudentProfilePage = memo(() => {
                             selectedIntervention={selectedIntervention}
                             onSelect={handleSelectIntervention}
                             glassStyles={glassStyles}
-                            isKindergartenQualitative={isKindergartenQualitative}
                         />
 
                         <AnimatePresence mode="wait">

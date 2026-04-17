@@ -3,7 +3,6 @@ import { CircleDot, Sparkles, Star, TrendingUp } from "lucide-react";
 import { buildStudentProfileView } from "../utils/studentProfileUtils";
 import { formatMentorDisplay } from "../utils/mentorNameUtils";
 import EvidenceViewer from "../components/EvidenceViewer";
-import { useToast } from "@/components/ui/use-toast";
 import {
     buildFallbackChart,
     buildTrendSeries,
@@ -21,31 +20,6 @@ const SUBJECT_EMOJI_MAP = {
     INDONESIAN: "🇮🇩",
 };
 
-const SIGNAL_BADGE_MAP = {
-    emerging: "bg-amber-100 text-amber-700 dark:bg-amber-900/35 dark:text-amber-300",
-    developing: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/35 dark:text-emerald-300",
-    consistent: "bg-green-100 text-green-700 dark:bg-green-900/35 dark:text-green-300",
-};
-
-const TAG_LABELS = {
-    emotional_regulation: "Emotional Regulation",
-    language: "Language",
-    social: "Social",
-    motor: "Motor Skills",
-    independence: "Independence",
-};
-
-const isKindergartenQualitativeStudent = (student = {}, interventions = []) => {
-    if (student?.kindergartenPortal?.isKindergarten && student?.kindergartenPortal?.isQualitative) return true;
-    const gradePool = [student?.grade, student?.currentGrade, student?.className]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-    const isKindergarten = /(kindergarten|pre[-\s]?k|\bk\s*1\b|\bk\s*2\b|kindy)/i.test(gradePool);
-    const hasQualitative = Array.isArray(interventions) && interventions.some((entry) => entry?.mode === "qualitative");
-    return isKindergarten && hasQualitative;
-};
-
 const formatReviewDate = (value, fallback = "Awaiting schedule") => {
     if (!value) return fallback;
     try {
@@ -54,13 +28,6 @@ const formatReviewDate = (value, fallback = "Awaiting schedule") => {
         return fallback;
     }
 };
-
-const toReadableToken = (value = "") =>
-    String(value || "")
-        .replace(/_/g, " ")
-        .replace(/\s+/g, " ")
-        .trim()
-        .replace(/\b\w/g, (char) => char.toUpperCase());
 
 const resolveInterventionGoal = (intervention, fallback) => {
     if (!intervention) return fallback;
@@ -73,14 +40,7 @@ const resolveInterventionGoal = (intervention, fallback) => {
     return intervention.strategyName || intervention.focusArea || fallback;
 };
 
-const StudentProgressPanel = ({
-    student,
-    isLoading = false,
-    portalViewMode = "student",
-    onSubmitMoodCheckin,
-    isSubmittingMood = false,
-}) => {
-    const { toast } = useToast();
+const StudentProgressPanel = ({ student, isLoading = false }) => {
     const studentProfileView = useMemo(() => {
         if (!student) {
             return {
@@ -123,47 +83,6 @@ const StudentProgressPanel = ({
         if (!visibleSubjects.length) return currentIntervention || null;
         return visibleSubjects.find((item) => item.type === activeSubjectType) || currentIntervention || visibleSubjects[0];
     }, [activeSubjectType, currentIntervention, visibleSubjects]);
-    const kindergartenPortal = student?.kindergartenPortal || null;
-    const isKindergartenQualitative = isKindergartenQualitativeStudent(student, visibleSubjects);
-    const [selectedMood, setSelectedMood] = useState("");
-    const [selectedRegulation, setSelectedRegulation] = useState("");
-    const [moodNote, setMoodNote] = useState("");
-
-    useEffect(() => {
-        const today = kindergartenPortal?.moodCheckin?.today;
-        if (!today) {
-            setSelectedMood("");
-            setSelectedRegulation("");
-            setMoodNote("");
-            return;
-        }
-        setSelectedMood(today.mood || "");
-        setSelectedRegulation(today.regulationChoice || "");
-        setMoodNote(today.note || "");
-    }, [kindergartenPortal?.moodCheckin?.today]);
-
-    const handleMoodSubmit = async () => {
-        if (!student?.id || !selectedMood) return;
-        if (!onSubmitMoodCheckin) return;
-        try {
-            await onSubmitMoodCheckin(student.id, {
-                mood: selectedMood,
-                regulationChoice: selectedRegulation || undefined,
-                note: moodNote.trim() || undefined,
-                source: portalViewMode === "parent_proxy" ? "parent_proxy" : "student",
-            });
-            toast({
-                title: "Mood check-in saved",
-                description: "Your daily mood check-in has been recorded.",
-            });
-        } catch (error) {
-            toast({
-                title: "Unable to save mood check-in",
-                description: error?.response?.data?.message || error?.message || "Please try again.",
-                variant: "destructive",
-            });
-        }
-    };
 
     if (isLoading) {
         return (
@@ -177,225 +96,6 @@ const StudentProgressPanel = ({
         return (
             <div className="rounded-[30px] border border-white/80 bg-white/90 p-8 text-center text-sm text-slate-700 shadow-sm dark:border-white/20 dark:bg-slate-900/82 dark:text-slate-200">
                 Student profile data is not available yet.
-            </div>
-        );
-    }
-
-    if (isKindergartenQualitative) {
-        const growthBoard = kindergartenPortal?.growthBoard || {};
-        const moodCheckin = kindergartenPortal?.moodCheckin || {};
-        const growthCards = Array.isArray(growthBoard.cards) ? growthBoard.cards : [];
-        const moodOptions = Array.isArray(moodCheckin.options) ? moodCheckin.options : [];
-        const regulationOptions = Array.isArray(moodCheckin.regulationOptions) ? moodCheckin.regulationOptions : [];
-        const moodHistoryEntries = Array.isArray(moodCheckin.recent) ? moodCheckin.recent.slice(0, 7) : [];
-        const moodOptionMap = new Map(moodOptions.map((option) => [option.value, option]));
-        const regulationOptionMap = new Map(regulationOptions.map((option) => [option.value, option]));
-        const moodLocked = portalViewMode === "parent_proxy";
-
-        return (
-            <div className="space-y-5">
-                <div className="rounded-[34px] border border-white/80 bg-white/90 p-5 shadow-[0_14px_36px_rgba(16,185,129,0.12)] backdrop-blur-xl dark:border-white/20 dark:bg-slate-900/82">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                            <p className="text-xs uppercase tracking-[0.35em] text-slate-600 dark:text-slate-200">My Growth Board</p>
-                            <h3 className="text-2xl font-black text-slate-800 dark:text-white">I Can! Portfolio</h3>
-                            <p className="mt-1 text-sm text-slate-600 dark:text-slate-200">
-                                Unlock cards from real classroom evidence and keep collecting growth stamps.
-                            </p>
-                        </div>
-                        <div className="rounded-2xl border border-white/80 bg-white/88 px-4 py-2 text-sm font-semibold text-slate-800 dark:border-white/20 dark:bg-slate-800/70 dark:text-slate-100">
-                            Stamps: {growthBoard?.stampCount || 0} / {growthBoard?.milestone?.target || 5}
-                        </div>
-                    </div>
-
-                    {growthCards.length > 0 ? (
-                        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                            {growthCards.slice(0, 12).map((card) => {
-                                const cover = card?.imageEvidence?.[0]?.url || null;
-                                return (
-                                    <div
-                                        key={card.id}
-                                        className="overflow-hidden rounded-2xl border border-white/80 bg-white/92 shadow-sm dark:border-white/20 dark:bg-slate-800/72"
-                                    >
-                                        {cover ? (
-                                            <img src={cover} alt={card.caption || "Growth evidence"} className="h-36 w-full object-cover" />
-                                        ) : (
-                                            <div className="h-36 w-full bg-gradient-to-br from-fuchsia-100 via-violet-100 to-cyan-100 dark:from-fuchsia-900/40 dark:via-violet-900/35 dark:to-cyan-900/35" />
-                                        )}
-                                        <div className="space-y-2 p-3">
-                                            <div className="flex items-center justify-between gap-2">
-                                                <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-300">{card.dateLabel}</p>
-                                                {card.signal && (
-                                                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold capitalize ${SIGNAL_BADGE_MAP[card.signal] || "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"}`}>
-                                                        {card.signal}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{card.caption}</p>
-                                            {Array.isArray(card.tags) && card.tags.length > 0 && (
-                                                <div className="flex flex-wrap gap-1">
-                                                    {card.tags.map((tag) => (
-                                                        <span key={`${card.id}-${tag}`} className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-200">
-                                                            {TAG_LABELS[tag] || tag}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            )}
-                                            {Array.isArray(card.audioEvidence) && card.audioEvidence.length > 0 && (
-                                                <p className="text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
-                                                    Voice note available
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ) : (
-                        <div className="mt-4 rounded-2xl border border-white/80 bg-gradient-to-r from-emerald-50 to-cyan-50 px-4 py-3 text-sm text-slate-700 dark:border-white/20 dark:from-emerald-950/55 dark:to-cyan-950/55 dark:text-slate-200">
-                            Growth cards will appear when teachers upload evidence with developing or consistent signals.
-                        </div>
-                    )}
-                </div>
-
-                <div className="rounded-[30px] border border-white/80 bg-white/90 p-5 shadow-md backdrop-blur-xl dark:border-white/20 dark:bg-slate-900/82 space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-xs uppercase tracking-[0.35em] text-slate-600 dark:text-slate-200">Daily Check-in</p>
-                            <h3 className="text-lg font-black text-slate-800 dark:text-white">How do I feel today?</h3>
-                        </div>
-                        {moodCheckin?.today?.dateLabel && (
-                            <span className="rounded-full border border-white/70 bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 dark:border-white/20 dark:bg-slate-800/70 dark:text-slate-100">
-                                Last: {moodCheckin.today.dateLabel}
-                            </span>
-                        )}
-                    </div>
-
-                    {moodLocked ? (
-                        <div className="rounded-2xl border border-blue-200 bg-blue-50/90 px-4 py-3 text-sm text-blue-700 dark:border-blue-400/25 dark:bg-blue-400/10 dark:text-blue-300">
-                            Parent Proxy mode keeps mood check-in read-only. Switch to Student View to submit today's mood.
-                        </div>
-                    ) : (
-                        <>
-                            <div className="grid gap-2 sm:grid-cols-5">
-                                {moodOptions.map((option) => (
-                                    <button
-                                        key={option.value}
-                                        type="button"
-                                        onClick={() => setSelectedMood(option.value)}
-                                        className={`rounded-2xl border px-3 py-2 text-sm font-semibold transition ${
-                                            selectedMood === option.value
-                                                ? "border-violet-300 bg-violet-100 text-violet-700 dark:border-violet-300/55 dark:bg-violet-900/50 dark:text-violet-100"
-                                                : "border-white/80 bg-white/92 text-slate-700 dark:border-white/20 dark:bg-slate-800/72 dark:text-slate-200"
-                                        }`}
-                                    >
-                                        <span className="mr-1">{option.icon}</span>
-                                        {option.label}
-                                    </button>
-                                ))}
-                            </div>
-
-                            <div>
-                                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-300">
-                                    Optional calming choice
-                                </p>
-                                <div className="grid gap-2 sm:grid-cols-3">
-                                    {regulationOptions.map((option) => (
-                                        <button
-                                            key={option.value}
-                                            type="button"
-                                            onClick={() => setSelectedRegulation(option.value)}
-                                            className={`rounded-xl border px-3 py-2 text-sm font-medium transition ${
-                                                selectedRegulation === option.value
-                                                    ? "border-emerald-300 bg-emerald-100 text-emerald-700 dark:border-emerald-300/55 dark:bg-emerald-900/40 dark:text-emerald-200"
-                                                    : "border-white/80 bg-white/92 text-slate-700 dark:border-white/20 dark:bg-slate-800/72 dark:text-slate-200"
-                                            }`}
-                                        >
-                                            <span className="mr-1">{option.icon}</span>
-                                            {option.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <textarea
-                                value={moodNote}
-                                onChange={(event) => setMoodNote(event.target.value)}
-                                placeholder="Optional note (what happened today)"
-                                className="w-full rounded-2xl border border-white/75 bg-white/88 px-4 py-3 text-sm text-slate-700 focus:border-violet-300 focus:outline-none dark:border-white/20 dark:bg-slate-800/72 dark:text-slate-100"
-                                rows={2}
-                                maxLength={220}
-                            />
-
-                            <button
-                                type="button"
-                                onClick={handleMoodSubmit}
-                                disabled={!selectedMood || isSubmittingMood}
-                                className="inline-flex items-center rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 px-4 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                                {isSubmittingMood ? "Saving..." : "Save Daily Mood"}
-                            </button>
-                        </>
-                    )}
-                </div>
-
-                <div className="rounded-[30px] border border-white/80 bg-white/90 p-5 shadow-md backdrop-blur-xl dark:border-white/20 dark:bg-slate-900/82 space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-xs uppercase tracking-[0.35em] text-slate-600 dark:text-slate-200">Mood History</p>
-                            <h3 className="text-lg font-black text-slate-800 dark:text-white">Last 7 Days</h3>
-                        </div>
-                        <span className="rounded-full border border-white/70 bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 dark:border-white/20 dark:bg-slate-800/70 dark:text-slate-100">
-                            {moodHistoryEntries.length} records
-                        </span>
-                    </div>
-
-                    {moodHistoryEntries.length > 0 ? (
-                        <div className="space-y-2">
-                            {moodHistoryEntries.map((entry, idx) => {
-                                const moodMeta = moodOptionMap.get(entry?.mood);
-                                const regulationMeta = regulationOptionMap.get(entry?.regulationChoice);
-                                const sourceLabel = entry?.source === "parent_proxy" ? "Parent Proxy" : "Student";
-                                return (
-                                    <div
-                                        key={entry?.id || `${entry?.date || "mood"}-${idx}`}
-                                        className="rounded-2xl border border-white/80 bg-white/92 p-3 dark:border-white/20 dark:bg-slate-800/72"
-                                    >
-                                        <div className="flex flex-wrap items-center justify-between gap-2">
-                                            <p className="text-xs font-semibold text-slate-500 dark:text-slate-300">
-                                                {entry?.dateLabel || "-"}
-                                            </p>
-                                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-200">
-                                                {sourceLabel}
-                                            </span>
-                                        </div>
-
-                                        <div className="mt-2 flex flex-wrap gap-2">
-                                            <span className="rounded-full bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-700 dark:bg-violet-900/45 dark:text-violet-100">
-                                                {moodMeta?.icon || "🙂"} {moodMeta?.label || toReadableToken(entry?.mood || "Not set")}
-                                            </span>
-                                            {entry?.regulationChoice && (
-                                                <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
-                                                    {regulationMeta?.icon || "🌿"} {regulationMeta?.label || toReadableToken(entry.regulationChoice)}
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        {entry?.note && (
-                                            <p className="mt-2 text-sm text-slate-700 dark:text-slate-200">
-                                                {entry.note}
-                                            </p>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ) : (
-                        <div className="rounded-2xl border border-white/80 bg-gradient-to-r from-violet-50 to-cyan-50 px-4 py-3 text-sm text-slate-700 dark:border-white/20 dark:from-violet-950/55 dark:to-cyan-950/55 dark:text-slate-200">
-                            No mood records yet. Save daily mood check-ins to build this 7-day history.
-                        </div>
-                    )}
-                </div>
             </div>
         );
     }
@@ -659,7 +359,7 @@ const StudentProgressPanel = ({
                             {updates.slice(0, 4).map((update, index) => (
                                 <div key={`${update.date || "update"}-${index}`} className="rounded-2xl border border-white/80 bg-gradient-to-r from-violet-50 to-pink-50 px-4 py-3 dark:border-white/20 dark:from-violet-950/70 dark:to-pink-950/60">
                                     <p className="text-sm font-bold text-violet-700 dark:text-violet-100">{update.date || "Recent"}</p>
-                                    <p className="text-sm text-slate-700 dark:text-slate-100">{update.notes || "Check-in recorded"}</p>
+                                    <p className="text-sm text-slate-700 dark:text-slate-100">{update.summary || update.notes || "Check-in recorded"}</p>
                                     {update.score !== undefined && update.score !== null && (
                                         <p className="mt-1 text-xs text-slate-600 dark:text-slate-200">Score: {formatScore(update.score, unitLabel)}</p>
                                     )}

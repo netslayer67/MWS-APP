@@ -22,7 +22,6 @@ const DEFAULT_FILTERS = {
 };
 
 const DEFAULT_VISIBLE_COUNT = 10;
-const DASHBOARD_TABS = new Set(["overview", "students", "mentors", "analytics"]);
 const DEFAULT_VIEW_STATE = {
     activeTab: "overview",
     filters: DEFAULT_FILTERS,
@@ -59,19 +58,24 @@ const normalizeTypeFilterValue = (value) => {
     return normalizeTypeOption(value)?.value || value;
 };
 
-export const useAdminDashboardState = (students = []) => {
+export const useAdminDashboardState = (students = [], availableTabs = ["overview", "students", "mentors", "analytics"]) => {
     const navigate = useNavigate();
     const location = useLocation();
     const { toast } = useToast();
+    const dashboardTabs = useMemo(() => {
+        const unique = Array.from(new Set((availableTabs || []).filter(Boolean)));
+        return unique.length ? unique : ["overview"];
+    }, [availableTabs]);
+    const dashboardTabSet = useMemo(() => new Set(dashboardTabs), [dashboardTabs]);
     const requestedTab = useMemo(() => {
         const params = new URLSearchParams(location.search);
         const tab = params.get("tab");
-        return tab && DASHBOARD_TABS.has(tab) ? tab : null;
-    }, [location.search]);
+        return tab && dashboardTabSet.has(tab) ? tab : null;
+    }, [dashboardTabSet, location.search]);
     const storageKey = useMemo(() => `mtss:dashboard-view:${location.pathname}`, [location.pathname]);
     const [viewState, setViewState] = useMtssPersistentState(storageKey, DEFAULT_VIEW_STATE);
 
-    const activeTab = typeof viewState?.activeTab === "string" ? viewState.activeTab : "overview";
+    const activeTab = dashboardTabSet.has(viewState?.activeTab) ? viewState.activeTab : dashboardTabs[0];
     const filters = useMemo(() => ({
         ...DEFAULT_FILTERS,
         ...(viewState?.filters || {}),
@@ -177,11 +181,12 @@ export const useAdminDashboardState = (students = []) => {
     }, [students]);
 
     const setActiveTab = useCallback((value) => {
+        if (!dashboardTabSet.has(value)) return;
         setViewState((prev) => ({
             ...(prev || {}),
             activeTab: value,
         }));
-    }, [setViewState]);
+    }, [dashboardTabSet, setViewState]);
 
     const handleFilterChange = useCallback((field, value) => {
         const nextValue = field === "type" ? normalizeTypeFilterValue(value) : value;

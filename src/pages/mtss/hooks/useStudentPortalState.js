@@ -10,8 +10,6 @@ import {
 import {
     fetchMtssStudentById,
     fetchMtssStudents,
-    submitKindergartenMoodCheckin,
-    submitKindergartenHomeObservation,
 } from "@/services/mtssService";
 import {
     buildGradeTierLabel,
@@ -29,8 +27,6 @@ export const useStudentPortalState = () => {
     const [error, setError] = useState(null);
     const [students, setStudents] = useState([]);
     const [activeTab, setActiveTab] = useState("progress");
-    const [isSubmittingMood, setIsSubmittingMood] = useState(false);
-    const [isSubmittingHomeObservation, setIsSubmittingHomeObservation] = useState(false);
 
     const loadStudents = useCallback(async ({ silent = false } = {}) => {
         try {
@@ -181,42 +177,6 @@ export const useStudentPortalState = () => {
         }
     }, [loadStudentDetails, loadStudents, selectedStudent]);
 
-    const submitMoodCheckin = useCallback(
-        async (studentId, payload = {}) => {
-            const targetId = studentId || selectedStudent;
-            if (!targetId) return null;
-            setIsSubmittingMood(true);
-            try {
-                const result = await submitKindergartenMoodCheckin(targetId, payload);
-                if (result?.kindergartenPortal) {
-                    setStudentDetails((prev) => (prev ? { ...prev, kindergartenPortal: result.kindergartenPortal } : prev));
-                } else {
-                    await loadStudentDetails(targetId);
-                }
-                return result;
-            } finally {
-                setIsSubmittingMood(false);
-            }
-        },
-        [loadStudentDetails, selectedStudent],
-    );
-
-    const submitHomeObservation = useCallback(
-        async (studentId, payload = {}) => {
-            const targetId = studentId || selectedStudent;
-            if (!targetId) return null;
-            setIsSubmittingHomeObservation(true);
-            try {
-                const result = await submitKindergartenHomeObservation(targetId, payload);
-                await loadStudentDetails(targetId);
-                return result;
-            } finally {
-                setIsSubmittingHomeObservation(false);
-            }
-        },
-        [loadStudentDetails, selectedStudent],
-    );
-
     return {
         selectedStudent,
         activeTab,
@@ -229,9 +189,5 @@ export const useStudentPortalState = () => {
         handleSelectStudent,
         refreshPortal,
         students,
-        submitMoodCheckin,
-        submitHomeObservation,
-        isSubmittingMood,
-        isSubmittingHomeObservation,
     };
 };

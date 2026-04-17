@@ -2,12 +2,13 @@ import { memo, Suspense, lazy, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { ClipboardCheck } from "lucide-react";
+import { ClipboardCheck, MessageSquareText } from "lucide-react";
 import useMtssObserver from "./hooks/useMtssObserver";
 import { adminTabs, heroCard, overviewIcons } from "./data/adminDashboardContent";
 import useAdminDashboardData from "./hooks/useAdminDashboardData";
 import { useAdminDashboardState } from "./hooks/useAdminDashboardState";
 import AdminHeroSection from "./admin/AdminHeroSection";
+import { canAccessPilotFeedbackAdmin } from "./utils/pilotFeedbackAccess";
 import {
     buildStaffGreeting,
     formatStaffDisplayName,
@@ -18,6 +19,7 @@ const AdminOverviewPanel = lazy(() => import("./admin/AdminOverviewPanel"));
 const AdminStudentsPanel = lazy(() => import("./admin/AdminStudentsPanel"));
 const AdminMentorsPanel = lazy(() => import("./admin/AdminMentorsPanel"));
 const AdminAnalyticsPanel = lazy(() => import("./admin/AdminAnalyticsPanel"));
+const AdminPilotFeedbackPanel = lazy(() => import("./admin/AdminPilotFeedbackPanel"));
 
 const PanelFallback = () => (
     <div className="glass glass-card p-8 text-center text-muted-foreground animate-pulse">Loading dashboard...</div>
@@ -27,6 +29,15 @@ const AdminDashboardPage = memo(() => {
     const { user } = useSelector((state) => state.auth);
     const { isObserver } = useMtssObserver();
     const navigate = useNavigate();
+    const showPilotFeedbackTab = canAccessPilotFeedbackAdmin(user);
+    const dashboardTabs = useMemo(
+        () => (
+            showPilotFeedbackTab
+                ? [...adminTabs, { key: "pilot-feedback", label: "Pilot Feedback", icon: MessageSquareText }]
+                : adminTabs
+        ),
+        [showPilotFeedbackTab],
+    );
 
     const {
         students,
@@ -64,7 +75,10 @@ const AdminDashboardPage = memo(() => {
         selectedIds,
         toggleSelection,
         resetSelection,
-    } = useAdminDashboardState(students);
+    } = useAdminDashboardState(
+        students,
+        dashboardTabs.map((tab) => tab.key),
+    );
 
     const adminHeroCard = useMemo(() => {
         const nameWithTitle = formatStaffDisplayName({
@@ -150,6 +164,8 @@ const AdminDashboardPage = memo(() => {
                         kindergartenAnalytics={kindergartenAnalytics}
                     />
                 );
+            case "pilot-feedback":
+                return showPilotFeedbackTab ? <AdminPilotFeedbackPanel /> : null;
             default:
                 return null;
         }
@@ -183,6 +199,7 @@ const AdminDashboardPage = memo(() => {
         tierMovement,
         isObserver,
         refresh,
+        showPilotFeedbackTab,
         students,
     ]);
 
@@ -197,7 +214,7 @@ const AdminDashboardPage = memo(() => {
 
             <div className="relative z-20 container-tight py-12 lg:py-16 text-foreground dark:text-white space-y-10">
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} data-aos="fade-up">
-                    <AdminHeroSection heroCard={adminHeroCard} tabs={adminTabs} activeTab={activeTab} onTabChange={setActiveTab} />
+                    <AdminHeroSection heroCard={adminHeroCard} tabs={dashboardTabs} activeTab={activeTab} onTabChange={setActiveTab} />
                 </motion.div>
 
                 <div className="flex justify-end" data-aos="fade-left" data-aos-delay="60">

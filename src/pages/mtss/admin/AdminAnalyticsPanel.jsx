@@ -1,11 +1,8 @@
-import React, { memo } from "react";
+import { memo } from "react";
 import { Activity, Sparkles } from "lucide-react";
-import KindergartenAdminInsights from "./components/KindergartenAdminInsights";
 
-const AdminAnalyticsPanel = ({ successByType, trendPaths, trendData, strategyHighlights, tierMovement, kindergartenAnalytics }) => (
+const AdminAnalyticsPanel = ({ successByType, trendPaths, trendData, strategyHighlights, tierMovement }) => (
     <div className="space-y-6">
-        <KindergartenAdminInsights analytics={kindergartenAnalytics} />
-
         <div
             className="glass glass-card mtss-card-surface p-6 rounded-[32px] space-y-5"
             data-aos="fade-up"

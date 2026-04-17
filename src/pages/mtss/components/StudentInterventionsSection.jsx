@@ -41,7 +41,6 @@ const StudentInterventionsSection = memo(({
     selectedIntervention,
     onSelect,
     glassStyles,
-    isKindergartenQualitative = false,
 }) => {
     const sectionRef = useRef(null);
     const chipsRef   = useRef([]);
@@ -130,7 +129,7 @@ const StudentInterventionsSection = memo(({
                     </div>
                     <div>
                         <h3 className="text-xs sm:text-base font-black text-foreground dark:text-white leading-tight">
-                            {isKindergartenQualitative ? "Observation Plans" : "Interventions"}
+                            Interventions
                             {total > 0 && (
                                 <span className="text-[10px] sm:text-xs font-semibold text-muted-foreground ml-1">
                                     · {total}
@@ -241,16 +240,8 @@ const StudentInterventionsSection = memo(({
             ) : (
                 <div className="text-center py-8 sm:py-12 text-muted-foreground">
                     <Star className="w-10 h-10 mx-auto mb-2 text-amber-400" />
-                    <p className="font-semibold text-sm">
-                        {isKindergartenQualitative
-                            ? "No observation plans yet"
-                            : "No active interventions"}
-                    </p>
-                    <p className="text-xs mt-1 opacity-70">
-                        {isKindergartenQualitative
-                            ? "Create a qualitative plan to start journaling."
-                            : "Universal supports are in place"}
-                    </p>
+                    <p className="font-semibold text-sm">No active interventions</p>
+                    <p className="text-xs mt-1 opacity-70">Universal supports are in place</p>
                 </div>
             )}
         </section>

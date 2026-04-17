@@ -3,7 +3,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { useLocation, useNavigate } from "react-router-dom";
 import StudentsTable from "./StudentsTable";
 import QuickUpdateModal from "./QuickUpdateModal";
-import KindergartenWeeklyFocusOverview from "./KindergartenWeeklyFocusOverview";
 import { updateMentorAssignment, uploadEvidence } from "@/services/mtssService";
 import { canUserSubmitProgressForAssignment } from "../utils/editPlanAccess";
 import { ensureStudentInterventions, getMostCriticalForDisplay } from "../utils/interventionUtils";
@@ -124,39 +123,21 @@ const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh, onEd
                     evidencePayload = uploadResult?.data?.evidence;
                 }
 
-                const isKindergarten = /kindergarten/i.test(student?.grade || student?.currentGrade || "");
                 const trimmedNotes = formState.notes?.trim() || "";
                 const parsedScoreValue = formState.scoreValue !== "" ? Number(formState.scoreValue) : undefined;
 
-                // Build CORN summary for Kindergarten if notes is empty
-                const kgSummary = isKindergarten
-                    ? [
-                        formState.observation?.trim(),
-                        formState.nextStep?.trim() ? `Next: ${formState.nextStep.trim()}` : null,
-                    ].filter(Boolean).join(" | ") || trimmedNotes || "Observation recorded"
-                    : trimmedNotes || "Quick update";
-
                 await updateMentorAssignment(assignmentId, {
-                    ...(isKindergarten && { mode: "qualitative" }),
                     checkIns: [
                         {
                             date: formState.date,
-                            summary: isKindergarten ? kgSummary : (trimmedNotes || "Quick update"),
-                            nextSteps: !isKindergarten ? (trimmedNotes || undefined) : undefined,
-                            value: !isKindergarten && Number.isFinite(parsedScoreValue) ? parsedScoreValue : undefined,
-                            unit: !isKindergarten ? formState.scoreUnit : undefined,
-                            performed: true,
-                            skipReason: !isKindergarten && formState.performed !== "yes" ? (formState.skipReason || undefined) : undefined,
-                            skipReasonNote: !isKindergarten && formState.performed !== "yes" && formState.skipReason === "other" ? (formState.skipReasonNote || undefined) : undefined,
-                            celebration: !isKindergarten ? formState.badge : undefined,
-                            // Qualitative fields
-                            signal: isKindergarten && formState.signal ? formState.signal : undefined,
-                            tags: isKindergarten && formState.tags?.length ? formState.tags : undefined,
-                            context: isKindergarten && formState.context?.trim() ? formState.context.trim() : undefined,
-                            observation: isKindergarten && formState.observation?.trim() ? formState.observation.trim() : undefined,
-                            response: isKindergarten && formState.response?.trim() ? formState.response.trim() : undefined,
-                            nextStep: isKindergarten && formState.nextStep?.trim() ? formState.nextStep.trim() : undefined,
-                            weeklyFocus: isKindergarten && formState.weeklyFocus ? formState.weeklyFocus : undefined,
+                            summary: trimmedNotes || "Quick update",
+                            nextSteps: trimmedNotes || undefined,
+                            value: Number.isFinite(parsedScoreValue) ? parsedScoreValue : undefined,
+                            unit: formState.scoreUnit,
+                            performed: formState.performed === "yes",
+                            skipReason: formState.performed !== "yes" ? (formState.skipReason || undefined) : undefined,
+                            skipReasonNote: formState.performed !== "yes" && formState.skipReason === "other" ? (formState.skipReasonNote || undefined) : undefined,
+                            celebration: formState.badge || undefined,
                             evidence: evidencePayload?.length ? evidencePayload : undefined,
                         },
                     ],
@@ -183,7 +164,6 @@ const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh, onEd
     return (
         <div className="space-y-6 mtss-theme">
             <FilterBar activeTier={activeTier} setActiveTier={setActiveTier} query={query} setQuery={setQuery} />
-            <KindergartenWeeklyFocusOverview students={filteredStudents} />
 
             <section
                 className="rounded-[32px] border border-white/40 bg-white/95 dark:bg-slate-900/40 p-6 space-y-4 shadow-[0_14px_48px_rgba(15,23,42,0.14)]"

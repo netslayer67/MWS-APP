@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from "react";
+import { memo, useState } from "react";
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { useStudentPortalState } from "./hooks/useStudentPortalState";
 import StudentSelectionView from "./student/StudentSelectionView";
@@ -24,16 +24,10 @@ const StudentPortalPage = memo(() => {
         isLoadingDetail,
         error,
         refreshPortal,
-        submitMoodCheckin,
-        submitHomeObservation,
-        isSubmittingMood,
-        isSubmittingHomeObservation,
     } = useStudentPortalState();
 
     const [isHeaderSnapped, setIsHeaderSnapped] = useState(false);
-    const [portalViewMode, setPortalViewMode] = useState("student");
     const { scrollY } = useScroll();
-    const isKindergartenPortal = Boolean(currentStudent?.kindergartenPortal?.isKindergarten);
 
     useMotionValueEvent(scrollY, "change", (latest) => {
         setIsHeaderSnapped((prev) => {
@@ -42,12 +36,6 @@ const StudentPortalPage = memo(() => {
             return prev;
         });
     });
-
-    useEffect(() => {
-        if (!isKindergartenPortal && portalViewMode !== "student") {
-            setPortalViewMode("student");
-        }
-    }, [isKindergartenPortal, portalViewMode]);
 
     if (!selectedStudent) {
         return (
@@ -103,38 +91,6 @@ const StudentPortalPage = memo(() => {
                     isHeaderSnapped={isHeaderSnapped}
                 />
 
-                {isKindergartenPortal && (
-                    <div className="ios-glass rounded-[22px] border border-white/70 bg-white/78 p-3 dark:border-white/15 dark:bg-white/5">
-                        <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-600 dark:text-slate-200">
-                            Kindergarten Portal Mode
-                        </p>
-                        <div className="mt-2 inline-flex rounded-2xl border border-white/70 bg-white/88 p-1 dark:border-white/20 dark:bg-slate-900/70">
-                            <button
-                                type="button"
-                                onClick={() => setPortalViewMode("student")}
-                                className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition ${
-                                    portalViewMode === "student"
-                                        ? "bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-sm"
-                                        : "text-slate-700 dark:text-slate-200"
-                                }`}
-                            >
-                                Student View
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setPortalViewMode("parent_proxy")}
-                                className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition ${
-                                    portalViewMode === "parent_proxy"
-                                        ? "bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-sm"
-                                        : "text-slate-700 dark:text-slate-200"
-                                }`}
-                            >
-                                Parent Proxy
-                            </button>
-                        </div>
-                    </div>
-                )}
-
                 <AnimatePresence mode="wait" initial={false}>
                     <motion.div
                         key={activeTab}
@@ -148,9 +104,6 @@ const StudentPortalPage = memo(() => {
                             <StudentProgressPanel
                                 student={currentStudent}
                                 isLoading={isLoadingDetail}
-                                portalViewMode={portalViewMode}
-                                onSubmitMoodCheckin={submitMoodCheckin}
-                                isSubmittingMood={isSubmittingMood}
                             />
                         )}
                         {activeTab === "schedule" && <StudentSchedulePanel student={currentStudent} isLoading={isLoadingDetail} />}
@@ -158,9 +111,6 @@ const StudentPortalPage = memo(() => {
                             <StudentMessagesPanel
                                 student={currentStudent}
                                 isLoading={isLoadingDetail}
-                                portalViewMode={portalViewMode}
-                                onSubmitHomeObservation={submitHomeObservation}
-                                isSubmittingHomeObservation={isSubmittingHomeObservation}
                             />
                         )}
                     </motion.div>

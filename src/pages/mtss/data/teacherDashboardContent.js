@@ -26,7 +26,6 @@ export const createDefaultInterventionForm = () => ({
     className: "",
     mode: "quantitative",
     type: "",
-    domainTags: [],
     strategyId: "",
     strategyName: "",
     tier: "tier2",
@@ -42,13 +41,6 @@ export const createDefaultInterventionForm = () => ({
     baselineUnit: "score",
     targetValue: "",
     targetUnit: "score",
-    weeklyFocus: "",
-    initialSignal: "",
-    context: "",
-    observation: "",
-    response: "",
-    nextStep: "",
-    aiPrompt: "",
 });
 
 export const createDefaultProgressForm = () => ({

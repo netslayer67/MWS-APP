@@ -74,7 +74,7 @@ export const mapAssignmentsToStudents = (assignments = [], teacherName = "MTSS M
                             metricLabel: assignment.metricLabel || null,
                             strategyId: assignment.strategyId?.toString?.() || assignment.strategyId || null,
                             strategyName,
-                            mode: assignment.mode || "quantitative",
+                            mode: "quantitative",
                             duration,
                             monitoringFrequency,
                             monitoringMethod,
@@ -159,7 +159,7 @@ export const mapAssignmentsToStudents = (assignments = [], teacherName = "MTSS M
                         return goals.length ? goals.length : Math.max(assignment.checkIns?.length || 1, 1);
                     })(),
                     progressUnit,
-                    mode: assignment.mode || "quantitative",
+                    mode: "quantitative",
                     weeklyFocusOverview: assignment.weeklyFocusOverview || null,
                     chart,
                     history,

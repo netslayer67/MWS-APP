@@ -1,7 +1,6 @@
 import api from './authService';
 
 const withData = (response) => response?.data?.data || {};
-const REQUEST_CONFIG = { skipGlobalLoading: true };
 
 const withConfig = (config = {}, params = {}) => ({ params, ...config });
 
@@ -20,21 +19,15 @@ export const fetchMtssStudents = (params = {}, config = {}) =>
     api.get('/mtss/students', withConfig(config, params)).then(withData);
 
 export const fetchMtssStudentById = (id, config = {}) => api.get(`/mtss/students/${id}`, config).then(withData);
-export const submitKindergartenMoodCheckin = (id, payload, config = {}) =>
-    api.post(`/mtss/students/${id}/kindergarten-mood-checkin`, payload, config).then(withData);
-export const submitKindergartenHomeObservation = (id, payload, config = {}) =>
-    api.post(`/mtss/students/${id}/kindergarten-home-observation`, payload, config).then(withData);
 
 export const fetchMtssMentors = (params = {}, config = {}) =>
     api.get('/mtss/mentors', withConfig(config, params)).then(withData);
 
-export const fetchKindergartenAdminAnalytics = (params = {}, config = {}) =>
-    api.get('/mtss/admin/kindergarten-analytics', withConfig(config, params)).then(withData);
+export const upsertPilotFeedbackSession = (payload, config = {}) =>
+    api.post('/mtss/pilot-feedback', payload, config).then(withData);
 
-export const fetchKindergartenInterventionBank = (config = {}) =>
-    api.get('/mtss/kindergarten/intervention-bank', config).then(withData);
-export const generateKindergartenAiDraft = (payload, config = {}) =>
-    api.post('/mtss/kindergarten/ai-draft', payload, { ...REQUEST_CONFIG, ...config }).then(withData);
+export const fetchPilotFeedbackSessions = (params = {}, config = {}) =>
+    api.get('/mtss/pilot-feedback', withConfig(config, params)).then(withData);
 
 export const createMentorAssignment = (payload, config = {}) =>
     api.post('/mtss/mentor-assignments', payload, config).then(withData);
@@ -69,12 +62,9 @@ export default {
     fetchStrategies,
     fetchMtssStudents,
     fetchMtssStudentById,
-    submitKindergartenMoodCheckin,
-    submitKindergartenHomeObservation,
     fetchMtssMentors,
-    fetchKindergartenAdminAnalytics,
-    fetchKindergartenInterventionBank,
-    generateKindergartenAiDraft,
+    upsertPilotFeedbackSession,
+    fetchPilotFeedbackSessions,
     createMentorAssignment,
     updateMentorAssignment,
     uploadEvidence,

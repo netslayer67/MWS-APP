@@ -120,36 +120,21 @@ const useTeacherDashboardActions = ({
                     evidencePayload = uploadResult?.data?.evidence;
                 }
 
-                const isKindergarten = /kindergarten/i.test(student?.grade || student?.currentGrade || "");
                 const trimmedNotes = formState.notes?.trim() || "";
                 const parsedScoreValue = formState.scoreValue !== "" ? Number(formState.scoreValue) : undefined;
-                const kgSummary = isKindergarten
-                    ? [
-                        formState.observation?.trim(),
-                        formState.nextStep?.trim() ? `Next: ${formState.nextStep.trim()}` : null,
-                    ].filter(Boolean).join(" | ") || trimmedNotes || "Observation recorded"
-                    : trimmedNotes || "Quick update";
 
                 await updateMentorAssignment(assignmentId, {
-                    ...(isKindergarten && { mode: "qualitative" }),
                     checkIns: [
                         {
                             date: formState.date,
-                            summary: isKindergarten ? kgSummary : (trimmedNotes || "Quick update"),
-                            nextSteps: !isKindergarten ? (trimmedNotes || undefined) : undefined,
-                            value: !isKindergarten && Number.isFinite(parsedScoreValue) ? parsedScoreValue : undefined,
-                            unit: !isKindergarten ? formState.scoreUnit : undefined,
-                            performed: true,
-                            skipReason: !isKindergarten && formState.performed !== "yes" ? (formState.skipReason || undefined) : undefined,
-                            skipReasonNote: !isKindergarten && formState.performed !== "yes" && formState.skipReason === "other" ? (formState.skipReasonNote || undefined) : undefined,
-                            celebration: !isKindergarten ? formState.badge : undefined,
-                            signal: isKindergarten && formState.signal ? formState.signal : undefined,
-                            tags: isKindergarten && formState.tags?.length ? formState.tags : undefined,
-                            context: isKindergarten && formState.context?.trim() ? formState.context.trim() : undefined,
-                            observation: isKindergarten && formState.observation?.trim() ? formState.observation.trim() : undefined,
-                            response: isKindergarten && formState.response?.trim() ? formState.response.trim() : undefined,
-                            nextStep: isKindergarten && formState.nextStep?.trim() ? formState.nextStep.trim() : undefined,
-                            weeklyFocus: isKindergarten && formState.weeklyFocus ? formState.weeklyFocus : undefined,
+                            summary: trimmedNotes || "Quick update",
+                            nextSteps: trimmedNotes || undefined,
+                            value: Number.isFinite(parsedScoreValue) ? parsedScoreValue : undefined,
+                            unit: formState.scoreUnit,
+                            performed: formState.performed === "yes",
+                            skipReason: formState.performed !== "yes" ? (formState.skipReason || undefined) : undefined,
+                            skipReasonNote: formState.performed !== "yes" && formState.skipReason === "other" ? (formState.skipReasonNote || undefined) : undefined,
+                            celebration: formState.badge || undefined,
                             evidence: evidencePayload?.length ? evidencePayload : undefined,
                         },
                     ],

@@ -186,6 +186,8 @@ class SocketService {
     offMtssAssignment(callback) { this.off('mtss:assignment', callback); }
     onMtssRefresh(callback) { this.on('mtss:refresh', callback); }
     offMtssRefresh(callback) { this.off('mtss:refresh', callback); }
+    onMtssPilotFeedbackUpdate(callback) { this.on('mtss:pilot-feedback:update', callback); }
+    offMtssPilotFeedbackUpdate(callback) { this.off('mtss:pilot-feedback:update', callback); }
     onDevTopologyUpdate(callback) { this.on('dev-topology:update', callback); }
     offDevTopologyUpdate(callback) { this.off('dev-topology:update', callback); }
     onDevTopologySnapshot(callback) { this.on('dev-topology:snapshot', callback); }

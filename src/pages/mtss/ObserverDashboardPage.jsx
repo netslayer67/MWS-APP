@@ -185,7 +185,7 @@ const ObserverDashboardPage = memo(() => {
         mentorSpotlights, mentorRoster, mentors,
         successByType, trendData, trendPaths,
         strategyHighlights, tierMovement,
-        kindergartenAnalytics, loading, error, refresh,
+        loading, error, refresh,
     } = useAdminDashboardData();
 
     const {
@@ -308,7 +308,6 @@ const ObserverDashboardPage = memo(() => {
                         trendData={trendData}
                         strategyHighlights={strategyHighlights}
                         tierMovement={tierMovement}
-                        kindergartenAnalytics={kindergartenAnalytics}
                     />
                 );
             default:
@@ -319,7 +318,7 @@ const ObserverDashboardPage = memo(() => {
         filters, handleFilterChange, gradeOptions, tierOptions, typeOptions,
         mentorOptions, filteredStudents, students, visibleCount, setVisibleCount, handleViewStudent, mentors,
         refresh, mentorRoster, successByType, trendPaths, trendData,
-        strategyHighlights, tierMovement, kindergartenAnalytics,
+        strategyHighlights, tierMovement,
     ]);
 
     return (
