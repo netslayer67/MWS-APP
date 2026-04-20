@@ -28,7 +28,6 @@ const STUDENT_LIMIT = 650;
 const useAdminDashboardData = () => {
     const { user } = useSelector((state) => state.auth);
     const [students, setStudents] = useState([]);
-    const [summary, setSummary] = useState(null);
     const [assignments, setAssignments] = useState([]);
     const [mentors, setMentors] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -136,7 +135,6 @@ const useAdminDashboardData = () => {
             const scopedMentors = allMentors.filter(mentorMatchesSegments);
 
             setStudents(normalizedRoster);
-            setSummary(buildSummaryFromStudents(normalizedRoster, scopedAssignments));
             setAssignments(scopedAssignments);
             setMentors(scopedMentors);
         } catch (err) {
@@ -184,6 +182,7 @@ const useAdminDashboardData = () => {
         [students.length, mentorCount, successRate],
     );
 
+    const summary = useMemo(() => buildSummaryFromStudents(students), [students]);
     const systemSnapshot = useMemo(() => buildSystemSnapshot(summary, students), [summary, students]);
     const successByType = useMemo(() => buildSuccessByType(assignments), [assignments]);
     const { trendData, trendPaths } = useMemo(() => buildTrendData(assignments), [assignments]);

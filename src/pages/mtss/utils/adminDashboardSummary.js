@@ -22,6 +22,11 @@ const safeNumber = (value) => {
 const getTrackedAssignments = (assignments = []) =>
     assignments.filter((assignment) => ASSIGNMENT_STATUSES.has(String(assignment?.status || "").toLowerCase()));
 
+const isTieredIntervention = (entry = {}) => {
+    const tierCode = normalizeTierCode(entry?.tierCode || entry?.tier);
+    return tierCode === "tier2" || tierCode === "tier3";
+};
+
 const getAssignmentTypeMeta = (assignment = {}) => {
     const focusLabel = Array.isArray(assignment.focusAreas)
         ? assignment.focusAreas.find(Boolean)
@@ -94,23 +99,26 @@ export const buildSystemSnapshot = (summary, students = []) => {
     };
 };
 
-export const buildSummaryFromStudents = (students = [], assignments = []) => {
+export const buildSummaryFromStudents = (students = []) => {
     const tierCounts = {
         [TIER_LABELS.tier1]: 0,
         [TIER_LABELS.tier2]: 0,
         [TIER_LABELS.tier3]: 0,
     };
     const interventionCounts = {};
-    const trackedAssignments = getTrackedAssignments(assignments);
+    let activeInterventionCount = 0;
 
     students.forEach((student) => {
-        const tierLabel = TIER_LABELS[getStudentTierCode(student)] || TIER_LABELS.tier1;
+        const interventions = ensureStudentInterventions(student.interventions);
+        const primary = pickPrimaryIntervention(interventions);
+        const tierCode = getStudentTierCode(student);
+        const tierLabel = TIER_LABELS[tierCode] || TIER_LABELS.tier1;
         tierCounts[tierLabel] = (tierCounts[tierLabel] || 0) + 1;
-    });
 
-    trackedAssignments.forEach((assignment) => {
-        const { label } = getAssignmentTypeMeta(assignment);
-        interventionCounts[label] = (interventionCounts[label] || 0) + 1;
+        if (primary && isTieredIntervention(primary)) {
+            interventionCounts[primary.label] = (interventionCounts[primary.label] || 0) + 1;
+            activeInterventionCount += 1;
+        }
     });
 
     const tierBreakdown = Object.entries(tierCounts)
@@ -129,7 +137,7 @@ export const buildSummaryFromStudents = (students = [], assignments = []) => {
         total: students.length,
         tierBreakdown,
         interventions,
-        activeInterventionCount: trackedAssignments.length,
+        activeInterventionCount,
     };
 };
 
