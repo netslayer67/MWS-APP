@@ -50,9 +50,10 @@ const AdminDashboardPage = memo(() => {
         successByType,
         trendData,
         trendPaths,
+        analyticsSummary,
+        analyticsNarrative,
         strategyHighlights,
         tierMovement,
-        kindergartenAnalytics,
         loading,
         error,
         refresh,
@@ -151,6 +152,7 @@ const AdminDashboardPage = memo(() => {
                     <AdminMentorsPanel
                         mentorRoster={mentorRoster}
                         mentorDirectory={mentors}
+                        students={students}
                     />
                 );
             case "analytics":
@@ -159,9 +161,10 @@ const AdminDashboardPage = memo(() => {
                         successByType={successByType}
                         trendPaths={trendPaths}
                         trendData={trendData}
+                        analyticsSummary={analyticsSummary}
+                        analyticsNarrative={analyticsNarrative}
                         strategyHighlights={strategyHighlights}
                         tierMovement={tierMovement}
-                        kindergartenAnalytics={kindergartenAnalytics}
                     />
                 );
             case "pilot-feedback":
@@ -191,10 +194,11 @@ const AdminDashboardPage = memo(() => {
         systemSnapshot,
         recentActivity,
         mentorSpotlights,
-        kindergartenAnalytics,
         successByType,
         trendData,
         trendPaths,
+        analyticsSummary,
+        analyticsNarrative,
         strategyHighlights,
         tierMovement,
         isObserver,

@@ -18,6 +18,8 @@ import {
     buildRecentActivity,
     calculateSuccessRate,
     buildSummaryFromStudents,
+    buildAnalyticsSummary,
+    buildAnalyticsNarrative,
 } from "../utils/adminDashboardUtils";
 import useAdminDashboardSegments from "./useAdminDashboardSegments";
 
@@ -60,6 +62,19 @@ const useAdminDashboardData = () => {
     const mergeAssignment = useCallback((action, assignment) => {
         if (!assignment?._id) return;
         setAssignments((prev) => {
+            const scopedAssignment = (() => {
+                const studentList = assignment.studentIds || [];
+                if (!studentList.length) return assignment;
+                const allowed = studentList.filter((student) => withinSegments(student));
+                if (!allowed.length) return null;
+                return { ...assignment, studentIds: allowed };
+            })();
+            if (!scopedAssignment) {
+                if (action === "deleted") {
+                    return prev.filter((item) => item._id !== assignment._id);
+                }
+                return prev;
+            }
             const index = prev.findIndex((item) => item._id === assignment._id);
             if (action === "deleted") {
                 if (index === -1) return prev;
@@ -68,13 +83,13 @@ const useAdminDashboardData = () => {
                 return clone;
             }
             if (index === -1) {
-                return [...prev, assignment];
+                return [...prev, scopedAssignment];
             }
             const clone = [...prev];
-            clone[index] = assignment;
+            clone[index] = scopedAssignment;
             return clone;
         });
-    }, []);
+    }, [withinSegments]);
     const loadDashboard = useCallback(async () => {
         setLoading(true);
         setError(null);
@@ -101,7 +116,7 @@ const useAdminDashboardData = () => {
             ]);
 
             const roster = studentResponse.students || [];
-            const scopedRoster = effectiveSegments.allowedGrades.length ? roster.filter(withinSegments) : roster;
+            const scopedRoster = roster.filter(withinSegments);
             const normalizedRoster = scopedRoster.map(transformStudent);
             const studentIdSet = new Set(
                 normalizedRoster
@@ -121,7 +136,7 @@ const useAdminDashboardData = () => {
             const scopedMentors = allMentors.filter(mentorMatchesSegments);
 
             setStudents(normalizedRoster);
-            setSummary(buildSummaryFromStudents(normalizedRoster));
+            setSummary(buildSummaryFromStudents(normalizedRoster, scopedAssignments));
             setAssignments(scopedAssignments);
             setMentors(scopedMentors);
         } catch (err) {
@@ -170,12 +185,14 @@ const useAdminDashboardData = () => {
     );
 
     const systemSnapshot = useMemo(() => buildSystemSnapshot(summary, students), [summary, students]);
-    const successByType = useMemo(() => buildSuccessByType(students), [students]);
+    const successByType = useMemo(() => buildSuccessByType(assignments), [assignments]);
     const { trendData, trendPaths } = useMemo(() => buildTrendData(assignments), [assignments]);
     const mentorSpotlights = useMemo(() => buildMentorSpotlights(assignments), [assignments]);
     const mentorRoster = useMemo(() => buildMentorRoster(assignments), [assignments]);
     const strategyHighlights = useMemo(() => buildStrategyHighlights(assignments), [assignments]);
-    const tierMovement = useMemo(() => buildTierMovement(students), [students]);
+    const tierMovement = useMemo(() => buildTierMovement(students, assignments), [students, assignments]);
+    const analyticsSummary = useMemo(() => buildAnalyticsSummary(assignments), [assignments]);
+    const analyticsNarrative = useMemo(() => buildAnalyticsNarrative(students, assignments), [students, assignments]);
     const recentActivity = useMemo(() => buildRecentActivity(assignments), [assignments]);
 
     return {
@@ -187,6 +204,8 @@ const useAdminDashboardData = () => {
         successByType,
         trendData,
         trendPaths,
+        analyticsSummary,
+        analyticsNarrative,
         mentorSpotlights,
         mentorRoster,
         strategyHighlights,

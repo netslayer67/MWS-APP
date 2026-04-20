@@ -1,35 +1,45 @@
 import { OBSERVER_EMAILS } from "../hooks/useMtssObserver";
+import {
+    appendPilotTeacherPreviewRoute,
+} from "../utils/pilotTeacherPreview";
 
 export const PILOT_PROGRESS_STORAGE_KEY = "mtss:pilot-testing:progress";
 
 export const principalBriefingChecklist = [
     {
-        id: "explain-pages",
-        title: "Explain the main MTSS pages to teachers",
+        id: "navigation-first",
+        title: "Start from the MTSS home flow",
         points: [
-            "Create interventions in /mtss/teacher?tab=create.",
-            "Edit plans and submit progress updates from /mtss/teacher?tab=students.",
-            "Principal oversight happens in /mtss/admin.",
-            "Test the AI Assistant in /ai-assistant.",
+            "Use Start step to open MTSS in a new tab, then move through the product from the normal landing page instead of being dropped directly into deep pages.",
+            "Admin review starts from /mtss/admin?tab=overview, then principals navigate to the needed tab on their own.",
+            "Teacher-experience steps start from the Teacher Dashboard so principals understand the real navigation teachers will use.",
         ],
     },
     {
-        id: "explain-minimum-fields",
-        title: "Emphasize the core fields teachers must understand",
+        id: "ownership-model",
+        title: "Explain the ownership model clearly",
         points: [
-            "When creating an intervention: student, type, tier, strategy, goal, baseline, target, start date, monitoring frequency, and monitoring method.",
-            "When updating progress: date, performed or not, score or status, notes, and evidence when available.",
-            "When editing an intervention: revise the target, frequency, method, strategy, or notes without removing past progress history.",
+            "Homeroom teachers are automatically linked to the students in their own class.",
+            "Manual mentor assignment is only for subject-specific mentoring or another special case where the owner is not the homeroom teacher.",
+            "Principals should be able to explain why clear ownership matters before any progress update is submitted.",
         ],
     },
     {
-        id: "explain-when-to-use",
-        title: "Clarify when teachers should use each feature",
+        id: "plan-structure",
+        title: "Teach the plan structure in concrete terms",
         points: [
-            "Use Create Intervention to build a new support plan.",
-            "Use Edit Intervention to revise an active plan when the strategy or target needs adjustment.",
-            "Use Quick Update for fast daily logging.",
-            "Use the Full Progress Form for more complete and formal updates.",
+            "A complete intervention plan must include student, subject or type, tier, goal, baseline, target, start date, monitoring frequency, and monitoring method.",
+            "The workflow is quantitative for every unit, including Kindergarten.",
+            "Editing a plan should refine the active plan, while progress updates should document what happened over time without erasing the plan history.",
+        ],
+    },
+    {
+        id: "minimum-workload",
+        title: "Set the minimum pilot workload",
+        points: [
+            "Use the agreed pilot teacher account for the unit: Kindergarten = Tr. Yohana, Elementary = Tr. Tria, Junior High = Tr. Nando.",
+            "Create 5 intervention plans across 5 different students from the pilot class, with varied subjects and Tier 2 or Tier 3 combinations.",
+            "Each pilot intervention must end up with at least 3 dated progress updates, spaced one week apart.",
         ],
     },
 ];
@@ -41,27 +51,30 @@ export const pilotSteps = [
         title: "Start & Context",
         duration: "3 min",
         routeKey: "hub",
-        goal: "Understand the pilot flow, time box, and what success looks like before testing begins.",
+        primaryActionLabel: "Open briefing hub",
+        routeGuidance:
+            "The main button keeps you on the pilot hub. Use the route chips only if you want to pre-open the admin dashboard or teacher dashboard in another tab before starting the walkthrough.",
+        goal: "Understand the pilot rules, how feedback works, and which teacher account should be used for the unit.",
         principalTask:
-            "Approach this as both a reviewer and a future trainer for teachers. The principal should not only try the features, but also judge whether the workflow is clear enough to explain back to teachers without help from the product team.",
-        pageHints: ["/mtss/pilot-testing"],
+            "Approach the pilot as both a reviewer and a trainer. Every step should help the principal decide whether the workflow is clear enough to teach back to teachers without product-team assistance.",
+        pageHints: ["/mtss/pilot-testing", "/mtss/admin?tab=overview", "/mtss/teacher?tab=dashboard"],
         actions: [
-            "Read the testing objective, total duration, and submission rules.",
-            "Confirm you will complete each step in order and submit short feedback after each section.",
-            "Open the MTSS workspace only after the briefing is clear.",
+            "Read the time box, submission rules, and the teacher-account instruction for your unit before opening MTSS.",
+            "Note that Start step opens MTSS in a new tab so this guide stays available in the current tab.",
+            "Note that final feedback unlocks only after step feedback has been submitted for every guided step.",
         ],
         technicalFocus: [
-            "Make sure the principal knows which page is used for create, edit, update, admin review, and the AI Assistant.",
-            "Make sure the principal understands that feedback is submitted after each step, with final feedback at the end.",
+            "The principal should understand the difference between admin review pages and teacher working pages.",
+            "The system should feel self-guided enough that a tester can move step by step without needing live support.",
         ],
         teacherTalkingPoints: [
-            "Teachers will work mainly in the Teacher Dashboard, not the Admin Dashboard.",
-            "All units, including Kindergarten, now use the same quantitative workflow.",
-            "Every intervention must be monitored with a baseline, target, and progress updates.",
+            "Teachers mainly work from the Teacher Dashboard, while principals review the wider picture from the Admin Dashboard.",
+            "Every unit uses the same quantitative MTSS logic: baseline, target, progress updates, and evidence.",
+            "Step feedback is submitted throughout the pilot, not only at the end.",
         ],
         expectedOutcome:
-            "The principal understands the pilot structure, knows that the full test should take 50–60 minutes, and is ready to continue without extra assistance.",
-        featureKeys: ["guided-pilot-briefing", "testing-flow-clarity"],
+            "The principal understands the pilot structure, the correct teacher account for the unit, and the rule that each step becomes complete automatically after step feedback is saved.",
+        featureKeys: ["guided-pilot-briefing", "testing-flow-clarity", "new-tab-guidance", "feedback-rules"],
     },
     {
         id: "dashboard-overview",
@@ -69,56 +82,63 @@ export const pilotSteps = [
         title: "Admin Dashboard Overview",
         duration: "5 min",
         routeKey: "overview",
-        goal: "Check whether the principal can quickly interpret the MTSS overview and identify priority signals.",
+        primaryActionLabel: "Open admin overview",
+        routeGuidance:
+            "The main button opens System Overview directly because this step audits the first leadership screen principals will read.",
+        goal: "Validate whether the overview gives a truthful summary of tiers, intervention load, and the newest activity.",
         principalTask:
-            "Test whether the principal can use this dashboard to answer a teacher lead's basic questions: how many students are active, which tier is most common, and which area needs the most follow-up.",
+            "Use the overview to answer a teacher lead's first questions: how many students are visible, which tier is most urgent, and whether active intervention work is happening right now.",
         pageHints: ["/mtss/admin?tab=overview"],
         actions: [
-            "Open the MTSS Admin Dashboard → System Overview tab.",
-            "Review summary cards: total students, active interventions, tier breakdown.",
-            "Scan the recent activity feed and mentor spotlight cards.",
-            "Decide which area or student appears most urgent from the overview alone.",
+            "Open MTSS Admin Dashboard and stay on System Overview first.",
+            "Review summary cards, tier distribution, intervention types, recent activity, and mentor spotlight.",
+            "Check the logic carefully: if every visible student is still Tier 1, there should be no active intervention types shown.",
+            "Decide what feels most urgent based on the overview alone.",
         ],
         technicalFocus: [
-            "Check whether the summary cards are readable without opening students one by one.",
-            "Check whether the recent activity feed clearly explains the latest teacher activity.",
+            "Tier and intervention cards should reflect real active intervention data, not placeholder counts.",
+            "The overview should let principals spot inconsistencies quickly without opening each student one by one.",
         ],
         teacherTalkingPoints: [
-            "The overview is for principal-level system monitoring, not for entering interventions.",
-            "Teachers need to keep updates clean and consistent because the overview pulls insight from teacher activity.",
+            "The overview is for monitoring the system, not for entering intervention plans.",
+            "Consistent teacher updates are what make the overview trustworthy for leadership review.",
         ],
         expectedOutcome:
-            "The principal can understand the system summary quickly and identify at least one clear priority area without guessing.",
-        featureKeys: ["overview-cards", "tier-summary", "recent-activity", "system-snapshot", "mentor-spotlight"],
+            "The principal can read the system summary quickly and confirm that Tier 1-only views do not falsely display intervention activity.",
+        featureKeys: ["overview-cards", "tier-summary", "recent-activity", "system-snapshot", "mentor-spotlight", "intervention-integrity"],
     },
     {
         id: "mentor-assignment",
         order: 2,
         title: "Mentor Assignment & Management",
         duration: "6 min",
-        routeKey: "mentors",
-        goal: "Test the full mentor assignment workflow — viewing mentors, assigning students, and confirming ownership.",
+        routeKey: "overview",
+        startRouteKey: "mentors",
+        primaryActionLabel: "Open overview, then go to mentors",
+        secondaryActionLabel: "Open mentors directly",
+        routeGuidance:
+            "The main button opens System Overview first so the principal can test the natural admin path. Use the secondary button only when you need to retest the mentor page itself without repeating the landing step.",
+        goal: "Test ownership review and the special-case mentor assignment flow without skipping the natural navigation path.",
         principalTask:
-            "Make sure the principal can explain the ownership model to teachers: who handles which students, and how workload distribution stays reasonable.",
-        pageHints: ["/mtss/admin?tab=mentors", "/mtss/admin/assign/:mentorId"],
+            "Confirm the principal can explain that class teachers already own their own class roster automatically, while manual mentor assignment is reserved for subject-specific or exceptional ownership changes.",
+        pageHints: ["/mtss/admin?tab=overview", "/mtss/admin?tab=mentors", "/mtss/admin/assign/:mentorId"],
         actions: [
-            "Open the Manage Mentors tab from the Admin Dashboard.",
-            "Browse the mentor roster — review each mentor card showing assigned students and workload.",
-            "Click Assign Students on one mentor to open the assignment page.",
-            "Select one or more students from the available list and confirm the assignment.",
-            "Return to the mentor roster and verify the assignment count has updated.",
+            "Use the main button to land on System Overview, then click Manage Mentors yourself instead of being dropped directly into the mentor page.",
+            "Review the roster and confirm that class teachers are already connected to their usual class ownership automatically.",
+            "Open one mentor assignment page only to test the manual flow for a subject-specific or special-case handoff.",
+            "If you assign a student manually, return to the roster and confirm the change appears immediately.",
         ],
         technicalFocus: [
-            "Check whether the assign-students flow is clear without extra instructions.",
-            "Check whether assignment changes become visible on the mentor roster immediately.",
+            "The page should clearly separate automatic classroom ownership from manual exception handling.",
+            "The roster should show enough ownership context that principals do not confuse homeroom coverage with special-case mentoring.",
         ],
         teacherTalkingPoints: [
-            "Clear ownership matters so progress updates are not entered by the wrong person.",
-            "Principals can use this page to review student distribution across teachers or mentors.",
+            "Teachers do not need to assign every student manually when they already own the class.",
+            "Manual mentor assignment is only needed when the support owner is someone outside the normal homeroom structure.",
         ],
         expectedOutcome:
-            "The principal can assign students to a mentor, confirm the assignment is reflected in the roster, and understand who is responsible for which students.",
-        featureKeys: ["mentor-roster", "mentor-assignment", "student-selection", "assignment-confirmation", "workload-visibility"],
+            "The principal understands the automatic classroom ownership model and can still test the manual mentor-assignment workflow for exceptions.",
+        featureKeys: ["mentor-roster", "mentor-assignment", "student-selection", "assignment-confirmation", "automatic-class-ownership", "special-case-mentoring"],
     },
     {
         id: "students-filters",
@@ -126,26 +146,31 @@ export const pilotSteps = [
         title: "Students List & Filters",
         duration: "5 min",
         routeKey: "students",
-        goal: "Validate whether the roster, search, and filters help principals narrow down students efficiently.",
+        startRouteKey: "overview",
+        primaryActionLabel: "Open all students",
+        secondaryActionLabel: "Open overview first",
+        routeGuidance:
+            "The main button opens All Students directly because filters are the core target of this step. Use the secondary button only if you also want to test the navigation path from the admin landing page.",
+        goal: "Check whether the roster, search, and filters help principals find the right students quickly from the normal admin flow.",
         principalTask:
-            "Test whether the principal can show a teacher coordinator how to find specific students quickly by grade, tier, type, and mentor.",
-        pageHints: ["/mtss/admin?tab=students"],
+            "Test whether the principal can guide a teacher lead toward the exact student list they need, using grade, tier, subject, and mentor context without getting lost.",
+        pageHints: ["/mtss/admin?tab=overview", "/mtss/admin?tab=students"],
         actions: [
-            "Open the All Students tab from the Admin Dashboard.",
-            "Filter by grade, tier, intervention type, and assigned mentor — try at least two filter combinations.",
-            "Use the search bar to find a specific student by name.",
-            "Load more students if the list supports pagination and confirm the list stays usable.",
+            "Open All Students with the main button. If you want to test the longer path too, use Open overview first and then click All Students yourself.",
+            "Try at least two filter combinations using grade, tier, intervention type, and mentor.",
+            "Search for one specific student by name and confirm the result stays consistent with the active filters.",
+            "Check whether the list remains understandable when more students are loaded.",
         ],
         technicalFocus: [
-            "Check whether filter combinations remain consistent as they are changed.",
-            "Check whether search and pagination preserve the selected filter context.",
+            "Filters should not reset unexpectedly while the principal is narrowing the roster.",
+            "Search, paging, and filter state should stay in sync so the principal always knows what is being viewed.",
         ],
         teacherTalkingPoints: [
-            "Filters and search help principals during coaching conversations with teachers.",
-            "Teacher leads can use this roster to review all students currently in Tier 2 or Tier 3.",
+            "This list is useful when principals coach teams on which students need review first.",
+            "A clean roster helps teacher leads focus on real intervention cases, not just general student lists.",
         ],
         expectedOutcome:
-            "The principal can narrow the roster confidently and the list behaves predictably without duplicate or confusing filter values.",
+            "The principal can locate targeted students confidently and the roster behaves predictably with layered filters.",
         featureKeys: ["students-roster", "grade-filter", "tier-filter", "type-filter", "mentor-filter", "search", "pagination"],
     },
     {
@@ -153,147 +178,138 @@ export const pilotSteps = [
         order: 4,
         title: "Create Intervention Plan",
         duration: "8 min",
-        routeKey: "teacher-create",
-        goal: "Test the full intervention creation flow — from student selection to plan submission, including AI-assisted drafting.",
+        routeKey: "teacher-dashboard",
+        startRouteKey: "teacher-create",
+        primaryActionLabel: "Open teacher dashboard preview",
+        secondaryActionLabel: "Open create form directly",
+        routeGuidance:
+            "The main button opens the unit teacher dashboard preview first so principals can follow the real teacher path. Use the secondary button only when you need to retest the form itself.",
+        requiresTeacherPersona: true,
+        goal: "Walk through the full teacher workflow for creating intervention plans from the real teacher starting point.",
         principalTask:
-            "Practice explaining the intervention creation order to teachers in technical terms: choose the student, choose the type and tier, fill in the strategy, goal, baseline, target, and monitoring setup, then save.",
-        pageHints: ["/mtss/teacher?tab=create"],
+            "Use the agreed teacher account for the unit and verify that a teacher can move from Teacher Dashboard to Create Intervention without confusion, then complete a full quantitative plan accurately.",
+        pageHints: ["/mtss/teacher?tab=dashboard", "/mtss/teacher?tab=create"],
         actions: [
-            "Switch to the Teacher Dashboard → Create Intervention tab.",
-            "Select a student from the dropdown and confirm the form stays consistent across Kindergarten, Elementary, and Junior High.",
-            "Select intervention type (SEL, English, Math, Behavior), tier, strategy, and set baseline/target scores.",
-            "Fill in the goal, monitoring frequency (Daily/Weekly/Bi-weekly), and monitoring method.",
-            "Set the start date and duration, then submit the plan.",
-            "Confirm the same quantitative workflow works for Kindergarten without any special mode or extra qualitative fields.",
+            "Use the main button to open the unit teacher dashboard preview, then click Create Intervention from the teacher navigation.",
+            "Create 5 intervention plans across 5 different students from the unit pilot class, with varied subjects and a mix of Tier 2 and Tier 3 plans.",
+            "For each plan, complete student, subject or type, tier, strategy, goal, baseline, target, monitoring frequency, monitoring method, and start date.",
+            "Confirm the same quantitative structure works in exactly the same way for Kindergarten, Elementary, and Junior High.",
         ],
         technicalFocus: [
-            "Mandatory understanding: student, type, tier, goal, start date, monitoring frequency, monitoring method.",
-            "Recommended field discipline: baseline and target should be quantitative and realistic.",
-            "The strategy field explains the teacher's approach; it does not replace the goal.",
+            "Baseline and target should be measurable values, not narrative statements.",
+            "Teachers need to understand that the strategy explains the support method, while the goal describes the gap being closed.",
+            "The create flow should make it obvious which fields are required before the plan can be saved.",
         ],
         teacherTalkingPoints: [
-            "The goal explains the gap being addressed, the baseline shows the starting point, and the target defines the expected outcome.",
-            "Monitoring frequency explains how often progress is checked; monitoring method explains how the teacher measures it.",
-            "Teachers should create new interventions from the Create tab, not from the Admin page.",
+            "Start from Teacher Dashboard, then move to Create Intervention when a new support plan is needed.",
+            "The plan should explain the gap, the starting point, the target, and how progress will be measured.",
+            "MTSS stays quantitative in every unit, including Kindergarten.",
         ],
         expectedOutcome:
-            "The intervention plan is created successfully and the principal sees one consistent quantitative workflow across all units.",
-        featureKeys: [
-            "intervention-creation",
-            "student-selection",
-            "type-selection",
-            "tier-configuration",
-            "strategy-bank",
-            "goal-setting",
-            "monitoring-setup",
-            "cross-unit-consistency",
-        ],
+            "Five pilot interventions can be created from the teacher workflow without ambiguity, using one consistent quantitative form across all units.",
+        featureKeys: ["intervention-creation", "teacher-navigation", "student-selection", "type-selection", "tier-configuration", "goal-setting", "monitoring-setup", "cross-unit-consistency"],
     },
     {
         id: "edit-intervention",
         order: 5,
         title: "Edit Intervention Plan",
         duration: "5 min",
-        routeKey: "teacher-students",
-        goal: "Verify that existing intervention plans can be modified — change settings, update goals, and review the change log.",
+        routeKey: "teacher-dashboard",
+        startRouteKey: "teacher-students",
+        primaryActionLabel: "Open teacher dashboard preview",
+        secondaryActionLabel: "Open My Students directly",
+        routeGuidance:
+            "The main button opens the teacher dashboard preview so the principal can move like a teacher. Use the secondary button only for a shorter retest of the student list and edit flow.",
+        requiresTeacherPersona: true,
+        goal: "Verify that teachers can revise active plans without breaking plan history or confusing the original intent of the intervention.",
         principalTask:
-            "Make sure the principal can clearly explain to teachers when to edit an active plan instead of creating a new plan or jumping straight to a progress update.",
-        pageHints: ["/mtss/teacher?tab=students", "/mtss/teacher?tab=edit"],
+            "Make sure the principal can explain when a teacher should edit the active plan instead of creating a new one or jumping straight into a progress update.",
+        pageHints: ["/mtss/teacher?tab=dashboard", "/mtss/teacher?tab=students", "/mtss/teacher?tab=edit"],
         actions: [
-            "From the Teacher Dashboard → My Students tab, find a student with an active intervention.",
-            "Click Edit Plan on the student card to open the Edit Intervention panel.",
-            "Change one setting — for example, update the monitoring frequency from Weekly to Bi-weekly, or adjust the target score.",
-            "Add or modify a note in the plan description.",
-            "Save the changes and confirm a success message appears.",
-            "Tip: The system keeps a change log of all plan modifications — useful for audit and review.",
+            "Use the main button to open the teacher dashboard preview, then click My Students.",
+            "Open at least 2 active pilot interventions and choose Edit Plan.",
+            "Adjust plan details such as target, monitoring frequency, monitoring method, or strategy note.",
+            "Save the changes and verify the plan still keeps its existing progress history.",
         ],
         technicalFocus: [
-            "Commonly edited fields: target, strategy, monitoring frequency, monitoring method, and notes.",
-            "Progress history should remain intact even after the plan is edited.",
+            "Editing a plan should refine the existing intervention rather than erase or duplicate it.",
+            "Teachers should be able to recognize which fields are safe to change during a review cycle.",
         ],
         teacherTalkingPoints: [
-            "Use Edit Plan when the target or strategy needs adjustment after review.",
-            "Do not create a new intervention when only the active plan needs revision.",
-            "The change log helps principals see who changed the plan and when.",
+            "Use Edit Plan when the support approach or target needs revision after review.",
+            "Do not create a brand-new intervention if the original plan simply needs adjustment.",
         ],
         expectedOutcome:
-            "The intervention plan is updated successfully. The principal can see that changes are tracked and the modified values appear correctly.",
+            "The principal can edit active plans from the teacher workflow and confirm that plan history and progress records remain intact.",
         featureKeys: ["intervention-editing", "plan-modification", "change-log", "edit-confirmation", "audit-trail"],
     },
     {
         id: "submit-progress",
         order: 6,
         title: "Submit Progress & Quick Update",
-        duration: "6 min",
-        routeKey: "teacher-students",
-        goal: "Test both the full progress submission flow and the quick update shortcut for rapid day-to-day logging.",
+        duration: "7 min",
+        routeKey: "teacher-dashboard",
+        startRouteKey: "teacher-students",
+        primaryActionLabel: "Open teacher dashboard preview",
+        secondaryActionLabel: "Open My Students directly",
+        routeGuidance:
+            "The main button opens the teacher dashboard preview first because teachers usually reach progress work from there. Use the secondary button only to jump back into My Students during retesting.",
+        requiresTeacherPersona: true,
+        goal: "Test both fast and detailed progress logging, with enough repeated updates to prove the intervention history is usable.",
         principalTask:
-            "Try both update modes directly so the principal can teach teachers when to use Quick Update and when to use the full progress form.",
-        pageHints: ["/mtss/teacher?tab=students"],
+            "Confirm that the principal can teach teachers how to keep intervention history current through both Quick Update and the fuller progress form.",
+        pageHints: ["/mtss/teacher?tab=dashboard", "/mtss/teacher?tab=students"],
         actions: [
-            "From My Students, select a student and open their detail view.",
-            "Use the Quick Update button on the student card to open the Quick Update Modal.",
-            "In the Quick Update Modal: enter a score value, select a celebration badge, add brief notes, and submit.",
-            "Alternatively, use the full progress form: select date, mark whether the session was performed, enter score, and add detailed notes.",
-            "Repeat the same score-based quick update flow for a Kindergarten student and confirm no special qualitative fields appear.",
-            "Tip: Quick Update is designed for busy teachers who need to log progress in under 30 seconds between classes.",
+            "Use the main button to open the teacher dashboard preview, then go to My Students and open the pilot interventions for the unit class.",
+            "For every pilot intervention, make sure there are at least 3 progress updates total with different dates spaced one week apart. Add missing updates if needed.",
+            "Use Quick Update for at least one of the weekly entries and use the full progress form for at least one other entry.",
+            "Check that every saved update lands in the correct intervention history and date order.",
         ],
         technicalFocus: [
-            "Quick Update focuses on fast input: assignment, date, score, notes, celebration, and evidence.",
-            "The full progress form is better when a teacher needs to explain whether the session was performed, include a skip reason, or provide more formal notes.",
-            "Make sure each progress update is saved to the correct intervention history.",
+            "Quick Update should cover fast logging, while the full form should support more complete documentation.",
+            "The history should show correct dates, values, notes, and performed or skipped status without duplication.",
         ],
         teacherTalkingPoints: [
-            "Use Quick Update for fast daily logging or right after a short session.",
-            "Use the full progress form for more complete updates or when cleaner documentation is needed.",
-            "The score entered should still align with the goal, baseline, and target that were set earlier.",
+            "Quick Update is for fast logging; the full form is for clearer documentation when more context is needed.",
+            "Progress updates should always stay aligned with the plan's baseline, target, and monitoring method.",
         ],
         expectedOutcome:
-            "Progress is submitted successfully via both methods. The principal understands when to use Quick Update (fast, daily) vs. Full Progress Form (detailed, weekly review).",
-        featureKeys: [
-            "progress-submission",
-            "quick-update-modal",
-            "score-entry",
-            "celebration-badge",
-            "cross-unit-consistency",
-        ],
+            "Each pilot intervention shows a believable timeline with at least 3 weekly progress entries, and the principal understands when to use fast versus detailed logging.",
+        featureKeys: ["progress-submission", "quick-update-modal", "score-entry", "progress-history", "weekly-update-cadence", "cross-unit-consistency"],
     },
     {
         id: "evidence-growth",
         order: 7,
         title: "Evidence Upload & Growth Journey",
         duration: "5 min",
-        routeKey: "teacher-students",
-        goal: "Test evidence attachment and review the student's growth journey timeline to track intervention progress over time.",
+        routeKey: "teacher-dashboard",
+        startRouteKey: "teacher-students",
+        primaryActionLabel: "Open teacher dashboard preview",
+        secondaryActionLabel: "Open My Students directly",
+        routeGuidance:
+            "The main button opens the teacher dashboard preview because this step should begin from the same workspace teachers normally use. Use the secondary button only if you are repeating the evidence test.",
+        requiresTeacherPersona: true,
+        goal: "Check whether teachers can attach supporting evidence and review a meaningful growth timeline from the intervention history.",
         principalTask:
-            "Test whether the principal can explain to teachers that progress is not only about numbers, but also about evidence and a timeline of change that can be reviewed together.",
-        pageHints: ["/mtss/teacher?tab=students", "/mtss/student/:slug"],
+            "Test whether the principal can explain how evidence and the growth journey strengthen progress conversations with teachers and parents.",
+        pageHints: ["/mtss/teacher?tab=dashboard", "/mtss/teacher?tab=students", "/mtss/student/:slug"],
         actions: [
-            "From My Students, open a student who has at least one check-in recorded.",
-            "Upload an evidence file (image) to the most recent check-in entry using the Evidence Uploader.",
-            "After upload, verify the evidence appears in the Evidence Viewer — try clicking to open the lightbox view.",
-            "Open the Growth Journey section to review the student's progress timeline.",
-            "Scroll through the Growth Journey History to see how check-in values have changed over time.",
-            "Tip: Evidence uploads support images (photos of student work, observation notes). Use this to build a visual portfolio of student progress.",
+            "Use the main button to open the teacher dashboard preview, then open My Students and select one pilot intervention that already has progress history.",
+            "Upload at least one evidence file to a recent check-in.",
+            "Confirm the uploaded file appears in the evidence viewer.",
+            "Open the student's Growth Journey and check whether the timeline reflects baseline, current progress, and target clearly.",
         ],
         technicalFocus: [
-            "Evidence should attach to the relevant check-in entry.",
-            "The Growth Journey should show the relationship between baseline, current value, target, and update history.",
+            "Evidence should attach to the correct progress entry and remain easy to review afterward.",
+            "The growth journey should feel like a timeline of change, not just a list of disconnected updates.",
         ],
         teacherTalkingPoints: [
-            "Teachers can use evidence to strengthen discussions with principals or parents.",
-            "The Growth Journey helps show whether the gap is actually narrowing over time.",
+            "Evidence adds credibility when teachers explain progress to principals or parents.",
+            "The Growth Journey helps show whether the learning gap is actually closing over time.",
         ],
         expectedOutcome:
-            "Evidence is attached successfully and visible in the timeline. The Growth Journey shows a clear picture of how the student's intervention is progressing.",
-        featureKeys: [
-            "evidence-upload",
-            "evidence-viewer",
-            "evidence-lightbox",
-            "growth-journey",
-            "growth-history",
-            "progress-timeline",
-        ],
+            "Evidence can be attached cleanly and the Growth Journey makes the intervention story easier to understand over time.",
+        featureKeys: ["evidence-upload", "evidence-viewer", "evidence-lightbox", "growth-journey", "growth-history", "progress-timeline"],
     },
     {
         id: "student-detail",
@@ -301,27 +317,30 @@ export const pilotSteps = [
         title: "Student Profile & Detail View",
         duration: "5 min",
         routeKey: "students",
-        goal: "Check whether the student profile provides enough context to understand one student's full MTSS situation.",
+        startRouteKey: "overview",
+        primaryActionLabel: "Open all students",
+        secondaryActionLabel: "Open overview first",
+        routeGuidance:
+            "The main button opens All Students because the student profile should usually be reached from roster context. Use the secondary button only if you want to repeat the longer path from overview.",
+        goal: "Confirm that one student page provides enough context for follow-up coaching and decision making.",
         principalTask:
-            "Review whether a single student profile page provides enough context for principal coaching or follow-up with a teacher.",
-        pageHints: ["/mtss/admin?tab=students", "/mtss/student/:slug"],
+            "Review whether one student profile contains enough context for a principal to understand the case without needing a technical teammate to interpret it.",
+        pageHints: ["/mtss/admin?tab=overview", "/mtss/admin?tab=students", "/mtss/student/:slug"],
         actions: [
-            "Open one student from the Admin Dashboard → All Students list.",
-            "Review the student profile header: name, grade, tier, status, and assigned mentor.",
-            "Examine the intervention summary — current plan, strategy, progress status.",
-            "Check the last update timestamp and next update indicator.",
-            "Assess whether the student's story is understandable without needing to ask a technical teammate.",
+            "Open All Students with the main button and select one student from the pilot class.",
+            "Review the student's tier, intervention summary, assigned mentor, latest update, and next action indicator.",
+            "Check whether the profile tells a coherent story from plan creation through progress history.",
         ],
         technicalFocus: [
-            "Check whether the student's status, current support, latest update, and next action are easy to find.",
-            "Check whether moving from the student list to the student detail page preserves context well.",
+            "Student detail should make status, ownership, and next follow-up action easy to find quickly.",
+            "The jump from roster to profile should preserve enough context that the principal knows why the student was opened.",
         ],
         teacherTalkingPoints: [
-            "The student profile is the best place to explain one student's full story.",
-            "Teachers need to keep plans and progress updates tidy so this profile stays useful for principal review.",
+            "The student profile is the clearest place to review one student's MTSS story end to end.",
+            "Teachers need clean plans and progress data so the profile remains useful during follow-up meetings.",
         ],
         expectedOutcome:
-            "The principal can describe the student's current condition, current support plan, and what should happen next — all from the profile view.",
+            "The principal can describe the student's current support, latest progress, and likely next step from the profile alone.",
         featureKeys: ["student-profile", "intervention-summary", "progress-visibility", "last-update", "next-update", "profile-completeness"],
     },
     {
@@ -330,38 +349,32 @@ export const pilotSteps = [
         title: "AI Assistant & Smart Insights",
         duration: "7 min",
         routeKey: "teacher-dashboard",
-        goal: "Explore the AI-powered features: smart alerts, student insights, pattern detection, and the AI chat assistant.",
+        startRouteKey: "ai-assistant",
+        primaryActionLabel: "Open teacher dashboard preview",
+        secondaryActionLabel: "Open AI Assistant directly",
+        routeGuidance:
+            "The main button opens the teacher dashboard preview first because this step should start from teacher-facing alerts or insights. Use the secondary button only if you need to retest the chat page directly.",
+        requiresTeacherPersona: true,
+        goal: "Check whether AI features are practical enough to support teacher workflow, not just interesting to look at.",
         principalTask:
-            "Try the AI Assistant from a trainer's perspective: are the prompts and answers clear enough to teach to teachers, and do the results help with the real workflow?",
+            "Test the AI Assistant as a trainer: would a teacher understand how to ask useful questions, and do the responses help with real MTSS follow-up?",
         pageHints: ["/mtss/teacher?tab=dashboard", "/ai-assistant"],
         actions: [
-            "From the Teacher Dashboard, check the notification area for any AI-generated alerts.",
-            "Review an AI alert — note the alert type (academic_struggle, emotional_pattern, progress_decline, etc.), severity, and recommended actions.",
-            "Click on a student with AI insights available to see detected patterns: learning style, academic struggles, emotional trends.",
-            "Open the AI Chat Assistant (/ai-assistant) and try asking a question about a student's progress or strategy recommendation.",
-            "Tip: Ask the AI specific questions like 'What intervention strategy works best for this student's learning style?' or 'Show me the emotional trend for the past 2 weeks'.",
-            "Tip: The AI learns from conversation history — follow-up questions give better, more contextual answers.",
+            "Use the main button to open the teacher dashboard preview and review any AI alert or smart insight that appears for a pilot student.",
+            "Open AI Assistant and ask at least one plan-related question and one progress-related question.",
+            "Judge whether the responses are specific enough to support next-step decisions instead of generic advice.",
         ],
         technicalFocus: [
-            "Check whether the AI gives output that can be used to create a plan, revise a plan, or support student follow-up.",
-            "Check whether the prompts are teacher-friendly and do not require excessive technical terms.",
+            "The AI output should be understandable to teachers without heavy technical wording.",
+            "Insights should help teachers plan, revise, or follow up on interventions faster.",
         ],
         teacherTalkingPoints: [
-            "The AI Assistant is most useful when the question is specific and tied to a particular student.",
-            "AI does not replace teacher judgment, but it can speed up analysis and next-step recommendations.",
+            "The AI Assistant works best when questions are specific to one student, one plan, or one trend.",
+            "AI supports teacher judgment but does not replace it.",
         ],
         expectedOutcome:
-            "The principal understands how AI alerts flag at-risk students proactively, how pattern detection reveals learning styles and emotional trends, and how the chat assistant provides on-demand guidance.",
-        featureKeys: [
-            "ai-alerts",
-            "alert-severity",
-            "pattern-detection",
-            "learning-style",
-            "emotional-trends",
-            "ai-chat-assistant",
-            "ai-recommendations",
-            "student-insights",
-        ],
+            "The principal sees clear value in AI for insight and guidance, and can explain how teachers should use it responsibly.",
+        featureKeys: ["ai-alerts", "alert-severity", "pattern-detection", "ai-chat-assistant", "ai-recommendations", "student-insights"],
     },
     {
         id: "mentor-visibility",
@@ -369,26 +382,30 @@ export const pilotSteps = [
         title: "Mentor Visibility & Coverage",
         duration: "4 min",
         routeKey: "mentors",
-        goal: "Check whether ownership and mentor coverage are visible enough for principal decision making.",
+        startRouteKey: "overview",
+        primaryActionLabel: "Open mentors roster",
+        secondaryActionLabel: "Open overview first",
+        routeGuidance:
+            "The main button opens Manage Mentors directly because this step is about workload and ownership visibility. Use the secondary button only if you want to retest the natural path from System Overview.",
+        goal: "Confirm that principals can read workload and coverage clearly enough to make staffing decisions.",
         principalTask:
-            "Make sure the principal can explain who is doing what, and how to check teacher workload as MTSS implementation expands.",
-        pageHints: ["/mtss/admin?tab=mentors"],
+            "Check whether the principal can explain who owns which students, where workload may be uneven, and where a special-case reassignment might be needed.",
+        pageHints: ["/mtss/admin?tab=overview", "/mtss/admin?tab=mentors"],
         actions: [
-            "Return to Admin Dashboard → Manage Mentors tab.",
-            "Review the overall mentor coverage — identify any gaps where students may not have assigned mentors.",
-            "Check mentor workload distribution — are some mentors handling too many students?",
-            "Identify who appears responsible for follow-up and whether the ownership model feels clear.",
+            "Open Manage Mentors with the main button. If you also want to retest the navigation path, use Open overview first and then click Manage Mentors.",
+            "Review overall workload distribution and look for unclear ownership or overload.",
+            "Confirm that the mentor page is useful for exception handling, not a page teachers must use every day.",
         ],
         technicalFocus: [
-            "The roster should be clear enough to show ownership and potential overload.",
-            "Principals should be able to detect coverage gaps without opening student data one by one.",
+            "The roster should make workload and ownership visible without extra clicks.",
+            "Automatic class ownership and manual exception handling should stay conceptually separate.",
         ],
         teacherTalkingPoints: [
-            "Unclear ownership will lead to inconsistent progress updates.",
-            "Principals can use this page to redistribute workload during a broader rollout.",
+            "Unclear ownership leads to inconsistent progress updates and missed follow-up.",
+            "Principals use this page to review balance and special-case support, not to rebuild class ownership manually.",
         ],
         expectedOutcome:
-            "The principal can understand who is handling which support area, spot any coverage gaps, and identify where escalation or redistribution may be needed.",
+            "The principal can see coverage clearly and distinguish normal class ownership from special-case mentor reassignment.",
         featureKeys: ["mentor-roster", "ownership-visibility", "coverage-gaps", "workload-balance", "follow-up-clarity"],
     },
     {
@@ -397,29 +414,32 @@ export const pilotSteps = [
         title: "Analytics & Trends",
         duration: "5 min",
         routeKey: "analytics",
-        goal: "Evaluate whether trends and analytics are useful for strategic leadership decisions.",
+        startRouteKey: "overview",
+        primaryActionLabel: "Open analytics lab",
+        secondaryActionLabel: "Open overview first",
+        routeGuidance:
+            "The main button opens Analytics Lab directly because chart completeness and clarity are the core target here. Use the secondary button only if you want to recheck the path from System Overview.",
+        goal: "Review whether analytics are complete, useful, and clean enough for leadership-level decision making.",
         principalTask:
-            "Test whether the principal can use these analytics in strategic conversations with teacher leads, such as reviewing intervention effectiveness or tier movement.",
-        pageHints: ["/mtss/admin?tab=analytics"],
+            "Use analytics to decide whether the system provides enough signal for principal conversations about intervention effectiveness and student movement.",
+        pageHints: ["/mtss/admin?tab=overview", "/mtss/admin?tab=analytics"],
         actions: [
-            "Open Analytics Lab from the Admin Dashboard.",
-            "Review success rates by intervention type — which types show the best outcomes?",
-            "Check tier movement trends — how many students improved, remained stable, or need more support?",
-            "Look at strategy effectiveness highlights to identify which approaches work best.",
-            "Confirm Kindergarten data appears in the same quantitative analytics patterns as other units.",
-            "Note which insight is most useful and which part is hardest to interpret.",
+            "Open Analytics Lab with the main button. If you want to test the navigation path too, use Open overview first and then click Analytics Lab yourself.",
+            "Review success rate by intervention type, student progress trend, focus-area highlights, and movement summary.",
+            "Check specifically that student progress is not blank when the pilot class already has progress updates.",
+            "Note which analytic is most actionable and which part still needs UI cleanup or clearer explanation.",
         ],
         technicalFocus: [
-            "Check whether the charts and labels are clear enough to read without technical help.",
-            "Check whether the analytics produce actionable insight rather than just visuals.",
+            "Analytics should be based on real intervention plans and progress history, not placeholder values.",
+            "Labels and charts should feel readable enough for principal conversations without technical translation.",
         ],
         teacherTalkingPoints: [
-            "Principals use analytics to read broader patterns, not to replace student-by-student case review.",
-            "Teachers are still responsible for entering consistent data so analytics remain accurate.",
+            "Analytics are useful only when teachers enter consistent plans and progress updates.",
+            "Principals use analytics for pattern reading and follow-up priorities, not to replace student-by-student review.",
         ],
         expectedOutcome:
-            "The principal can identify at least one actionable insight from analytics, understand tier movement trends, and clearly describe any confusing area.",
-        featureKeys: ["analytics-lab", "intervention-success-rate", "tier-movement", "strategy-effectiveness", "trend-insights", "chart-clarity"],
+            "The principal can identify at least one actionable trend and confirm whether the analytics feel complete enough for leadership use.",
+        featureKeys: ["analytics-lab", "intervention-success-rate", "student-progress-trend", "tier-movement", "strategy-effectiveness", "chart-clarity"],
     },
     {
         id: "decision-simulation",
@@ -427,100 +447,95 @@ export const pilotSteps = [
         title: "Decision Simulation & Wrap-Up",
         duration: "5 min",
         routeKey: "students",
-        goal: "Test whether MTSS gives enough information to support a real follow-up decision — the ultimate readiness test.",
+        startRouteKey: "overview",
+        primaryActionLabel: "Open all students",
+        secondaryActionLabel: "Open overview first",
+        routeGuidance:
+            "The main button opens All Students directly so the principal can choose one case quickly for the wrap-up decision. Use the secondary button only if you want to restart from the system-wide landing view.",
+        goal: "Simulate a real follow-up decision and verify that the system provides enough evidence to support it.",
         principalTask:
-            "Conclude whether the principal feels confident enough to teach teachers how to use MTSS and make follow-up decisions based on system data.",
-        pageHints: ["/mtss/admin?tab=students", "/mtss/pilot-testing"],
+            "Conclude whether the principal feels ready to explain the teacher workflow and make a concrete MTSS follow-up decision using only what the system shows.",
+        pageHints: ["/mtss/admin?tab=overview", "/mtss/admin?tab=students", "/mtss/pilot-testing"],
         actions: [
-            "Choose one student who seems most in need of follow-up based on everything you have seen.",
-            "State what action you would take next (e.g. escalate tier, change strategy, assign additional mentor, schedule parent meeting).",
-            "Assess whether the system gave enough information to support that decision confidently.",
-            "Consider: Would you be able to explain this decision to a parent or colleague using only the information in MTSS?",
+            "Choose one student who seems most in need of review based on the overview, profile, progress history, and analytics.",
+            "State the next action you would take: keep the plan, revise the plan, escalate support, reassign ownership, or schedule a meeting.",
+            "Return to the Pilot Testing Hub and submit step feedback so the wrap-up can count as completed.",
         ],
         technicalFocus: [
-            "The final decision should be explainable using plan data, progress, ownership, and analytics from the system.",
-            "If it is not, there is likely a gap in clarity or completeness that should be captured in feedback.",
+            "The system should provide enough evidence to justify a follow-up action clearly.",
+            "If the decision still feels weak or guess-based, that gap should be captured in the feedback.",
         ],
         teacherTalkingPoints: [
-            "Teachers need to enter plans and progress consistently because that data is what principals use for real decisions.",
-            "MTSS is not just data entry; its purpose is better follow-up decisions.",
+            "Clean plan data and consistent weekly updates are what make leadership decisions possible.",
+            "MTSS is not only for data entry; it should help teams make better support decisions.",
         ],
         expectedOutcome:
-            "The principal feels confident enough to propose a concrete follow-up action using the information in MTSS, and can articulate the reasoning behind the decision.",
+            "The principal can explain one concrete action to take next and can justify it with MTSS data rather than guesswork.",
         featureKeys: ["decision-support", "actionability", "leadership-readiness", "data-driven-decisions"],
     },
 ];
 
 export const pilotFeatureCoverage = [
-    { feature: "Guided pilot briefing", steps: ["Start & Context"] },
-    { feature: "Overview cards / system snapshot", steps: ["Admin Dashboard Overview"] },
-    { feature: "Tier summary / recent activity", steps: ["Admin Dashboard Overview"] },
-    { feature: "Mentor spotlight", steps: ["Admin Dashboard Overview"] },
-    { feature: "Mentor roster & assignment", steps: ["Mentor Assignment & Management", "Mentor Visibility & Coverage"] },
-    { feature: "Student-to-mentor assignment flow", steps: ["Mentor Assignment & Management"] },
-    { feature: "Workload & coverage visibility", steps: ["Mentor Assignment & Management", "Mentor Visibility & Coverage"] },
-    { feature: "Students roster & filters", steps: ["Students List & Filters"] },
-    { feature: "Search and pagination", steps: ["Students List & Filters"] },
+    { feature: "Guided pilot briefing and feedback rules", steps: ["Start & Context"] },
+    { feature: "Overview cards and intervention integrity", steps: ["Admin Dashboard Overview"] },
+    { feature: "Tier summary and recent activity", steps: ["Admin Dashboard Overview"] },
+    { feature: "Automatic classroom ownership", steps: ["Mentor Assignment & Management", "Mentor Visibility & Coverage"] },
+    { feature: "Manual mentor assignment for special cases", steps: ["Mentor Assignment & Management"] },
+    { feature: "Students roster, filters, and search", steps: ["Students List & Filters"] },
+    { feature: "Teacher navigation from dashboard", steps: ["Create Intervention Plan", "Edit Intervention Plan", "Submit Progress & Quick Update"] },
     { feature: "Intervention creation (quantitative)", steps: ["Create Intervention Plan"] },
-    { feature: "Cross-unit intervention consistency", steps: ["Create Intervention Plan", "Submit Progress & Quick Update", "Analytics & Trends"] },
-    { feature: "Strategy bank & tier configuration", steps: ["Create Intervention Plan"] },
-    { feature: "Intervention editing & change log", steps: ["Edit Intervention Plan"] },
-    { feature: "Progress submission (full form)", steps: ["Submit Progress & Quick Update"] },
-    { feature: "Quick Update Modal (rapid logging)", steps: ["Submit Progress & Quick Update"] },
-    { feature: "Evidence upload & viewer", steps: ["Evidence Upload & Growth Journey"] },
-    { feature: "Growth Journey timeline", steps: ["Evidence Upload & Growth Journey"] },
-    { feature: "Student profile & detail view", steps: ["Student Profile & Detail View"] },
-    { feature: "Last Update / Next Update clarity", steps: ["Student Profile & Detail View"] },
-    { feature: "AI-generated alerts & severity", steps: ["AI Assistant & Smart Insights"] },
-    { feature: "Pattern detection & learning styles", steps: ["AI Assistant & Smart Insights"] },
-    { feature: "AI Chat Assistant", steps: ["AI Assistant & Smart Insights"] },
-    { feature: "Analytics Lab & trend charts", steps: ["Analytics & Trends"] },
-    { feature: "Tier movement & strategy effectiveness", steps: ["Analytics & Trends"] },
-    { feature: "Decision support / actionability", steps: ["Decision Simulation & Wrap-Up"] },
-    { feature: "Overall usability / readiness", steps: ["Final Feedback"] },
+    { feature: "Edit active plan without losing history", steps: ["Edit Intervention Plan"] },
+    { feature: "Progress submission and quick update", steps: ["Submit Progress & Quick Update"] },
+    { feature: "Weekly progress cadence", steps: ["Submit Progress & Quick Update"] },
+    { feature: "Evidence upload and Growth Journey", steps: ["Evidence Upload & Growth Journey"] },
+    { feature: "Student profile and follow-up context", steps: ["Student Profile & Detail View"] },
+    { feature: "AI Assistant and smart insights", steps: ["AI Assistant & Smart Insights"] },
+    { feature: "Analytics completeness and chart clarity", steps: ["Analytics & Trends"] },
+    { feature: "Decision support and wrap-up readiness", steps: ["Decision Simulation & Wrap-Up"] },
+    { feature: "Overall usability and rollout readiness", steps: ["Final Feedback"] },
 ];
 
 export const aiTipsAndTricks = [
     {
         id: "ai-alerts-priority",
-        title: "Prioritize AI Alerts by Severity",
+        title: "Prioritize AI alerts by urgency",
         description:
-            "AI alerts come in four severity levels: low, medium, high, and urgent. Focus on urgent and high alerts first. Each alert includes a confidence score — higher confidence means the pattern is more reliable. Use the Acknowledge → In Progress → Resolve workflow to track your response.",
+            "Review urgent and high-severity alerts first, especially when they point to declining progress or repeated support gaps. Confidence scores help you judge how strongly the system believes the pattern is real.",
         applicableTo: "Teacher Dashboard, AI Alerts",
     },
     {
         id: "ai-chat-specific-questions",
-        title: "Ask Specific Questions in AI Chat",
+        title: "Ask narrow, student-specific questions",
         description:
-            "Instead of vague questions, ask the AI specific ones: 'What learning style does Ahmad show based on recent check-ins?' or 'Suggest a Tier 2 strategy for emotional regulation in Grade 3.' The AI uses conversation history for context, so follow-up questions build on previous answers.",
+            "Questions such as 'What should I adjust in this Tier 2 math plan?' or 'Summarize the last three weekly updates for this student' lead to more useful answers than broad prompts.",
         applicableTo: "AI Chat Assistant (/ai-assistant)",
     },
     {
-        id: "ai-learning-style",
-        title: "Leverage Learning Style Detection",
+        id: "ai-plan-review",
+        title: "Use AI to review the plan before editing it",
         description:
-            "The AI analyzes student interaction patterns to detect learning styles (Visual, Auditory, Kinesthetic, Reading/Writing). Use this insight when choosing intervention strategies — match the strategy to the student's preferred learning modality for better outcomes.",
-        applicableTo: "Student AI Insights, Create Intervention",
+            "Ask the assistant whether the baseline, target, and monitoring cadence feel realistic before you edit the plan. This is especially useful when progress has stalled.",
+        applicableTo: "Teacher Dashboard, Edit Intervention",
     },
     {
-        id: "ai-emotional-patterns",
-        title: "Monitor Emotional Trend Analysis",
+        id: "ai-progress-summary",
+        title: "Use AI to summarize progress history quickly",
         description:
-            "The AI tracks emotional check-in patterns over time and flags concerning trends (declining mood, anxiety spikes). When an emotional_pattern alert appears, review the student's recent check-in history before deciding on intervention adjustments.",
-        applicableTo: "AI Alerts, Emotional Check-in Dashboard",
+            "When a plan already has three or more weekly updates, the AI can help summarize the trend and suggest whether to maintain, revise, or escalate support.",
+        applicableTo: "Student Detail, Growth Journey, AI Assistant",
     },
     {
-        id: "ai-batch-alerts",
-        title: "Generate Alerts in Batch (Admin Only)",
+        id: "ai-admin-scan",
+        title: "Use AI insight as a review accelerator, not a replacement",
         description:
-            "As an admin, you can trigger batch alert generation for all students at once. This is useful before weekly review meetings — it surfaces all at-risk students across the school in one view. Use the batch-generate endpoint or the admin alert dashboard.",
-        applicableTo: "Admin Dashboard, Weekly Review Prep",
+            "Principals can use AI to speed up review, but the final decision still needs to be grounded in the plan data, progress history, and ownership context shown in MTSS.",
+        applicableTo: "Admin Review, Teacher Coaching",
     },
 ];
 
 export const stepCompletionOptions = [
     { value: "yes", label: "Yes — completed fully" },
-    { value: "partial", label: "Partial — some parts skipped" },
+    { value: "partial", label: "Partial — some parts were skipped" },
     { value: "no", label: "No — could not complete" },
 ];
 
@@ -538,47 +553,49 @@ export const readinessOptions = [
 
 export const ratingOptions = [1, 2, 3, 4, 5];
 
-export const buildPilotBaseRoute = (user) => {
-    const role = String(user?.role || "").toLowerCase();
+export const buildPilotAdminBaseRoute = (user) => {
     const email = String(user?.email || "").toLowerCase().trim();
 
     if (OBSERVER_EMAILS.has(email)) {
         return "/mtss/observer";
     }
 
-    if (["admin", "superadmin", "directorate", "head_unit"].includes(role)) {
-        return "/mtss/admin";
-    }
-
-    return "/mtss/teacher";
+    return "/mtss/admin";
 };
 
-export const buildPilotStepRoute = (step, user) => {
-    const baseRoute = buildPilotBaseRoute(user);
+const buildPilotRouteFromKey = (routeKey, user) => {
+    const adminBaseRoute = buildPilotAdminBaseRoute(user);
+    const withTeacherPreview = (route) => appendPilotTeacherPreviewRoute(route, user);
 
-    switch (step.routeKey) {
+    switch (routeKey) {
+        case "hub":
+            return "/mtss/pilot-testing";
         case "overview":
-            return `${baseRoute}?tab=overview`;
+            return `${adminBaseRoute}?tab=overview`;
         case "students":
-            return `${baseRoute}?tab=students`;
+            return `${adminBaseRoute}?tab=students`;
         case "mentors":
-            return `${baseRoute}?tab=mentors`;
+            return `${adminBaseRoute}?tab=mentors`;
         case "analytics":
-            return `${baseRoute}?tab=analytics`;
+            return `${adminBaseRoute}?tab=analytics`;
         case "teacher-dashboard":
-            return "/mtss/teacher?tab=dashboard";
+            return withTeacherPreview("/mtss/teacher?tab=dashboard");
         case "teacher-students":
-            return "/mtss/teacher?tab=students";
+            return withTeacherPreview("/mtss/teacher?tab=students");
         case "teacher-create":
-            return "/mtss/teacher?tab=create";
+            return withTeacherPreview("/mtss/teacher?tab=create");
         case "teacher-edit":
-            return "/mtss/teacher?tab=edit";
+            return withTeacherPreview("/mtss/teacher?tab=edit");
         case "ai-assistant":
             return "/ai-assistant";
         default:
             return "/mtss/pilot-testing";
     }
 };
+
+export const buildPilotStepRoute = (step, user) => buildPilotRouteFromKey(step?.routeKey, user);
+
+export const buildPilotStartRoute = (step, user) => buildPilotRouteFromKey(step?.startRouteKey || step?.routeKey, user);
 
 export const createEmptyStepFeedback = () => ({
     completionStatus: "yes",

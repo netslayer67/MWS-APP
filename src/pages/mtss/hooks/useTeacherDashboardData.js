@@ -56,8 +56,8 @@ const normalizeHeroBadge = (user) => {
     };
 };
 
-const useTeacherDashboardData = () => {
-    const storedUser = useMemo(() => getStoredUser(), []);
+const useTeacherDashboardData = (viewerUser = null) => {
+    const storedUser = useMemo(() => viewerUser || getStoredUser(), [viewerUser]);
     const baseHero = useMemo(() => normalizeHeroBadge(storedUser), [storedUser]);
 
     const segments = useMemo(() => deriveTeacherSegments(storedUser), [storedUser]);
@@ -95,11 +95,23 @@ const useTeacherDashboardData = () => {
             ]);
 
             const assignments = assignmentPayload.assignments || assignmentPayload || [];
-            const cards = buildStatCards(assignments);
             const primaryGender = resolveStaffGender(storedUser);
             const primaryName = storedUser?.nickname || storedUser?.username || storedUser?.name || baseHero.teacher;
-            const assignmentSummary = mapAssignmentsToStudents(assignments, primaryName);
             const rosterStudents = rosterPayload?.students || [];
+            const studentIdSet = new Set(
+                rosterStudents
+                    .map((student) => student?._id?.toString?.() || student?.id?.toString?.())
+                    .filter(Boolean),
+            );
+            const scopedAssignments = studentIdSet.size
+                ? assignments.filter((assignment) =>
+                    (assignment.studentIds || []).some((student) => {
+                        const studentKey = student?._id?.toString?.() || student?.id?.toString?.() || student?.toString?.();
+                        return Boolean(studentKey && studentIdSet.has(studentKey));
+                    }))
+                : assignments;
+            const cards = buildStatCards(scopedAssignments);
+            const assignmentSummary = mapAssignmentsToStudents(scopedAssignments, primaryName);
             const mergedStudents = mergeRosterWithAssignments(rosterStudents, assignmentSummary.students, segments);
             const teacherWithTitle = formatStaffDisplayName({
                 name: primaryName,

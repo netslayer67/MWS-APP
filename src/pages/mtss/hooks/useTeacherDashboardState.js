@@ -137,7 +137,7 @@ const buildScorePayload = (value, unit = "score", allowClear = false) => {
     };
 };
 
-export const useTeacherDashboardState = (tabs, { onSaveSuccess } = {}) => {
+export const useTeacherDashboardState = (tabs, { onSaveSuccess, viewerUser } = {}) => {
     const { toast } = useToast();
     const location = useLocation();
     const tabStorageKey = useMemo(() => `mtss:teacher-tab:${location.pathname}`, [location.pathname]);
@@ -153,7 +153,8 @@ export const useTeacherDashboardState = (tabs, { onSaveSuccess } = {}) => {
     const [submittingPlan, setSubmittingPlan] = useState(false);
     const [submittingProgress, setSubmittingProgress] = useState(false);
 
-    const user = useSelector((state) => state.auth?.user);
+    const authUser = useSelector((state) => state.auth?.user);
+    const actingUser = viewerUser || authUser;
 
     useEffect(() => {
         if (requestedTab && requestedTab !== activeTab) {
@@ -247,7 +248,7 @@ export const useTeacherDashboardState = (tabs, { onSaveSuccess } = {}) => {
                 if (isEditing) {
                     await updateMentorAssignment(editingPlan.assignmentId, payload);
                 } else {
-                    const mentorId = user?.id || user?._id;
+                    const mentorId = actingUser?.id || actingUser?._id || authUser?.id || authUser?._id;
                     await createMentorAssignment({
                         ...payload,
                         mentorId,
@@ -277,7 +278,7 @@ export const useTeacherDashboardState = (tabs, { onSaveSuccess } = {}) => {
                 setSubmittingPlan(false);
             }
         },
-        [editingPlan, interventionForm, onSaveSuccess, setActiveTab, submittingPlan, toast, user],
+        [actingUser, authUser, editingPlan, interventionForm, onSaveSuccess, setActiveTab, submittingPlan, toast],
     );
 
     const handleSubmitProgress = useCallback(

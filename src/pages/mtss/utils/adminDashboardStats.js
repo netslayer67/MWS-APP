@@ -35,7 +35,7 @@ export const buildAdminStatCards = (studentCount = 0, mentorCount = 0, successRa
         return { ...card, value: `${successRate}%` };
     });
 
-const isTargetMet = (assignment) => {
+export const isAssignmentTargetMet = (assignment) => {
     if (assignment.status === "completed") return true;
 
     const goals = assignment.goals || [];
@@ -53,6 +53,6 @@ const isTargetMet = (assignment) => {
 
 export const calculateSuccessRate = (assignments = []) => {
     if (!assignments.length) return 0;
-    const hitting = assignments.filter(isTargetMet).length;
+    const hitting = assignments.filter(isAssignmentTargetMet).length;
     return Math.round((hitting / assignments.length) * 100);
 };

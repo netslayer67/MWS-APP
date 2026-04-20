@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CARD_THEMES, AOS_VARIANTS, CARD_BATCH_SIZE } from "./config/mentorPanelConfig";
 import { buildMentorRoster, makeMentorKey } from "./utils/mentorRosterUtils";
@@ -6,11 +6,11 @@ import AdminMentorsHeader from "./components/AdminMentorsHeader";
 import MentorCard from "./components/MentorCard";
 import AdminMentorsFooter from "./components/AdminMentorsFooter";
 
-const AdminMentorsPanel = ({ mentorRoster = [], mentorDirectory = [] }) => {
+const AdminMentorsPanel = ({ mentorRoster = [], mentorDirectory = [], students = [] }) => {
     const navigate = useNavigate();
     const roster = useMemo(
-        () => buildMentorRoster(mentorRoster, mentorDirectory),
-        [mentorRoster, mentorDirectory],
+        () => buildMentorRoster(mentorRoster, mentorDirectory, students),
+        [mentorRoster, mentorDirectory, students],
     );
 
     const [visibleCount, setVisibleCount] = useState(CARD_BATCH_SIZE);

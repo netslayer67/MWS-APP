@@ -1,5 +1,4 @@
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
     ArrowRight,
@@ -36,8 +35,13 @@ import { useToast } from "@/components/ui/use-toast";
 import { cn, sanitizeLight } from "@/lib/utils";
 import { upsertPilotFeedbackSession } from "@/services/mtssService";
 import {
+    appendPilotTeacherPreviewRoute,
+    resolvePilotTeacherRunbook,
+} from "./utils/pilotTeacherPreview";
+import {
     PILOT_PROGRESS_STORAGE_KEY,
     aiTipsAndTricks,
+    buildPilotStartRoute,
     buildPilotStepRoute,
     createEmptyFinalFeedback,
     createEmptyStepFeedback,
@@ -132,6 +136,8 @@ const sanitizeFinalDraft = (draft = {}) => ({
     additionalComments: sanitizeLight(draft.additionalComments || "", 1600),
 });
 
+const hasSavedStepFeedback = (stepId, state = {}) => Boolean(state?.completedSteps?.[stepId]);
+
 const hydratePilotState = (user) => {
     const stored = readStoredPilotState(user);
     const feedbackByStep = Object.fromEntries(
@@ -215,11 +221,92 @@ const ratingLabels = {
     5: "Excellent",
 };
 
+const completionLabels = {
+    yes: "Done",
+    partial: "Partial",
+    no: "Not done",
+};
+
 const readinessLabels = {
     yes: "Yes",
     almost: "Almost",
     "not-yet": "Not yet",
 };
+
+const DialogSection = ({ eyebrow, title, description, children }) => (
+    <section className="space-y-3 rounded-[24px] border border-white/45 bg-white/72 p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] dark:border-white/10 dark:bg-white/5">
+        {eyebrow && (
+            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-500 dark:text-white/55">{eyebrow}</p>
+        )}
+        {title && <h3 className="text-lg font-black text-slate-900 dark:text-white">{title}</h3>}
+        {description && <p className="text-sm leading-relaxed text-slate-600 dark:text-white/70">{description}</p>}
+        {children}
+    </section>
+);
+
+const SnapshotMetric = ({ label, value, tone = "default" }) => {
+    const toneClass =
+        tone === "positive"
+            ? "text-emerald-600 dark:text-emerald-300"
+            : tone === "warning"
+                ? "text-amber-600 dark:text-amber-300"
+                : tone === "danger"
+                    ? "text-rose-600 dark:text-rose-300"
+                    : "text-slate-900 dark:text-white";
+
+    return (
+        <div className="rounded-2xl border border-white/45 bg-white/80 px-3 py-3 dark:border-white/10 dark:bg-white/5">
+            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500 dark:text-white/55">{label}</p>
+            <p className={cn("mt-2 text-base font-black", toneClass)}>{value}</p>
+        </div>
+    );
+};
+
+const DialogInfoCard = ({ label, value }) => (
+    <div className="rounded-2xl border border-white/45 bg-white/80 px-4 py-4 dark:border-white/10 dark:bg-white/5">
+        <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500 dark:text-white/55">{label}</p>
+        <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-white/75">{value}</p>
+    </div>
+);
+
+const STEP_CARD_TONES = {
+    soft: "from-white via-[#f8fafc] to-[#fefce8] dark:from-white/5 dark:via-white/10 dark:to-white/5",
+    sky: "from-[#eff6ff] via-white to-[#ecfeff] dark:from-sky-500/10 dark:via-white/10 dark:to-cyan-500/10",
+    peach: "from-[#fff7ed] via-white to-[#fdf2f8] dark:from-orange-500/10 dark:via-white/10 dark:to-pink-500/10",
+    mint: "from-[#ecfdf5] via-white to-[#eff6ff] dark:from-emerald-500/10 dark:via-white/10 dark:to-sky-500/10",
+    violet: "from-[#f5f3ff] via-white to-[#fdf4ff] dark:from-violet-500/10 dark:via-white/10 dark:to-fuchsia-500/10",
+};
+
+const StepDetailCard = ({ icon: Icon, title, description, items = [], tone = "soft" }) => (
+    <div
+        className={cn(
+            "rounded-[24px] border border-white/45 bg-gradient-to-br p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)] dark:border-white/10",
+            STEP_CARD_TONES[tone] || STEP_CARD_TONES.soft,
+        )}
+    >
+        <div className="flex items-center gap-3">
+            <div className="rounded-2xl bg-slate-900 p-2 text-white shadow-sm dark:bg-white/10 dark:text-white">
+                <Icon className="h-4 w-4" />
+            </div>
+            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-700 dark:text-white/80">{title}</p>
+        </div>
+
+        {description ? (
+            <p className="mt-3 text-[13px] leading-6 text-slate-700 dark:text-white/75">{description}</p>
+        ) : null}
+
+        {items.length ? (
+            <ul className="mt-3 space-y-2.5 text-[13px] leading-6 text-slate-700 dark:text-white/75">
+                {items.map((item) => (
+                    <li key={item} className="flex gap-2.5">
+                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-900 dark:bg-white" />
+                        <span>{item}</span>
+                    </li>
+                ))}
+            </ul>
+        ) : null}
+    </div>
+);
 
 const StepRatingField = ({ label, value, onChange }) => (
     <div className="space-y-2">
@@ -259,122 +346,153 @@ const StepFeedbackDialog = ({
     if (!step) return null;
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-3xl max-h-[88vh] overflow-y-auto rounded-[28px] border-white/20 bg-white/95 dark:bg-slate-950/95">
+            <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-4xl max-h-[88vh] overflow-y-auto rounded-[28px] border-white/20 bg-white/95 dark:bg-slate-950/95">
                 <DialogHeader>
                     <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white">
-                        Step {step.order} Feedback
+                        Step {step.order} feedback
                     </DialogTitle>
                     <DialogDescription className="text-sm text-slate-600 dark:text-white/70">
-                        {step.title} — share clarity, usability, speed, and any bug you noticed in this step.
+                        {step.title} — rate the step, note what helped, and log any issue you found. Saving this form marks the step as done automatically.
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-6">
-                    <div className="rounded-[24px] border border-white/40 bg-gradient-to-br from-[#fff7ed]/90 via-white to-[#eff6ff]/90 p-5 dark:border-white/10 dark:from-white/5 dark:via-white/10 dark:to-white/5">
-                        <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-500 dark:text-white/55">Expected outcome</p>
-                        <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-white/80">{step.expectedOutcome}</p>
-                    </div>
+                    <DialogSection
+                        eyebrow="Step reminder"
+                        title={step.title}
+                        description="Use this summary to judge whether the step was clear, useful, and easy to explain back to teachers."
+                    >
+                        <div className="grid gap-3 md:grid-cols-3">
+                            <DialogInfoCard label="Goal" value={step.goal} />
+                            <DialogInfoCard label="Success check" value={step.expectedOutcome} />
+                            <DialogInfoCard label="Save rule" value="Saving this form marks the step done." />
+                        </div>
+                    </DialogSection>
 
-                    <div className="grid gap-5 md:grid-cols-2">
-                        <div className="space-y-2">
-                            <Label htmlFor={`completion-status-${step.id}`} className="text-sm font-semibold text-slate-700 dark:text-white">
-                                Step completed
-                            </Label>
-                            <select
-                                id={`completion-status-${step.id}`}
-                                className="w-full rounded-2xl border border-white/40 bg-white/80 px-4 py-3 text-sm text-slate-800 dark:border-white/10 dark:bg-white/5 dark:text-white"
-                                value={value.completionStatus}
-                                onChange={(event) => onChange({ ...value, completionStatus: event.target.value })}
-                            >
-                                {stepCompletionOptions.map((option) => (
-                                    <option key={option.value} value={option.value}>
-                                        {option.label}
-                                    </option>
-                                ))}
-                            </select>
+                    <DialogSection
+                        eyebrow="Quick score"
+                        title="How did this step feel?"
+                        description="Give a quick completion result, then rate ease, clarity, and speed."
+                    >
+                        <div className="grid gap-5 md:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label htmlFor={`completion-status-${step.id}`} className="text-sm font-semibold text-slate-700 dark:text-white">
+                                    Were you able to finish this step?
+                                </Label>
+                                <select
+                                    id={`completion-status-${step.id}`}
+                                    className="w-full rounded-2xl border border-white/40 bg-white/80 px-4 py-3 text-sm text-slate-800 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                                    value={value.completionStatus}
+                                    onChange={(event) => onChange({ ...value, completionStatus: event.target.value })}
+                                >
+                                    {stepCompletionOptions.map((option) => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor={`bug-severity-${step.id}`} className="text-sm font-semibold text-slate-700 dark:text-white">
+                                    Bug impact
+                                </Label>
+                                <select
+                                    id={`bug-severity-${step.id}`}
+                                    className="w-full rounded-2xl border border-white/40 bg-white/80 px-4 py-3 text-sm text-slate-800 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                                    value={value.bugSeverity}
+                                    onChange={(event) => onChange({ ...value, bugSeverity: event.target.value })}
+                                    disabled={!value.bugFound}
+                                >
+                                    {severityOptions.map((option) => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor={`bug-severity-${step.id}`} className="text-sm font-semibold text-slate-700 dark:text-white">
-                                Bug severity
-                            </Label>
-                            <select
-                                id={`bug-severity-${step.id}`}
-                                className="w-full rounded-2xl border border-white/40 bg-white/80 px-4 py-3 text-sm text-slate-800 dark:border-white/10 dark:bg-white/5 dark:text-white"
-                                value={value.bugSeverity}
-                                onChange={(event) => onChange({ ...value, bugSeverity: event.target.value })}
-                                disabled={!value.bugFound}
-                            >
-                                {severityOptions.map((option) => (
-                                    <option key={option.value} value={option.value}>
-                                        {option.label}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div className="grid gap-5 md:grid-cols-3">
-                        <StepRatingField
-                            label="Ease of use"
-                            value={value.easeOfUse}
-                            onChange={(nextValue) => onChange({ ...value, easeOfUse: nextValue })}
-                        />
-                        <StepRatingField
-                            label="Clarity"
-                            value={value.clarity}
-                            onChange={(nextValue) => onChange({ ...value, clarity: nextValue })}
-                        />
-                        <StepRatingField
-                            label="Speed / performance"
-                            value={value.performance}
-                            onChange={(nextValue) => onChange({ ...value, performance: nextValue })}
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor={`helpful-${step.id}`} className="text-sm font-semibold text-slate-700 dark:text-white">
-                            What was most helpful in this step?
-                        </Label>
-                        <Textarea
-                            id={`helpful-${step.id}`}
-                            value={value.helpfulNotes}
-                            onChange={(event) => onChange({ ...value, helpfulNotes: event.target.value })}
-                            className="min-h-[108px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
-                            placeholder="Example: The tier summary made it easy to spot which area needed attention first."
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor={`confusing-${step.id}`} className="text-sm font-semibold text-slate-700 dark:text-white">
-                            What felt confusing, unclear, or missing?
-                        </Label>
-                        <Textarea
-                            id={`confusing-${step.id}`}
-                            value={value.confusingNotes}
-                            onChange={(event) => onChange({ ...value, confusingNotes: event.target.value })}
-                            className="min-h-[108px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
-                            placeholder="Example: I was not sure what the metric means or what action should happen next."
-                        />
-                    </div>
-
-                    {(value.completionStatus === "partial" || value.completionStatus === "no") && (
-                        <div className="space-y-2">
-                            <Label htmlFor={`partial-reason-${step.id}`} className="text-sm font-semibold text-slate-700 dark:text-white">
-                                If this step failed or was partial, why?
-                            </Label>
-                            <Textarea
-                                id={`partial-reason-${step.id}`}
-                                value={value.partialReason}
-                                onChange={(event) => onChange({ ...value, partialReason: event.target.value })}
-                                className="min-h-[96px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
-                                placeholder="Explain what blocked completion: permission, data, unclear flow, bug, or time."
+                        <div className="grid gap-5 md:grid-cols-3">
+                            <StepRatingField
+                                label="Ease"
+                                value={value.easeOfUse}
+                                onChange={(nextValue) => onChange({ ...value, easeOfUse: nextValue })}
+                            />
+                            <StepRatingField
+                                label="Clarity"
+                                value={value.clarity}
+                                onChange={(nextValue) => onChange({ ...value, clarity: nextValue })}
+                            />
+                            <StepRatingField
+                                label="Speed"
+                                value={value.performance}
+                                onChange={(nextValue) => onChange({ ...value, performance: nextValue })}
                             />
                         </div>
+                    </DialogSection>
+
+                    <DialogSection
+                        eyebrow="What to tell the team"
+                        title="What worked and what needs fixing?"
+                        description="Keep the notes short and concrete. A few clear lines are better than long general comments."
+                    >
+                        <div className="grid gap-5 md:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label htmlFor={`helpful-${step.id}`} className="text-sm font-semibold text-slate-700 dark:text-white">
+                                    What worked well?
+                                </Label>
+                                <Textarea
+                                    id={`helpful-${step.id}`}
+                                    value={value.helpfulNotes}
+                                    onChange={(event) => onChange({ ...value, helpfulNotes: event.target.value })}
+                                    className="min-h-[120px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
+                                    placeholder="Example: The student list made it easy to find Tier 2 cases quickly."
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor={`confusing-${step.id}`} className="text-sm font-semibold text-slate-700 dark:text-white">
+                                    What needs to be clearer?
+                                </Label>
+                                <Textarea
+                                    id={`confusing-${step.id}`}
+                                    value={value.confusingNotes}
+                                    onChange={(event) => onChange({ ...value, confusingNotes: event.target.value })}
+                                    className="min-h-[120px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
+                                    placeholder="Example: I could not tell which button to use first."
+                                />
+                            </div>
+                        </div>
+                    </DialogSection>
+
+                    {(value.completionStatus === "partial" || value.completionStatus === "no") && (
+                        <DialogSection
+                            eyebrow="Completion gap"
+                            title="What stopped the step?"
+                            description="Only fill this in if the step could not be completed fully."
+                        >
+                            <div className="space-y-2">
+                                <Label htmlFor={`partial-reason-${step.id}`} className="text-sm font-semibold text-slate-700 dark:text-white">
+                                    Main blocker
+                                </Label>
+                                <Textarea
+                                    id={`partial-reason-${step.id}`}
+                                    value={value.partialReason}
+                                    onChange={(event) => onChange({ ...value, partialReason: event.target.value })}
+                                    className="min-h-[96px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
+                                    placeholder="Example: missing data, unclear flow, permission issue, or bug."
+                                />
+                            </div>
+                        </DialogSection>
                     )}
 
-                    <div className="rounded-[24px] border border-dashed border-rose-200 bg-rose-50/80 p-4 dark:border-rose-400/30 dark:bg-rose-500/10">
+                    <DialogSection
+                        eyebrow="Bug log"
+                        title="Did something break?"
+                        description="Turn this on only when you found a real bug or broken behavior in the step."
+                    >
                         <label className="flex items-center gap-3 text-sm font-semibold text-slate-800 dark:text-white">
                             <input
                                 type="checkbox"
@@ -387,65 +505,65 @@ const StepFeedbackDialog = ({
                                 }
                                 className="h-4 w-4 rounded border-slate-300"
                             />
-                            I found a bug or broken behavior in this step
+                            This step had a bug or broken flow
                         </label>
 
                         {value.bugFound && (
-                            <div className="mt-4 space-y-4">
-                                <div className="space-y-2">
+                            <div className="mt-4 grid gap-5 md:grid-cols-2">
+                                <div className="space-y-2 md:col-span-2">
                                     <Label htmlFor={`bug-summary-${step.id}`} className="text-sm font-semibold text-slate-700 dark:text-white">
-                                        Bug summary
+                                        What broke?
                                     </Label>
                                     <Textarea
                                         id={`bug-summary-${step.id}`}
                                         value={value.bugSummary}
                                         onChange={(event) => onChange({ ...value, bugSummary: event.target.value })}
                                         className="min-h-[96px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
-                                        placeholder="Describe what happened, what you expected, and how to reproduce it."
+                                        placeholder="Example: The page opened, but the chart stayed blank."
                                     />
                                 </div>
 
                                 <div className="space-y-2">
                                     <Label htmlFor={`expected-result-${step.id}`} className="text-sm font-semibold text-slate-700 dark:text-white">
-                                        Expected result
+                                        What should happen?
                                     </Label>
                                     <Textarea
                                         id={`expected-result-${step.id}`}
                                         value={value.expectedResult}
                                         onChange={(event) => onChange({ ...value, expectedResult: event.target.value })}
-                                        className="min-h-[84px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
-                                        placeholder="What should have happened if the flow worked correctly?"
+                                        className="min-h-[96px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
+                                        placeholder="Example: The chart should load student progress."
                                     />
                                 </div>
 
                                 <div className="space-y-2">
                                     <Label htmlFor={`reproduction-${step.id}`} className="text-sm font-semibold text-slate-700 dark:text-white">
-                                        Reproduction steps
+                                        How can we reproduce it?
                                     </Label>
                                     <Textarea
                                         id={`reproduction-${step.id}`}
                                         value={value.reproductionSteps}
                                         onChange={(event) => onChange({ ...value, reproductionSteps: event.target.value })}
-                                        className="min-h-[84px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
-                                        placeholder="List short steps so the MTSS team can reproduce the issue."
+                                        className="min-h-[96px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
+                                        placeholder="List the short steps that triggered the issue."
                                     />
                                 </div>
 
-                                <div className="space-y-2">
+                                <div className="space-y-2 md:col-span-2">
                                     <Label htmlFor={`bug-shot-${step.id}`} className="text-sm font-semibold text-slate-700 dark:text-white">
-                                        Screenshot / video link
+                                        Screenshot or video link
                                     </Label>
                                     <Input
                                         id={`bug-shot-${step.id}`}
                                         value={value.screenshotLink}
                                         onChange={(event) => onChange({ ...value, screenshotLink: event.target.value })}
                                         className="rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
-                                        placeholder="Paste a drive link or screenshot URL if available"
+                                        placeholder="Paste a drive link if you captured the issue."
                                     />
                                 </div>
                             </div>
                         )}
-                    </div>
+                    </DialogSection>
                 </div>
 
                 <DialogFooter className="gap-2 pt-2">
@@ -453,7 +571,7 @@ const StepFeedbackDialog = ({
                         Close
                     </Button>
                     <Button variant="gradient" onClick={onSave}>
-                        Save step feedback
+                        Save and mark step done
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -461,129 +579,150 @@ const StepFeedbackDialog = ({
     );
 };
 
-const FinalFeedbackDialog = ({ open, onOpenChange, value, onChange, onSave }) => (
+const FinalFeedbackDialog = ({ open, onOpenChange, value, onChange, onSave, blocked, remainingCount }) => (
     <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl max-h-[88vh] overflow-y-auto rounded-[28px] border-white/20 bg-white/95 dark:bg-slate-950/95">
+        <DialogContent className="max-w-4xl max-h-[88vh] overflow-y-auto rounded-[28px] border-white/20 bg-white/95 dark:bg-slate-950/95">
             <DialogHeader>
-                <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white">Final Feedback</DialogTitle>
+                <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white">Final pilot feedback</DialogTitle>
                 <DialogDescription className="text-sm text-slate-600 dark:text-white/70">
-                    Capture the overall readiness, biggest usability insights, and top priorities before the pilot closes.
+                    {blocked
+                        ? `${remainingCount} guided ${remainingCount === 1 ? "step still needs" : "steps still need"} saved feedback before final feedback can be submitted.`
+                        : "Wrap up rollout readiness, strongest points, and the top fixes before wider use."}
                 </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-6">
-                <StepRatingField
-                    label="Overall confidence using MTSS"
-                    value={value.overallConfidence}
-                    onChange={(nextValue) => onChange({ ...value, overallConfidence: nextValue })}
-                />
-
-                <div className="grid gap-5 md:grid-cols-2">
-                    <div className="space-y-2">
-                        <Label htmlFor="most-useful-feature" className="text-sm font-semibold text-slate-700 dark:text-white">
-                            Most useful feature
-                        </Label>
-                        <Textarea
-                            id="most-useful-feature"
-                            value={value.mostUsefulFeature}
-                            onChange={(event) => onChange({ ...value, mostUsefulFeature: event.target.value })}
-                            className="min-h-[108px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
-                            placeholder="What helped you most during the pilot?"
+                <DialogSection
+                    eyebrow="Overall verdict"
+                    title="How ready does MTSS feel overall?"
+                    description="Use this final form to give a short rollout view after all guided steps are done."
+                >
+                    <div className="grid gap-5 lg:grid-cols-[1fr_0.9fr]">
+                        <StepRatingField
+                            label="Overall confidence"
+                            value={value.overallConfidence}
+                            onChange={(nextValue) => onChange({ ...value, overallConfidence: nextValue })}
                         />
+                        <div className="space-y-2">
+                            <Label htmlFor="readiness-select" className="text-sm font-semibold text-slate-700 dark:text-white">
+                                Ready for wider principal use?
+                            </Label>
+                            <select
+                                id="readiness-select"
+                                className="w-full rounded-2xl border border-white/40 bg-white/80 px-4 py-3 text-sm text-slate-800 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                                value={value.readiness}
+                                onChange={(event) => onChange({ ...value, readiness: event.target.value })}
+                            >
+                                {readinessOptions.map((option) => (
+                                    <option key={option.value} value={option.value}>
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
+                </DialogSection>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="most-confusing-feature" className="text-sm font-semibold text-slate-700 dark:text-white">
-                            Most confusing feature
-                        </Label>
-                        <Textarea
-                            id="most-confusing-feature"
-                            value={value.mostConfusingFeature}
-                            onChange={(event) => onChange({ ...value, mostConfusingFeature: event.target.value })}
-                            className="min-h-[108px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
-                            placeholder="What still feels unclear or needs simplification?"
-                        />
+                <DialogSection
+                    eyebrow="Fast wrap-up"
+                    title="What stood out most?"
+                    description="Keep this short. These are the lines leadership will read first."
+                >
+                    <div className="grid gap-5 md:grid-cols-2">
+                        <div className="space-y-2">
+                            <Label htmlFor="most-useful-feature" className="text-sm font-semibold text-slate-700 dark:text-white">
+                                Most useful part
+                            </Label>
+                            <Textarea
+                                id="most-useful-feature"
+                                value={value.mostUsefulFeature}
+                                onChange={(event) => onChange({ ...value, mostUsefulFeature: event.target.value })}
+                                className="min-h-[108px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
+                                placeholder="What helped most during the pilot?"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="most-confusing-feature" className="text-sm font-semibold text-slate-700 dark:text-white">
+                                Still unclear
+                            </Label>
+                            <Textarea
+                                id="most-confusing-feature"
+                                value={value.mostConfusingFeature}
+                                onChange={(event) => onChange({ ...value, mostConfusingFeature: event.target.value })}
+                                className="min-h-[108px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
+                                placeholder="What still needs simplification?"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="slowest-part" className="text-sm font-semibold text-slate-700 dark:text-white">
+                                Slowest part
+                            </Label>
+                            <Textarea
+                                id="slowest-part"
+                                value={value.slowestPart}
+                                onChange={(event) => onChange({ ...value, slowestPart: event.target.value })}
+                                className="min-h-[108px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
+                                placeholder="What felt slow or heavy?"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="missing-feature" className="text-sm font-semibold text-slate-700 dark:text-white">
+                                Missing feature
+                            </Label>
+                            <Textarea
+                                id="missing-feature"
+                                value={value.missingFeature}
+                                onChange={(event) => onChange({ ...value, missingFeature: event.target.value })}
+                                className="min-h-[108px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
+                                placeholder="What is still missing?"
+                            />
+                        </div>
                     </div>
-                </div>
+                </DialogSection>
 
-                <div className="grid gap-5 md:grid-cols-2">
-                    <div className="space-y-2">
-                        <Label htmlFor="slowest-part" className="text-sm font-semibold text-slate-700 dark:text-white">
-                            Slowest or heaviest part
-                        </Label>
-                        <Textarea
-                            id="slowest-part"
-                            value={value.slowestPart}
-                            onChange={(event) => onChange({ ...value, slowestPart: event.target.value })}
-                            className="min-h-[108px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
-                            placeholder="Which part felt slow or interrupted your flow?"
-                        />
+                <DialogSection
+                    eyebrow="Rollout priorities"
+                    title="What should we fix next?"
+                    description="List the most important changes before the pilot expands."
+                >
+                    <div className="space-y-5">
+                        <div className="space-y-2">
+                            <Label htmlFor="top-improvements" className="text-sm font-semibold text-slate-700 dark:text-white">
+                                Top 3 fixes before rollout
+                            </Label>
+                            <Textarea
+                                id="top-improvements"
+                                value={value.topImprovements}
+                                onChange={(event) => onChange({ ...value, topImprovements: event.target.value })}
+                                className="min-h-[120px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
+                                placeholder={"1. ...\n2. ...\n3. ..."}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="additional-comments" className="text-sm font-semibold text-slate-700 dark:text-white">
+                                Anything else?
+                            </Label>
+                            <Textarea
+                                id="additional-comments"
+                                value={value.additionalComments}
+                                onChange={(event) => onChange({ ...value, additionalComments: event.target.value })}
+                                className="min-h-[120px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
+                                placeholder="Any final note before broader rollout?"
+                            />
+                        </div>
                     </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="missing-feature" className="text-sm font-semibold text-slate-700 dark:text-white">
-                            Missing feature
-                        </Label>
-                        <Textarea
-                            id="missing-feature"
-                            value={value.missingFeature}
-                            onChange={(event) => onChange({ ...value, missingFeature: event.target.value })}
-                            className="min-h-[108px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
-                            placeholder="What capability would make MTSS more useful for principals?"
-                        />
-                    </div>
-                </div>
-
-                <div className="space-y-2">
-                    <Label htmlFor="readiness-select" className="text-sm font-semibold text-slate-700 dark:text-white">
-                        Is MTSS ready for wider principal usage next week?
-                    </Label>
-                    <select
-                        id="readiness-select"
-                        className="w-full rounded-2xl border border-white/40 bg-white/80 px-4 py-3 text-sm text-slate-800 dark:border-white/10 dark:bg-white/5 dark:text-white"
-                        value={value.readiness}
-                        onChange={(event) => onChange({ ...value, readiness: event.target.value })}
-                    >
-                        {readinessOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                                {option.label}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                <div className="space-y-2">
-                    <Label htmlFor="top-improvements" className="text-sm font-semibold text-slate-700 dark:text-white">
-                        Top 3 improvement priorities
-                    </Label>
-                    <Textarea
-                        id="top-improvements"
-                        value={value.topImprovements}
-                        onChange={(event) => onChange({ ...value, topImprovements: event.target.value })}
-                        className="min-h-[120px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
-                        placeholder={"1. ...\n2. ...\n3. ..."}
-                    />
-                </div>
-
-                <div className="space-y-2">
-                    <Label htmlFor="additional-comments" className="text-sm font-semibold text-slate-700 dark:text-white">
-                        Additional comments
-                    </Label>
-                    <Textarea
-                        id="additional-comments"
-                        value={value.additionalComments}
-                        onChange={(event) => onChange({ ...value, additionalComments: event.target.value })}
-                        className="min-h-[120px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
-                        placeholder="Anything else the MTSS team should know before broader rollout?"
-                    />
-                </div>
+                </DialogSection>
             </div>
 
             <DialogFooter className="gap-2 pt-2">
                 <Button variant="outline" onClick={() => onOpenChange(false)}>
                     Close
                 </Button>
-                <Button variant="gradient" onClick={onSave}>
+                <Button variant="gradient" onClick={onSave} disabled={blocked}>
                     Save final feedback
                 </Button>
             </DialogFooter>
@@ -683,7 +822,6 @@ const buildMarkdownSummary = ({ user, sessionKey, stepFeedback, finalFeedback, c
 };
 
 const MTSSPilotTestingHubPage = memo(() => {
-    const navigate = useNavigate();
     const { toast } = useToast();
     const user = useSelector((state) => state.auth?.user);
     const [pilotState, setPilotState] = useState(() => hydratePilotState(user));
@@ -729,13 +867,20 @@ const MTSSPilotTestingHubPage = memo(() => {
     );
     const completionRate = Math.round((completedCount / pilotSteps.length) * 100);
     const activeStep = activeStepId ? pilotSteps.find((step) => step.id === activeStepId) : null;
-    const feedbackCount = useMemo(
-        () => pilotSteps.filter((step) => {
-            const draft = pilotState.feedbackByStep?.[step.id];
-            return Boolean(draft?.helpfulNotes || draft?.confusingNotes || draft?.bugFound || pilotState.completedSteps?.[step.id]);
-        }).length,
-        [pilotState.completedSteps, pilotState.feedbackByStep],
+    const feedbackCount = completedCount;
+    const teacherRunbook = useMemo(() => resolvePilotTeacherRunbook(user), [user]);
+    const resolveHintRoute = useCallback(
+        (page, step) => {
+            if (!page || page.includes(":")) return null;
+            if (step?.requiresTeacherPersona) {
+                return appendPilotTeacherPreviewRoute(page, user);
+            }
+            return page;
+        },
+        [user],
     );
+    const remainingFeedbackCount = pilotSteps.length - completedCount;
+    const allStepsReviewed = remainingFeedbackCount === 0;
 
     useEffect(() => {
         if (!user?.email || !pilotState?.sessionKey || !hasMeaningfulPilotState(pilotState)) {
@@ -801,26 +946,49 @@ const MTSSPilotTestingHubPage = memo(() => {
         );
     }, []);
 
-    const handleStartStep = useCallback((step) => {
-        const route = buildPilotStepRoute(step, user);
+    const openPilotRoute = useCallback((route, description) => {
         if (route === "/mtss/pilot-testing") {
             window.scrollTo({ top: 0, behavior: "smooth" });
             return;
         }
-        navigate(route);
-    }, [navigate, user]);
+        window.open(route, "_blank", "noopener,noreferrer");
+        toast({
+            title: "Step opened in a new tab",
+            description,
+        });
+    }, [toast]);
 
-    const handleMarkComplete = useCallback((stepId) => {
-        setPilotState((prev) =>
-            withTimestamp({
-                ...prev,
-                completedSteps: {
-                    ...prev.completedSteps,
-                    [stepId]: !prev.completedSteps?.[stepId],
-                },
-            }),
-        );
-    }, []);
+    const handleStartStep = useCallback((step) => {
+        const route = buildPilotStepRoute(step, user);
+        openPilotRoute(route, "The primary task page is now open. Keep this hub here, complete the task, then return to save step feedback.");
+    }, [openPilotRoute, user]);
+
+    const handleOpenStartPage = useCallback((step) => {
+        const route = buildPilotStartRoute(step, user);
+        openPilotRoute(route, "The recommended starting page is open in a new tab. From there, continue through the product flow naturally.");
+    }, [openPilotRoute, user]);
+
+    const handleOpenFinalFeedback = useCallback(() => {
+        if (!allStepsReviewed) {
+            toast({
+                title: "Finish all step feedback first",
+                description: `${remainingFeedbackCount} guided ${remainingFeedbackCount === 1 ? "step still needs" : "steps still need"} feedback before final feedback can be submitted.`,
+                variant: "destructive",
+            });
+            return;
+        }
+        setFinalFeedbackOpen(true);
+    }, [allStepsReviewed, remainingFeedbackCount, toast]);
+
+    const handleFinalDialogChange = useCallback((open) => {
+        if (!open) {
+            setFinalFeedbackOpen(false);
+            return;
+        }
+        if (allStepsReviewed) {
+            setFinalFeedbackOpen(true);
+        }
+    }, [allStepsReviewed]);
 
     const handleSaveStepFeedback = useCallback(() => {
         if (!activeStep) return;
@@ -835,18 +1003,26 @@ const MTSSPilotTestingHubPage = memo(() => {
                 },
                 completedSteps: {
                     ...prev.completedSteps,
-                    [activeStep.id]: draft.completionStatus !== "no" || prev.completedSteps?.[activeStep.id],
+                    [activeStep.id]: true,
                 },
             });
         });
         setActiveStepId(null);
         toast({
             title: "Step feedback saved",
-            description: `${activeStep.title} is now recorded in the pilot hub.`,
+            description: `${activeStep.title} is now recorded and counted as completed in the pilot hub.`,
         });
     }, [activeStep, toast]);
 
     const handleSaveFinalFeedback = useCallback(() => {
+        if (!allStepsReviewed) {
+            toast({
+                title: "Step feedback is incomplete",
+                description: "Final feedback stays locked until every guided step has saved feedback.",
+                variant: "destructive",
+            });
+            return;
+        }
         const savedAt = new Date().toISOString();
         setPilotState((prev) =>
             ({
@@ -861,7 +1037,7 @@ const MTSSPilotTestingHubPage = memo(() => {
             title: "Final feedback saved",
             description: "Your pilot summary is saved and will sync to the review dashboard automatically.",
         });
-    }, [toast]);
+    }, [allStepsReviewed, toast]);
 
     const handleCopySummary = useCallback(async () => {
         const summary = buildMarkdownSummary({
@@ -936,7 +1112,7 @@ const MTSSPilotTestingHubPage = memo(() => {
         });
         toast({
             title: "Pilot progress reset",
-            description: "All saved step feedback and completion markers have been cleared.",
+            description: "All saved step feedback and final feedback drafts have been cleared.",
         });
     }, [toast, user]);
 
@@ -981,7 +1157,7 @@ const MTSSPilotTestingHubPage = memo(() => {
                                 </div>
                                 <div className="rounded-[24px] border border-white/50 bg-white/80 p-4 shadow-lg dark:border-white/10 dark:bg-white/5">
                                     <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500 dark:text-white/55">Feedback mode</p>
-                                    <p className="mt-2 text-lg font-bold text-slate-900 dark:text-white">In-app and exportable</p>
+                                    <p className="mt-2 text-lg font-bold text-slate-900 dark:text-white">Per step, then final</p>
                                 </div>
                             </div>
                         </div>
@@ -993,7 +1169,7 @@ const MTSSPilotTestingHubPage = memo(() => {
                                         Pilot progress
                                     </p>
                                     <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">
-                                        {completedCount} / {pilotSteps.length} steps completed
+                                        {completedCount} / {pilotSteps.length} step feedback saved
                                     </p>
                                 </div>
                                 <Badge className="rounded-full border-0 bg-gradient-to-r from-[#fb7185] via-[#f59e0b] to-[#22c55e] px-3 py-1 text-white">
@@ -1005,7 +1181,7 @@ const MTSSPilotTestingHubPage = memo(() => {
 
                             <div className="mt-4 grid gap-3 sm:grid-cols-2">
                                 <div className="rounded-2xl border border-white/50 bg-white/75 p-4 dark:border-white/10 dark:bg-white/5">
-                                    <p className="text-xs font-semibold text-slate-500 dark:text-white/55">Feedback saved</p>
+                                    <p className="text-xs font-semibold text-slate-500 dark:text-white/55">Completed by feedback</p>
                                     <p className="mt-1 text-xl font-black text-slate-900 dark:text-white">{feedbackCount}</p>
                                 </div>
                                 <div className="rounded-2xl border border-white/50 bg-white/75 p-4 dark:border-white/10 dark:bg-white/5">
@@ -1051,7 +1227,7 @@ const MTSSPilotTestingHubPage = memo(() => {
                             </div>
 
                             <div className="mt-4 flex flex-wrap gap-2">
-                                <Button variant="gradient" onClick={() => setFinalFeedbackOpen(true)}>
+                                <Button variant="gradient" onClick={handleOpenFinalFeedback} disabled={!allStepsReviewed}>
                                     <MessageSquareText className="mr-2 h-4 w-4" />
                                     Final feedback
                                 </Button>
@@ -1088,23 +1264,23 @@ const MTSSPilotTestingHubPage = memo(() => {
                             {[
                                 {
                                     icon: Target,
-                                    title: "Follow the order",
-                                    text: "Complete each step in sequence so no feature is skipped and the feedback stays comparable across principals.",
+                                    title: "Follow the product flow",
+                                    text: "Start from overview or teacher dashboard, then navigate naturally inside MTSS instead of relying on deep links.",
                                 },
                                 {
                                     icon: Gauge,
-                                    title: "Submit micro feedback after each step",
-                                    text: "Capture fresh impressions on usability, clarity, and speed while the experience is still recent.",
+                                    title: "Save feedback to complete the step",
+                                    text: "There is no manual mark-complete button. A step becomes complete automatically when its feedback form is saved.",
                                 },
                                 {
                                     icon: Sparkles,
-                                    title: "Use the expected outcome as a success check",
-                                    text: "If the outcome feels unclear, that itself is valuable feedback for the rollout team.",
+                                    title: "Test in a new tab",
+                                    text: "Start step opens MTSS in a new tab, so this guide stays visible while principals move through the product.",
                                 },
                                 {
                                     icon: TimerReset,
-                                    title: "Finish with one final summary",
-                                    text: "The final feedback should highlight readiness, biggest blockers, and top improvement priorities.",
+                                    title: "Unlock the wrap-up",
+                                    text: "Final feedback stays locked until every guided step has saved feedback, making the submission sequence harder to break.",
                                 },
                             ].map((item) => (
                                 <div
@@ -1128,10 +1304,10 @@ const MTSSPilotTestingHubPage = memo(() => {
                         <h2 className="mt-2 text-2xl font-black text-slate-900 dark:text-white">When and how feedback should be submitted</h2>
                         <div className="mt-5 space-y-4">
                             {[
-                                "Open a step from the Testing Hub using Start Step.",
-                                "Complete the activity in MTSS, then return to this hub.",
-                                "Save short step feedback before moving to the next checkpoint.",
-                                "Submit final feedback after all guided steps are done.",
+                                "Open a step from the Testing Hub. MTSS opens in a new tab so the guide remains available here.",
+                                "Complete the activity inside MTSS, then return to this hub tab.",
+                                "Save short step feedback. The save action automatically marks the step as completed.",
+                                "Submit final feedback only after all guided steps show saved feedback.",
                                 "Copy or download the summary to share with the MTSS rollout team.",
                             ].map((text, index) => (
                                 <div key={text} className="flex gap-3 rounded-2xl border border-white/45 bg-white/75 p-4 dark:border-white/10 dark:bg-white/5">
@@ -1140,23 +1316,45 @@ const MTSSPilotTestingHubPage = memo(() => {
                                     </div>
                                     <p className="text-sm leading-relaxed text-slate-600 dark:text-white/70">{text}</p>
                                 </div>
-                            ))}
+                        ))}
                         </div>
                     </div>
                 </section>
 
-                <section className="rounded-[32px] border border-white/35 bg-white/85 p-6 shadow-[0_25px_80px_rgba(15,23,42,0.15)] dark:border-white/10 dark:bg-white/5">
-                    <div className="flex items-center gap-3">
-                        <div className="rounded-2xl bg-gradient-to-br from-[#0ea5e9] via-[#6366f1] to-[#ec4899] p-3 text-white shadow-lg">
-                            <ClipboardCheck className="h-5 w-5" />
-                        </div>
-                        <div>
-                            <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500 dark:text-white/55">Principal briefing notes</p>
-                            <h2 className="text-2xl font-black text-slate-900 dark:text-white">What principals should be able to explain to teachers after this pilot</h2>
+                <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+                    <div className="rounded-[32px] border border-white/35 bg-gradient-to-br from-[#fff7ed]/90 via-white to-[#eff6ff]/90 p-6 shadow-[0_25px_80px_rgba(15,23,42,0.15)] dark:border-white/10 dark:from-white/5 dark:via-white/10 dark:to-white/5">
+                        <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500 dark:text-white/55">Teacher test account for this unit</p>
+                        <h2 className="mt-2 text-3xl font-black text-slate-900 dark:text-white">{teacherRunbook.displayName}</h2>
+                        <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-white/70">
+                            Use this teacher account during principal-as-teacher steps so the test matches how teachers will really work in the unit.
+                        </p>
+                        <div className="mt-5 grid gap-3">
+                            {[
+                                { label: "Teacher", value: `${teacherRunbook.fullName} (${teacherRunbook.email})` },
+                                { label: "Unit", value: teacherRunbook.unit },
+                                { label: "Pilot class", value: teacherRunbook.className },
+                                { label: "Minimum workload", value: "Create 5 plans across 5 students, then make sure each plan has 3 weekly updates." },
+                            ].map((item) => (
+                                <div key={item.label} className="rounded-2xl border border-white/45 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
+                                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500 dark:text-white/55">{item.label}</p>
+                                    <p className="mt-2 text-sm font-semibold leading-relaxed text-slate-800 dark:text-white">{item.value}</p>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
-                    <div className="mt-6 grid gap-4 lg:grid-cols-3">
+                    <div className="rounded-[32px] border border-white/35 bg-white/85 p-6 shadow-[0_25px_80px_rgba(15,23,42,0.15)] dark:border-white/10 dark:bg-white/5">
+                        <div className="flex items-center gap-3">
+                            <div className="rounded-2xl bg-gradient-to-br from-[#0ea5e9] via-[#6366f1] to-[#ec4899] p-3 text-white shadow-lg">
+                                <ClipboardCheck className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500 dark:text-white/55">Principal briefing notes</p>
+                                <h2 className="text-2xl font-black text-slate-900 dark:text-white">What principals should be able to explain to teachers after this pilot</h2>
+                            </div>
+                        </div>
+
+                        <div className="mt-6 grid gap-4 lg:grid-cols-2">
                         {principalBriefingChecklist.map((item) => (
                             <div
                                 key={item.id}
@@ -1175,6 +1373,7 @@ const MTSSPilotTestingHubPage = memo(() => {
                                 </ul>
                             </div>
                         ))}
+                        </div>
                     </div>
                 </section>
 
@@ -1192,7 +1391,12 @@ const MTSSPilotTestingHubPage = memo(() => {
                     <div className="grid gap-5">
                         {pilotSteps.map((step) => {
                             const feedback = pilotState.feedbackByStep?.[step.id] || createEmptyStepFeedback();
-                            const isCompleted = Boolean(pilotState.completedSteps?.[step.id]);
+                            const isCompleted = hasSavedStepFeedback(step.id, pilotState);
+                            const taskRoute = buildPilotStepRoute(step, user);
+                            const startRoute = buildPilotStartRoute(step, user);
+                            const hasSeparateStartRoute = taskRoute !== startRoute;
+                            const primaryActionLabel = step.primaryActionLabel || "Open step";
+                            const secondaryActionLabel = step.secondaryActionLabel || "Open alternate page";
 
                             return (
                                 <article
@@ -1204,7 +1408,7 @@ const MTSSPilotTestingHubPage = memo(() => {
                                             : "border-white/35 bg-white/85 dark:border-white/10 dark:bg-white/5",
                                     )}
                                 >
-                                    <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                                    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
                                         <div className="space-y-4">
                                             <div className="flex flex-wrap items-center gap-3">
                                                 <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#f97316] via-[#ec4899] to-[#6366f1] text-sm font-black text-white shadow-lg">
@@ -1218,125 +1422,160 @@ const MTSSPilotTestingHubPage = memo(() => {
                                                 {isCompleted && (
                                                     <Badge className="rounded-full border-0 bg-emerald-500/90 px-3 py-1 text-white">
                                                         <CheckCircle2 className="mr-1 h-3.5 w-3.5" />
-                                                        Completed
-                                                    </Badge>
-                                                )}
-                                                {(feedback.helpfulNotes || feedback.confusingNotes || feedback.bugFound) && (
-                                                    <Badge variant="outline" className="rounded-full border-slate-300 bg-white/85 px-3 py-1 text-slate-700 dark:border-white/15 dark:bg-white/5 dark:text-white/75">
                                                         Feedback saved
                                                     </Badge>
                                                 )}
+                                                {step.requiresTeacherPersona && (
+                                                    <Badge variant="outline" className="rounded-full border-slate-300 bg-white/85 px-3 py-1 text-slate-700 dark:border-white/15 dark:bg-white/5 dark:text-white/75">
+                                                        Teacher-flow step
+                                                    </Badge>
+                                                )}
                                             </div>
 
-                                            <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr_1fr]">
-                                                <div className="space-y-2">
-                                                    <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500 dark:text-white/55">Goal</p>
-                                                    <p className="text-sm leading-relaxed text-slate-700 dark:text-white/75">{step.goal}</p>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500 dark:text-white/55">Actions</p>
-                                                    <ul className="space-y-2 text-sm leading-relaxed text-slate-700 dark:text-white/75">
-                                                        {step.actions.map((action) => (
-                                                            <li key={action} className="flex gap-2">
-                                                                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-900 dark:bg-white" />
-                                                                <span>{action}</span>
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500 dark:text-white/55">Expected outcome</p>
-                                                    <p className="text-sm leading-relaxed text-slate-700 dark:text-white/75">{step.expectedOutcome}</p>
-                                                </div>
+                                            <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                                                <StepDetailCard icon={Target} title="Goal" description={step.goal} tone="soft" />
+                                                <StepDetailCard icon={ListChecks} title="Actions" items={step.actions} tone="sky" />
+                                                <StepDetailCard icon={CheckCircle2} title="Expected outcome" description={step.expectedOutcome} tone="mint" />
+                                                <StepDetailCard icon={ClipboardCheck} title="Principal task" description={step.principalTask} tone="peach" />
+                                                <StepDetailCard icon={Gauge} title="Technical focus" items={step.technicalFocus || []} tone="soft" />
+                                                <StepDetailCard icon={Lightbulb} title="How to explain this to teachers" items={step.teacherTalkingPoints || []} tone="violet" />
                                             </div>
 
-                                            <div className="grid gap-5 lg:grid-cols-[0.9fr_1fr_1fr]">
-                                                <div className="space-y-2">
-                                                    <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500 dark:text-white/55">Principal task</p>
-                                                    <p className="text-sm leading-relaxed text-slate-700 dark:text-white/75">{step.principalTask}</p>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500 dark:text-white/55">Technical focus</p>
-                                                    <ul className="space-y-2 text-sm leading-relaxed text-slate-700 dark:text-white/75">
-                                                        {(step.technicalFocus || []).map((item) => (
-                                                            <li key={item} className="flex gap-2">
-                                                                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-900 dark:bg-white" />
-                                                                <span>{item}</span>
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500 dark:text-white/55">How to explain this to teachers</p>
-                                                    <ul className="space-y-2 text-sm leading-relaxed text-slate-700 dark:text-white/75">
-                                                        {(step.teacherTalkingPoints || []).map((item) => (
-                                                            <li key={item} className="flex gap-2">
-                                                                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-900 dark:bg-white" />
-                                                                <span>{item}</span>
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-                                            </div>
-
-                                            {Array.isArray(step.pageHints) && step.pageHints.length > 0 && (
-                                                <div className="space-y-2">
-                                                    <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500 dark:text-white/55">Pages to open in this step</p>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {step.pageHints.map((page) => (
-                                                            <span
-                                                                key={page}
-                                                                className="rounded-full border border-sky-200 bg-sky-50/90 px-3 py-1 text-[11px] font-semibold text-sky-700 dark:border-sky-400/20 dark:bg-sky-500/10 dark:text-sky-200"
-                                                            >
-                                                                {page}
-                                                            </span>
-                                                        ))}
+                                            <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+                                                {Array.isArray(step.pageHints) && step.pageHints.length > 0 && (
+                                                    <div className="rounded-[24px] border border-white/45 bg-white/80 p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)] dark:border-white/10 dark:bg-white/5">
+                                                        <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500 dark:text-white/55">Pages for this step</p>
+                                                        <div className="mt-3 flex flex-wrap gap-2">
+                                                            {step.pageHints.map((page) => {
+                                                                const hintRoute = resolveHintRoute(page, step);
+                                                                const isReferenceOnly = !hintRoute;
+                                                                return (
+                                                                    <button
+                                                                        key={page}
+                                                                        type="button"
+                                                                        disabled={isReferenceOnly}
+                                                                        onClick={() =>
+                                                                            hintRoute
+                                                                                ? openPilotRoute(hintRoute, "The referenced page is open in a new tab for this testing step.")
+                                                                                : undefined
+                                                                        }
+                                                                        className={cn(
+                                                                            "rounded-full border px-3 py-1 text-[11px] font-semibold transition",
+                                                                            isReferenceOnly
+                                                                                ? "cursor-default border-slate-200 bg-slate-100/90 text-slate-400 dark:border-white/10 dark:bg-white/5 dark:text-white/35"
+                                                                                : "border-sky-200 bg-sky-50/90 text-sky-700 hover:-translate-y-0.5 hover:bg-sky-100 dark:border-sky-400/20 dark:bg-sky-500/10 dark:text-sky-200 dark:hover:bg-sky-500/20",
+                                                                        )}
+                                                                    >
+                                                                        {page}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                        <p className="mt-3 text-[11px] leading-relaxed text-slate-500 dark:text-white/50">
+                                                            Gray route chips are references only because they need a dynamic ID from the current session.
+                                                        </p>
                                                     </div>
-                                                </div>
-                                            )}
+                                                )}
 
-                                            <div className="flex flex-wrap gap-2">
-                                                {step.featureKeys.map((feature) => (
-                                                    <span
-                                                        key={feature}
-                                                        className="rounded-full border border-white/50 bg-white/85 px-3 py-1 text-[11px] font-semibold text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-white/70"
-                                                    >
-                                                        {formatFeatureKey(feature)}
-                                                    </span>
-                                                ))}
+                                                {step.requiresTeacherPersona && (
+                                                    <div className="rounded-[24px] border border-amber-200 bg-amber-50/85 p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)] dark:border-amber-400/20 dark:bg-amber-500/10">
+                                                        <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500 dark:text-white/55">Teacher account</p>
+                                                        <p className="mt-2 text-sm font-semibold text-slate-800 dark:text-white">
+                                                            {teacherRunbook.fullName} · {teacherRunbook.email}
+                                                        </p>
+                                                        <p className="mt-2 text-[13px] leading-6 text-slate-600 dark:text-white/70">
+                                                            Use the {teacherRunbook.className} pilot class for create, edit, and progress-testing tasks in this unit.
+                                                        </p>
+                                                        <p className="mt-2 text-[11px] leading-relaxed text-slate-500 dark:text-white/55">
+                                                            Start step opens the teacher workflow preview in a new tab so this guide stays visible.
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="rounded-[24px] border border-white/45 bg-white/74 p-4 shadow-[0_16px_40px_rgba(15,23,42,0.05)] dark:border-white/10 dark:bg-white/5">
+                                                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500 dark:text-white/55">Coverage tags</p>
+                                                <div className="mt-3 flex flex-wrap gap-2">
+                                                    {step.featureKeys.map((feature) => (
+                                                        <span
+                                                            key={feature}
+                                                            className="rounded-full border border-white/50 bg-white/85 px-3 py-1 text-[11px] font-semibold text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-white/70"
+                                                        >
+                                                            {formatFeatureKey(feature)}
+                                                        </span>
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
 
-                                        <div className="w-full max-w-xs space-y-3 rounded-[28px] border border-white/45 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
-                                            <div className="flex items-center justify-between gap-3">
-                                                <div>
-                                                    <p className="text-xs font-semibold text-slate-500 dark:text-white/55">Feedback snapshot</p>
-                                                    <p className="mt-1 text-sm font-bold text-slate-900 dark:text-white">
-                                                        Ease {feedback.easeOfUse}/5 · Clarity {feedback.clarity}/5
+                                        <div className="w-full max-w-sm space-y-4 rounded-[28px] border border-white/45 bg-white/80 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] xl:sticky xl:top-6 dark:border-white/10 dark:bg-white/5">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="space-y-1">
+                                                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500 dark:text-white/55">Step snapshot</p>
+                                                    <p className="text-base font-black text-slate-900 dark:text-white">
+                                                        {isCompleted ? "Feedback saved" : "Feedback not saved yet"}
                                                     </p>
                                                 </div>
-                                                <Flag className={cn("h-5 w-5", feedback.bugFound ? "text-rose-500" : "text-slate-300 dark:text-white/20")} />
+                                                <Flag className={cn("h-5 w-5 shrink-0", feedback.bugFound ? "text-rose-500" : "text-slate-300 dark:text-white/20")} />
                                             </div>
-                                            <p className="text-xs leading-relaxed text-slate-500 dark:text-white/55">
-                                                Completion: <span className="font-semibold text-slate-800 dark:text-white">{feedback.completionStatus}</span>
-                                            </p>
-                                            <p className="text-xs leading-relaxed text-slate-500 dark:text-white/55">
-                                                Explainability to teachers: <span className="font-semibold text-slate-800 dark:text-white">{feedback.clarity}/5 clarity</span>
-                                            </p>
+
+                                            <div className="grid gap-3 sm:grid-cols-2">
+                                                <SnapshotMetric
+                                                    label="Status"
+                                                    value={completionLabels[feedback.completionStatus] || feedback.completionStatus}
+                                                    tone={
+                                                        feedback.completionStatus === "yes"
+                                                            ? "positive"
+                                                            : feedback.completionStatus === "partial"
+                                                                ? "warning"
+                                                                : "danger"
+                                                    }
+                                                />
+                                                <SnapshotMetric
+                                                    label="Bug"
+                                                    value={feedback.bugFound ? "Reported" : "None"}
+                                                    tone={feedback.bugFound ? "danger" : "positive"}
+                                                />
+                                                <SnapshotMetric label="Ease" value={`${feedback.easeOfUse}/5`} />
+                                                <SnapshotMetric label="Clarity" value={`${feedback.clarity}/5`} />
+                                            </div>
+
+                                            <div className="rounded-[24px] border border-white/45 bg-gradient-to-br from-[#f8fafc] via-white to-[#eff6ff]/85 p-4 dark:border-white/10 dark:from-white/5 dark:via-white/10 dark:to-white/5">
+                                                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500 dark:text-white/55">Route plan</p>
+                                                <div className="mt-3 space-y-2 text-xs leading-relaxed text-slate-600 dark:text-white/65">
+                                                    <p>
+                                                        Main page: <span className="font-semibold text-slate-900 dark:text-white">{taskRoute}</span>
+                                                    </p>
+                                                    {hasSeparateStartRoute && (
+                                                        <p>
+                                                            Extra page: <span className="font-semibold text-slate-900 dark:text-white">{startRoute}</span>
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
 
                                             <div className="grid gap-2">
                                                 <Button variant="gradient" onClick={() => handleStartStep(step)}>
                                                     <ArrowRight className="mr-2 h-4 w-4" />
-                                                    Start step
+                                                    {primaryActionLabel}
                                                 </Button>
+                                                {hasSeparateStartRoute && (
+                                                    <Button variant="outline" onClick={() => handleOpenStartPage(step)}>
+                                                        {secondaryActionLabel}
+                                                    </Button>
+                                                )}
                                                 <Button variant="glass" onClick={() => setActiveStepId(step.id)}>
                                                     <MessageSquareText className="mr-2 h-4 w-4" />
-                                                    Submit feedback
+                                                    Add step feedback
                                                 </Button>
-                                                <Button variant="outline" onClick={() => handleMarkComplete(step.id)}>
-                                                    <CheckCircle2 className="mr-2 h-4 w-4" />
-                                                    {isCompleted ? "Mark incomplete" : "Mark complete"}
-                                                </Button>
+                                            </div>
+
+                                            <div className="rounded-[24px] border border-dashed border-white/50 bg-white/55 px-4 py-3 dark:border-white/10 dark:bg-white/5">
+                                                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500 dark:text-white/55">How to use these buttons</p>
+                                                <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-white/65">
+                                                    {step.routeGuidance ||
+                                                        "Use the main button for the audited route. Use the second button only when you also want to test the longer entry path."}
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
@@ -1409,8 +1648,8 @@ const MTSSPilotTestingHubPage = memo(() => {
                         <div className="mt-5 space-y-4">
                             <div className="rounded-[24px] border border-white/45 bg-gradient-to-br from-[#eff6ff]/85 via-white to-[#fff7ed]/80 p-5 dark:border-white/10 dark:from-white/5 dark:via-white/10 dark:to-white/5">
                                 <p className="text-sm leading-relaxed text-slate-700 dark:text-white/75">
-                                    Submit final feedback after all guided steps are finished. This section focuses on rollout readiness,
-                                    most useful feature, confusing parts, performance concerns, missing capabilities, and the top three improvement priorities.
+                                    Final feedback unlocks only after every guided step has saved feedback. This wrap-up captures rollout readiness,
+                                    the most useful feature, confusing points, missing capabilities, and the top improvement priorities.
                                 </p>
                             </div>
                             <div className="grid gap-3 sm:grid-cols-2">
@@ -1427,8 +1666,13 @@ const MTSSPilotTestingHubPage = memo(() => {
                                     </p>
                                 </div>
                             </div>
+                            {!allStepsReviewed && (
+                                <div className="rounded-2xl border border-amber-200 bg-amber-50/85 px-4 py-3 text-sm text-amber-800 dark:border-amber-400/20 dark:bg-amber-500/10 dark:text-amber-200">
+                                    Final feedback is locked until the remaining {remainingFeedbackCount} guided {remainingFeedbackCount === 1 ? "step saves" : "steps save"} feedback.
+                                </div>
+                            )}
                             <div className="flex flex-wrap gap-2">
-                                <Button variant="gradient" onClick={() => setFinalFeedbackOpen(true)}>
+                                <Button variant="gradient" onClick={handleOpenFinalFeedback} disabled={!allStepsReviewed}>
                                     <MessageSquareText className="mr-2 h-4 w-4" />
                                     Open final feedback
                                 </Button>
@@ -1455,7 +1699,7 @@ const MTSSPilotTestingHubPage = memo(() => {
 
             <FinalFeedbackDialog
                 open={finalFeedbackOpen}
-                onOpenChange={setFinalFeedbackOpen}
+                onOpenChange={handleFinalDialogChange}
                 value={pilotState.finalFeedback}
                 onChange={(nextValue) =>
                     setPilotState((prev) =>
@@ -1466,6 +1710,8 @@ const MTSSPilotTestingHubPage = memo(() => {
                     )
                 }
                 onSave={handleSaveFinalFeedback}
+                blocked={!allStepsReviewed}
+                remainingCount={remainingFeedbackCount}
             />
         </div>
     );

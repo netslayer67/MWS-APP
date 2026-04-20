@@ -2,14 +2,16 @@ import { memo } from "react";
 import { motion } from "framer-motion";
 
 const MentorCard = memo(({ mentor, theme, aosVariant, index, batchSize, onAssign }) => {
-    const activeStudents = Number(mentor.activeStudents) || 0;
+    const classOwnedStudents = Number(mentor.classOwnedStudents ?? mentor.activeStudents) || 0;
+    const interventionStudents = Number(mentor.interventionStudents) || 0;
+    const manualAssignedStudents = Number(mentor.manualAssignedStudents ?? interventionStudents) || 0;
     const successValue = Number(String(mentor.successRate ?? "0").replace(/[^\d.]/g, "")) || 0;
     const successTone = successValue >= 85 ? "text-emerald-400" : successValue >= 60 ? "text-amber-400" : "text-rose-400";
     const classTags = Array.isArray(mentor.classes)
         ? mentor.classes.slice(0, 3).map((cls) => {
               const grade = cls.grade || mentor.unit || "MTSS";
               const focus = cls.className || cls.subject;
-              return focus ? `${grade} • ${focus}` : grade;
+              return focus ? `${grade} Â· ${focus}` : grade;
           })
         : [];
 
@@ -63,10 +65,14 @@ const MentorCard = memo(({ mentor, theme, aosVariant, index, batchSize, onAssign
                     </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-3 text-xs font-semibold text-slate-600 dark:text-white/70">
+                <div className="grid gap-3 text-xs font-semibold text-slate-600 dark:text-white/70 sm:grid-cols-3">
                     <div className="rounded-2xl border border-white/40 dark:border-white/10 px-3 py-3 bg-white/80 dark:bg-white/5 backdrop-blur text-center">
-                        <p className="text-[0.55rem] uppercase tracking-[0.35em] text-slate-500 dark:text-white/60">Active</p>
-                        <p className="text-2xl font-black text-slate-900 dark:text-white">{activeStudents}</p>
+                        <p className="text-[0.55rem] uppercase tracking-[0.35em] text-slate-500 dark:text-white/60">Class Roster</p>
+                        <p className="text-2xl font-black text-slate-900 dark:text-white">{classOwnedStudents}</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/40 dark:border-white/10 px-3 py-3 bg-white/80 dark:bg-white/5 backdrop-blur text-center">
+                        <p className="text-[0.55rem] uppercase tracking-[0.35em] text-slate-500 dark:text-white/60">Manual Cases</p>
+                        <p className="text-2xl font-black text-slate-900 dark:text-white">{manualAssignedStudents}</p>
                     </div>
                     <div className="rounded-2xl border border-white/40 dark:border-white/10 px-3 py-3 bg-white/80 dark:bg-white/5 backdrop-blur text-center">
                         <p className="text-[0.55rem] uppercase tracking-[0.35em] text-slate-500 dark:text-white/60">Success</p>
@@ -76,13 +82,17 @@ const MentorCard = memo(({ mentor, theme, aosVariant, index, batchSize, onAssign
 
                 <div className="flex flex-wrap gap-2 text-[0.65rem] font-semibold text-slate-600 dark:text-white/70">
                     <span className="px-3 py-1 rounded-full border border-white/60 dark:border-white/20 bg-white/80 dark:bg-white/5">
-                        {activeStudents >= 12 ? "High load" : "Balanced load"}
+                        {classOwnedStudents >= 12 ? "High class load" : "Balanced class load"}
                     </span>
                     <span className="px-3 py-1 rounded-full border border-white/60 dark:border-white/20 bg-white/80 dark:bg-white/5">
-                        SEL friendly
+                        {manualAssignedStudents > 0
+                            ? `${manualAssignedStudents} special-case handoff${manualAssignedStudents === 1 ? "" : "s"}`
+                            : "No special-case handoffs"}
                     </span>
                     <span className="px-3 py-1 rounded-full border border-white/60 dark:border-white/20 bg-white/80 dark:bg-white/5">
-                        {successValue >= 90 ? "Spotlight" : "Steady growth"}
+                        {interventionStudents > 0
+                            ? `${interventionStudents} intervention student${interventionStudents === 1 ? "" : "s"}`
+                            : "Roster ownership only"}
                     </span>
                 </div>
 

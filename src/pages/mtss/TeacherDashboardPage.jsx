@@ -1,4 +1,4 @@
-import { memo, lazy, Suspense, useCallback, useMemo, useRef, useState } from "react";
+import { memo, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fieldClasses, tabs } from "./data/teacherDashboardContent";
 import { useTeacherDashboardState } from "./hooks/useTeacherDashboardState";
 import useTeacherDashboardData from "./hooks/useTeacherDashboardData";
@@ -6,12 +6,14 @@ import TeacherHeroSection from "./teacher/TeacherHeroSection";
 import { useToast } from "@/components/ui/use-toast";
 import { useSelector } from "react-redux";
 import PageLoader from "@/components/PageLoader";
+import { fetchMtssMentors } from "@/services/mtssService";
 import { useLocation, useNavigate } from "react-router-dom";
 import QuickUpdateModal from "./components/QuickUpdateModal";
 import TeacherDashboardPanels from "./components/TeacherDashboardPanels";
 import TeacherDashboardStatus from "./components/TeacherDashboardStatus";
 import useTeacherDashboardActions from "./hooks/useTeacherDashboardActions";
 import { canUserEditPlanForStudent, resolveEditableAssignmentForUser } from "./utils/editPlanAccess";
+import { resolvePilotTeacherPreview } from "./utils/pilotTeacherPreview";
 import useMtssObserver from "./hooks/useMtssObserver";
 
 const CheckinCollageLayer = lazy(() => import("@/components/emotion-staff/CheckinCollageLayer"));
@@ -23,6 +25,51 @@ const TeacherDashboardPage = memo(() => {
     const navigate = useNavigate();
     const location = useLocation();
     const pageRef = useRef(null);
+    const pilotTeacherPreview = useMemo(() => resolvePilotTeacherPreview(location.search), [location.search]);
+    const [resolvedPilotTeacher, setResolvedPilotTeacher] = useState(null);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        if (!pilotTeacherPreview?.email) {
+            setResolvedPilotTeacher(null);
+            return () => {
+                isMounted = false;
+            };
+        }
+
+        setResolvedPilotTeacher(pilotTeacherPreview);
+
+        fetchMtssMentors({ search: pilotTeacherPreview.email, unit: pilotTeacherPreview.unit })
+            .then((payload) => {
+                if (!isMounted) return;
+                const mentors = payload?.mentors || [];
+                const exactMatch = mentors.find(
+                    (mentor) => String(mentor?.email || "").trim().toLowerCase() === String(pilotTeacherPreview.email).trim().toLowerCase(),
+                );
+                if (!exactMatch) return;
+                setResolvedPilotTeacher({
+                    ...pilotTeacherPreview,
+                    ...exactMatch,
+                    name: exactMatch.name || pilotTeacherPreview.fullName,
+                    username: exactMatch.username || pilotTeacherPreview.displayName,
+                    jobPosition: exactMatch.jobPosition || pilotTeacherPreview.jobPosition,
+                    role: exactMatch.role || pilotTeacherPreview.role,
+                    classes: Array.isArray(exactMatch.classes) && exactMatch.classes.length ? exactMatch.classes : pilotTeacherPreview.classes,
+                });
+            })
+            .catch(() => {
+                if (isMounted) {
+                    setResolvedPilotTeacher(pilotTeacherPreview);
+                }
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [pilotTeacherPreview]);
+
+    const effectiveTeacherUser = resolvedPilotTeacher || pilotTeacherPreview || authUser;
     const {
         statCards,
         students,
@@ -31,7 +78,7 @@ const TeacherDashboardPage = memo(() => {
         loading: dataLoading,
         error: dataError,
         refresh,
-    } = useTeacherDashboardData();
+    } = useTeacherDashboardData(effectiveTeacherUser);
     const {
         activeTab,
         setActiveTab,
@@ -48,7 +95,7 @@ const TeacherDashboardPage = memo(() => {
         submittingPlan,
         setSubmittingProgress,
         submittingProgress,
-    } = useTeacherDashboardState(tabs, { onSaveSuccess: refresh });
+    } = useTeacherDashboardState(tabs, { onSaveSuccess: refresh, viewerUser: effectiveTeacherUser });
     const [quickUpdateStudent, setQuickUpdateStudent] = useState(null);
     const [savingQuickUpdate, setSavingQuickUpdate] = useState(false);
 
@@ -71,17 +118,17 @@ const TeacherDashboardPage = memo(() => {
     const handleOpenQuickUpdate = useCallback((student) => setQuickUpdateStudent(student), []);
     const canEditPlanForStudent = useCallback(
         (student) => {
-            const assignmentOption = resolveEditableAssignmentForUser(authUser, student);
+            const assignmentOption = resolveEditableAssignmentForUser(effectiveTeacherUser, student);
             return Boolean(assignmentOption?.assignmentId);
         },
-        [authUser],
+        [effectiveTeacherUser],
     );
     const handleEditPlan = useCallback(
         (payload) => {
             const student = payload?.student || payload;
             if (!student) return;
 
-            const assignmentOption = payload?.assignmentOption || resolveEditableAssignmentForUser(authUser, student);
+            const assignmentOption = payload?.assignmentOption || resolveEditableAssignmentForUser(effectiveTeacherUser, student);
             if (!assignmentOption?.assignmentId) {
                 toast({
                     title: "No editable intervention",
@@ -91,7 +138,7 @@ const TeacherDashboardPage = memo(() => {
                 return;
             }
 
-            if (!canUserEditPlanForStudent(authUser, student, assignmentOption)) {
+            if (!canUserEditPlanForStudent(effectiveTeacherUser, student, assignmentOption)) {
                 toast({
                     title: "Edit permission denied",
                     description: "Only homeroom teacher or matching subject teacher can edit this intervention plan.",
@@ -102,7 +149,7 @@ const TeacherDashboardPage = memo(() => {
 
             startEditingPlan(student, assignmentOption);
         },
-        [authUser, startEditingPlan, toast],
+        [effectiveTeacherUser, startEditingPlan, toast],
     );
     const handleCancelEditPlan = useCallback(() => {
         cancelEditingPlan();
@@ -179,6 +226,29 @@ const TeacherDashboardPage = memo(() => {
                 >
                     <TeacherHeroSection heroBadge={heroBadge} tabs={heroTabs} activeTab={activeTab} onTabChange={handleHeroTabChange} />
                 </section>
+
+                {pilotTeacherPreview && (
+                    <section
+                        className="rounded-[28px] border border-amber-200/80 bg-gradient-to-r from-amber-50/95 via-white to-sky-50/90 px-5 py-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] dark:border-amber-400/20 dark:from-amber-500/10 dark:via-white/5 dark:to-sky-500/10"
+                        data-aos="fade-up"
+                        data-aos-delay="60"
+                    >
+                        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                            <div className="space-y-1">
+                                <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500 dark:text-white/55">Teacher workflow preview</p>
+                                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                                    You are reviewing the MTSS teacher flow for {pilotTeacherPreview.fullName} · {pilotTeacherPreview.className}.
+                                </p>
+                                <p className="text-sm text-slate-600 dark:text-white/70">
+                                    This preview keeps the principal inside the real teacher pages while matching the pilot class and unit teacher context for guided testing.
+                                </p>
+                            </div>
+                            <div className="rounded-full border border-white/60 bg-white/85 px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm dark:border-white/15 dark:bg-white/5 dark:text-white/75">
+                                Pilot teacher: {pilotTeacherPreview.displayName}
+                            </div>
+                        </div>
+                    </section>
+                )}
 
                 <TeacherDashboardStatus loading={dataLoading} error={dataError} onRetry={refresh} />
 
