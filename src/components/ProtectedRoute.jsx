@@ -13,11 +13,11 @@ const ProtectedRoute = ({
     const { user, isAuthenticated, loading } = useSelector((state) => state.auth);
     const location = useLocation();
 
-    // Role-aware fallback: students go to student hub, eligible staff to support hub, others to role selection
-    const supportHubRoles = ['staff', 'support_staff', 'nurse', 'teacher', 'head_unit', 'directorate', 'admin', 'superadmin'];
+    // Role-aware fallback: students → student hub, MTSS roles → support hub, others (staff/support_staff) → check-in selection
+    const mtssHubRoles = ['teacher', 'se_teacher', 'head_unit', 'directorate', 'admin', 'superadmin'];
     const fallbackPath = user?.role === 'student'
         ? '/student/support-hub'
-        : supportHubRoles.includes(user?.role)
+        : mtssHubRoles.includes(user?.role)
             ? '/support-hub'
             : '/select-role';
 

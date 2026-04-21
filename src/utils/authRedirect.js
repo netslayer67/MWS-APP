@@ -44,9 +44,10 @@ export const getDefaultPostLoginPath = (role) => {
         return "/student/support-hub";
     }
 
-    if (["teacher", "head_unit", "directorate", "admin", "superadmin"].includes(normalizedRole)) {
+    if (["teacher", "se_teacher", "head_unit", "directorate", "admin", "superadmin"].includes(normalizedRole)) {
         return "/support-hub";
     }
 
+    // staff, support_staff, and other non-MTSS roles go directly to check-in method selection
     return "/select-role";
 };

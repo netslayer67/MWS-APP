@@ -1,6 +1,6 @@
 // RouteConfig.jsx
 import { Suspense, lazy, memo, useMemo } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import PageLoader from "@/components/PageLoader";
 import PageTransition from "./PageTransition";
@@ -79,7 +79,9 @@ const AdminProtectedRoute = memo(({ children }) => {
 AdminProtectedRoute.displayName = 'AdminProtectedRoute';
 
 const previewEmails = new Set(["faisal@millennia21.id", "mahrukh@millennia21.id"]);
-const mtssRoleAccess = new Set(['staff', 'support_staff', 'nurse', 'teacher', 'directorate', 'head_unit', 'admin', 'superadmin']);
+// Only teacher-track and admin roles may access MTSS pages.
+// staff, support_staff, nurse have no MTSS context.
+const mtssRoleAccess = new Set(['teacher', 'se_teacher', 'directorate', 'head_unit', 'admin', 'superadmin']);
 
 const MtssPreviewGate = memo(({ children }) => {
     const { user, loading } = useSelector((state) => state.auth);
@@ -106,7 +108,8 @@ const MtssPreviewGate = memo(({ children }) => {
     }
 
     if (!isPreviewUser && !hasRoleAccess) {
-        return children;
+        // Non-MTSS roles (staff, support_staff, etc.) land on their check-in page
+        return <Navigate to="/select-role" replace />;
     }
 
     return children;
@@ -148,7 +151,7 @@ const publicRoutes = [
     <Route key="emotional-patterns" path="/profile/emotional-patterns" element={<ProtectedRoute><MemoizedPageTransition><EmotionalPatternsPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="emotional-patterns-user" path="/profile/emotional-patterns/:userId" element={<ProtectedRoute><MemoizedPageTransition><EmotionalPatternsPage /></MemoizedPageTransition></ProtectedRoute>} />,
     <Route key="user-management" path="/user-management" element={<AdminProtectedRoute><UserManagementDashboard /></AdminProtectedRoute>} />,
-    <Route key="support-hub" path="/support-hub" element={<ProtectedRoute allowedRoles={['staff', 'support_staff', 'nurse', 'teacher', 'head_unit', 'directorate', 'admin', 'superadmin']}><MtssPreviewGate><MemoizedPageTransition><SupportModeSelectionPage /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
+    <Route key="support-hub" path="/support-hub" element={<ProtectedRoute allowedRoles={['teacher', 'se_teacher', 'head_unit', 'directorate', 'admin', 'superadmin']}><MtssPreviewGate><MemoizedPageTransition><SupportModeSelectionPage /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
     // <Route key="mtss-role" path="/mtss" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSRoleSelectionPage /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
     <Route key="mtss-teacher" path="/mtss/teacher" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSTeacherDashboard /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
     <Route key="mtss-admin" path="/mtss/admin" element={<ProtectedRoute><MtssPreviewGate><MemoizedPageTransition><MTSSAdminDashboard /></MemoizedPageTransition></MtssPreviewGate></ProtectedRoute>} />,
@@ -157,7 +160,7 @@ const publicRoutes = [
         key="mtss-pilot-testing"
         path="/mtss/pilot-testing"
         element={
-            <ProtectedRoute allowedRoles={['teacher', 'se_teacher', 'staff', 'support_staff', 'nurse', 'head_unit', 'directorate', 'admin', 'superadmin']}>
+            <ProtectedRoute allowedRoles={['teacher', 'se_teacher', 'head_unit', 'directorate', 'admin', 'superadmin']}>
                 <MtssPreviewGate>
                     <MemoizedPageTransition>
                         <MTSSPilotTestingHubPage />

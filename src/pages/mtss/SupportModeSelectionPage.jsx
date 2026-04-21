@@ -153,7 +153,7 @@ const TRUST_ITEMS = [
 ];
 
 const ADMIN_ROLES = new Set(['admin', 'superadmin', 'directorate', 'head_unit']);
-const TEACHER_ROLES = new Set(['teacher', 'se_teacher', 'staff', 'support_staff', 'nurse']);
+const TEACHER_ROLES = new Set(['teacher', 'se_teacher']);
 
 /* ── OptionCard ─────────────────────────────────────────── */
 const OptionCard = memo(({ card, onClick, index }) => (
