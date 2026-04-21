@@ -21,6 +21,7 @@ import {
     PilotIdentityCard,
     PilotInsightTile,
     PilotKpiBar,
+    PilotLiveMonitor,
     PilotMetadataStrip,
     PilotPageHeader,
     PilotPanelSection,
@@ -28,6 +29,7 @@ import {
     PilotReadinessMiniChart,
     PilotSessionListItem,
     PilotStepFeedbackCard,
+    PilotActivityTimeline,
 } from "./components/PilotFeedbackPanelParts";
 import {
     buildBugSeveritySummary,
@@ -244,6 +246,14 @@ const AdminPilotFeedbackPanel = memo(() => {
                             />
 
                             <PilotPanelSection
+                                eyebrow="Live monitor"
+                                title="Exactly what the principal is doing now"
+                                description="Real-time operational view: current step, open dialog, route in focus, and the latest action captured from the pilot hub."
+                            >
+                                <PilotLiveMonitor session={selectedSession} />
+                            </PilotPanelSection>
+
+                            <PilotPanelSection
                                 eyebrow="Confidence trend"
                                 title="How rollout confidence is trending"
                                 description="Recent final feedback entries plotted side by side, colored by readiness verdict."
@@ -315,6 +325,14 @@ const AdminPilotFeedbackPanel = memo(() => {
                                     sessionKey={selectedSession?.sessionKey}
                                     completionLabel={`${selectedSession?.completedStepCount || 0}/${selectedSession?.stepCount || 0}`}
                                 />
+                            </PilotPanelSection>
+
+                            <PilotPanelSection
+                                eyebrow="Recent activity"
+                                title="Latest pilot actions from this principal"
+                                description="A short activity trail captured while the principal opens steps, writes feedback, and saves the pilot wrap-up."
+                            >
+                                <PilotActivityTimeline items={selectedSession?.activityTrail || []} />
                             </PilotPanelSection>
 
                             <PilotPanelSection

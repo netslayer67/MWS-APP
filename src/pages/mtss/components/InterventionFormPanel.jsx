@@ -3,9 +3,11 @@ import { Loader2, Sparkles } from "lucide-react";
 import { fetchStrategies } from "@/services/mtssService";
 import { filterStrategiesByType, validateInterventionForm } from "../config/interventionFormConfig";
 import InterventionFormFields from "./InterventionFormFields";
+import PilotTaskHintBanner from "./PilotTaskHintBanner";
 
 const InterventionFormPanel = memo(({
     formState,
+    pilotGuide = null,
     onChange,
     onSubmit,
     baseFieldClass,
@@ -85,6 +87,10 @@ const InterventionFormPanel = memo(({
                 <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.6),_transparent_60%)] dark:opacity-20" />
             </div>
             <div className="relative space-y-6">
+                {pilotGuide && (
+                    <PilotTaskHintBanner guide={pilotGuide} actionLabel="Complete this form in order" />
+                )}
+
                 <header className="space-y-2" data-aos="fade-up" data-aos-delay="60">
                     <div className="inline-flex items-center gap-2 rounded-full bg-white/80 dark:bg-white/10 border border-white/60 dark:border-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.4em] text-slate-600 dark:text-slate-200">
                         <Sparkles className="w-4 h-4 text-primary" />
@@ -125,8 +131,15 @@ const InterventionFormPanel = memo(({
                         <button
                             type="submit"
                             disabled={!isValid || submitting}
-                            className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-600 text-white font-semibold shadow-[0_18px_45px_rgba(14,116,214,0.28)] transition hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className={`relative inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-600 text-white font-semibold shadow-[0_18px_45px_rgba(14,116,214,0.28)] transition hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                pilotGuide?.formAction === "save-plan" ? "ring-2 ring-amber-400/90 ring-offset-2 ring-offset-white dark:ring-amber-300 dark:ring-offset-slate-900 animate-pulse" : ""
+                            }`}
                         >
+                            {pilotGuide?.formAction === "save-plan" && (
+                                <span className="pointer-events-none absolute -top-3 right-2 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-white shadow-lg animate-bounce">
+                                    Save here
+                                </span>
+                            )}
                             {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                             {submitting ? "Saving..." : "Save Intervention Plan"}
                         </button>

@@ -18,6 +18,8 @@ const StudentsTableMobileCard = memo(
         student,
         ProgressBadge,
         showActions,
+        pilotHintAction,
+        showPilotHint = false,
         onView,
         onUpdate,
         onEditPlan,
@@ -84,8 +86,15 @@ const StudentsTableMobileCard = memo(
         return (
             <div
                 onClick={() => onView?.(student)}
-                className={`relative overflow-hidden rounded-2xl bg-white/90 dark:bg-slate-900/70 backdrop-blur-lg border border-slate-200/60 dark:border-slate-700/50 shadow-[0_6px_24px_rgba(15,23,42,0.07)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.22)] cursor-pointer active:scale-[0.99] transition-transform duration-100 ${cardRing}`}
+                className={`relative overflow-hidden rounded-2xl bg-white/90 dark:bg-slate-900/70 backdrop-blur-lg border border-slate-200/60 dark:border-slate-700/50 shadow-[0_6px_24px_rgba(15,23,42,0.07)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.22)] cursor-pointer active:scale-[0.99] transition-transform duration-100 ${cardRing} ${
+                    showPilotHint && pilotHintAction === "view" ? "ring-2 ring-amber-400/90 ring-offset-2 ring-offset-white dark:ring-amber-300 dark:ring-offset-slate-950" : ""
+                }`}
             >
+                {showPilotHint && pilotHintAction === "view" && (
+                    <span className="pointer-events-none absolute right-3 top-3 z-10 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-white shadow-lg animate-bounce">
+                        Open this card
+                    </span>
+                )}
                 {/* Top accent bar */}
                 <div className={`h-1 w-full bg-gradient-to-r ${accent}`} />
 
@@ -172,14 +181,22 @@ const StudentsTableMobileCard = memo(
                             <div className="flex gap-2 mt-1.5">
                                 {actionButtons.map((action) => {
                                     const Icon = action.icon;
+                                    const hinted = showPilotHint && pilotHintAction === action.key;
                                     return (
                                         <button
                                             key={action.key}
                                             type="button"
                                             onClick={action.onClick}
                                             aria-label={action.label}
-                                            className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border text-[10px] font-semibold active:scale-95 transition-all ${action.className}`}
+                                            className={`relative flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border text-[10px] font-semibold active:scale-95 transition-all ${action.className} ${
+                                                hinted ? "ring-2 ring-amber-400/90 ring-offset-2 ring-offset-white dark:ring-amber-300 dark:ring-offset-slate-950 animate-pulse" : ""
+                                            }`}
                                         >
+                                            {hinted && (
+                                                <span className="pointer-events-none absolute -top-3 right-2 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-white shadow-lg animate-bounce">
+                                                    Tap here
+                                                </span>
+                                            )}
                                             <Icon className="w-3 h-3 shrink-0" />
                                             {action.label}
                                         </button>

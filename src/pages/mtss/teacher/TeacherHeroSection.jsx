@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { ArrowRight, Sparkles, CalendarDays, User } from "lucide-react";
 
-const TeacherHeroSection = ({ heroBadge, tabs, activeTab, onTabChange }) => (
+const TeacherHeroSection = ({ heroBadge, tabs, activeTab, onTabChange, pilotGuide = null }) => (
     <div className="relative rounded-2xl sm:rounded-[40px] p-[1.5px] bg-gradient-to-br from-[#f472b6]/60 via-[#818cf8]/50 to-[#34d399]/60 shadow-[0_16px_50px_rgba(99,102,241,0.15)] sm:shadow-[0_30px_80px_rgba(99,102,241,0.2)]">
         <div className="relative overflow-hidden rounded-[14px] sm:rounded-[38px] border border-white/40 dark:border-white/10 bg-white/80 dark:bg-slate-900/70 backdrop-blur-2xl">
             {/* Background decorations */}
@@ -72,12 +72,13 @@ const TeacherHeroSection = ({ heroBadge, tabs, activeTab, onTabChange }) => (
                             const Icon = tab.icon;
                             const active = activeTab === tab.key;
                             const disabled = Boolean(tab.disabled);
+                            const hinted = pilotGuide?.teacherTab === tab.key;
                             return (
                                 <button
                                     key={tab.key}
                                     onClick={() => !disabled && onTabChange(tab.key)}
                                     disabled={disabled}
-                                    className={`group flex items-center justify-center sm:justify-between gap-1 sm:gap-2 rounded-xl sm:rounded-2xl px-2 py-2 sm:px-4 sm:py-3.5 text-[11px] sm:text-sm font-semibold transition-all duration-200 border ${
+                                    className={`relative group flex items-center justify-center sm:justify-between gap-1 sm:gap-2 rounded-xl sm:rounded-2xl px-2 py-2 sm:px-4 sm:py-3.5 text-[11px] sm:text-sm font-semibold transition-all duration-200 border ${
                                         active
                                             ? "bg-gradient-to-r from-[#6366f1] via-[#8b5cf6] to-[#d946ef] text-white border-transparent shadow-[0_8px_24px_rgba(99,102,241,0.35)] sm:shadow-[0_12px_35px_rgba(99,102,241,0.4)] scale-[1.02]"
                                             : disabled
@@ -90,10 +91,10 @@ const TeacherHeroSection = ({ heroBadge, tabs, activeTab, onTabChange }) => (
                                         <span
                                             className={`inline-flex h-6 w-6 sm:h-8 sm:w-8 flex-shrink-0 items-center justify-center rounded-lg sm:rounded-xl transition-all ${
                                                 active
-                                                    ? "bg-white/25 text-white"
-                                                    : disabled
-                                                        ? "bg-slate-200/70 dark:bg-slate-700/60 text-slate-400 dark:text-slate-500"
-                                                    : "bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-600 text-slate-500 dark:text-slate-200 group-hover:from-indigo-50 group-hover:to-purple-50 group-hover:text-indigo-500 dark:group-hover:from-indigo-800 dark:group-hover:to-purple-800 dark:group-hover:text-indigo-300"
+                                                ? "bg-white/25 text-white"
+                                            : disabled
+                                                ? "bg-slate-200/70 dark:bg-slate-700/60 text-slate-400 dark:text-slate-500"
+                                            : "bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-600 text-slate-500 dark:text-slate-200 group-hover:from-indigo-50 group-hover:to-purple-50 group-hover:text-indigo-500 dark:group-hover:from-indigo-800 dark:group-hover:to-purple-800 dark:group-hover:text-indigo-300"
                                             }`}
                                         >
                                             <Icon className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -101,6 +102,14 @@ const TeacherHeroSection = ({ heroBadge, tabs, activeTab, onTabChange }) => (
                                         <span className="sm:hidden text-[10px]">{tab.shortLabel || tab.label}</span>
                                         <span className="hidden sm:inline text-sm">{tab.label}</span>
                                     </span>
+                                    {hinted && (
+                                        <>
+                                            <span className="pointer-events-none absolute inset-0 rounded-xl sm:rounded-2xl ring-2 ring-amber-400/90 ring-offset-2 ring-offset-white/70 dark:ring-amber-300 dark:ring-offset-slate-900/80 animate-pulse" />
+                                            <span className="pointer-events-none absolute -top-2 right-3 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-white shadow-lg">
+                                                {active ? "You are here" : "Next click"}
+                                            </span>
+                                        </>
+                                    )}
                                     <ArrowRight
                                         className={`hidden sm:block w-4 h-4 flex-shrink-0 transition-transform duration-200 ${
                                             active ? "translate-x-0.5" : disabled ? "opacity-0 -translate-x-1" : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0"

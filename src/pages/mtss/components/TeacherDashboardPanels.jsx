@@ -14,6 +14,7 @@ const PanelFallback = () => (
 const TeacherDashboardPanels = memo(
     ({
         activeTab,
+        pilotGuide,
         statCards,
         students,
         progressData,
@@ -56,6 +57,7 @@ const TeacherDashboardPanels = memo(
                     return (
                         <StudentsPanel
                             students={students}
+                            pilotGuide={pilotGuide}
                             TierPill={TierPill}
                             ProgressBadge={ProgressBadge}
                             onEditPlan={onEditPlan}
@@ -67,6 +69,7 @@ const TeacherDashboardPanels = memo(
                     return (
                         <InterventionFormPanel
                             formState={interventionForm}
+                            pilotGuide={pilotGuide}
                             onChange={handleInterventionChange}
                             onSubmit={(event) => handleSavePlan(event, interventionForm)}
                             baseFieldClass={baseFieldClass}
@@ -113,6 +116,7 @@ const TeacherDashboardPanels = memo(
             handleSavePlan,
             canEditPlanForStudent,
             interventionForm,
+            pilotGuide,
             notesTextareaClass,
             onCancelEditPlan,
             onEditPlan,

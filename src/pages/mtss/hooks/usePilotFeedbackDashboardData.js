@@ -90,6 +90,16 @@ const usePilotFeedbackDashboardData = ({ enabled = true } = {}) => {
     }, [refresh]);
 
     useEffect(() => {
+        if (!enabled) return undefined;
+
+        const intervalId = window.setInterval(() => {
+            refresh();
+        }, 15000);
+
+        return () => window.clearInterval(intervalId);
+    }, [enabled, refresh]);
+
+    useEffect(() => {
         if (!enabled || !dashboardUserId) return undefined;
 
         socketService.connect();

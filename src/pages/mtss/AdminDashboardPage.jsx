@@ -1,7 +1,7 @@
 import { memo, Suspense, lazy, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ClipboardCheck, MessageSquareText } from "lucide-react";
 import useMtssObserver from "./hooks/useMtssObserver";
 import { adminTabs, heroCard, overviewIcons } from "./data/adminDashboardContent";
@@ -9,6 +9,8 @@ import useAdminDashboardData from "./hooks/useAdminDashboardData";
 import { useAdminDashboardState } from "./hooks/useAdminDashboardState";
 import AdminHeroSection from "./admin/AdminHeroSection";
 import { canAccessPilotFeedbackAdmin } from "./utils/pilotFeedbackAccess";
+import PilotTaskHintBanner from "./components/PilotTaskHintBanner";
+import { resolvePilotStepGuide } from "./utils/pilotStepGuidance";
 import {
     buildStaffGreeting,
     formatStaffDisplayName,
@@ -29,6 +31,11 @@ const AdminDashboardPage = memo(() => {
     const { user } = useSelector((state) => state.auth);
     const { isObserver } = useMtssObserver();
     const navigate = useNavigate();
+    const location = useLocation();
+    const pilotGuide = useMemo(() => resolvePilotStepGuide(location.search), [location.search]);
+    const showGlobalPilotGuide = Boolean(
+        pilotGuide?.pageType === "admin" && !pilotGuide?.studentAction && !pilotGuide?.mentorAction && !pilotGuide?.panelArea,
+    );
     const showPilotFeedbackTab = canAccessPilotFeedbackAdmin(user);
     const dashboardTabs = useMemo(
         () => (
@@ -117,6 +124,7 @@ const AdminDashboardPage = memo(() => {
             case "overview":
                 return (
                     <AdminOverviewPanel
+                        pilotGuide={pilotGuide}
                         statCards={statCards}
                         systemSnapshot={systemSnapshot}
                         recentActivity={recentActivity}
@@ -127,6 +135,7 @@ const AdminDashboardPage = memo(() => {
             case "students":
                 return (
                     <AdminStudentsPanel
+                        pilotGuide={pilotGuide}
                         filters={filters}
                         onFilterChange={handleFilterChange}
                         gradeOptions={gradeOptions}
@@ -150,6 +159,7 @@ const AdminDashboardPage = memo(() => {
             case "mentors":
                 return (
                     <AdminMentorsPanel
+                        pilotGuide={pilotGuide}
                         mentorRoster={mentorRoster}
                         mentorDirectory={mentors}
                         students={students}
@@ -158,6 +168,7 @@ const AdminDashboardPage = memo(() => {
             case "analytics":
                 return (
                     <AdminAnalyticsPanel
+                        pilotGuide={pilotGuide}
                         successByType={successByType}
                         trendPaths={trendPaths}
                         trendData={trendData}
@@ -203,6 +214,7 @@ const AdminDashboardPage = memo(() => {
         tierMovement,
         isObserver,
         refresh,
+        pilotGuide,
         showPilotFeedbackTab,
         students,
     ]);
@@ -218,8 +230,18 @@ const AdminDashboardPage = memo(() => {
 
             <div className="relative z-20 container-tight py-12 lg:py-16 text-foreground dark:text-white space-y-10">
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} data-aos="fade-up">
-                    <AdminHeroSection heroCard={adminHeroCard} tabs={dashboardTabs} activeTab={activeTab} onTabChange={setActiveTab} />
+                    <AdminHeroSection
+                        heroCard={adminHeroCard}
+                        tabs={dashboardTabs}
+                        activeTab={activeTab}
+                        onTabChange={setActiveTab}
+                        pilotGuide={pilotGuide?.pageType === "admin" ? pilotGuide : null}
+                    />
                 </motion.div>
+
+                {showGlobalPilotGuide && (
+                    <PilotTaskHintBanner guide={pilotGuide} actionLabel="Review this page in order" />
+                )}
 
                 <div className="flex justify-end" data-aos="fade-left" data-aos-delay="60">
                     <button

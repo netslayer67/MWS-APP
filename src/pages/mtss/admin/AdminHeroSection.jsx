@@ -1,6 +1,6 @@
-import React, { memo } from "react";
+import { memo } from "react";
 
-const AdminHeroSection = ({ heroCard, tabs, activeTab, onTabChange }) => {
+const AdminHeroSection = ({ heroCard, tabs, activeTab, onTabChange, pilotGuide = null }) => {
     const BadgeIcon = heroCard.badgeIcon;
 
     return (
@@ -24,6 +24,7 @@ const AdminHeroSection = ({ heroCard, tabs, activeTab, onTabChange }) => {
                 {tabs.map((tab) => {
                     const TabIcon = tab.icon;
                     const active = activeTab === tab.key;
+                    const hinted = pilotGuide?.adminTab === tab.key;
                     const baseClass =
                         "px-5 py-3 rounded-full border backdrop-blur-xl font-semibold text-sm flex items-center gap-2 transition shadow-lg relative overflow-hidden group";
                     const activeClass =
@@ -44,6 +45,14 @@ const AdminHeroSection = ({ heroCard, tabs, activeTab, onTabChange }) => {
                             />
                             <TabIcon className="w-4 h-4" />
                             <span className="relative">{tab.label}</span>
+                            {hinted && (
+                                <>
+                                    <span className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-amber-400/90 ring-offset-2 ring-offset-white/80 dark:ring-amber-300 dark:ring-offset-slate-900/80 animate-pulse" />
+                                    <span className="pointer-events-none absolute -top-1 right-3 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-white shadow-lg">
+                                        {active ? "You are here" : "Start here"}
+                                    </span>
+                                </>
+                            )}
                         </button>
                     );
                 })}

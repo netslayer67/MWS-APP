@@ -3,6 +3,7 @@ import StudentsTable from "../../components/StudentsTable";
 import { TierPill, ProgressBadge } from "../../components/StatusPills";
 
 const AdminStudentsRoster = ({
+    pilotGuide = null,
     visibleStudents,
     filteredCount,
     selectedCount,
@@ -79,6 +80,7 @@ const AdminStudentsRoster = ({
             TierPill={TierPill}
             ProgressBadge={ProgressBadge}
             showActions={!isReadOnly}
+            pilotHintAction={pilotGuide?.studentAction || null}
             onView={onViewStudent}
             onUpdate={isReadOnly ? undefined : onUpdateStudent}
             selectable={!isReadOnly}

@@ -9,11 +9,13 @@ import PageLoader from "@/components/PageLoader";
 import { fetchMtssMentors } from "@/services/mtssService";
 import { useLocation, useNavigate } from "react-router-dom";
 import QuickUpdateModal from "./components/QuickUpdateModal";
+import PilotTaskHintBanner from "./components/PilotTaskHintBanner";
 import TeacherDashboardPanels from "./components/TeacherDashboardPanels";
 import TeacherDashboardStatus from "./components/TeacherDashboardStatus";
 import useTeacherDashboardActions from "./hooks/useTeacherDashboardActions";
 import { canUserEditPlanForStudent, resolveEditableAssignmentForUser } from "./utils/editPlanAccess";
 import { resolvePilotTeacherPreview } from "./utils/pilotTeacherPreview";
+import { resolvePilotStepGuide } from "./utils/pilotStepGuidance";
 import useMtssObserver from "./hooks/useMtssObserver";
 
 const CheckinCollageLayer = lazy(() => import("@/components/emotion-staff/CheckinCollageLayer"));
@@ -26,6 +28,10 @@ const TeacherDashboardPage = memo(() => {
     const location = useLocation();
     const pageRef = useRef(null);
     const pilotTeacherPreview = useMemo(() => resolvePilotTeacherPreview(location.search), [location.search]);
+    const pilotGuide = useMemo(() => resolvePilotStepGuide(location.search), [location.search]);
+    const showGlobalPilotGuide = Boolean(
+        pilotGuide?.pageType === "teacher" && !pilotGuide?.studentAction && !pilotGuide?.formAction,
+    );
     const [resolvedPilotTeacher, setResolvedPilotTeacher] = useState(null);
 
     useEffect(() => {
@@ -224,7 +230,13 @@ const TeacherDashboardPage = memo(() => {
                     data-aos="fade-up"
                     data-aos-duration="700"
                 >
-                    <TeacherHeroSection heroBadge={heroBadge} tabs={heroTabs} activeTab={activeTab} onTabChange={handleHeroTabChange} />
+                    <TeacherHeroSection
+                        heroBadge={heroBadge}
+                        tabs={heroTabs}
+                        activeTab={activeTab}
+                        onTabChange={handleHeroTabChange}
+                        pilotGuide={pilotGuide?.pageType === "teacher" ? pilotGuide : null}
+                    />
                 </section>
 
                 {pilotTeacherPreview && (
@@ -250,10 +262,15 @@ const TeacherDashboardPage = memo(() => {
                     </section>
                 )}
 
+                {showGlobalPilotGuide && (
+                    <PilotTaskHintBanner guide={pilotGuide} actionLabel="Use this path next" />
+                )}
+
                 <TeacherDashboardStatus loading={dataLoading} error={dataError} onRetry={refresh} />
 
                 <TeacherDashboardPanels
                     activeTab={activeTab}
+                    pilotGuide={pilotGuide?.pageType === "teacher" ? pilotGuide : null}
                     statCards={statCards}
                     students={students}
                     progressData={progressData}

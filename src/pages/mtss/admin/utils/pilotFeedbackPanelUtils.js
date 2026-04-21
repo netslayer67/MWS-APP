@@ -50,6 +50,40 @@ export const formatRelativeTime = (value) => {
     return formatDateTime(value);
 };
 
+export const formatPilotRouteLabel = (value = "") => {
+    const route = String(value || "").trim();
+    if (!route) return "Not captured yet";
+
+    return route
+        .replace(/\?.*$/, (query) => {
+            if (!query) return "";
+            return query
+                .replace(/\?/g, " ? ")
+                .replace(/&/g, " · ")
+                .replace(/=/g, "=");
+        });
+};
+
+export const getPilotLiveStatus = (session = {}) => {
+    const modal = String(session?.liveContext?.currentModal || "").trim();
+    const action = String(session?.liveContext?.currentAction || "").trim();
+    const currentStepTitle = String(session?.liveContext?.currentStepTitle || "").trim();
+
+    if (modal === "final-feedback") {
+        return "Writing final feedback";
+    }
+    if (modal === "step-feedback") {
+        return currentStepTitle ? `Writing feedback for ${currentStepTitle}` : "Writing step feedback";
+    }
+    if (action) {
+        return action.charAt(0).toUpperCase() + action.slice(1);
+    }
+    if (currentStepTitle) {
+        return `Working on ${currentStepTitle}`;
+    }
+    return "Pilot session open";
+};
+
 export const buildStepCoverage = (sessions = []) => {
     const map = new Map();
 

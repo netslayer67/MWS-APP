@@ -1,12 +1,13 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import PilotTaskHintBanner from "../components/PilotTaskHintBanner";
 import { CARD_THEMES, AOS_VARIANTS, CARD_BATCH_SIZE } from "./config/mentorPanelConfig";
 import { buildMentorRoster, makeMentorKey } from "./utils/mentorRosterUtils";
 import AdminMentorsHeader from "./components/AdminMentorsHeader";
 import MentorCard from "./components/MentorCard";
 import AdminMentorsFooter from "./components/AdminMentorsFooter";
 
-const AdminMentorsPanel = ({ mentorRoster = [], mentorDirectory = [], students = [] }) => {
+const AdminMentorsPanel = ({ mentorRoster = [], mentorDirectory = [], students = [], pilotGuide = null }) => {
     const navigate = useNavigate();
     const roster = useMemo(
         () => buildMentorRoster(mentorRoster, mentorDirectory, students),
@@ -71,6 +72,11 @@ const AdminMentorsPanel = ({ mentorRoster = [], mentorDirectory = [], students =
     return (
         <div className="space-y-8" data-aos="fade-up" data-aos-delay="100">
             <div className="glass glass-card mtss-card-surface p-8 rounded-[40px] shadow-[0_30px_90px_rgba(15,23,42,0.32)] border border-white/10 bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-white/5 dark:via-white/10 dark:to-white/5 backdrop-blur-2xl">
+                {pilotGuide && (
+                    <div className="mb-6">
+                        <PilotTaskHintBanner guide={pilotGuide} actionLabel="Follow this mentor check next" />
+                    </div>
+                )}
                 <AdminMentorsHeader />
                 <div className="grid gap-5 lg:gap-6 md:grid-cols-2 xl:grid-cols-3" data-aos="fade-up" data-aos-delay="180">
                     {visibleMentors.map((mentor, index) => {
@@ -84,6 +90,7 @@ const AdminMentorsPanel = ({ mentorRoster = [], mentorDirectory = [], students =
                                 aosVariant={aosVariant}
                                 index={index}
                                 batchSize={CARD_BATCH_SIZE}
+                                highlightAssign={pilotGuide?.mentorAction === "assign" && index === 0}
                                 onAssign={triggerAssign}
                             />
                         );

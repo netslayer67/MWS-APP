@@ -2,6 +2,7 @@ import { OBSERVER_EMAILS } from "../hooks/useMtssObserver";
 import {
     appendPilotTeacherPreviewRoute,
 } from "../utils/pilotTeacherPreview";
+import { appendPilotStepRoute } from "../utils/pilotStepGuidance";
 
 export const PILOT_PROGRESS_STORAGE_KEY = "mtss:pilot-testing:progress";
 
@@ -112,17 +113,17 @@ export const pilotSteps = [
         order: 2,
         title: "Mentor Assignment & Management",
         duration: "6 min",
-        routeKey: "overview",
-        startRouteKey: "overview",
-        primaryActionLabel: "Open admin dashboard",
+        routeKey: "mentors",
+        startRouteKey: "mentors",
+        primaryActionLabel: "Open Manage Mentors",
         routeGuidance:
-            "The main button opens System Overview first. From there, principals should click Manage Mentors themselves so the navigation path is tested naturally.",
+            "The main button opens the Manage Mentors tab for this step so principals land on the ownership and assignment workflow directly.",
         goal: "Test ownership review and the special-case mentor assignment flow without skipping the natural navigation path.",
         principalTask:
             "Confirm the principal can explain that class teachers already own their own class roster automatically, while manual mentor assignment is reserved for subject-specific or exceptional ownership changes.",
         pageHints: ["/mtss/admin?tab=overview", "/mtss/admin?tab=mentors", "/mtss/admin/assign/:mentorId"],
         actions: [
-            "Use the main button to land on System Overview, then click Manage Mentors yourself instead of being dropped directly into the mentor page.",
+            "Use the main button to open the Manage Mentors tab.",
             "Review the roster and confirm that class teachers are already connected to their usual class ownership automatically.",
             "Open one mentor assignment page only to test the manual flow for a subject-specific or special-case handoff.",
             "If you assign a student manually, return to the roster and confirm the change appears immediately.",
@@ -145,16 +146,16 @@ export const pilotSteps = [
         title: "Students List & Filters",
         duration: "5 min",
         routeKey: "students",
-        startRouteKey: "overview",
-        primaryActionLabel: "Open admin dashboard",
+        startRouteKey: "students",
+        primaryActionLabel: "Open All Students",
         routeGuidance:
-            "The main button opens System Overview first. From there, principals should click All Students themselves before testing filters and search.",
+            "The main button opens the All Students tab for this step so principals can start testing filters and search immediately.",
         goal: "Check whether the roster, search, and filters help principals find the right students quickly from the normal admin flow.",
         principalTask:
             "Test whether the principal can guide a teacher lead toward the exact student list they need, using grade, tier, subject, and mentor context without getting lost.",
         pageHints: ["/mtss/admin?tab=overview", "/mtss/admin?tab=students"],
         actions: [
-            "Use the main button to open System Overview, then click All Students yourself.",
+            "Use the main button to open the All Students tab.",
             "Try at least two filter combinations using grade, tier, intervention type, and mentor.",
             "Search for one specific student by name and confirm the result stays consistent with the active filters.",
             "Check whether the list remains understandable when more students are loaded.",
@@ -311,16 +312,16 @@ export const pilotSteps = [
         title: "Student Profile & Detail View",
         duration: "5 min",
         routeKey: "students",
-        startRouteKey: "overview",
-        primaryActionLabel: "Open admin dashboard",
+        startRouteKey: "students",
+        primaryActionLabel: "Open All Students",
         routeGuidance:
-            "The main button opens System Overview first. From there, principals should click All Students and choose one student themselves.",
+            "The main button opens the All Students tab because the student profile should be reached from roster context for this step.",
         goal: "Confirm that one student page provides enough context for follow-up coaching and decision making.",
         principalTask:
             "Review whether one student profile contains enough context for a principal to understand the case without needing a technical teammate to interpret it.",
         pageHints: ["/mtss/admin?tab=overview", "/mtss/admin?tab=students", "/mtss/student/:slug"],
         actions: [
-            "Use the main button to open System Overview, then click All Students and select one student from the pilot class.",
+            "Use the main button to open the All Students tab and select one student from the pilot class.",
             "Review the student's tier, intervention summary, assigned mentor, latest update, and next action indicator.",
             "Check whether the profile tells a coherent story from plan creation through progress history.",
         ],
@@ -374,16 +375,16 @@ export const pilotSteps = [
         title: "Mentor Visibility & Coverage",
         duration: "4 min",
         routeKey: "mentors",
-        startRouteKey: "overview",
-        primaryActionLabel: "Open admin dashboard",
+        startRouteKey: "mentors",
+        primaryActionLabel: "Open Manage Mentors",
         routeGuidance:
-            "The main button opens System Overview first. From there, principals should click Manage Mentors themselves to review workload and ownership visibility.",
+            "The main button opens the Manage Mentors tab because this step focuses on workload and ownership visibility.",
         goal: "Confirm that principals can read workload and coverage clearly enough to make staffing decisions.",
         principalTask:
             "Check whether the principal can explain who owns which students, where workload may be uneven, and where a special-case reassignment might be needed.",
         pageHints: ["/mtss/admin?tab=overview", "/mtss/admin?tab=mentors"],
         actions: [
-            "Use the main button to open System Overview, then click Manage Mentors yourself.",
+            "Use the main button to open the Manage Mentors tab.",
             "Review overall workload distribution and look for unclear ownership or overload.",
             "Confirm that the mentor page is useful for exception handling, not a page teachers must use every day.",
         ],
@@ -405,16 +406,16 @@ export const pilotSteps = [
         title: "Analytics & Trends",
         duration: "5 min",
         routeKey: "analytics",
-        startRouteKey: "overview",
-        primaryActionLabel: "Open admin dashboard",
+        startRouteKey: "analytics",
+        primaryActionLabel: "Open Analytics Lab",
         routeGuidance:
-            "The main button opens System Overview first. From there, principals should click Analytics Lab themselves so the navigation path is also tested.",
+            "The main button opens the Analytics Lab tab for this step so principals can review charts and trend quality directly.",
         goal: "Review whether analytics are complete, useful, and clean enough for leadership-level decision making.",
         principalTask:
             "Use analytics to decide whether the system provides enough signal for principal conversations about intervention effectiveness and student movement.",
         pageHints: ["/mtss/admin?tab=overview", "/mtss/admin?tab=analytics"],
         actions: [
-            "Use the main button to open System Overview, then click Analytics Lab yourself.",
+            "Use the main button to open the Analytics Lab tab.",
             "Review success rate by intervention type, student progress trend, focus-area highlights, and movement summary.",
             "Check specifically that student progress is not blank when the pilot class already has progress updates.",
             "Note which analytic is most actionable and which part still needs UI cleanup or clearer explanation.",
@@ -437,10 +438,10 @@ export const pilotSteps = [
         title: "Decision Simulation & Wrap-Up",
         duration: "5 min",
         routeKey: "students",
-        startRouteKey: "overview",
-        primaryActionLabel: "Open admin dashboard",
+        startRouteKey: "students",
+        primaryActionLabel: "Open All Students",
         routeGuidance:
-            "The main button opens System Overview first. From there, principals should choose the student path themselves for the wrap-up decision.",
+            "The main button opens the All Students tab so principals can choose one case quickly for the wrap-up decision.",
         goal: "Simulate a real follow-up decision and verify that the system provides enough evidence to support it.",
         principalTask:
             "Conclude whether the principal feels ready to explain the teacher workflow and make a concrete MTSS follow-up decision using only what the system shows.",
@@ -552,21 +553,22 @@ export const buildPilotAdminBaseRoute = (user) => {
     return "/mtss/admin";
 };
 
-const buildPilotRouteFromKey = (routeKey, user) => {
+const buildPilotRouteFromKey = (routeKey, user, stepId = "") => {
     const adminBaseRoute = buildPilotAdminBaseRoute(user);
-    const withTeacherPreview = (route) => appendPilotTeacherPreviewRoute(route, user);
+    const withStep = (route) => appendPilotStepRoute(route, stepId);
+    const withTeacherPreview = (route) => withStep(appendPilotTeacherPreviewRoute(route, user));
 
     switch (routeKey) {
         case "hub":
-            return "/mtss/pilot-testing";
+            return withStep("/mtss/pilot-testing");
         case "overview":
-            return `${adminBaseRoute}?tab=overview`;
+            return withStep(`${adminBaseRoute}?tab=overview`);
         case "students":
-            return `${adminBaseRoute}?tab=students`;
+            return withStep(`${adminBaseRoute}?tab=students`);
         case "mentors":
-            return `${adminBaseRoute}?tab=mentors`;
+            return withStep(`${adminBaseRoute}?tab=mentors`);
         case "analytics":
-            return `${adminBaseRoute}?tab=analytics`;
+            return withStep(`${adminBaseRoute}?tab=analytics`);
         case "teacher-dashboard":
             return withTeacherPreview("/mtss/teacher?tab=dashboard");
         case "teacher-students":
@@ -576,15 +578,15 @@ const buildPilotRouteFromKey = (routeKey, user) => {
         case "teacher-edit":
             return withTeacherPreview("/mtss/teacher?tab=edit");
         case "ai-assistant":
-            return "/ai-assistant";
+            return withStep("/ai-assistant");
         default:
-            return "/mtss/pilot-testing";
+            return withStep("/mtss/pilot-testing");
     }
 };
 
-export const buildPilotStepRoute = (step, user) => buildPilotRouteFromKey(step?.routeKey, user);
+export const buildPilotStepRoute = (step, user) => buildPilotRouteFromKey(step?.routeKey, user, step?.id);
 
-export const buildPilotStartRoute = (step, user) => buildPilotRouteFromKey(step?.startRouteKey || step?.routeKey, user);
+export const buildPilotStartRoute = (step, user) => buildPilotRouteFromKey(step?.startRouteKey || step?.routeKey, user, step?.id);
 
 export const createEmptyStepFeedback = () => ({
     completionStatus: "yes",

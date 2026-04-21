@@ -1,4 +1,5 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
+import PilotTaskHintBanner from "../components/PilotTaskHintBanner";
 import AdminAssignmentModal from "./AdminAssignmentModal";
 import AdminStudentsFilters from "./components/AdminStudentsFilters";
 import AdminStudentsRoster from "./components/AdminStudentsRoster";
@@ -6,6 +7,7 @@ import AdminStudentsRoster from "./components/AdminStudentsRoster";
 const BATCH_SIZE = 10;
 
 const AdminStudentsPanel = ({
+    pilotGuide = null,
     filters,
     onFilterChange,
     gradeOptions,
@@ -61,18 +63,30 @@ const AdminStudentsPanel = ({
 
     return (
         <div className="space-y-6">
-            <AdminStudentsFilters
-                filters={filters}
-                onFilterChange={onFilterChange}
-                gradeOptions={gradeOptions}
-                tierOptions={tierOptions}
-                typeOptions={typeOptions}
-                mentorOptions={mentorOptions}
-                filteredCount={filteredStudents.length}
-                totalCount={allStudents.length}
-            />
+            {pilotGuide && (
+                <PilotTaskHintBanner guide={pilotGuide} actionLabel="Use these controls next" />
+            )}
+
+            <div className={`relative ${pilotGuide?.panelArea === "filters" ? "rounded-[32px] ring-2 ring-amber-400/80 ring-offset-2 ring-offset-white dark:ring-amber-300 dark:ring-offset-slate-950 animate-pulse" : ""}`}>
+                {pilotGuide?.panelArea === "filters" && (
+                    <span className="pointer-events-none absolute -top-3 left-4 z-10 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-white shadow-lg animate-bounce">
+                        Start here
+                    </span>
+                )}
+                <AdminStudentsFilters
+                    filters={filters}
+                    onFilterChange={onFilterChange}
+                    gradeOptions={gradeOptions}
+                    tierOptions={tierOptions}
+                    typeOptions={typeOptions}
+                    mentorOptions={mentorOptions}
+                    filteredCount={filteredStudents.length}
+                    totalCount={allStudents.length}
+                />
+            </div>
 
             <AdminStudentsRoster
+                pilotGuide={pilotGuide}
                 visibleStudents={visibleStudents}
                 filteredCount={filteredStudents.length}
                 selectedCount={selectedStudents.length}

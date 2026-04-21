@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { motion } from "framer-motion";
 
-const MentorCard = memo(({ mentor, theme, aosVariant, index, batchSize, onAssign }) => {
+const MentorCard = memo(({ mentor, theme, aosVariant, index, batchSize, onAssign, highlightAssign = false }) => {
     const classOwnedStudents = Number(mentor.classOwnedStudents ?? mentor.activeStudents) || 0;
     const interventionStudents = Number(mentor.interventionStudents) || 0;
     const manualAssignedStudents = Number(mentor.manualAssignedStudents ?? interventionStudents) || 0;
@@ -103,9 +103,16 @@ const MentorCard = memo(({ mentor, theme, aosVariant, index, batchSize, onAssign
                         Pulse profile
                     </button>
                     <button
-                        className="flex-1 px-4 py-2.5 rounded-full border border-white/60 dark:border-white/20 text-slate-900 dark:text-white bg-white/85 dark:bg-white/5 shadow-inner hover:-translate-y-0.5 transition"
+                        className={`relative flex-1 px-4 py-2.5 rounded-full border border-white/60 dark:border-white/20 text-slate-900 dark:text-white bg-white/85 dark:bg-white/5 shadow-inner hover:-translate-y-0.5 transition ${
+                            highlightAssign ? "ring-2 ring-amber-400/90 ring-offset-2 ring-offset-white/80 dark:ring-amber-300 dark:ring-offset-slate-900/80 animate-pulse" : ""
+                        }`}
                         onClick={() => onAssign?.(mentor)}
                     >
+                        {highlightAssign && (
+                            <span className="pointer-events-none absolute -top-2 right-3 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-white shadow-lg">
+                                Try this
+                            </span>
+                        )}
                         Assign
                     </button>
                 </div>

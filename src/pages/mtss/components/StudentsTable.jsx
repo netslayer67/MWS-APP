@@ -1,6 +1,7 @@
 import { memo } from "react";
 import StudentsTableDesktopRow from "./StudentsTableDesktopRow";
 import StudentsTableMobileCard from "./StudentsTableMobileCard";
+import { resolveProgressAssignmentForStudent } from "../utils/editPlanAccess";
 
 const MAX_RENDER = 50;
 
@@ -19,6 +20,7 @@ const StudentsTable = memo(
         ProgressBadge,
         dense = false,
         showActions = false,
+        pilotHintAction = null,
         onView,
         onUpdate,
         onEditPlan,
@@ -29,6 +31,19 @@ const StudentsTable = memo(
     }) => {
         const activeSelectedIds = selectedIds || [];
         const limitedStudents = students.slice(0, Math.min(MAX_RENDER, students.length));
+        const hintedStudent = limitedStudents.find((student) => {
+            if (pilotHintAction === "view") return true;
+            if (pilotHintAction === "progress") {
+                return Boolean(resolveProgressAssignmentForStudent(student)?.assignmentId);
+            }
+            if (pilotHintAction === "edit") {
+                return typeof canEditPlanForStudent === "function"
+                    ? Boolean(canEditPlanForStudent(student))
+                    : Boolean(student?.assignmentId || Number(student?.activeAssignmentCount || 0) > 0);
+            }
+            return false;
+        });
+        const hintedStudentKey = hintedStudent?.id || hintedStudent?._id || hintedStudent?.name || null;
 
         return (
             <div className="space-y-5">
@@ -77,6 +92,8 @@ const StudentsTable = memo(
                                         student={student}
                                         ProgressBadge={ProgressBadge}
                                         showActions={showActions}
+                                        pilotHintAction={pilotHintAction}
+                                        showPilotHint={Boolean(pilotHintAction) && hintedStudentKey === key}
                                         onView={onView}
                                         onUpdate={onUpdate}
                                         onEditPlan={onEditPlan}
@@ -103,6 +120,8 @@ const StudentsTable = memo(
                                 student={student}
                                 ProgressBadge={ProgressBadge}
                                 showActions={showActions}
+                                pilotHintAction={pilotHintAction}
+                                showPilotHint={Boolean(pilotHintAction) && hintedStudentKey === key}
                                 onView={onView}
                                 onUpdate={onUpdate}
                                 onEditPlan={onEditPlan}

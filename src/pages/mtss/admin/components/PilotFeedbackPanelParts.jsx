@@ -27,7 +27,7 @@ import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis } from "rechar
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { BUG_SEVERITY_LABELS, buildBugSeveritySummary, formatRelativeTime, READINESS_LABELS } from "../utils/pilotFeedbackPanelUtils";
+import { BUG_SEVERITY_LABELS, buildBugSeveritySummary, formatDateTime, formatPilotRouteLabel, formatRelativeTime, getPilotLiveStatus, READINESS_LABELS } from "../utils/pilotFeedbackPanelUtils";
 
 const panelSurfaceClass =
     "relative overflow-hidden rounded-[34px] border border-white/40 bg-white/86 shadow-[0_24px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/55";
@@ -1126,6 +1126,63 @@ export const PilotMetadataStrip = memo(({ session, finalSavedAtLabel, sessionKey
     </div>
 ));
 
+export const PilotLiveMonitor = memo(({ session }) => {
+    const liveStatus = getPilotLiveStatus(session);
+    const currentStep = session?.liveContext?.currentStepTitle || "No step in focus";
+    const currentRoute = formatPilotRouteLabel(session?.liveContext?.currentRoute || session?.lastViewedRoute || "");
+    const lastActionAt = formatDateTime(session?.liveContext?.lastActionAt || session?.updatedAt || session?.clientUpdatedAt);
+
+    return (
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <PilotInfoField label="Live status" value={liveStatus} tone="info" />
+            <PilotInfoField label="Step in focus" value={currentStep} tone="default" />
+            <PilotInfoField label="Live route" value={currentRoute} tone="default" multiline className="xl:col-span-2" />
+            <PilotInfoField label="Open modal" value={session?.liveContext?.currentModal || "No modal open"} tone="default" />
+            <PilotInfoField label="Last principal action" value={session?.liveContext?.currentAction || "No action label yet"} tone="warning" />
+            <PilotInfoField label="Last live event" value={lastActionAt} tone="success" />
+            <PilotInfoField label="Final feedback state" value={session?.finalFeedbackSavedAt ? "Final feedback saved" : "Still drafting or not started"} tone={session?.finalFeedbackSavedAt ? "success" : "warning"} />
+        </div>
+    );
+});
+
+export const PilotActivityTimeline = memo(({ items = [] }) => {
+    if (!items.length) {
+        return (
+            <PilotEmptyState
+                title="No activity trail yet"
+                description="Recent pilot actions will appear here as principals open steps, write feedback, and save their wrap-up."
+            />
+        );
+    }
+
+    return (
+        <div className="space-y-3">
+            {items.map((entry, index) => (
+                <div
+                    key={`${entry.type}-${entry.at}-${index}`}
+                    className="grid gap-3 rounded-[24px] border border-white/45 bg-white/80 p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.05] md:grid-cols-[9rem_minmax(0,1fr)]"
+                >
+                    <div className="space-y-1">
+                        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500 dark:text-white/50">{entry.type || "activity"}</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-white">{formatDateTime(entry.at)}</p>
+                    </div>
+                    <div className="space-y-1.5">
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">{entry.label || "Activity recorded"}</p>
+                        {entry.stepTitle ? (
+                            <p className="text-xs text-slate-500 dark:text-white/55">Step: {entry.stepTitle}</p>
+                        ) : null}
+                        {entry.route ? (
+                            <p className="text-xs leading-relaxed text-slate-500 dark:text-white/55">
+                                Route: {formatPilotRouteLabel(entry.route)}
+                            </p>
+                        ) : null}
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+});
+
 PilotPanelSection.displayName = "PilotPanelSection";
 PilotMetricCard.displayName = "PilotMetricCard";
 PilotDashboardHero.displayName = "PilotDashboardHero";
@@ -1147,3 +1204,5 @@ PilotIdentityCard.displayName = "PilotIdentityCard";
 PilotDecisionHub.displayName = "PilotDecisionHub";
 PilotInsightTile.displayName = "PilotInsightTile";
 PilotMetadataStrip.displayName = "PilotMetadataStrip";
+PilotLiveMonitor.displayName = "PilotLiveMonitor";
+PilotActivityTimeline.displayName = "PilotActivityTimeline";

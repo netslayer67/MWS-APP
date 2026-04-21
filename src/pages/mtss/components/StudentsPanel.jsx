@@ -1,6 +1,7 @@
 import { memo, useMemo, useState, useCallback, useDeferredValue } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { useLocation, useNavigate } from "react-router-dom";
+import PilotTaskHintBanner from "./PilotTaskHintBanner";
 import StudentsTable from "./StudentsTable";
 import QuickUpdateModal from "./QuickUpdateModal";
 import { updateMentorAssignment, uploadEvidence } from "@/services/mtssService";
@@ -15,7 +16,7 @@ const DEFAULT_VIEW_STATE = {
     visibleCount: STUDENTS_PANEL_BATCH,
 };
 
-const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh, onEditPlan, canEditPlanForStudent }) => {
+const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh, onEditPlan, canEditPlanForStudent, pilotGuide = null }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const { toast } = useToast();
@@ -163,6 +164,10 @@ const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh, onEd
 
     return (
         <div className="space-y-6 mtss-theme">
+            {pilotGuide && (
+                <PilotTaskHintBanner guide={pilotGuide} actionLabel="Click this next inside the teacher roster" />
+            )}
+
             <FilterBar activeTier={activeTier} setActiveTier={setActiveTier} query={query} setQuery={setQuery} />
 
             <section
@@ -173,13 +178,14 @@ const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh, onEd
                 <RosterHeader visible={visibleStudents.length} total={filteredStudents.length} />
 
                 <div data-aos="fade-up" data-aos-delay="120">
-                    <StudentsTable
-                        students={visibleStudents}
-                        TierPill={TierPill}
-                        ProgressBadge={ProgressBadge}
-                        showActions
-                        onView={handleView}
-                        onUpdate={(student) => handleOpen("update", student)}
+                        <StudentsTable
+                            students={visibleStudents}
+                            TierPill={TierPill}
+                            ProgressBadge={ProgressBadge}
+                            showActions
+                            pilotHintAction={pilotGuide?.studentAction || null}
+                            onView={handleView}
+                            onUpdate={(student) => handleOpen("update", student)}
                         onEditPlan={onEditPlan}
                         canEditPlanForStudent={canEditPlanForStudent}
                     />

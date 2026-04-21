@@ -38,6 +38,7 @@ import {
     appendPilotTeacherPreviewRoute,
     resolvePilotTeacherRunbook,
 } from "./utils/pilotTeacherPreview";
+import { appendPilotStepRoute } from "./utils/pilotStepGuidance";
 import {
     PILOT_PROGRESS_STORAGE_KEY,
     aiTipsAndTricks,
@@ -57,6 +58,17 @@ const buildPilotStorageKey = (user) => {
     const email = String(user?.email || "anonymous").trim().toLowerCase();
     return `${PILOT_PROGRESS_STORAGE_KEY}:${email || "anonymous"}`;
 };
+
+const MAX_PILOT_ACTIVITY_EVENTS = 20;
+
+const createEmptyLiveContext = () => ({
+    currentStepId: "",
+    currentStepTitle: "",
+    currentModal: "",
+    currentAction: "",
+    currentRoute: "",
+    lastActionAt: null,
+});
 
 const createPilotSessionKey = (user) => {
     const emailSeed = String(user?.email || "principal")
@@ -135,6 +147,28 @@ const sanitizeFinalDraft = (draft = {}) => ({
     additionalComments: sanitizeLight(draft.additionalComments || "", 1600),
 });
 
+const sanitizeLiveContext = (value = {}) => ({
+    currentStepId: sanitizeLight(value.currentStepId || "", 80),
+    currentStepTitle: sanitizeLight(value.currentStepTitle || "", 200),
+    currentModal: sanitizeLight(value.currentModal || "", 80),
+    currentAction: sanitizeLight(value.currentAction || "", 200),
+    currentRoute: sanitizeLight(value.currentRoute || "", 300),
+    lastActionAt: value.lastActionAt || null,
+});
+
+const sanitizeActivityTrail = (items = []) =>
+    (Array.isArray(items) ? items : [])
+        .slice(0, MAX_PILOT_ACTIVITY_EVENTS)
+        .map((entry) => ({
+            type: sanitizeLight(entry?.type || "", 80),
+            label: sanitizeLight(entry?.label || "", 200),
+            stepId: sanitizeLight(entry?.stepId || "", 80),
+            stepTitle: sanitizeLight(entry?.stepTitle || "", 200),
+            route: sanitizeLight(entry?.route || "", 300),
+            at: entry?.at || null,
+        }))
+        .filter((entry) => entry.type || entry.label || entry.stepId || entry.route);
+
 const hasSavedStepFeedback = (stepId, state = {}) => Boolean(state?.completedSteps?.[stepId]);
 
 const hydratePilotState = (user) => {
@@ -152,6 +186,8 @@ const hydratePilotState = (user) => {
         feedbackByStep,
         finalFeedback: sanitizeFinalDraft(stored?.finalFeedback || createEmptyFinalFeedback()),
         finalFeedbackSavedAt: stored?.finalFeedbackSavedAt || null,
+        liveContext: sanitizeLiveContext(stored?.liveContext || createEmptyLiveContext()),
+        activityTrail: sanitizeActivityTrail(stored?.activityTrail || []),
         tester: {
             name: user?.name || user?.nickname || "",
             email: user?.email || "",
@@ -230,6 +266,76 @@ const readinessLabels = {
     yes: "Yes",
     almost: "Almost",
     "not-yet": "Not yet",
+};
+
+const formatConfidenceScore = (value) => {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return null;
+    return Number.isInteger(parsed) ? `${parsed}` : parsed.toFixed(1);
+};
+
+const computeDerivedConfidence = (feedbackEntries = []) => {
+    if (!Array.isArray(feedbackEntries) || feedbackEntries.length === 0) return null;
+
+    const totals = feedbackEntries.reduce(
+        (accumulator, entry) => {
+            accumulator.ease += clampRating(entry?.easeOfUse, 0);
+            accumulator.clarity += clampRating(entry?.clarity, 0);
+            accumulator.performance += clampRating(entry?.performance, 0);
+            return accumulator;
+        },
+        { ease: 0, clarity: 0, performance: 0 },
+    );
+
+    const divisor = feedbackEntries.length;
+    const averagedValue = (totals.ease + totals.clarity + totals.performance) / (divisor * 3);
+    return Math.round(averagedValue * 10) / 10;
+};
+
+const buildConfidenceSummary = ({
+    completedCount = 0,
+    totalSteps = 0,
+    derivedConfidence = null,
+    finalFeedback = {},
+    finalFeedbackSavedAt = null,
+}) => {
+    if (completedCount === 0) {
+        return {
+            displayValue: "Pending",
+            helper: "Save at least one step feedback first.",
+            tone: "default",
+        };
+    }
+
+    if (finalFeedbackSavedAt) {
+        return {
+            displayValue: `${finalFeedback.overallConfidence}/5`,
+            helper: `${ratingLabels[finalFeedback.overallConfidence] || "Final rating"} from the saved wrap-up.`,
+            tone:
+                finalFeedback.overallConfidence >= 4
+                    ? "positive"
+                    : finalFeedback.overallConfidence >= 3
+                        ? "warning"
+                        : "danger",
+        };
+    }
+
+    const provisionalLabel = formatConfidenceScore(derivedConfidence);
+    const remaining = Math.max(totalSteps - completedCount, 0);
+
+    return {
+        displayValue: provisionalLabel ? `${provisionalLabel}/5` : "Pending",
+        helper:
+            remaining > 0
+                ? `Provisional score from ${completedCount} saved ${completedCount === 1 ? "step" : "steps"}. ${remaining} more ${remaining === 1 ? "step remains" : "steps remain"} before the final rating.`
+                : "All step feedback is saved. Confirm the final confidence in the wrap-up form.",
+        tone:
+            derivedConfidence >= 4
+                ? "positive"
+                : derivedConfidence >= 3
+                    ? "warning"
+                    : "danger",
+    };
 };
 
 const DialogSection = ({ eyebrow, title, description, children }) => (
@@ -601,7 +707,7 @@ const StepFeedbackDialog = ({
     );
 };
 
-const FinalFeedbackDialog = ({ open, onOpenChange, value, onChange, onSave, blocked, remainingCount }) => (
+const FinalFeedbackDialog = ({ open, onOpenChange, value, onChange, onSave, blocked, remainingCount, derivedOverallConfidence = null }) => (
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[88vh] overflow-y-auto rounded-[28px] border-white/20 bg-white/95 dark:bg-slate-950/95">
             <DialogHeader>
@@ -617,7 +723,11 @@ const FinalFeedbackDialog = ({ open, onOpenChange, value, onChange, onSave, bloc
                 <DialogSection
                     eyebrow="Overall verdict"
                     title="How ready does MTSS feel overall?"
-                    description="Use this final form to give a short rollout view after all guided steps are done."
+                    description={
+                        Number.isFinite(derivedOverallConfidence)
+                            ? `Use this final form to confirm the rollout view. Suggested confidence from saved step ratings: ${formatConfidenceScore(derivedOverallConfidence)}/5.`
+                            : "Use this final form to give a short rollout view after all guided steps are done."
+                    }
                 >
                     <div className="grid gap-5 lg:grid-cols-[1fr_0.9fr]">
                         <StepRatingField
@@ -760,6 +870,8 @@ const buildFeedbackExport = ({
     completedSteps,
     updatedAt,
     finalFeedbackSavedAt,
+    liveContext,
+    activityTrail,
     lastViewedRoute,
     source,
 }) => ({
@@ -775,6 +887,8 @@ const buildFeedbackExport = ({
         unit: user?.unit || user?.department || "",
     },
     completedSteps,
+    liveContext: sanitizeLiveContext(liveContext),
+    activityTrail: sanitizeActivityTrail(activityTrail),
     stepFeedback: pilotSteps.map((step) => ({
         id: step.id,
         title: step.title,
@@ -855,6 +969,40 @@ const MTSSPilotTestingHubPage = memo(() => {
         error: null,
     });
 
+    const recordPilotEvent = useCallback((payload = {}) => {
+        const timestamp = new Date().toISOString();
+        const route = payload.route || (typeof window !== "undefined" ? `${window.location.pathname}${window.location.search}` : "/mtss/pilot-testing");
+        const appendToTrail = payload.appendToTrail !== false;
+
+        setPilotState((prev) =>
+            withTimestamp({
+                ...prev,
+                liveContext: {
+                    ...prev.liveContext,
+                    currentStepId: payload.currentStepId ?? prev.liveContext?.currentStepId ?? "",
+                    currentStepTitle: payload.currentStepTitle ?? prev.liveContext?.currentStepTitle ?? "",
+                    currentModal: payload.currentModal ?? prev.liveContext?.currentModal ?? "",
+                    currentAction: payload.currentAction ?? prev.liveContext?.currentAction ?? "",
+                    currentRoute: route,
+                    lastActionAt: timestamp,
+                },
+                activityTrail: appendToTrail
+                    ? [
+                        {
+                            type: payload.type || "interaction",
+                            label: payload.label || "Pilot activity recorded",
+                            stepId: payload.stepId || payload.currentStepId || prev.liveContext?.currentStepId || "",
+                            stepTitle: payload.stepTitle || payload.currentStepTitle || prev.liveContext?.currentStepTitle || "",
+                            route,
+                            at: timestamp,
+                        },
+                        ...(Array.isArray(prev.activityTrail) ? prev.activityTrail : []),
+                    ].slice(0, MAX_PILOT_ACTIVITY_EVENTS)
+                    : prev.activityTrail,
+            }),
+        );
+    }, []);
+
     useEffect(() => {
         setPilotState((previous) => {
             const nextState = hydratePilotState(user);
@@ -869,6 +1017,8 @@ const MTSSPilotTestingHubPage = memo(() => {
                 feedbackByStep: previous?.feedbackByStep || nextState.feedbackByStep,
                 finalFeedback: previous?.finalFeedback || nextState.finalFeedback,
                 finalFeedbackSavedAt: previous?.finalFeedbackSavedAt || nextState.finalFeedbackSavedAt,
+                liveContext: previous?.liveContext || nextState.liveContext,
+                activityTrail: previous?.activityTrail || nextState.activityTrail,
                 lastUpdatedAt: previous?.lastUpdatedAt || nextState.lastUpdatedAt,
             };
         });
@@ -883,6 +1033,18 @@ const MTSSPilotTestingHubPage = memo(() => {
         savePilotState(user, pilotState);
     }, [pilotState, user]);
 
+    useEffect(() => {
+        recordPilotEvent({
+            type: "hub-view",
+            label: "Pilot Testing Hub viewed",
+            currentAction: activeStepId ? "reviewing guided step" : "reviewing pilot hub",
+            currentStepId: activeStep?.id || "",
+            currentStepTitle: activeStep?.title || "",
+            currentModal: finalFeedbackOpen ? "final-feedback" : activeStepId ? "step-feedback" : "",
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     const completedCount = useMemo(
         () => pilotSteps.filter((step) => pilotState.completedSteps?.[step.id]).length,
         [pilotState.completedSteps],
@@ -890,14 +1052,36 @@ const MTSSPilotTestingHubPage = memo(() => {
     const completionRate = Math.round((completedCount / pilotSteps.length) * 100);
     const activeStep = activeStepId ? pilotSteps.find((step) => step.id === activeStepId) : null;
     const feedbackCount = completedCount;
+    const savedStepFeedbackEntries = useMemo(
+        () => pilotSteps
+            .filter((step) => pilotState.completedSteps?.[step.id])
+            .map((step) => pilotState.feedbackByStep?.[step.id])
+            .filter(Boolean),
+        [pilotState.completedSteps, pilotState.feedbackByStep],
+    );
+    const derivedOverallConfidence = useMemo(
+        () => computeDerivedConfidence(savedStepFeedbackEntries),
+        [savedStepFeedbackEntries],
+    );
+    const confidenceSummary = useMemo(
+        () => buildConfidenceSummary({
+            completedCount,
+            totalSteps: pilotSteps.length,
+            derivedConfidence: derivedOverallConfidence,
+            finalFeedback: pilotState.finalFeedback,
+            finalFeedbackSavedAt: pilotState.finalFeedbackSavedAt,
+        }),
+        [completedCount, derivedOverallConfidence, pilotState.finalFeedback, pilotState.finalFeedbackSavedAt],
+    );
     const teacherRunbook = useMemo(() => resolvePilotTeacherRunbook(user), [user]);
     const resolveHintRoute = useCallback(
         (page, step) => {
             if (!page || page.includes(":")) return null;
+            const withStep = appendPilotStepRoute(page, step?.id);
             if (step?.requiresTeacherPersona) {
-                return appendPilotTeacherPreviewRoute(page, user);
+                return appendPilotTeacherPreviewRoute(withStep, user);
             }
-            return page;
+            return withStep;
         },
         [user],
     );
@@ -932,6 +1116,8 @@ const MTSSPilotTestingHubPage = memo(() => {
                         completedSteps: pilotState.completedSteps,
                         updatedAt: pilotState.lastUpdatedAt,
                         finalFeedbackSavedAt: pilotState.finalFeedbackSavedAt,
+                        liveContext: pilotState.liveContext,
+                        activityTrail: pilotState.activityTrail,
                     }),
                 );
 
@@ -951,7 +1137,7 @@ const MTSSPilotTestingHubPage = memo(() => {
                     error: error?.response?.data?.message || error?.message || "Failed to sync pilot feedback.",
                 }));
             }
-        }, 900);
+        }, 300);
 
         return () => window.clearTimeout(timeoutId);
     }, [pilotState, user]);
@@ -982,8 +1168,19 @@ const MTSSPilotTestingHubPage = memo(() => {
 
     const handleStartStep = useCallback((step) => {
         const route = buildPilotStartRoute(step, user);
+        recordPilotEvent({
+            type: "start-step",
+            label: `Opened ${step.title}`,
+            stepId: step.id,
+            stepTitle: step.title,
+            currentStepId: step.id,
+            currentStepTitle: step.title,
+            currentAction: `opened ${step.title.toLowerCase()}`,
+            currentModal: "",
+            route,
+        });
         openPilotRoute(route, "The primary task page is now open. Keep this hub here, complete the task, then return to save step feedback.");
-    }, [openPilotRoute, user]);
+    }, [openPilotRoute, recordPilotEvent, user]);
 
     const handleOpenFinalFeedback = useCallback(() => {
         if (!allStepsReviewed) {
@@ -994,18 +1191,36 @@ const MTSSPilotTestingHubPage = memo(() => {
             });
             return;
         }
+        recordPilotEvent({
+            type: "open-final-feedback",
+            label: "Opened final feedback dialog",
+            currentAction: "writing final feedback",
+            currentModal: "final-feedback",
+        });
         setFinalFeedbackOpen(true);
-    }, [allStepsReviewed, remainingFeedbackCount, toast]);
+    }, [allStepsReviewed, recordPilotEvent, remainingFeedbackCount, toast]);
 
     const handleFinalDialogChange = useCallback((open) => {
         if (!open) {
+            recordPilotEvent({
+                type: "close-final-feedback",
+                label: "Closed final feedback dialog",
+                currentModal: "",
+                currentAction: "reviewing pilot hub",
+            });
             setFinalFeedbackOpen(false);
             return;
         }
         if (allStepsReviewed) {
+            recordPilotEvent({
+                type: "open-final-feedback",
+                label: "Opened final feedback dialog",
+                currentModal: "final-feedback",
+                currentAction: "writing final feedback",
+            });
             setFinalFeedbackOpen(true);
         }
-    }, [allStepsReviewed]);
+    }, [allStepsReviewed, recordPilotEvent]);
 
     const handleSaveStepFeedback = useCallback(() => {
         if (!activeStep) return;
@@ -1022,6 +1237,26 @@ const MTSSPilotTestingHubPage = memo(() => {
                     ...prev.completedSteps,
                     [activeStep.id]: true,
                 },
+                liveContext: {
+                    ...prev.liveContext,
+                    currentStepId: activeStep.id,
+                    currentStepTitle: activeStep.title,
+                    currentModal: "",
+                    currentAction: `saved feedback for ${activeStep.title.toLowerCase()}`,
+                    currentRoute: typeof window !== "undefined" ? `${window.location.pathname}${window.location.search}` : "/mtss/pilot-testing",
+                    lastActionAt: new Date().toISOString(),
+                },
+                activityTrail: [
+                    {
+                        type: "save-step-feedback",
+                        label: `Saved feedback for ${activeStep.title}`,
+                        stepId: activeStep.id,
+                        stepTitle: activeStep.title,
+                        route: typeof window !== "undefined" ? `${window.location.pathname}${window.location.search}` : "/mtss/pilot-testing",
+                        at: new Date().toISOString(),
+                    },
+                    ...(Array.isArray(prev.activityTrail) ? prev.activityTrail : []),
+                ].slice(0, MAX_PILOT_ACTIVITY_EVENTS),
             });
         });
         setActiveStepId(null);
@@ -1030,6 +1265,27 @@ const MTSSPilotTestingHubPage = memo(() => {
             description: `${activeStep.title} is now recorded and counted as completed in the pilot hub.`,
         });
     }, [activeStep, toast]);
+
+    useEffect(() => {
+        if (pilotState.finalFeedbackSavedAt || !Number.isFinite(derivedOverallConfidence)) {
+            return;
+        }
+
+        const suggestedRating = clampRating(Math.round(derivedOverallConfidence), 4);
+        if (pilotState.finalFeedback?.overallConfidence === suggestedRating) {
+            return;
+        }
+
+        setPilotState((prev) =>
+            withTimestamp({
+                ...prev,
+                finalFeedback: {
+                    ...prev.finalFeedback,
+                    overallConfidence: suggestedRating,
+                },
+            }),
+        );
+    }, [derivedOverallConfidence, pilotState.finalFeedback?.overallConfidence, pilotState.finalFeedbackSavedAt]);
 
     const handleSaveFinalFeedback = useCallback(() => {
         if (!allStepsReviewed) {
@@ -1046,6 +1302,24 @@ const MTSSPilotTestingHubPage = memo(() => {
                 ...prev,
                 finalFeedback: sanitizeFinalDraft(prev.finalFeedback),
                 finalFeedbackSavedAt: savedAt,
+                liveContext: {
+                    ...prev.liveContext,
+                    currentModal: "",
+                    currentAction: "saved final feedback",
+                    currentRoute: typeof window !== "undefined" ? `${window.location.pathname}${window.location.search}` : "/mtss/pilot-testing",
+                    lastActionAt: savedAt,
+                },
+                activityTrail: [
+                    {
+                        type: "save-final-feedback",
+                        label: "Saved final feedback",
+                        stepId: "",
+                        stepTitle: "",
+                        route: typeof window !== "undefined" ? `${window.location.pathname}${window.location.search}` : "/mtss/pilot-testing",
+                        at: savedAt,
+                    },
+                    ...(Array.isArray(prev.activityTrail) ? prev.activityTrail : []),
+                ].slice(0, MAX_PILOT_ACTIVITY_EVENTS),
                 lastUpdatedAt: savedAt,
             }),
         );
@@ -1563,7 +1837,22 @@ const MTSSPilotTestingHubPage = memo(() => {
                                                     <ArrowRight className="mr-2 h-4 w-4" />
                                                     {primaryActionLabel}
                                                 </Button>
-                                                <Button variant="glass" onClick={() => setActiveStepId(step.id)}>
+                                                <Button
+                                                    variant="glass"
+                                                    onClick={() => {
+                                                        recordPilotEvent({
+                                                            type: "open-step-feedback",
+                                                            label: `Opened step feedback for ${step.title}`,
+                                                            stepId: step.id,
+                                                            stepTitle: step.title,
+                                                            currentStepId: step.id,
+                                                            currentStepTitle: step.title,
+                                                            currentModal: "step-feedback",
+                                                            currentAction: `writing feedback for ${step.title.toLowerCase()}`,
+                                                        });
+                                                        setActiveStepId(step.id);
+                                                    }}
+                                                >
                                                     <MessageSquareText className="mr-2 h-4 w-4" />
                                                     Add step feedback
                                                 </Button>
@@ -1654,8 +1943,22 @@ const MTSSPilotTestingHubPage = memo(() => {
                             <div className="grid gap-3 sm:grid-cols-2">
                                 <div className="rounded-2xl border border-white/45 bg-white/75 p-4 dark:border-white/10 dark:bg-white/5">
                                     <p className="text-xs font-semibold text-slate-500 dark:text-white/55">Overall confidence</p>
-                                    <p className="mt-1 text-2xl font-black text-slate-900 dark:text-white">
-                                        {pilotState.finalFeedback.overallConfidence}/5
+                                    <p
+                                        className={cn(
+                                            "mt-1 text-2xl font-black",
+                                            confidenceSummary.tone === "positive"
+                                                ? "text-emerald-600 dark:text-emerald-300"
+                                                : confidenceSummary.tone === "warning"
+                                                    ? "text-amber-600 dark:text-amber-300"
+                                                    : confidenceSummary.tone === "danger"
+                                                        ? "text-rose-600 dark:text-rose-300"
+                                                        : "text-slate-900 dark:text-white",
+                                        )}
+                                    >
+                                        {confidenceSummary.displayValue}
+                                    </p>
+                                    <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-white/55">
+                                        {confidenceSummary.helper}
                                     </p>
                                 </div>
                                 <div className="rounded-2xl border border-white/45 bg-white/75 p-4 dark:border-white/10 dark:bg-white/5">
@@ -1688,11 +1991,37 @@ const MTSSPilotTestingHubPage = memo(() => {
             <StepFeedbackDialog
                 open={Boolean(activeStepId)}
                 onOpenChange={(open) => {
-                    if (!open) setActiveStepId(null);
+                    if (!open) {
+                        recordPilotEvent({
+                            type: "close-step-feedback",
+                            label: `Closed step feedback for ${activeStep?.title || "current step"}`,
+                            stepId: activeStep?.id || "",
+                            stepTitle: activeStep?.title || "",
+                            currentStepId: activeStep?.id || "",
+                            currentStepTitle: activeStep?.title || "",
+                            currentModal: "",
+                            currentAction: "reviewing pilot hub",
+                        });
+                        setActiveStepId(null);
+                    }
                 }}
                 step={activeStep}
                 value={activeStep ? pilotState.feedbackByStep?.[activeStep.id] || createEmptyStepFeedback() : createEmptyStepFeedback()}
-                onChange={(nextValue) => activeStep && updateStepFeedback(activeStep.id, nextValue)}
+                onChange={(nextValue) => {
+                    if (!activeStep) return;
+                    recordPilotEvent({
+                        type: "edit-step-feedback",
+                        label: `Editing feedback for ${activeStep.title}`,
+                        stepId: activeStep.id,
+                        stepTitle: activeStep.title,
+                        currentStepId: activeStep.id,
+                        currentStepTitle: activeStep.title,
+                        currentModal: "step-feedback",
+                        currentAction: `editing feedback for ${activeStep.title.toLowerCase()}`,
+                        appendToTrail: false,
+                    });
+                    updateStepFeedback(activeStep.id, nextValue);
+                }}
                 onSave={handleSaveStepFeedback}
             />
 
@@ -1701,16 +2030,26 @@ const MTSSPilotTestingHubPage = memo(() => {
                 onOpenChange={handleFinalDialogChange}
                 value={pilotState.finalFeedback}
                 onChange={(nextValue) =>
-                    setPilotState((prev) =>
-                        withTimestamp({
-                            ...prev,
-                            finalFeedback: nextValue,
-                        }),
-                    )
+                    {
+                        recordPilotEvent({
+                            type: "edit-final-feedback",
+                            label: "Editing final feedback",
+                            currentModal: "final-feedback",
+                            currentAction: "editing final feedback",
+                            appendToTrail: false,
+                        });
+                        setPilotState((prev) =>
+                            withTimestamp({
+                                ...prev,
+                                finalFeedback: nextValue,
+                            }),
+                        );
+                    }
                 }
                 onSave={handleSaveFinalFeedback}
                 blocked={!allStepsReviewed}
                 remainingCount={remainingFeedbackCount}
+                derivedOverallConfidence={derivedOverallConfidence}
             />
         </div>
     );
