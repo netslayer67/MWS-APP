@@ -67,7 +67,7 @@ export const buildStepCoverage = (sessions = []) => {
             };
 
             current.total += 1;
-            if (step.completedInHub || step.completionStatus === "yes") {
+            if (step.completedInHub) {
                 current.completed += 1;
             }
 

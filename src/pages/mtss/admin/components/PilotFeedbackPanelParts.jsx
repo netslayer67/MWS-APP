@@ -627,6 +627,11 @@ export const PilotInsightCard = memo(({
 export const PilotStepFeedbackCard = memo(({ step, completionStatusLabel }) => {
     const bugSeverity = step?.bugSeverity || "medium";
     const severityPanelClass = severityPanelClassMap[bugSeverity] || severityPanelClassMap.medium;
+    const isSubmitted = Boolean(step?.completedInHub);
+    const stepStatusLabel = isSubmitted ? completionStatusLabel : "Not started";
+    const easeValue = isSubmitted ? `${step.easeOfUse}/5` : "Not rated";
+    const clarityValue = isSubmitted ? `${step.clarity}/5` : "Not rated";
+    const performanceValue = isSubmitted ? `${step.performance}/5` : "Not rated";
 
     return (
         <details
@@ -654,7 +659,7 @@ export const PilotStepFeedbackCard = memo(({ step, completionStatusLabel }) => {
                         </p>
                         <h5 className="mt-1 text-xl font-black text-slate-950 dark:text-white">{step.title || step.stepId}</h5>
                         <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-white/62">
-                            {step.duration || "No duration"} · {completionStatusLabel}
+                            {step.duration || "No duration"} · {stepStatusLabel}
                         </p>
                     </div>
 
@@ -673,9 +678,9 @@ export const PilotStepFeedbackCard = memo(({ step, completionStatusLabel }) => {
                             ) : "Not marked complete"}
                         </Badge>
                         {step.bugFound ? <PilotSeverityBadge severity={bugSeverity} /> : null}
-                        <StepScorePill label="Ease" value={step.easeOfUse} />
-                        <StepScorePill label="Clarity" value={step.clarity} />
-                        <StepScorePill label="Speed" value={step.performance} />
+                        <StepScorePill label="Ease" value={isSubmitted ? step.easeOfUse : "—"} />
+                        <StepScorePill label="Clarity" value={isSubmitted ? step.clarity : "—"} />
+                        <StepScorePill label="Speed" value={isSubmitted ? step.performance : "—"} />
                         <ChevronDown className="h-4 w-4 text-slate-400 transition group-open:rotate-180" />
                     </div>
                 </div>
@@ -683,9 +688,9 @@ export const PilotStepFeedbackCard = memo(({ step, completionStatusLabel }) => {
 
             <div className={cn("border-t border-slate-200/80 px-5 pb-5 pt-5 dark:border-white/10", step?.bugFound && "pl-6")}>
                 <div className="grid gap-3 md:grid-cols-3">
-                    <PilotMetricCard label="Ease of use" value={`${step.easeOfUse}/5`} note="Usability score" icon={Sparkles} />
-                    <PilotMetricCard label="Clarity" value={`${step.clarity}/5`} note="Understanding score" icon={Compass} />
-                    <PilotMetricCard label="Performance" value={`${step.performance}/5`} note="Speed score" icon={Activity} />
+                    <PilotMetricCard label="Ease of use" value={easeValue} note={isSubmitted ? "Usability score" : "No saved feedback yet"} icon={Sparkles} />
+                    <PilotMetricCard label="Clarity" value={clarityValue} note={isSubmitted ? "Understanding score" : "No saved feedback yet"} icon={Compass} />
+                    <PilotMetricCard label="Performance" value={performanceValue} note={isSubmitted ? "Speed score" : "No saved feedback yet"} icon={Activity} />
                 </div>
 
                 <div className="mt-4 grid gap-4 xl:grid-cols-2">

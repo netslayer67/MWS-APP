@@ -82,9 +82,9 @@ export const pilotSteps = [
         title: "Admin Dashboard Overview",
         duration: "5 min",
         routeKey: "overview",
-        primaryActionLabel: "Open admin overview",
+        primaryActionLabel: "Open admin dashboard",
         routeGuidance:
-            "The main button opens System Overview directly because this step audits the first leadership screen principals will read.",
+            "The main button opens the admin dashboard landing page for this unit. Stay on System Overview first and review that screen before moving anywhere else.",
         goal: "Validate whether the overview gives a truthful summary of tiers, intervention load, and the newest activity.",
         principalTask:
             "Use the overview to answer a teacher lead's first questions: how many students are visible, which tier is most urgent, and whether active intervention work is happening right now.",
@@ -113,11 +113,10 @@ export const pilotSteps = [
         title: "Mentor Assignment & Management",
         duration: "6 min",
         routeKey: "overview",
-        startRouteKey: "mentors",
-        primaryActionLabel: "Open overview, then go to mentors",
-        secondaryActionLabel: "Open mentors directly",
+        startRouteKey: "overview",
+        primaryActionLabel: "Open admin dashboard",
         routeGuidance:
-            "The main button opens System Overview first so the principal can test the natural admin path. Use the secondary button only when you need to retest the mentor page itself without repeating the landing step.",
+            "The main button opens System Overview first. From there, principals should click Manage Mentors themselves so the navigation path is tested naturally.",
         goal: "Test ownership review and the special-case mentor assignment flow without skipping the natural navigation path.",
         principalTask:
             "Confirm the principal can explain that class teachers already own their own class roster automatically, while manual mentor assignment is reserved for subject-specific or exceptional ownership changes.",
@@ -147,16 +146,15 @@ export const pilotSteps = [
         duration: "5 min",
         routeKey: "students",
         startRouteKey: "overview",
-        primaryActionLabel: "Open all students",
-        secondaryActionLabel: "Open overview first",
+        primaryActionLabel: "Open admin dashboard",
         routeGuidance:
-            "The main button opens All Students directly because filters are the core target of this step. Use the secondary button only if you also want to test the navigation path from the admin landing page.",
+            "The main button opens System Overview first. From there, principals should click All Students themselves before testing filters and search.",
         goal: "Check whether the roster, search, and filters help principals find the right students quickly from the normal admin flow.",
         principalTask:
             "Test whether the principal can guide a teacher lead toward the exact student list they need, using grade, tier, subject, and mentor context without getting lost.",
         pageHints: ["/mtss/admin?tab=overview", "/mtss/admin?tab=students"],
         actions: [
-            "Open All Students with the main button. If you want to test the longer path too, use Open overview first and then click All Students yourself.",
+            "Use the main button to open System Overview, then click All Students yourself.",
             "Try at least two filter combinations using grade, tier, intervention type, and mentor.",
             "Search for one specific student by name and confirm the result stays consistent with the active filters.",
             "Check whether the list remains understandable when more students are loaded.",
@@ -181,9 +179,8 @@ export const pilotSteps = [
         routeKey: "teacher-dashboard",
         startRouteKey: "teacher-create",
         primaryActionLabel: "Open teacher dashboard preview",
-        secondaryActionLabel: "Open create form directly",
         routeGuidance:
-            "The main button opens the unit teacher dashboard preview first so principals can follow the real teacher path. Use the secondary button only when you need to retest the form itself.",
+            "The main button opens the unit teacher dashboard preview first so principals can follow the real teacher path from the normal teacher landing page.",
         requiresTeacherPersona: true,
         goal: "Walk through the full teacher workflow for creating intervention plans from the real teacher starting point.",
         principalTask:
@@ -217,9 +214,8 @@ export const pilotSteps = [
         routeKey: "teacher-dashboard",
         startRouteKey: "teacher-students",
         primaryActionLabel: "Open teacher dashboard preview",
-        secondaryActionLabel: "Open My Students directly",
         routeGuidance:
-            "The main button opens the teacher dashboard preview so the principal can move like a teacher. Use the secondary button only for a shorter retest of the student list and edit flow.",
+            "The main button opens the teacher dashboard preview so the principal can move like a teacher from the normal starting page.",
         requiresTeacherPersona: true,
         goal: "Verify that teachers can revise active plans without breaking plan history or confusing the original intent of the intervention.",
         principalTask:
@@ -251,9 +247,8 @@ export const pilotSteps = [
         routeKey: "teacher-dashboard",
         startRouteKey: "teacher-students",
         primaryActionLabel: "Open teacher dashboard preview",
-        secondaryActionLabel: "Open My Students directly",
         routeGuidance:
-            "The main button opens the teacher dashboard preview first because teachers usually reach progress work from there. Use the secondary button only to jump back into My Students during retesting.",
+            "The main button opens the teacher dashboard preview first because teachers usually reach progress work from there.",
         requiresTeacherPersona: true,
         goal: "Test both fast and detailed progress logging, with enough repeated updates to prove the intervention history is usable.",
         principalTask:
@@ -285,9 +280,8 @@ export const pilotSteps = [
         routeKey: "teacher-dashboard",
         startRouteKey: "teacher-students",
         primaryActionLabel: "Open teacher dashboard preview",
-        secondaryActionLabel: "Open My Students directly",
         routeGuidance:
-            "The main button opens the teacher dashboard preview because this step should begin from the same workspace teachers normally use. Use the secondary button only if you are repeating the evidence test.",
+            "The main button opens the teacher dashboard preview because this step should begin from the same workspace teachers normally use.",
         requiresTeacherPersona: true,
         goal: "Check whether teachers can attach supporting evidence and review a meaningful growth timeline from the intervention history.",
         principalTask:
@@ -318,16 +312,15 @@ export const pilotSteps = [
         duration: "5 min",
         routeKey: "students",
         startRouteKey: "overview",
-        primaryActionLabel: "Open all students",
-        secondaryActionLabel: "Open overview first",
+        primaryActionLabel: "Open admin dashboard",
         routeGuidance:
-            "The main button opens All Students because the student profile should usually be reached from roster context. Use the secondary button only if you want to repeat the longer path from overview.",
+            "The main button opens System Overview first. From there, principals should click All Students and choose one student themselves.",
         goal: "Confirm that one student page provides enough context for follow-up coaching and decision making.",
         principalTask:
             "Review whether one student profile contains enough context for a principal to understand the case without needing a technical teammate to interpret it.",
         pageHints: ["/mtss/admin?tab=overview", "/mtss/admin?tab=students", "/mtss/student/:slug"],
         actions: [
-            "Open All Students with the main button and select one student from the pilot class.",
+            "Use the main button to open System Overview, then click All Students and select one student from the pilot class.",
             "Review the student's tier, intervention summary, assigned mentor, latest update, and next action indicator.",
             "Check whether the profile tells a coherent story from plan creation through progress history.",
         ],
@@ -349,11 +342,10 @@ export const pilotSteps = [
         title: "AI Assistant & Smart Insights",
         duration: "7 min",
         routeKey: "teacher-dashboard",
-        startRouteKey: "ai-assistant",
+        startRouteKey: "teacher-dashboard",
         primaryActionLabel: "Open teacher dashboard preview",
-        secondaryActionLabel: "Open AI Assistant directly",
         routeGuidance:
-            "The main button opens the teacher dashboard preview first because this step should start from teacher-facing alerts or insights. Use the secondary button only if you need to retest the chat page directly.",
+            "The main button opens the teacher dashboard preview first because this step should start from teacher-facing alerts or insights on the normal teacher landing page.",
         requiresTeacherPersona: true,
         goal: "Check whether AI features are practical enough to support teacher workflow, not just interesting to look at.",
         principalTask:
@@ -383,16 +375,15 @@ export const pilotSteps = [
         duration: "4 min",
         routeKey: "mentors",
         startRouteKey: "overview",
-        primaryActionLabel: "Open mentors roster",
-        secondaryActionLabel: "Open overview first",
+        primaryActionLabel: "Open admin dashboard",
         routeGuidance:
-            "The main button opens Manage Mentors directly because this step is about workload and ownership visibility. Use the secondary button only if you want to retest the natural path from System Overview.",
+            "The main button opens System Overview first. From there, principals should click Manage Mentors themselves to review workload and ownership visibility.",
         goal: "Confirm that principals can read workload and coverage clearly enough to make staffing decisions.",
         principalTask:
             "Check whether the principal can explain who owns which students, where workload may be uneven, and where a special-case reassignment might be needed.",
         pageHints: ["/mtss/admin?tab=overview", "/mtss/admin?tab=mentors"],
         actions: [
-            "Open Manage Mentors with the main button. If you also want to retest the navigation path, use Open overview first and then click Manage Mentors.",
+            "Use the main button to open System Overview, then click Manage Mentors yourself.",
             "Review overall workload distribution and look for unclear ownership or overload.",
             "Confirm that the mentor page is useful for exception handling, not a page teachers must use every day.",
         ],
@@ -415,16 +406,15 @@ export const pilotSteps = [
         duration: "5 min",
         routeKey: "analytics",
         startRouteKey: "overview",
-        primaryActionLabel: "Open analytics lab",
-        secondaryActionLabel: "Open overview first",
+        primaryActionLabel: "Open admin dashboard",
         routeGuidance:
-            "The main button opens Analytics Lab directly because chart completeness and clarity are the core target here. Use the secondary button only if you want to recheck the path from System Overview.",
+            "The main button opens System Overview first. From there, principals should click Analytics Lab themselves so the navigation path is also tested.",
         goal: "Review whether analytics are complete, useful, and clean enough for leadership-level decision making.",
         principalTask:
             "Use analytics to decide whether the system provides enough signal for principal conversations about intervention effectiveness and student movement.",
         pageHints: ["/mtss/admin?tab=overview", "/mtss/admin?tab=analytics"],
         actions: [
-            "Open Analytics Lab with the main button. If you want to test the navigation path too, use Open overview first and then click Analytics Lab yourself.",
+            "Use the main button to open System Overview, then click Analytics Lab yourself.",
             "Review success rate by intervention type, student progress trend, focus-area highlights, and movement summary.",
             "Check specifically that student progress is not blank when the pilot class already has progress updates.",
             "Note which analytic is most actionable and which part still needs UI cleanup or clearer explanation.",
@@ -448,10 +438,9 @@ export const pilotSteps = [
         duration: "5 min",
         routeKey: "students",
         startRouteKey: "overview",
-        primaryActionLabel: "Open all students",
-        secondaryActionLabel: "Open overview first",
+        primaryActionLabel: "Open admin dashboard",
         routeGuidance:
-            "The main button opens All Students directly so the principal can choose one case quickly for the wrap-up decision. Use the secondary button only if you want to restart from the system-wide landing view.",
+            "The main button opens System Overview first. From there, principals should choose the student path themselves for the wrap-up decision.",
         goal: "Simulate a real follow-up decision and verify that the system provides enough evidence to support it.",
         principalTask:
             "Conclude whether the principal feels ready to explain the teacher workflow and make a concrete MTSS follow-up decision using only what the system shows.",

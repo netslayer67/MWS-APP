@@ -42,7 +42,6 @@ import {
     PILOT_PROGRESS_STORAGE_KEY,
     aiTipsAndTricks,
     buildPilotStartRoute,
-    buildPilotStepRoute,
     createEmptyFinalFeedback,
     createEmptyStepFeedback,
     pilotFeatureCoverage,
@@ -261,6 +260,29 @@ const SnapshotMetric = ({ label, value, tone = "default" }) => {
         </div>
     );
 };
+
+const getUnsavedStepSnapshot = () => ({
+    statusLabel: "Not started",
+    statusTone: "default",
+    bugLabel: "No report yet",
+    bugTone: "default",
+    easeLabel: "Not rated",
+    clarityLabel: "Not rated",
+});
+
+const getSavedStepSnapshot = (feedback = {}) => ({
+    statusLabel: completionLabels[feedback.completionStatus] || feedback.completionStatus || "Done",
+    statusTone:
+        feedback.completionStatus === "yes"
+            ? "positive"
+            : feedback.completionStatus === "partial"
+                ? "warning"
+                : "danger",
+    bugLabel: feedback.bugFound ? "Reported" : "None",
+    bugTone: feedback.bugFound ? "danger" : "positive",
+    easeLabel: `${feedback.easeOfUse}/5`,
+    clarityLabel: `${feedback.clarity}/5`,
+});
 
 const DialogInfoCard = ({ label, value }) => (
     <div className="rounded-2xl border border-white/45 bg-white/80 px-4 py-4 dark:border-white/10 dark:bg-white/5">
@@ -959,13 +981,8 @@ const MTSSPilotTestingHubPage = memo(() => {
     }, [toast]);
 
     const handleStartStep = useCallback((step) => {
-        const route = buildPilotStepRoute(step, user);
-        openPilotRoute(route, "The primary task page is now open. Keep this hub here, complete the task, then return to save step feedback.");
-    }, [openPilotRoute, user]);
-
-    const handleOpenStartPage = useCallback((step) => {
         const route = buildPilotStartRoute(step, user);
-        openPilotRoute(route, "The recommended starting page is open in a new tab. From there, continue through the product flow naturally.");
+        openPilotRoute(route, "The primary task page is now open. Keep this hub here, complete the task, then return to save step feedback.");
     }, [openPilotRoute, user]);
 
     const handleOpenFinalFeedback = useCallback(() => {
@@ -1392,11 +1409,9 @@ const MTSSPilotTestingHubPage = memo(() => {
                         {pilotSteps.map((step) => {
                             const feedback = pilotState.feedbackByStep?.[step.id] || createEmptyStepFeedback();
                             const isCompleted = hasSavedStepFeedback(step.id, pilotState);
-                            const taskRoute = buildPilotStepRoute(step, user);
+                            const snapshot = isCompleted ? getSavedStepSnapshot(feedback) : getUnsavedStepSnapshot();
                             const startRoute = buildPilotStartRoute(step, user);
-                            const hasSeparateStartRoute = taskRoute !== startRoute;
                             const primaryActionLabel = step.primaryActionLabel || "Open step";
-                            const secondaryActionLabel = step.secondaryActionLabel || "Open alternate page";
 
                             return (
                                 <article
@@ -1522,35 +1537,24 @@ const MTSSPilotTestingHubPage = memo(() => {
                                             <div className="grid gap-3 sm:grid-cols-2">
                                                 <SnapshotMetric
                                                     label="Status"
-                                                    value={completionLabels[feedback.completionStatus] || feedback.completionStatus}
-                                                    tone={
-                                                        feedback.completionStatus === "yes"
-                                                            ? "positive"
-                                                            : feedback.completionStatus === "partial"
-                                                                ? "warning"
-                                                                : "danger"
-                                                    }
+                                                    value={snapshot.statusLabel}
+                                                    tone={snapshot.statusTone}
                                                 />
                                                 <SnapshotMetric
                                                     label="Bug"
-                                                    value={feedback.bugFound ? "Reported" : "None"}
-                                                    tone={feedback.bugFound ? "danger" : "positive"}
+                                                    value={snapshot.bugLabel}
+                                                    tone={snapshot.bugTone}
                                                 />
-                                                <SnapshotMetric label="Ease" value={`${feedback.easeOfUse}/5`} />
-                                                <SnapshotMetric label="Clarity" value={`${feedback.clarity}/5`} />
+                                                <SnapshotMetric label="Ease" value={snapshot.easeLabel} />
+                                                <SnapshotMetric label="Clarity" value={snapshot.clarityLabel} />
                                             </div>
 
                                             <div className="rounded-[24px] border border-white/45 bg-gradient-to-br from-[#f8fafc] via-white to-[#eff6ff]/85 p-4 dark:border-white/10 dark:from-white/5 dark:via-white/10 dark:to-white/5">
                                                 <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500 dark:text-white/55">Route plan</p>
                                                 <div className="mt-3 space-y-2 text-xs leading-relaxed text-slate-600 dark:text-white/65">
                                                     <p>
-                                                        Main page: <span className="font-semibold text-slate-900 dark:text-white">{taskRoute}</span>
+                                                        Start page: <span className="font-semibold text-slate-900 dark:text-white">{startRoute}</span>
                                                     </p>
-                                                    {hasSeparateStartRoute && (
-                                                        <p>
-                                                            Extra page: <span className="font-semibold text-slate-900 dark:text-white">{startRoute}</span>
-                                                        </p>
-                                                    )}
                                                 </div>
                                             </div>
 
@@ -1559,11 +1563,6 @@ const MTSSPilotTestingHubPage = memo(() => {
                                                     <ArrowRight className="mr-2 h-4 w-4" />
                                                     {primaryActionLabel}
                                                 </Button>
-                                                {hasSeparateStartRoute && (
-                                                    <Button variant="outline" onClick={() => handleOpenStartPage(step)}>
-                                                        {secondaryActionLabel}
-                                                    </Button>
-                                                )}
                                                 <Button variant="glass" onClick={() => setActiveStepId(step.id)}>
                                                     <MessageSquareText className="mr-2 h-4 w-4" />
                                                     Add step feedback
@@ -1574,7 +1573,7 @@ const MTSSPilotTestingHubPage = memo(() => {
                                                 <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500 dark:text-white/55">How to use these buttons</p>
                                                 <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-white/65">
                                                     {step.routeGuidance ||
-                                                        "Use the main button for the audited route. Use the second button only when you also want to test the longer entry path."}
+                                                        "Use the main button to open the starting dashboard, then continue to the target feature yourself inside MTSS."}
                                                 </p>
                                             </div>
                                         </div>
