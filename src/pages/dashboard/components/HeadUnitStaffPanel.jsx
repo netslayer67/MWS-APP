@@ -6,16 +6,24 @@ import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import UserDetailModal from "./UserDetailModal";
-import { formatCalendarDateKey, formatCalendarDateLabel, getTodayCalendarDateKey } from "../utils/calendarDate";
+import { formatCalendarDateKey, formatCalendarDateLabel, getTodayCalendarDateKey, parseCalendarDate } from "../utils/calendarDate";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 const formatRelativeDate = (value) => {
     if (!value) return 'No activity yet';
-    const date = new Date(value);
-    const diff = Date.now() - date.getTime();
-    if (diff < DAY_IN_MS) return 'Today';
-    if (diff < DAY_IN_MS * 2) return 'Yesterday';
+    const date = parseCalendarDate(value);
+    if (!date) return 'No activity yet';
+
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const diff = today.getTime() - compareDate.getTime();
+    if (diff === 0) return 'Today';
+    if (diff === DAY_IN_MS) return 'Yesterday';
     const days = Math.floor(diff / DAY_IN_MS);
     return `${days} day${days !== 1 ? 's' : ''} ago`;
 };
@@ -242,4 +250,3 @@ const HeadUnitStaffPanel = memo(({ staff = [], summary, isDirectorate = false })
 
 HeadUnitStaffPanel.displayName = 'HeadUnitStaffPanel';
 export default HeadUnitStaffPanel;
-
