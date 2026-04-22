@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import PageLoader from "@/components/PageLoader";
 import PageTransition from "./PageTransition";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { getMtssAccessProfile } from "@/utils/mtssAccess";
 
 // Lazy pages (kept as you had them)
 const LandingPage = lazy(() => import(/* webpackPrefetch: true */ '@/pages/LandingPage'));
@@ -78,11 +79,6 @@ const AdminProtectedRoute = memo(({ children }) => {
 });
 AdminProtectedRoute.displayName = 'AdminProtectedRoute';
 
-const previewEmails = new Set(["faisal@millennia21.id", "mahrukh@millennia21.id"]);
-// Only teacher-track and admin roles may access MTSS pages.
-// staff, support_staff, nurse have no MTSS context.
-const mtssRoleAccess = new Set(['teacher', 'se_teacher', 'directorate', 'head_unit', 'admin', 'superadmin']);
-
 const MtssPreviewGate = memo(({ children }) => {
     const { user, loading } = useSelector((state) => state.auth);
 
@@ -98,16 +94,24 @@ const MtssPreviewGate = memo(({ children }) => {
         }
     }, []);
 
-    const email = (user?.email || storedEmail || "").toLowerCase();
-    const normalizedRole = (user?.role || '').toLowerCase();
-    const isPreviewUser = previewEmails.has(email);
-    const hasRoleAccess = mtssRoleAccess.has(normalizedRole);
+    const storedUser = useMemo(() => {
+        if (typeof window === "undefined") return null;
+        try {
+            const raw = localStorage.getItem("auth_user");
+            return raw ? JSON.parse(raw) : null;
+        } catch {
+            return null;
+        }
+    }, []);
 
-    if (!email && loading) {
+    const effectiveUser = user || storedUser || (storedEmail ? { email: storedEmail } : null);
+    const mtssAccess = getMtssAccessProfile(effectiveUser);
+
+    if (!effectiveUser?.email && loading) {
         return <PageLoader />;
     }
 
-    if (!isPreviewUser && !hasRoleAccess) {
+    if (!mtssAccess.hasAccess) {
         // Non-MTSS roles (staff, support_staff, etc.) land on their check-in page
         return <Navigate to="/select-role" replace />;
     }

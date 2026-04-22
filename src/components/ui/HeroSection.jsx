@@ -46,7 +46,7 @@ const HeroSection = memo(() => {
     try {
       const resultAction = await dispatch(loginUser({ email, password }));
       if (loginUser.fulfilled.match(resultAction)) {
-        const redirectPath = consumePendingRedirect() || getDefaultPostLoginPath(resultAction.payload?.user?.role);
+        const redirectPath = consumePendingRedirect() || getDefaultPostLoginPath(resultAction.payload?.user);
         toast({ title: "Login Successful! 🎉", description: "Welcome back! Redirecting...", duration: 3000 });
         setEmail(""); setPassword("");
         setTimeout(() => navigate(redirectPath), 1000);

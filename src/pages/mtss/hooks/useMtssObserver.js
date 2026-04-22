@@ -1,15 +1,8 @@
 import { useMemo } from "react";
 import { useSelector } from "react-redux";
+import { getMtssAccessProfile, isMtssObserver as resolveIsMtssObserver } from "@/utils/mtssAccess";
 
-/**
- * Emails that have read-only "observer" access to all MTSS units.
- * They can view any dashboard/student but cannot create, edit, or
- * submit any intervention data.
- */
-export const OBSERVER_EMAILS = new Set([
-    "mahrukh@millennia21.id",
-    "faisal@millennia21.id",
-]);
+export const getObserverAccessProfile = (user = null) => getMtssAccessProfile(user);
 
 /**
  * Returns whether the current logged-in user is an MTSS observer
@@ -18,9 +11,8 @@ export const OBSERVER_EMAILS = new Set([
 const useMtssObserver = () => {
     const user = useSelector((state) => state.auth?.user);
     const isObserver = useMemo(() => {
-        const email = (user?.email || "").toLowerCase().trim();
-        return OBSERVER_EMAILS.has(email);
-    }, [user?.email]);
+        return resolveIsMtssObserver(user);
+    }, [user]);
     return { isObserver };
 };
 

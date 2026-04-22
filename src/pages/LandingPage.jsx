@@ -141,7 +141,7 @@ const LandingPage = memo(function LandingPage() {
     const pendingRedirect = consumePendingRedirect();
     const fallbackPath = (user?.role || "").toLowerCase() === "student"
       ? "/profile"
-      : getDefaultPostLoginPath(user?.role);
+      : getDefaultPostLoginPath(user);
     navigate(pendingRedirect || fallbackPath, { replace: true });
   }, [isAuthenticated, user, navigate]);
 

@@ -19,6 +19,148 @@ import {
     mapAssignmentsToStudents,
     mergeRosterWithAssignments,
 } from "../utils/teacherDashboardUtils";
+import { mapTierLabel } from "../utils/teacherMappingHelpers";
+
+const SUBJECT_ALIAS_MAP = {
+    english: ["english", "bahasa inggris", "ela", "reading", "literacy", "ela/reading"],
+    math: ["math", "mathematics", "numeracy"],
+    behavior: ["behavior", "behaviour", "conduct"],
+    sel: ["sel", "social emotional", "social-emotional"],
+    attendance: ["attendance", "engagement", "present", "absence", "absent"],
+    indonesian: ["indonesian", "bahasa indonesia", "bahasa", "bi"],
+};
+
+const TIER_PRIORITY = {
+    tier3: 3,
+    tier2: 2,
+    tier1: 1,
+};
+
+const normalizeText = (value = "") =>
+    value
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+
+const resolveKnownSubjectKey = (value = "") => {
+    const normalized = normalizeText(value);
+    if (!normalized) return null;
+
+    for (const [canonical, aliases] of Object.entries(SUBJECT_ALIAS_MAP)) {
+        if (normalized === canonical) return canonical;
+        if (aliases.some((alias) => normalized === alias || normalized.includes(alias) || alias.includes(normalized))) {
+            return canonical;
+        }
+    }
+
+    return null;
+};
+
+const buildIdentityKeys = (profile = {}) =>
+    new Set(
+        [
+            profile?.id,
+            profile?._id,
+            profile?.email ? normalizeText(profile.email) : null,
+            profile?.username ? normalizeText(profile.username) : null,
+            profile?.nickname ? normalizeText(profile.nickname) : null,
+            profile?.name ? normalizeText(profile.name) : null,
+        ]
+            .filter(Boolean)
+            .map((value) => value.toString()),
+    );
+
+const resolvePrimaryFocusText = (assignment = {}) =>
+    [
+        ...(Array.isArray(assignment?.focusAreas) ? assignment.focusAreas : []),
+        assignment?.strategyName,
+        assignment?.metricLabel,
+    ].find((value) => typeof value === "string" && value.trim()) || null;
+
+const buildViewerSubjectKeys = (user = {}) => {
+    const keys = new Set();
+
+    (Array.isArray(user?.classes) ? user.classes : []).forEach((entry) => {
+        const key = resolveKnownSubjectKey(entry?.subject);
+        if (key) keys.add(key);
+    });
+
+    const jobPositionKey = resolveKnownSubjectKey(user?.jobPosition);
+    if (jobPositionKey) keys.add(jobPositionKey);
+
+    return keys;
+};
+
+const buildAssignmentSubjectKeys = (assignment = {}) =>
+    new Set(
+        [
+            ...(Array.isArray(assignment?.focusAreas) ? assignment.focusAreas : []),
+            assignment?.strategyName,
+            assignment?.metricLabel,
+        ]
+            .map((value) => resolveKnownSubjectKey(value))
+            .filter(Boolean),
+    );
+
+const isAssignmentOwnedByViewer = (assignment = {}, viewer = {}) => {
+    const viewerKeys = buildIdentityKeys(viewer);
+    if (!viewerKeys.size) return false;
+
+    const mentorKeys = buildIdentityKeys(assignment?.mentorId || {});
+    for (const key of mentorKeys) {
+        if (viewerKeys.has(key)) return true;
+    }
+
+    return false;
+};
+
+const doesAssignmentMatchViewerSubject = (assignment = {}, viewer = {}) => {
+    const viewerSubjectKeys = buildViewerSubjectKeys(viewer);
+    if (!viewerSubjectKeys.size) return false;
+
+    const assignmentSubjectKeys = buildAssignmentSubjectKeys(assignment);
+    for (const key of assignmentSubjectKeys) {
+        if (viewerSubjectKeys.has(key)) return true;
+    }
+
+    return false;
+};
+
+const rankAssignmentPriority = (assignment = {}) => {
+    const tierRank = TIER_PRIORITY[String(assignment?.tier || "").toLowerCase()] || 0;
+    const activeRank = String(assignment?.status || "").toLowerCase() === "active" ? 1 : 0;
+    const recencyRank = new Date(
+        assignment?.updatedAt || assignment?.lastPlanUpdatedAt || assignment?.createdAt || assignment?.startDate || 0,
+    ).getTime();
+
+    return (tierRank * 1_000_000_000) + (activeRank * 1_000_000) + recencyRank;
+};
+
+const resolveRelevantFocusLabel = (assignments = [], viewer = {}) => {
+    const candidates = Array.isArray(assignments) ? assignments : [];
+    const ownedAssignments = candidates.filter((assignment) => isAssignmentOwnedByViewer(assignment, viewer));
+    const subjectMatchedAssignments = candidates.filter((assignment) => doesAssignmentMatchViewerSubject(assignment, viewer));
+    const prioritizedAssignments = ownedAssignments.length ? ownedAssignments : subjectMatchedAssignments;
+
+    if (!prioritizedAssignments.length) return null;
+
+    const selected = [...prioritizedAssignments]
+        .filter((assignment) => resolvePrimaryFocusText(assignment))
+        .sort((a, b) => rankAssignmentPriority(b) - rankAssignmentPriority(a))[0];
+
+    if (!selected) return null;
+
+    const focusText = resolvePrimaryFocusText(selected);
+    return focusText ? `${mapTierLabel(selected.tier)} ${focusText}` : null;
+};
+
+const formatHeroDateLabel = (value = new Date()) =>
+    new Intl.DateTimeFormat("en-US", {
+        weekday: "long",
+        month: "short",
+        day: "numeric",
+    }).format(value);
 
 const buildGreeting = (name) =>
     buildStaffGreeting(name, {
@@ -50,9 +192,10 @@ const normalizeHeroBadge = (user) => {
     return {
         teacher: nameWithTitle,
         school: user?.jobPosition || user?.unit || "Millennia21 Schools",
-        tierFocus: "Personalized supports",
+        tierFocus: null,
         greeting: buildGreeting(nameWithTitle),
         gradeLabel: user?.unit || "All Grades",
+        dateLabel: formatHeroDateLabel(),
     };
 };
 
@@ -132,8 +275,9 @@ const useTeacherDashboardData = (viewerUser = null) => {
                 ...baseHero,
                 teacher: teacherWithTitle || baseHero.teacher,
                 greeting: buildGreeting(teacherWithTitle || baseHero.teacher),
-                tierFocus: assignmentSummary.focusLabel || prev.tierFocus || "Tiered Supports",
+                tierFocus: resolveRelevantFocusLabel(scopedAssignments, storedUser),
                 gradeLabel: segments.label,
+                dateLabel: formatHeroDateLabel(),
             }));
         } catch (err) {
             if (err?.name !== "CanceledError" && err?.name !== "AbortError") {

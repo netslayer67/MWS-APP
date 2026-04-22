@@ -40,11 +40,10 @@ const AuthCallback = () => {
                 localStorage.setItem('auth_user', JSON.stringify(canonicalUser));
                 dispatch(loginSuccess({ user: canonicalUser, token }));
 
-                const normalizedRole = (canonicalUser.role || '').toLowerCase();
                 const redirectParam = hashParams.get('redirect');
                 const safeRedirect = sanitizeRedirectPath(redirectParam);
                 const pendingRedirect = consumePendingRedirect();
-                const target = pendingRedirect || safeRedirect || getDefaultPostLoginPath(normalizedRole);
+                const target = pendingRedirect || safeRedirect || getDefaultPostLoginPath(canonicalUser);
 
                 // Remove sensitive token/user params from URL before leaving callback route
                 window.history.replaceState({}, document.title, '/auth/callback');

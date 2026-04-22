@@ -1,3 +1,5 @@
+import { hasMtssAccess } from "@/utils/mtssAccess";
+
 const PENDING_AUTH_REDIRECT_KEY = "pending_auth_redirect";
 
 export const sanitizeRedirectPath = (value) => {
@@ -37,14 +39,15 @@ export const consumePendingRedirect = () => {
     return redirect;
 };
 
-export const getDefaultPostLoginPath = (role) => {
-    const normalizedRole = String(role || "").trim().toLowerCase();
+export const getDefaultPostLoginPath = (userOrRole) => {
+    const user = userOrRole && typeof userOrRole === "object" ? userOrRole : null;
+    const normalizedRole = String(user?.role || userOrRole || "").trim().toLowerCase();
 
     if (normalizedRole === "student") {
         return "/student/support-hub";
     }
 
-    if (["teacher", "se_teacher", "head_unit", "directorate", "admin", "superadmin"].includes(normalizedRole)) {
+    if (hasMtssAccess(user || { role: normalizedRole })) {
         return "/support-hub";
     }
 

@@ -1,4 +1,4 @@
-import { OBSERVER_EMAILS } from "../hooks/useMtssObserver";
+import { getMtssAccessProfile } from "@/utils/mtssAccess";
 import {
     appendPilotTeacherPreviewRoute,
 } from "../utils/pilotTeacherPreview";
@@ -544,9 +544,8 @@ export const readinessOptions = [
 export const ratingOptions = [1, 2, 3, 4, 5];
 
 export const buildPilotAdminBaseRoute = (user) => {
-    const email = String(user?.email || "").toLowerCase().trim();
-
-    if (OBSERVER_EMAILS.has(email)) {
+    const profile = getMtssAccessProfile(user);
+    if (profile.accessLevel === "observer") {
         return "/mtss/observer";
     }
 

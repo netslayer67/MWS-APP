@@ -32,41 +32,56 @@ const TeacherHeroSection = ({ heroBadge, tabs, activeTab, onTabChange, pilotGuid
                     {heroBadge.greeting || `Hey ${heroBadge.teacher}, let's light up today's boosts.`}
                 </h1>
 
-                {/* Focus badge */}
-                <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 sm:px-3.5 sm:py-1.5 mt-2 sm:mt-3 rounded-full bg-gradient-to-r from-amber-400/15 to-orange-400/15 dark:from-amber-500/15 dark:to-orange-500/15 border border-amber-300/40 dark:border-amber-500/20">
-                    <span className="relative flex h-1.5 w-1.5 sm:h-2 sm:w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                        <span className="relative inline-flex h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-amber-500" />
-                    </span>
-                    <span className="text-[10px] sm:text-sm font-semibold text-amber-700 dark:text-amber-300">
-                        Focus today: {heroBadge.tierFocus}
-                    </span>
-                </div>
-
-                {/* Info cards — compact on mobile */}
-                <div className="flex gap-2 sm:gap-3 mt-2.5 sm:mt-5">
-                    <div className="flex items-center gap-2 px-2.5 py-1.5 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl bg-gradient-to-br from-indigo-50/90 to-purple-50/90 dark:from-indigo-900/30 dark:to-purple-900/20 border border-indigo-200/50 dark:border-indigo-500/15 shadow-sm flex-1 min-w-0">
-                        <span className="hidden sm:inline-flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-400 to-purple-500 text-white shadow-[0_4px_12px_rgba(99,102,241,0.35)]">
-                            <User className="w-3.5 h-3.5" />
-                        </span>
-                        <div className="min-w-0">
-                            <span className="block text-[8px] sm:text-[10px] font-semibold uppercase tracking-[0.2em] sm:tracking-[0.25em] text-indigo-400 dark:text-indigo-300">Teacher</span>
-                            <span className="block text-[11px] sm:text-base font-bold text-slate-800 dark:text-white leading-tight truncate">{heroBadge.teacher}</span>
-                        </div>
+                <div className="mt-3 sm:mt-5 space-y-4 sm:space-y-5">
+                    <div className="space-y-2">
+                        <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.24em] text-slate-500 dark:text-white/55">
+                            Today&apos;s context
+                        </p>
+                        {heroBadge.tierFocus && (
+                            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-gradient-to-r from-amber-400/15 to-orange-400/15 dark:from-amber-500/15 dark:to-orange-500/15 border border-amber-300/40 dark:border-amber-500/20">
+                                <span className="relative flex h-1.5 w-1.5 sm:h-2 sm:w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                                    <span className="relative inline-flex h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-amber-500" />
+                                </span>
+                                <span className="text-[10px] sm:text-sm font-semibold text-amber-700 dark:text-amber-300">
+                                    Focus today: {heroBadge.tierFocus}
+                                </span>
+                            </div>
+                        )}
                     </div>
-                    <div className="flex items-center gap-2 px-2.5 py-1.5 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-50/90 to-teal-50/90 dark:from-emerald-900/30 dark:to-teal-900/20 border border-emerald-200/50 dark:border-emerald-500/15 shadow-sm flex-1 min-w-0">
-                        <span className="hidden sm:inline-flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-[0_4px_12px_rgba(52,211,153,0.35)]">
-                            <CalendarDays className="w-3.5 h-3.5" />
-                        </span>
-                        <div className="min-w-0">
-                            <span className="block text-[8px] sm:text-[10px] font-semibold uppercase tracking-[0.2em] sm:tracking-[0.25em] text-emerald-500 dark:text-emerald-300">Today</span>
-                            <span className="block text-[11px] sm:text-base font-bold text-slate-800 dark:text-white leading-tight truncate">{heroBadge.dateLabel || "Ready to roll"}</span>
+
+                    <div className="border-t border-white/50 dark:border-white/10 pt-4 sm:pt-5">
+                        <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.24em] text-slate-500 dark:text-white/55 mb-3">
+                            Teacher snapshot
+                        </p>
+                        <div className="grid gap-2 sm:gap-3 md:grid-cols-2">
+                            <div className="flex items-start gap-3 px-3 py-3 sm:px-4 rounded-xl sm:rounded-2xl border border-slate-200/70 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.03] min-w-0">
+                                <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-slate-200/80 dark:bg-white/10 text-slate-600 dark:text-slate-300 flex-shrink-0">
+                                    <User className="w-3.5 h-3.5" />
+                                </span>
+                                <div className="min-w-0">
+                                    <span className="block text-[9px] sm:text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-white/45">Teacher</span>
+                                    <span className="block text-[12px] sm:text-base font-semibold text-slate-800 dark:text-white leading-tight truncate">{heroBadge.teacher}</span>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-3 px-3 py-3 sm:px-4 rounded-xl sm:rounded-2xl border border-slate-200/70 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.03] min-w-0">
+                                <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-slate-200/80 dark:bg-white/10 text-slate-600 dark:text-slate-300 flex-shrink-0">
+                                    <CalendarDays className="w-3.5 h-3.5" />
+                                </span>
+                                <div className="min-w-0">
+                                    <span className="block text-[9px] sm:text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-white/45">Today</span>
+                                    <span className="block text-[12px] sm:text-base font-semibold text-slate-800 dark:text-white leading-tight truncate">{heroBadge.dateLabel || "Daily snapshot"}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Tab navigation — compact on mobile */}
-                <div className="mt-2.5 sm:mt-7">
+                <div className="mt-4 sm:mt-7 border-t border-white/50 dark:border-white/10 pt-4 sm:pt-5">
+                    <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.24em] text-slate-500 dark:text-white/55 mb-3">
+                        Quick actions
+                    </p>
                     <div className={`grid gap-1.5 sm:gap-3 ${tabs.length > 3 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
                         {tabs.map((tab) => {
                             const Icon = tab.icon;

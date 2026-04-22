@@ -1,11 +1,11 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { OBSERVER_EMAILS } from "./hooks/useMtssObserver";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Brain, Handshake, ArrowRight, Sparkles, Shield, Users } from "lucide-react";
 import Logo from "../../components/ui/Millennia.webp";
 import gsap from "gsap";
 import { MWS_STUDENT_CARD_ASSET_IDS } from "@/data/mwsStudentsDesignAssets";
+import { getDefaultMtssRoute, getMtssAccessProfile } from "@/utils/mtssAccess";
 import "@/pages/styles/landing-minimal.css";
 
 /* Cloudinary helpers */
@@ -152,9 +152,6 @@ const TRUST_ITEMS = [
   { icon: Users, text: "Built for Schools" },
 ];
 
-const ADMIN_ROLES = new Set(['admin', 'superadmin', 'directorate', 'head_unit']);
-const TEACHER_ROLES = new Set(['teacher', 'se_teacher']);
-
 /* ── OptionCard ─────────────────────────────────────────── */
 const OptionCard = memo(({ card, onClick, index }) => (
   <button
@@ -234,30 +231,19 @@ const SupportModeSelectionPage = memo(() => {
   }, []);
 
   const canAccessPilotHub = useMemo(() => {
-    const normalizedRole = (user?.role || '').toLowerCase();
-    const userEmail = (user?.email || '').toLowerCase().trim();
-    return OBSERVER_EMAILS.has(userEmail) || ADMIN_ROLES.has(normalizedRole);
-  }, [user?.email, user?.role]);
+    const profile = getMtssAccessProfile(user);
+    return profile.hasAccess && (profile.canAccessAdmin || profile.accessLevel === "observer");
+  }, [user]);
 
   const handleMtssClick = useCallback(() => {
-    const normalizedRole = (user?.role || '').toLowerCase();
-    const userEmail = (user?.email || '').toLowerCase().trim();
+    if (!getMtssAccessProfile(user).hasAccess) {
+      navigate('/select-role');
+      return;
+    }
 
-    if (OBSERVER_EMAILS.has(userEmail)) {
-      navigate('/mtss/observer');
-      return;
-    }
-    if (ADMIN_ROLES.has(normalizedRole)) {
-      navigate('/mtss/admin');
-      return;
-    }
-    if (TEACHER_ROLES.has(normalizedRole)) {
-      navigate('/mtss/teacher');
-      return;
-    }
-    // fallback
-    navigate('/mtss/admin');
-  }, [navigate, user?.role, user?.email]);
+    const nextRoute = getDefaultMtssRoute(user) || '/select-role';
+    navigate(nextRoute);
+  }, [navigate, user]);
 
   return (
     <div ref={pageRef} className="lm-shell min-h-screen relative overflow-hidden text-foreground dark:text-white transition-colors">
