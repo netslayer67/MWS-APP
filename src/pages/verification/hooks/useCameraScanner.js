@@ -59,14 +59,32 @@ export const useCameraScanner = ({
 
     const capturePhoto = useCallback(async () => {
         try {
-            if (!videoRef.current) {
+            const video = videoRef.current;
+            if (!video) {
                 throw new Error("Video element not available");
             }
+
+            // readyState >= 2 (HAVE_CURRENT_DATA) plus a non-zero frame guarantees
+            // drawImage will paint actual pixels instead of a blank canvas.
+            const hasFrame =
+                video.readyState >= 2 &&
+                video.videoWidth > 0 &&
+                video.videoHeight > 0;
+
+            if (!hasFrame) {
+                toast?.({
+                    title: "Camera warming up",
+                    description: "Please wait a moment for the camera to stabilize, then try again.",
+                    variant: "destructive"
+                });
+                return null;
+            }
+
             const canvas = document.createElement("canvas");
             const ctx = canvas.getContext("2d");
-            canvas.width = videoRef.current.videoWidth || 640;
-            canvas.height = videoRef.current.videoHeight || 480;
-            ctx.drawImage(videoRef.current, 0, 0);
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
 
             const photoDataUrl = canvas.toDataURL("image/jpeg", 0.9);
 
@@ -84,6 +102,7 @@ export const useCameraScanner = ({
                 variant: "destructive"
             });
             setStage(autoStart ? "preview" : initialStage);
+            return null;
         }
     }, [autoStart, initialStage, stream, toast]);
 

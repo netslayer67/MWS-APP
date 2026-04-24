@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { generateAIAnalysis } from "@/pages/verification/utils/generateAIAnalysis";
-import { startGlobalLoading, stopGlobalLoading } from "@/lib/loadingManager";
 
 export const useEmotionAnalysis = ({ toast, setStage, fallbackStage = "intro" }) => {
     const [analysis, setAnalysis] = useState(null);
@@ -8,7 +7,6 @@ export const useEmotionAnalysis = ({ toast, setStage, fallbackStage = "intro" })
     const [aiEmotionResult, setAiEmotionResult] = useState(null);
 
     const analyzePhoto = useCallback(async (imageDataUrl) => {
-        startGlobalLoading();
         try {
             setStage("analyzing");
             const response = await fetch(imageDataUrl);
@@ -47,8 +45,6 @@ export const useEmotionAnalysis = ({ toast, setStage, fallbackStage = "intro" })
                 variant: "destructive"
             });
             setStage(fallbackStage);
-        } finally {
-            stopGlobalLoading();
         }
     }, [fallbackStage, setStage, toast]);
 

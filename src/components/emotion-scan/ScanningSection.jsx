@@ -1,4 +1,4 @@
-import React, { memo, useState, useEffect } from "react";
+import React, { memo, useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Brain, CheckCircle } from "lucide-react";
 import Webcam from "react-webcam";
@@ -24,18 +24,29 @@ const ScanningOverlay = memo(() => (
 ));
 
 const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onEmotionDetected, onTakePhoto, stage }) => {
-    const [running, setRunning] = useState(false);
+    const [cameraReady, setCameraReady] = useState(false);
     const [currentEmotion, setCurrentEmotion] = useState(null);
     const webcamRef = React.useRef(null);
 
-    useEffect(() => {
-        // Set the videoRef to point to the webcam's video element
-        if (webcamRef?.current && videoRef) {
+    const bindVideoElement = useCallback(() => {
+        if (webcamRef.current?.video && videoRef) {
             videoRef.current = webcamRef.current.video;
-            setRunning(true);
-            console.log('📹 Video element assigned to ref');
+            setCameraReady(true);
         }
-    }, []);
+    }, [videoRef]);
+
+    // Re-bind whenever stage flips between preview and scanning since the
+    // <Webcam /> element is remounted in each branch.
+    useEffect(() => {
+        if (stage === "preview" || stage === "scanning") {
+            bindVideoElement();
+        }
+    }, [bindVideoElement, stage]);
+
+    const handleTakePhoto = useCallback(() => {
+        if (!cameraReady) return;
+        onTakePhoto?.();
+    }, [cameraReady, onTakePhoto]);
 
     if (stage === 'preview') {
         return (
@@ -61,7 +72,8 @@ const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onEmot
                         ref={webcamRef}
                         mirrored
                         videoConstraints={{ facingMode: "user" }}
-                        onUserMedia={() => setRunning(true)}
+                        onUserMedia={bindVideoElement}
+                        onLoadedMetadata={bindVideoElement}
                         style={{ width: "100%", height: "100%" }}
                     />
                 </div>
@@ -71,10 +83,11 @@ const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onEmot
                         When you're ready, we'll take a photo for emotion analysis
                     </p>
                     <button
-                        onClick={onTakePhoto}
-                        className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                        onClick={handleTakePhoto}
+                        disabled={!cameraReady}
+                        className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        I'm Ready - Take Photo
+                        {cameraReady ? "I'm Ready - Take Photo" : "Preparing camera..."}
                     </button>
                 </div>
             </motion.div>
@@ -114,7 +127,8 @@ const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onEmot
                     ref={webcamRef}
                     mirrored
                     videoConstraints={{ facingMode: "user" }}
-                    onUserMedia={() => setRunning(true)}
+                    onUserMedia={bindVideoElement}
+                    onLoadedMetadata={bindVideoElement}
                     style={{ width: "100%", height: "100%" }}
                 />
                 <ScanningOverlay />
