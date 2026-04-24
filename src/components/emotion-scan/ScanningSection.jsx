@@ -1,4 +1,4 @@
-import React, { memo, useEffect } from "react";
+import React, { memo, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Brain, CheckCircle } from "lucide-react";
 import Webcam from "react-webcam";
@@ -25,16 +25,22 @@ const ScanningOverlay = memo(() => (
 
 const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onTakePhoto, stage, onCameraError }) => {
     const webcamRef = React.useRef(null);
+    const [cameraReady, setCameraReady] = useState(false);
     const bindVideoElement = React.useCallback(() => {
         if (webcamRef?.current?.video && videoRef) {
             videoRef.current = webcamRef.current.video;
-            console.log('📹 Video element assigned to ref');
+            setCameraReady(true);
         }
     }, [videoRef]);
 
     useEffect(() => {
         bindVideoElement();
-    }, [bindVideoElement]);
+    }, [bindVideoElement, stage]);
+
+    const handleTakePhoto = React.useCallback(() => {
+        if (!cameraReady) return;
+        onTakePhoto?.();
+    }, [cameraReady, onTakePhoto]);
 
     if (stage === 'preview') {
         return (
@@ -72,10 +78,11 @@ const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onTake
                         When you're ready, we'll take a photo for emotion analysis
                     </p>
                     <button
-                        onClick={onTakePhoto}
-                        className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                        onClick={handleTakePhoto}
+                        disabled={!cameraReady}
+                        className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        I'm Ready - Take Photo
+                        {cameraReady ? "I'm Ready - Take Photo" : "Preparing camera..."}
                     </button>
                 </div>
             </motion.div>

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { generateAIAnalysis } from "@/pages/verification/utils/generateAIAnalysis";
-import { startGlobalLoading, stopGlobalLoading } from "@/lib/loadingManager";
 
 export const useEmotionAnalysis = ({ toast, setStage, fallbackStage = "intro" }) => {
     const [analysis, setAnalysis] = useState(null);
@@ -29,7 +28,6 @@ export const useEmotionAnalysis = ({ toast, setStage, fallbackStage = "intro" })
     }, [fallbackStage, selectedSupportContact, setStage, toast]);
 
     const analyzePhoto = useCallback(async (imageSource) => {
-        startGlobalLoading();
         try {
             setStage("analyzing");
 
@@ -73,8 +71,6 @@ export const useEmotionAnalysis = ({ toast, setStage, fallbackStage = "intro" })
                 variant: "destructive"
             });
             setStage(fallbackStage);
-        } finally {
-            stopGlobalLoading();
         }
     }, [fallbackStage, finalizeAnalysis, setStage, toast]);
 

@@ -53,12 +53,29 @@ export const useCameraScanner = ({
 
     const capturePhoto = useCallback(async () => {
         try {
-            if (!videoRef.current) {
+            const video = videoRef.current;
+            if (!video) {
                 throw new Error("Video element not available");
             }
 
-            const sourceWidth = videoRef.current.videoWidth || 640;
-            const sourceHeight = videoRef.current.videoHeight || 480;
+            // readyState >= 2 (HAVE_CURRENT_DATA) plus a non-zero frame guarantees
+            // drawImage will paint actual pixels instead of a blank canvas.
+            const hasFrame =
+                video.readyState >= 2 &&
+                video.videoWidth > 0 &&
+                video.videoHeight > 0;
+
+            if (!hasFrame) {
+                toast?.({
+                    title: "Camera warming up",
+                    description: "Please wait a moment for the camera to stabilize, then try again.",
+                    variant: "destructive"
+                });
+                return null;
+            }
+
+            const sourceWidth = video.videoWidth;
+            const sourceHeight = video.videoHeight;
             const maxDimension = 960;
             const scale = Math.min(1, maxDimension / Math.max(sourceWidth, sourceHeight));
 
@@ -66,7 +83,7 @@ export const useCameraScanner = ({
             const ctx = canvas.getContext("2d");
             canvas.width = Math.max(1, Math.round(sourceWidth * scale));
             canvas.height = Math.max(1, Math.round(sourceHeight * scale));
-            ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
             const photoBlob = await new Promise((resolve, reject) => {
                 canvas.toBlob(
@@ -93,6 +110,7 @@ export const useCameraScanner = ({
                 variant: "destructive"
             });
             setStage(autoStart ? "preview" : initialStage);
+            return null;
         }
     }, [autoStart, initialStage, stopActiveVideoTracks, toast]);
 
