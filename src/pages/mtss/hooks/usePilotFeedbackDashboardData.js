@@ -66,22 +66,33 @@ const usePilotFeedbackDashboardData = ({ enabled = true } = {}) => {
     const [lastLiveEventAt, setLastLiveEventAt] = useState(null);
     const dashboardUserId = user?.id || user?._id;
 
-    const refresh = useCallback(async () => {
+    const refresh = useCallback(async ({ background = false } = {}) => {
         if (!enabled) {
             setLoading(false);
             return;
         }
 
-        setLoading(true);
-        setError(null);
+        if (!background) {
+            setLoading(true);
+            setError(null);
+        }
+
         try {
-            const response = await fetchPilotFeedbackSessions({ limit: 300 });
+            const response = await fetchPilotFeedbackSessions(
+                { limit: 300 },
+                background ? { skipGlobalLoading: true } : undefined,
+            );
             setSessions(sortSessions(response?.sessions || []));
             setServerStats(response?.stats || null);
+            if (background) {
+                setError(null);
+            }
         } catch (err) {
             setError(err?.response?.data?.message || err?.message || "Failed to load pilot feedback sessions.");
         } finally {
-            setLoading(false);
+            if (!background) {
+                setLoading(false);
+            }
         }
     }, [enabled]);
 
@@ -93,7 +104,7 @@ const usePilotFeedbackDashboardData = ({ enabled = true } = {}) => {
         if (!enabled) return undefined;
 
         const intervalId = window.setInterval(() => {
-            refresh();
+            refresh({ background: true });
         }, 15000);
 
         return () => window.clearInterval(intervalId);
