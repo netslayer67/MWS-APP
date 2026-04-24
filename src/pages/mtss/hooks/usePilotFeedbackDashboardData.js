@@ -2,6 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import socketService from "@/services/socketService";
 import { fetchPilotFeedbackSessions } from "@/services/mtssService";
+import { PILOT_FEEDBACK_ADMIN_EMAILS } from "../utils/pilotFeedbackAccess";
+
+const normalizeEmail = (value = "") => String(value || "").trim().toLowerCase();
+
+const shouldHidePilotSession = (session = {}) => {
+    const testerEmail = normalizeEmail(session?.tester?.email);
+    return Boolean(testerEmail && PILOT_FEEDBACK_ADMIN_EMAILS.has(testerEmail));
+};
 
 const sortSessions = (items = []) =>
     [...items].sort((left, right) => {
@@ -13,7 +21,7 @@ const sortSessions = (items = []) =>
 const mergeSessions = (existing = [], incoming = []) => {
     const map = new Map(existing.map((item) => [item.sessionKey, item]));
     incoming.forEach((item) => {
-        if (!item?.sessionKey) return;
+        if (!item?.sessionKey || shouldHidePilotSession(item)) return;
         map.set(item.sessionKey, {
             ...(map.get(item.sessionKey) || {}),
             ...item,
@@ -82,7 +90,7 @@ const usePilotFeedbackDashboardData = ({ enabled = true } = {}) => {
                 { limit: 300 },
                 background ? { skipGlobalLoading: true } : undefined,
             );
-            setSessions(sortSessions(response?.sessions || []));
+            setSessions(sortSessions((response?.sessions || []).filter((session) => !shouldHidePilotSession(session))));
             setServerStats(response?.stats || null);
             if (background) {
                 setError(null);
