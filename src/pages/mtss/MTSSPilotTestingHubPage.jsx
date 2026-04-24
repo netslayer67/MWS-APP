@@ -1,8 +1,10 @@
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import {
+    AlertTriangle,
     ArrowRight,
     Bot,
+    Check,
     CheckCircle2,
     ClipboardCheck,
     Copy,
@@ -11,6 +13,7 @@ import {
     Gauge,
     Lightbulb,
     ListChecks,
+    Loader2,
     MessageSquareText,
     RotateCcw,
     Sparkles,
@@ -463,6 +466,50 @@ const StepRatingField = ({ label, value, onChange }) => (
     </div>
 );
 
+const SyncBadge = memo(({ syncState }) => {
+    if (!syncState || syncState.status === "idle") return null;
+
+    const status = syncState.status;
+    let Icon = Loader2;
+    let label = "Saving…";
+    let tone = "border-slate-300 bg-slate-50 text-slate-600 dark:border-white/15 dark:bg-white/5 dark:text-white/70";
+    let spin = false;
+
+    if (status === "syncing") {
+        Icon = Loader2;
+        label = "Saving…";
+        tone = "border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-400/30 dark:bg-violet-500/10 dark:text-violet-200";
+        spin = true;
+    } else if (status === "pending") {
+        Icon = Loader2;
+        label = "Edits queued…";
+        tone = "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-200";
+    } else if (status === "synced") {
+        Icon = Check;
+        label = "Saved";
+        tone = "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-200";
+    } else if (status === "error") {
+        Icon = AlertTriangle;
+        label = "Save failed — retrying";
+        tone = "border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-400/30 dark:bg-rose-500/10 dark:text-rose-200";
+    }
+
+    return (
+        <span
+            className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap",
+                tone,
+            )}
+            title={syncState.error || (syncState.lastSyncedAt ? `Last synced: ${new Date(syncState.lastSyncedAt).toLocaleString()}` : undefined)}
+            aria-live="polite"
+        >
+            <Icon className={cn("h-3 w-3", spin && "animate-spin")} />
+            {label}
+        </span>
+    );
+});
+SyncBadge.displayName = "SyncBadge";
+
 const StepFeedbackDialog = ({
     open,
     onOpenChange,
@@ -470,6 +517,7 @@ const StepFeedbackDialog = ({
     value,
     onChange,
     onSave,
+    syncState,
 }) => {
     if (!step) return null;
 
@@ -477,9 +525,12 @@ const StepFeedbackDialog = ({
             <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-4xl max-h-[88vh] overflow-y-auto rounded-[28px] border-white/20 bg-white/95 dark:bg-slate-950/95">
                 <DialogHeader>
-                    <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white">
-                        Step {step.order} feedback
-                    </DialogTitle>
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                        <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white">
+                            Step {step.order} feedback
+                        </DialogTitle>
+                        <SyncBadge syncState={syncState} />
+                    </div>
                     <DialogDescription className="text-sm text-slate-600 dark:text-white/70">
                         {step.title} — rate the step, note what helped, and log any issue you found. Saving this form marks the step as done automatically.
                     </DialogDescription>
@@ -707,11 +758,14 @@ const StepFeedbackDialog = ({
     );
 };
 
-const FinalFeedbackDialog = ({ open, onOpenChange, value, onChange, onSave, blocked, remainingCount, derivedOverallConfidence = null }) => (
+const FinalFeedbackDialog = ({ open, onOpenChange, value, onChange, onSave, blocked, remainingCount, derivedOverallConfidence = null, syncState }) => (
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[88vh] overflow-y-auto rounded-[28px] border-white/20 bg-white/95 dark:bg-slate-950/95">
             <DialogHeader>
-                <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white">Final pilot feedback</DialogTitle>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                    <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white">Final pilot feedback</DialogTitle>
+                    <SyncBadge syncState={syncState} />
+                </div>
                 <DialogDescription className="text-sm text-slate-600 dark:text-white/70">
                     {blocked
                         ? `${remainingCount} guided ${remainingCount === 1 ? "step still needs" : "steps still need"} saved feedback before final feedback can be submitted.`
@@ -1137,7 +1191,7 @@ const MTSSPilotTestingHubPage = memo(() => {
                     error: error?.response?.data?.message || error?.message || "Failed to sync pilot feedback.",
                 }));
             }
-        }, 300);
+        }, 1000);
 
         return () => window.clearTimeout(timeoutId);
     }, [pilotState, user]);
@@ -2023,6 +2077,7 @@ const MTSSPilotTestingHubPage = memo(() => {
                     updateStepFeedback(activeStep.id, nextValue);
                 }}
                 onSave={handleSaveStepFeedback}
+                syncState={syncState}
             />
 
             <FinalFeedbackDialog
@@ -2050,6 +2105,7 @@ const MTSSPilotTestingHubPage = memo(() => {
                 blocked={!allStepsReviewed}
                 remainingCount={remainingFeedbackCount}
                 derivedOverallConfidence={derivedOverallConfidence}
+                syncState={syncState}
             />
         </div>
     );
