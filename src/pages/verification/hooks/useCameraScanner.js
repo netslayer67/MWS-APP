@@ -22,32 +22,44 @@ export const useCameraScanner = ({
 }) => {
     const initialStage = autoStart ? "loading" : DEFAULT_STAGE;
     const [stage, setStage] = useState(initialStage);
-    const [stream, setStream] = useState(null);
+    const [cameraError, setCameraError] = useState(null);
     const [scanProgress, setScanProgress] = useState(0);
     const [detectedFeatures, setDetectedFeatures] = useState([]);
     const [rescanCount, setRescanCount] = useState(0);
     const videoRef = useRef(null);
     const scanIntervalRef = useRef(null);
 
-    const startScan = useCallback(async () => {
-        try {
-            const mediaStream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    facingMode: "user",
-                    width: { ideal: 640 },
-                    height: { ideal: 480 }
-                }
-            });
-            setStream(mediaStream);
-            setStage("preview");
-        } catch (error) {
-            console.error("Camera access error:", error);
-            toast?.({
-                title: "Camera Access Required",
-                description: "Please allow camera access for emotional analysis.",
-                variant: "destructive"
-            });
+    const stopVideoStream = useCallback(() => {
+        const video = videoRef.current;
+        const activeStream = video?.srcObject;
+        if (activeStream && typeof activeStream.getTracks === "function") {
+            activeStream.getTracks().forEach((track) => track.stop());
         }
+        if (video) {
+            try {
+                video.srcObject = null;
+            } catch {
+                // Browser owns this property; failure to detach is non-fatal.
+            }
+        }
+    }, []);
+
+    const startScan = useCallback(() => {
+        setCameraError(null);
+        setScanProgress(0);
+        setDetectedFeatures([]);
+        setStage("preview");
+    }, []);
+
+    const handleCameraError = useCallback((error) => {
+        console.error("Camera access error:", error);
+        setCameraError(error);
+        setStage("camera-error");
+        toast?.({
+            title: "Camera Access Required",
+            description: "Please allow camera access, close other apps using the camera, then try again.",
+            variant: "destructive"
+        });
     }, [toast]);
 
     // Auto-start camera when autoStart is true (skip intro)
@@ -88,9 +100,7 @@ export const useCameraScanner = ({
 
             const photoDataUrl = canvas.toDataURL("image/jpeg", 0.9);
 
-            if (stream) {
-                stream.getTracks().forEach((track) => track.stop());
-            }
+            stopVideoStream();
 
             setStage("analyzing");
             return photoDataUrl;
@@ -104,7 +114,7 @@ export const useCameraScanner = ({
             setStage(autoStart ? "preview" : initialStage);
             return null;
         }
-    }, [autoStart, initialStage, stream, toast]);
+    }, [autoStart, initialStage, stopVideoStream, toast]);
 
     const resetScan = useCallback(async () => {
         try {
@@ -118,21 +128,19 @@ export const useCameraScanner = ({
             clearInterval(scanIntervalRef.current);
             scanIntervalRef.current = null;
         }
-        if (stream) {
-            stream.getTracks().forEach((track) => track.stop());
-        }
-        setStream(null);
+        stopVideoStream();
+        setCameraError(null);
         setStage(initialStage);
         setScanProgress(0);
         setDetectedFeatures([]);
-    }, [initialStage, stream]);
+    }, [initialStage, stopVideoStream]);
 
-    const handleRescanRequest = useCallback(() => {
+    const handleRescanRequest = useCallback(async () => {
         if (rescanCount >= maxRescanAttempts) {
             return;
         }
         setRescanCount((prev) => prev + 1);
-        resetScan();
+        await resetScan();
         if (autoStart) {
             startScan();
         }
@@ -154,26 +162,24 @@ export const useCameraScanner = ({
                     // Never loaded, nothing to dispose.
                 });
 
-            if (stream) {
-                stream.getTracks().forEach((track) => track.stop());
-            }
+            stopVideoStream();
             if (scanIntervalRef.current) {
                 clearInterval(scanIntervalRef.current);
                 scanIntervalRef.current = null;
             }
         };
-    }, [stream]);
+    }, [stopVideoStream]);
 
     return {
         stage,
         setStage,
-        stream,
-        setStream,
+        cameraError,
         scanProgress,
         setScanProgress,
         detectedFeatures,
         setDetectedFeatures,
         startScan,
+        handleCameraError,
         capturePhoto,
         resetScan,
         handleRescanRequest,

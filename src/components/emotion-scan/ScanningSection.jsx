@@ -23,15 +23,16 @@ const ScanningOverlay = memo(() => (
     </motion.div>
 ));
 
-const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onEmotionDetected, onTakePhoto, stage }) => {
+const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onEmotionDetected, onTakePhoto, onCameraError, stage }) => {
     const [cameraReady, setCameraReady] = useState(false);
     const [currentEmotion, setCurrentEmotion] = useState(null);
     const webcamRef = React.useRef(null);
 
     const bindVideoElement = useCallback(() => {
-        if (webcamRef.current?.video && videoRef) {
-            videoRef.current = webcamRef.current.video;
-            setCameraReady(true);
+        const video = webcamRef.current?.video;
+        if (video && videoRef) {
+            videoRef.current = video;
+            setCameraReady(video.videoWidth > 0 && video.videoHeight > 0);
         }
     }, [videoRef]);
 
@@ -40,7 +41,9 @@ const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onEmot
     useEffect(() => {
         if (stage === "preview" || stage === "scanning") {
             bindVideoElement();
+            return;
         }
+        setCameraReady(false);
     }, [bindVideoElement, stage]);
 
     const handleTakePhoto = useCallback(() => {
@@ -73,7 +76,9 @@ const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onEmot
                         mirrored
                         videoConstraints={{ facingMode: "user" }}
                         onUserMedia={bindVideoElement}
+                        onUserMediaError={onCameraError}
                         onLoadedMetadata={bindVideoElement}
+                        onCanPlay={bindVideoElement}
                         style={{ width: "100%", height: "100%" }}
                     />
                 </div>
@@ -128,7 +133,9 @@ const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onEmot
                     mirrored
                     videoConstraints={{ facingMode: "user" }}
                     onUserMedia={bindVideoElement}
+                    onUserMediaError={onCameraError}
                     onLoadedMetadata={bindVideoElement}
+                    onCanPlay={bindVideoElement}
                     style={{ width: "100%", height: "100%" }}
                 />
                 <ScanningOverlay />

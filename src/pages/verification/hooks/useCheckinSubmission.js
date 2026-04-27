@@ -65,6 +65,14 @@ export const useCheckinSubmission = ({
                 aiSummary: analysis.personalizedRecommendation || "",
                 aiInsights: analysis.detailedRecommendations || [],
                 aiGenerated: true,
+                aiEmotionScan: analysis.aiEmotionScan || {
+                    valence: analysis.valence,
+                    arousal: analysis.arousal,
+                    intensity: analysis.intensity,
+                    detectedEmotion: analysis.detectedEmotion,
+                    confidence: analysis.confidence || 75,
+                    explanations: analysis.explanations || []
+                },
                 personalizedGreeting: analysis.personalizedRecommendation || "",
                 needsSupport:
                     (analysis.presenceCapacity?.estimatedPresence || 7) < 5 ||
@@ -100,4 +108,3 @@ export const useCheckinSubmission = ({
 
     return { isSubmitting, completeCheckin };
 };
-

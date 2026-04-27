@@ -2,7 +2,7 @@ import React, { memo, useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
-import { Shield, Camera, Brain, CheckCircle, ArrowLeft, Sparkles } from "lucide-react";
+import { Shield, Camera, Brain, CheckCircle, ArrowLeft, Sparkles, AlertCircle, RefreshCcw } from "lucide-react";
 import Webcam from "react-webcam";
 import AnimatedPage from "@/components/AnimatedPage";
 import { useToast } from "@/components/ui/use-toast";
@@ -63,8 +63,8 @@ const StudentFaceScanPage = memo(() => {
 
     const {
         stage, setStage, videoRef, scanProgress, detectedFeatures,
-        capturePhoto, handleRescanRequest,
-        isRescanDisabled, remainingRescans
+        startScan, capturePhoto, handleRescanRequest, handleCameraError,
+        isRescanDisabled, remainingRescans, cameraError
     } = useCameraScanner({ toast, maxRescanAttempts: MAX_AI_RESCAN_ATTEMPTS, autoStart: true });
 
     const {
@@ -77,9 +77,10 @@ const StudentFaceScanPage = memo(() => {
     });
 
     const bindVideoElement = useCallback(() => {
-        if (webcamRef.current?.video && videoRef) {
-            videoRef.current = webcamRef.current.video;
-            setCameraReady(true);
+        const video = webcamRef.current?.video;
+        if (video && videoRef) {
+            videoRef.current = video;
+            setCameraReady(video.videoWidth > 0 && video.videoHeight > 0);
         }
     }, [videoRef]);
 
@@ -88,7 +89,7 @@ const StudentFaceScanPage = memo(() => {
         if (stage === "preview" || stage === "scanning") {
             bindVideoElement();
         }
-        if (stage === "loading") {
+        if (stage !== "preview" && stage !== "scanning") {
             setCameraReady(false);
         }
     }, [bindVideoElement, stage]);
@@ -114,6 +115,11 @@ const StudentFaceScanPage = memo(() => {
         setSelectedSupportContact(null);
         handleRescanRequest();
     }, [handleRescanRequest, setAnalysis, setSelectedSupportContact]);
+
+    const handleRetryCamera = useCallback(() => {
+        setCameraReady(false);
+        startScan();
+    }, [startScan]);
 
     useEffect(() => {
         if (supportContacts.length === 0 && isAuthenticated) {
@@ -189,6 +195,44 @@ const StudentFaceScanPage = memo(() => {
                             </motion.div>
                         )}
 
+                        {stage === "camera-error" && (
+                            <motion.div key="camera-error" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="w-full max-w-md text-center space-y-5">
+                                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-100 text-rose-500 dark:bg-rose-500/10">
+                                    <AlertCircle className="h-7 w-7" />
+                                </div>
+                                <div className="space-y-2">
+                                    <h2 className="text-xl sm:text-2xl font-black text-gray-700 dark:text-white">
+                                        Camera needs permission
+                                    </h2>
+                                    <p className="text-[13px] text-gray-400 dark:text-gray-500 font-medium">
+                                        Allow camera access, close other apps using the camera, then try again.
+                                    </p>
+                                    {cameraError?.name && (
+                                        <p className="text-[11px] text-gray-300 dark:text-gray-600 font-semibold">
+                                            Error: {cameraError.name}
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate('/student/emotional-checkin/ai')}
+                                        className="w-full py-3 rounded-2xl bg-white/70 dark:bg-white/8 border border-gray-200/60 dark:border-white/10 text-gray-600 dark:text-gray-300 font-extrabold transition-colors hover:bg-white"
+                                    >
+                                        Back
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleRetryCamera}
+                                        className="w-full py-3 rounded-2xl bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 text-white font-extrabold shadow-lg shadow-violet-500/25 flex items-center justify-center gap-2"
+                                    >
+                                        <RefreshCcw className="w-4 h-4" />
+                                        Try Again
+                                    </button>
+                                </div>
+                            </motion.div>
+                        )}
+
                         {/* Camera Preview - student styled */}
                         {stage === "preview" && (
                             <motion.div key="preview" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="w-full max-w-md text-center space-y-5">
@@ -213,7 +257,9 @@ const StudentFaceScanPage = memo(() => {
                                         mirrored
                                         videoConstraints={{ facingMode: "user" }}
                                         onUserMedia={bindVideoElement}
+                                        onUserMediaError={handleCameraError}
                                         onLoadedMetadata={bindVideoElement}
+                                        onCanPlay={bindVideoElement}
                                         style={{ width: "100%", height: "100%" }}
                                     />
                                 </div>
@@ -256,7 +302,9 @@ const StudentFaceScanPage = memo(() => {
                                         mirrored
                                         videoConstraints={{ facingMode: "user" }}
                                         onUserMedia={bindVideoElement}
+                                        onUserMediaError={handleCameraError}
                                         onLoadedMetadata={bindVideoElement}
+                                        onCanPlay={bindVideoElement}
                                         style={{ width: "100%", height: "100%" }}
                                     />
                                     <StudentScanOverlay />
