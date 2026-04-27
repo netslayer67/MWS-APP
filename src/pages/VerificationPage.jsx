@@ -37,12 +37,8 @@ const EmotionalCheckinFaceScanPage = memo(() => {
         handleCameraError,
         handleRescanRequest,
         isRescanDisabled,
-<<<<<<< HEAD
-        remainingRescans
-=======
         remainingRescans,
         cameraError
->>>>>>> 284c40f (Fix FaceScan loading and cache refresh)
     } = useCameraScanner({
         toast,
         maxRescanAttempts: MAX_AI_RESCAN_ATTEMPTS
@@ -65,19 +61,11 @@ const EmotionalCheckinFaceScanPage = memo(() => {
     });
 
     const handleTakePhoto = useCallback(async () => {
-        const photoDataUrl = await capturePhoto();
-        if (photoDataUrl) {
-            await analyzePhoto(photoDataUrl);
+        const photoSource = await capturePhoto();
+        if (photoSource) {
+            await analyzePhoto(photoSource);
         }
     }, [analyzePhoto, capturePhoto]);
-
-    const handleCameraError = useCallback(() => {
-        toast({
-            title: "Camera Access Required",
-            description: "Please allow camera access so the AI scan can start.",
-            variant: "destructive"
-        });
-    }, [toast]);
 
     const handleRescan = useCallback(() => {
         setAnalysis(null);
@@ -178,7 +166,7 @@ const EmotionalCheckinFaceScanPage = memo(() => {
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                             <button
                                                 type="button"
-                                                onClick={() => navigate('/emotional-checkin')}
+                                                onClick={() => navigate("/emotional-checkin")}
                                                 className="w-full px-4 py-3 rounded-lg border border-border bg-background text-sm font-semibold hover:bg-muted transition-colors"
                                             >
                                                 Back

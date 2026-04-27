@@ -112,10 +112,7 @@ export const useCheckinSubmission = ({
                 weatherType: analysis.internalWeather || analysis.weatherDesc || "AI Generated Weather",
                 weatherIcon: analysis.weatherIcon || "☀️",
                 weatherDescription: analysis.weatherDesc || "",
-<<<<<<< HEAD
                 preparedAiAnalysis,
-                needsSupport: preparedAiAnalysis.needsSupport
-=======
                 aiSummary: analysis.personalizedRecommendation || "",
                 aiInsights: analysis.detailedRecommendations || [],
                 aiGenerated: true,
@@ -128,10 +125,7 @@ export const useCheckinSubmission = ({
                     explanations: analysis.explanations || []
                 },
                 personalizedGreeting: analysis.personalizedRecommendation || "",
-                needsSupport:
-                    (analysis.presenceCapacity?.estimatedPresence || 7) < 5 ||
-                    (analysis.presenceCapacity?.estimatedCapacity || 7) < 5
->>>>>>> 284c40f (Fix FaceScan loading and cache refresh)
+                needsSupport: preparedAiAnalysis.needsSupport
             };
 
             const response = await authService.post("/checkin/ai-submit", checkInData);

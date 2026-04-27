@@ -6,8 +6,8 @@ const ANALYSIS_TIMEOUT_MS = 20000;
 export const useEmotionAnalysis = ({ toast, setStage, fallbackStage = "intro" }) => {
     const [analysis, setAnalysis] = useState(null);
     const [selectedSupportContact, setSelectedSupportContact] = useState(null);
+    const [aiEmotionResult, setAiEmotionResult] = useState(null);
 
-<<<<<<< HEAD
     const finalizeAnalysis = useCallback((emotionResult) => {
         if (!emotionResult) {
             return;
@@ -15,6 +15,17 @@ export const useEmotionAnalysis = ({ toast, setStage, fallbackStage = "intro" })
 
         try {
             const finalAnalysis = generateAIAnalysis(emotionResult);
+            finalAnalysis.aiEmotionScan = {
+                valence: emotionResult.valence,
+                arousal: emotionResult.arousal,
+                intensity: emotionResult.intensity,
+                detectedEmotion: emotionResult.primaryEmotion,
+                confidence: emotionResult.confidence,
+                explanations: emotionResult.explanations,
+                temporalAnalysis: emotionResult.temporalAnalysis,
+                emotionalAuthenticity: emotionResult.emotionalAuthenticity,
+                psychologicalDepth: emotionResult.psychologicalDepth
+            };
             finalAnalysis.selectedSupportContact = selectedSupportContact;
             finalAnalysis.isSubmitting = false;
             setAnalysis(finalAnalysis);
@@ -31,10 +42,7 @@ export const useEmotionAnalysis = ({ toast, setStage, fallbackStage = "intro" })
     }, [fallbackStage, selectedSupportContact, setStage, toast]);
 
     const analyzePhoto = useCallback(async (imageSource) => {
-=======
-    const analyzePhoto = useCallback(async (imageDataUrl) => {
         let timeoutId;
->>>>>>> 284c40f (Fix FaceScan loading and cache refresh)
         try {
             setAiEmotionResult(null);
             setAnalysis(null);
@@ -69,6 +77,7 @@ export const useEmotionAnalysis = ({ toast, setStage, fallbackStage = "intro" })
                 throw new Error("Invalid emotion analysis response format - no emotionResult found");
             }
 
+            setAiEmotionResult(emotionResult);
             finalizeAnalysis(emotionResult);
         } catch (error) {
             console.error("Emotion analysis failed:", error);
@@ -91,52 +100,7 @@ export const useEmotionAnalysis = ({ toast, setStage, fallbackStage = "intro" })
                 window.clearTimeout(timeoutId);
             }
         }
-<<<<<<< HEAD
     }, [fallbackStage, finalizeAnalysis, setStage, toast]);
-=======
-    }, [fallbackStage, setStage, toast]);
-
-    const finalizeAnalysis = useCallback(() => {
-        if (!aiEmotionResult) {
-            return;
-        }
-
-        try {
-            const finalAnalysis = generateAIAnalysis(aiEmotionResult);
-            finalAnalysis.aiEmotionScan = {
-                valence: aiEmotionResult.valence,
-                arousal: aiEmotionResult.arousal,
-                intensity: aiEmotionResult.intensity,
-                detectedEmotion: aiEmotionResult.primaryEmotion,
-                confidence: aiEmotionResult.confidence,
-                explanations: aiEmotionResult.explanations,
-                temporalAnalysis: aiEmotionResult.temporalAnalysis,
-                emotionalAuthenticity: aiEmotionResult.emotionalAuthenticity,
-                psychologicalDepth: aiEmotionResult.psychologicalDepth
-            };
-            finalAnalysis.selectedSupportContact = selectedSupportContact;
-            finalAnalysis.isSubmitting = false;
-            setAnalysis(finalAnalysis);
-            setStage("results");
-        } catch (error) {
-            console.error("Failed to generate AI analysis:", error);
-            toast?.({
-                title: "Analysis Failed",
-                description: "Unable to process AI emotion analysis. Please try again.",
-                variant: "destructive"
-            });
-            setStage(fallbackStage);
-        }
-    }, [aiEmotionResult, fallbackStage, selectedSupportContact, setStage, toast]);
-
-    useEffect(() => {
-        if (!aiEmotionResult) {
-            return;
-        }
-        const timer = setTimeout(finalizeAnalysis, 100);
-        return () => clearTimeout(timer);
-    }, [aiEmotionResult, finalizeAnalysis]);
->>>>>>> 284c40f (Fix FaceScan loading and cache refresh)
 
     useEffect(() => {
         setAnalysis((prev) => {

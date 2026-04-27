@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useState } from "react";
+import React, { memo, useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Brain, CheckCircle } from "lucide-react";
 import Webcam from "react-webcam";
@@ -23,18 +23,8 @@ const ScanningOverlay = memo(() => (
     </motion.div>
 ));
 
-<<<<<<< HEAD
-const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onTakePhoto, stage, onCameraError }) => {
-    const webcamRef = React.useRef(null);
+const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onTakePhoto, onCameraError, stage }) => {
     const [cameraReady, setCameraReady] = useState(false);
-    const bindVideoElement = React.useCallback(() => {
-        if (webcamRef?.current?.video && videoRef) {
-            videoRef.current = webcamRef.current.video;
-            setCameraReady(true);
-=======
-const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onEmotionDetected, onTakePhoto, onCameraError, stage }) => {
-    const [cameraReady, setCameraReady] = useState(false);
-    const [currentEmotion, setCurrentEmotion] = useState(null);
     const webcamRef = React.useRef(null);
 
     const bindVideoElement = useCallback(() => {
@@ -42,28 +32,23 @@ const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onEmot
         if (video && videoRef) {
             videoRef.current = video;
             setCameraReady(video.videoWidth > 0 && video.videoHeight > 0);
->>>>>>> 284c40f (Fix FaceScan loading and cache refresh)
         }
     }, [videoRef]);
 
     useEffect(() => {
-<<<<<<< HEAD
-        bindVideoElement();
-=======
         if (stage === "preview" || stage === "scanning") {
             bindVideoElement();
             return;
         }
         setCameraReady(false);
->>>>>>> 284c40f (Fix FaceScan loading and cache refresh)
     }, [bindVideoElement, stage]);
 
-    const handleTakePhoto = React.useCallback(() => {
+    const handleTakePhoto = useCallback(() => {
         if (!cameraReady) return;
         onTakePhoto?.();
     }, [cameraReady, onTakePhoto]);
 
-    if (stage === 'preview') {
+    if (stage === "preview") {
         return (
             <motion.div
                 key="preview"
@@ -90,11 +75,7 @@ const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onEmot
                         onUserMedia={bindVideoElement}
                         onUserMediaError={onCameraError}
                         onLoadedMetadata={bindVideoElement}
-<<<<<<< HEAD
-                        onUserMediaError={onCameraError}
-=======
                         onCanPlay={bindVideoElement}
->>>>>>> 284c40f (Fix FaceScan loading and cache refresh)
                         style={{ width: "100%", height: "100%" }}
                     />
                 </div>
@@ -144,11 +125,7 @@ const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onEmot
                     onUserMedia={bindVideoElement}
                     onUserMediaError={onCameraError}
                     onLoadedMetadata={bindVideoElement}
-<<<<<<< HEAD
-                    onUserMediaError={onCameraError}
-=======
                     onCanPlay={bindVideoElement}
->>>>>>> 284c40f (Fix FaceScan loading and cache refresh)
                     style={{ width: "100%", height: "100%" }}
                 />
                 <ScanningOverlay />
@@ -190,8 +167,8 @@ const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onEmot
                 Advanced AI analysis in progress...
             </div>
         </motion.div>
-    )
+    );
 });
 
-ScanningSection.displayName = 'ScanningSection';
+ScanningSection.displayName = "ScanningSection";
 export default ScanningSection;
