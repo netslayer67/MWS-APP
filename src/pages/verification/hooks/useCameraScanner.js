@@ -22,7 +22,7 @@ export const useCameraScanner = ({
 }) => {
     const initialStage = autoStart ? "preview" : DEFAULT_STAGE;
     const [stage, setStage] = useState(initialStage);
-    const [stream, setStream] = useState(null);
+    const [cameraError, setCameraError] = useState(null);
     const [scanProgress, setScanProgress] = useState(0);
     const [detectedFeatures, setDetectedFeatures] = useState([]);
     const [rescanCount, setRescanCount] = useState(0);
@@ -38,11 +38,45 @@ export const useCameraScanner = ({
         setStream(null);
     }, [stream]);
 
+<<<<<<< HEAD
     const startScan = useCallback(async () => {
+=======
+    const stopVideoStream = useCallback(() => {
+        const video = videoRef.current;
+        const activeStream = video?.srcObject;
+        if (activeStream && typeof activeStream.getTracks === "function") {
+            activeStream.getTracks().forEach((track) => track.stop());
+        }
+        if (video) {
+            try {
+                video.srcObject = null;
+            } catch {
+                // Browser owns this property; failure to detach is non-fatal.
+            }
+        }
+    }, []);
+
+    const startScan = useCallback(() => {
+        setCameraError(null);
+>>>>>>> 284c40f (Fix FaceScan loading and cache refresh)
         setScanProgress(0);
         setDetectedFeatures([]);
         setStage("preview");
     }, []);
+<<<<<<< HEAD
+=======
+
+    const handleCameraError = useCallback((error) => {
+        console.error("Camera access error:", error);
+        setCameraError(error);
+        setStage("camera-error");
+        toast?.({
+            title: "Camera Access Required",
+            description: "Please allow camera access, close other apps using the camera, then try again.",
+            variant: "destructive"
+        });
+    }, [toast]);
+>>>>>>> 284c40f (Fix FaceScan loading and cache refresh)
 
     // Auto-start camera when autoStart is true (skip intro)
     useEffect(() => {
@@ -85,6 +119,7 @@ export const useCameraScanner = ({
             canvas.height = Math.max(1, Math.round(sourceHeight * scale));
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+<<<<<<< HEAD
             const photoBlob = await new Promise((resolve, reject) => {
                 canvas.toBlob(
                     (blob) => {
@@ -98,6 +133,11 @@ export const useCameraScanner = ({
                     0.82
                 );
             });
+=======
+            const photoDataUrl = canvas.toDataURL("image/jpeg", 0.9);
+
+            stopVideoStream();
+>>>>>>> 284c40f (Fix FaceScan loading and cache refresh)
 
             stopActiveVideoTracks();
             setStage("analyzing");
@@ -112,7 +152,11 @@ export const useCameraScanner = ({
             setStage(autoStart ? "preview" : initialStage);
             return null;
         }
+<<<<<<< HEAD
     }, [autoStart, initialStage, stopActiveVideoTracks, toast]);
+=======
+    }, [autoStart, initialStage, stopVideoStream, toast]);
+>>>>>>> 284c40f (Fix FaceScan loading and cache refresh)
 
     const resetScan = useCallback(async () => {
         try {
@@ -126,18 +170,27 @@ export const useCameraScanner = ({
             clearInterval(scanIntervalRef.current);
             scanIntervalRef.current = null;
         }
+<<<<<<< HEAD
         stopActiveVideoTracks();
         setStage(initialStage);
         setScanProgress(0);
         setDetectedFeatures([]);
     }, [initialStage, stopActiveVideoTracks]);
+=======
+        stopVideoStream();
+        setCameraError(null);
+        setStage(initialStage);
+        setScanProgress(0);
+        setDetectedFeatures([]);
+    }, [initialStage, stopVideoStream]);
+>>>>>>> 284c40f (Fix FaceScan loading and cache refresh)
 
-    const handleRescanRequest = useCallback(() => {
+    const handleRescanRequest = useCallback(async () => {
         if (rescanCount >= maxRescanAttempts) {
             return;
         }
         setRescanCount((prev) => prev + 1);
-        resetScan();
+        await resetScan();
         if (autoStart) {
             startScan();
         }
@@ -159,24 +212,32 @@ export const useCameraScanner = ({
                     // Never loaded, nothing to dispose.
                 });
 
+<<<<<<< HEAD
             stopActiveVideoTracks();
+=======
+            stopVideoStream();
+>>>>>>> 284c40f (Fix FaceScan loading and cache refresh)
             if (scanIntervalRef.current) {
                 clearInterval(scanIntervalRef.current);
                 scanIntervalRef.current = null;
             }
         };
+<<<<<<< HEAD
     }, [stopActiveVideoTracks]);
+=======
+    }, [stopVideoStream]);
+>>>>>>> 284c40f (Fix FaceScan loading and cache refresh)
 
     return {
         stage,
         setStage,
-        stream,
-        setStream,
+        cameraError,
         scanProgress,
         setScanProgress,
         detectedFeatures,
         setDetectedFeatures,
         startScan,
+        handleCameraError,
         capturePhoto,
         resetScan,
         handleRescanRequest,

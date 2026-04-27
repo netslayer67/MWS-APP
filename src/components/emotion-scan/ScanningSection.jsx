@@ -23,6 +23,7 @@ const ScanningOverlay = memo(() => (
     </motion.div>
 ));
 
+<<<<<<< HEAD
 const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onTakePhoto, stage, onCameraError }) => {
     const webcamRef = React.useRef(null);
     const [cameraReady, setCameraReady] = useState(false);
@@ -30,11 +31,31 @@ const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onTake
         if (webcamRef?.current?.video && videoRef) {
             videoRef.current = webcamRef.current.video;
             setCameraReady(true);
+=======
+const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onEmotionDetected, onTakePhoto, onCameraError, stage }) => {
+    const [cameraReady, setCameraReady] = useState(false);
+    const [currentEmotion, setCurrentEmotion] = useState(null);
+    const webcamRef = React.useRef(null);
+
+    const bindVideoElement = useCallback(() => {
+        const video = webcamRef.current?.video;
+        if (video && videoRef) {
+            videoRef.current = video;
+            setCameraReady(video.videoWidth > 0 && video.videoHeight > 0);
+>>>>>>> 284c40f (Fix FaceScan loading and cache refresh)
         }
     }, [videoRef]);
 
     useEffect(() => {
+<<<<<<< HEAD
         bindVideoElement();
+=======
+        if (stage === "preview" || stage === "scanning") {
+            bindVideoElement();
+            return;
+        }
+        setCameraReady(false);
+>>>>>>> 284c40f (Fix FaceScan loading and cache refresh)
     }, [bindVideoElement, stage]);
 
     const handleTakePhoto = React.useCallback(() => {
@@ -67,8 +88,13 @@ const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onTake
                         mirrored
                         videoConstraints={{ facingMode: "user" }}
                         onUserMedia={bindVideoElement}
-                        onLoadedMetadata={bindVideoElement}
                         onUserMediaError={onCameraError}
+                        onLoadedMetadata={bindVideoElement}
+<<<<<<< HEAD
+                        onUserMediaError={onCameraError}
+=======
+                        onCanPlay={bindVideoElement}
+>>>>>>> 284c40f (Fix FaceScan loading and cache refresh)
                         style={{ width: "100%", height: "100%" }}
                     />
                 </div>
@@ -116,8 +142,13 @@ const ScanningSection = memo(({ videoRef, scanProgress, detectedFeatures, onTake
                     mirrored
                     videoConstraints={{ facingMode: "user" }}
                     onUserMedia={bindVideoElement}
-                    onLoadedMetadata={bindVideoElement}
                     onUserMediaError={onCameraError}
+                    onLoadedMetadata={bindVideoElement}
+<<<<<<< HEAD
+                    onUserMediaError={onCameraError}
+=======
+                    onCanPlay={bindVideoElement}
+>>>>>>> 284c40f (Fix FaceScan loading and cache refresh)
                     style={{ width: "100%", height: "100%" }}
                 />
                 <ScanningOverlay />

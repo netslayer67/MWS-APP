@@ -46,6 +46,7 @@ export default defineConfig({
                     '**/assets/vendor-tfjs-*.js',
                     '**/assets/vendor-mediapipe-*.js'
                 ],
+                cleanupOutdatedCaches: true,
                 runtimeCaching: [
                     {
                         urlPattern: ({ request, url }) =>
@@ -93,18 +94,6 @@ export default defineConfig({
                             }
                         }
                     },
-                    {
-                        urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
-                        handler: 'NetworkFirst',
-                        options: {
-                            cacheName: 'api-cache',
-                            expiration: {
-                                maxEntries: 100,
-                                maxAgeSeconds: 60 * 60 * 24 // 24 hours
-                            },
-                            networkTimeoutSeconds: 10
-                        }
-                    }
                 ],
                 navigateFallback: '/index.html',
                 navigateFallbackDenylist: [/^\/api\//, /^\/auth\//, /^\/socket\.io\//],
