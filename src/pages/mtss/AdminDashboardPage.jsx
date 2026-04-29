@@ -2,7 +2,7 @@ import { memo, Suspense, lazy, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ClipboardCheck, MessageSquareText } from "lucide-react";
+import { ClipboardCheck, FileText, MessageSquareText } from "lucide-react";
 import useMtssObserver from "./hooks/useMtssObserver";
 import { adminTabs, heroCard, overviewIcons } from "./data/adminDashboardContent";
 import useAdminDashboardData from "./hooks/useAdminDashboardData";
@@ -22,6 +22,7 @@ const AdminStudentsPanel = lazy(() => import("./admin/AdminStudentsPanel"));
 const AdminMentorsPanel = lazy(() => import("./admin/AdminMentorsPanel"));
 const AdminAnalyticsPanel = lazy(() => import("./admin/AdminAnalyticsPanel"));
 const AdminPilotFeedbackPanel = lazy(() => import("./admin/AdminPilotFeedbackPanel"));
+const AdminPilotSummaryReportPanel = lazy(() => import("./admin/AdminPilotSummaryReportPanel"));
 
 const PanelFallback = () => (
     <div className="glass glass-card p-8 text-center text-muted-foreground animate-pulse">Loading dashboard...</div>
@@ -40,7 +41,11 @@ const AdminDashboardPage = memo(() => {
     const dashboardTabs = useMemo(
         () => (
             showPilotFeedbackTab
-                ? [...adminTabs, { key: "pilot-feedback", label: "Pilot Feedback", icon: MessageSquareText }]
+                ? [
+                    ...adminTabs,
+                    { key: "pilot-feedback", label: "Pilot Feedback", icon: MessageSquareText },
+                    { key: "pilot-report", label: "Feedback Summary", icon: FileText },
+                ]
                 : adminTabs
         ),
         [showPilotFeedbackTab],
@@ -180,6 +185,8 @@ const AdminDashboardPage = memo(() => {
                 );
             case "pilot-feedback":
                 return showPilotFeedbackTab ? <AdminPilotFeedbackPanel /> : null;
+            case "pilot-report":
+                return showPilotFeedbackTab ? <AdminPilotSummaryReportPanel /> : null;
             default:
                 return null;
         }
