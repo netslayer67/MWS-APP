@@ -78,7 +78,7 @@ const DashboardOverviewSpotlightDetails = ({
                     Intervention
                 </div>
                 <ul className="space-y-2 text-sm text-foreground dark:text-white">
-                    <li><strong>Type:</strong> {spotlightProfile.type ?? "-"}</li>
+	                    <li><strong>Subject / Focus Area:</strong> {spotlightProfile.type ?? "-"}</li>
                     <li><strong>Strategy:</strong> {spotlightProfile.strategy ?? "-"}</li>
                     <li><strong>Started:</strong> {spotlightProfile.started ?? "-"}</li>
                     <li><strong>Duration:</strong> {spotlightProfile.duration ?? "-"}</li>

@@ -13,7 +13,7 @@ const formatMessageTime = (value) => {
     return TIME_FORMATTER.format(parsed);
 };
 
-const ChatMessageItem = React.memo(({ message, onWidgetAction }) => {
+const ChatMessageItem = React.memo(({ message, onWidgetAction, onMessageFeedback }) => {
     const isUser = message.role === 'user';
 
     return (
@@ -23,6 +23,7 @@ const ChatMessageItem = React.memo(({ message, onWidgetAction }) => {
                     message={message}
                     isUser={isUser}
                     onWidgetAction={onWidgetAction}
+                    onMessageFeedback={onMessageFeedback}
                 />
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 px-2">
                     {formatMessageTime(message.timestamp)}
@@ -33,6 +34,7 @@ const ChatMessageItem = React.memo(({ message, onWidgetAction }) => {
 }, (previousProps, nextProps) => (
     previousProps.message === nextProps.message
     && previousProps.onWidgetAction === nextProps.onWidgetAction
+    && previousProps.onMessageFeedback === nextProps.onMessageFeedback
 ));
 
 ChatMessageItem.displayName = 'ChatMessageItem';

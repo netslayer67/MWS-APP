@@ -2,6 +2,26 @@ import { normalizeGradeLabel, normalizeClassLabel } from "./teacherGradeUtils";
 import { slugify } from "./teacherCommonUtils";
 import { TIER_PRIORITY } from "./teacherMappingConstants";
 import { normalizeTierCode } from "./teacherMappingHelpers";
+import { resolveTypeKey } from "./interventionNormalize";
+
+const buildInterventionsFromAssignments = (assignmentOptions = []) =>
+    assignmentOptions
+        .filter((option) => option?.assignmentId)
+        .map((option) => {
+            const focus = option.focus || option.focusAreas?.[0] || option.strategyName || "Focused Support";
+            const tierCode = option.tierCode || normalizeTierCode(option.tier || option.tierValue) || "tier2";
+            return {
+                id: option.assignmentId,
+                type: resolveTypeKey(focus) || "SEL",
+                label: focus,
+                tier: option.tier || (tierCode === "tier3" ? "Tier 3" : tierCode === "tier2" ? "Tier 2" : "Tier 1"),
+                tierCode,
+                status: option.statusKey || option.status || "active",
+                strategies: [option.strategyName].filter(Boolean),
+                history: option.history || [],
+                hasData: true,
+            };
+        });
 
 const matchesGrade = (grade, allowedGrades = []) => {
     if (!allowedGrades.length) return true;
@@ -57,6 +77,7 @@ export const mergeRosterWithAssignments = (
             const useAssignment = assignment && (!rosterScore || assignmentScore > rosterScore);
             const displaySource = useAssignment ? assignment : student;
             const assignmentOptions = assignment?.assignmentOptions || [];
+            const assignmentInterventions = buildInterventionsFromAssignments(assignmentOptions);
 
             return {
                 id,
@@ -72,7 +93,7 @@ export const mergeRosterWithAssignments = (
                 assignmentId: assignment?.assignmentId || null,
                 assignmentOptions,
                 profile: displaySource?.profile || assignment?.profile || student.profile,
-                interventions: student.interventions,
+                interventions: assignmentInterventions.length ? assignmentInterventions : student.interventions,
                 primaryIntervention: student.primaryIntervention,
             };
         })

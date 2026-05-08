@@ -38,7 +38,12 @@ const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh, onEd
             const matchesTier = activeTier === "All" || tierLabel === activeTier;
             if (!deferredQuery) return matchesTier;
             const chipLabels = interventions.map((entry) => entry.label).join(" ");
-            const searchPool = `${student.name} ${student.type || ""} ${student.grade || ""} ${student.className || ""} ${criticalInfo?.label || ""} ${chipLabels}`.toLowerCase();
+            const assignmentLabels = Array.isArray(student.assignmentOptions)
+                ? student.assignmentOptions
+                    .map((option) => `${option.focus || ""} ${(option.focusAreas || []).join(" ")} ${option.mentor || ""}`)
+                    .join(" ")
+                : "";
+            const searchPool = `${student.name} ${student.type || ""} ${student.grade || ""} ${student.className || ""} ${assignmentLabels} ${criticalInfo?.label || ""} ${chipLabels}`.toLowerCase();
             return matchesTier && searchPool.includes(deferredQuery);
         }),
     [students, activeTier, deferredQuery]);

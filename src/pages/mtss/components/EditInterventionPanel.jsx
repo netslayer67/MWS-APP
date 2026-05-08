@@ -69,6 +69,13 @@ const EditInterventionPanel = memo(({
     };
 
     const isValid = validateInterventionForm(formState);
+    const contextItems = useMemo(() => [
+        { label: "Subject", value: editingPlan?.subject || editingPlan?.focusLabel || "Focused Support" },
+        { label: "Owner", value: editingPlan?.owner || "Unassigned" },
+        { label: "Goal", value: editingPlan?.goal || "Not set" },
+        { label: "Baseline", value: editingPlan?.baseline || "Not set" },
+        { label: "Status", value: editingPlan?.status || "Active" },
+    ], [editingPlan]);
 
     if (!editingPlan?.assignmentId) {
         return (
@@ -119,10 +126,25 @@ const EditInterventionPanel = memo(({
                     <p className="text-sm text-slate-600 dark:text-slate-200 max-w-2xl">
                         This workspace is dedicated for plan updates only, separate from create flow to avoid confusion.
                     </p>
-                    <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/60 bg-cyan-50/80 px-3 py-1 text-xs font-semibold text-cyan-700 dark:border-cyan-500/40 dark:bg-cyan-900/30 dark:text-cyan-200">
-                        Editing: {editingPlan?.studentName || "Student"} {editingPlan?.focusLabel ? `(${editingPlan.focusLabel})` : ""}
-                    </div>
-                </header>
+	                    <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/60 bg-cyan-50/80 px-3 py-1 text-xs font-semibold text-cyan-700 dark:border-cyan-500/40 dark:bg-cyan-900/30 dark:text-cyan-200">
+	                        Editing: {editingPlan?.studentName || "Student"} {editingPlan?.focusLabel ? `(${editingPlan.focusLabel})` : ""}
+	                    </div>
+                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                            {contextItems.map((item) => (
+                                <div
+                                    key={item.label}
+                                    className="rounded-2xl border border-cyan-200/70 bg-white/80 px-3 py-3 shadow-sm dark:border-cyan-500/25 dark:bg-white/5"
+                                >
+                                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-700/70 dark:text-cyan-200/70">
+                                        {item.label}
+                                    </p>
+                                    <p className="mt-1 line-clamp-2 text-sm font-semibold text-slate-900 dark:text-white" title={item.value}>
+                                        {item.value}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+	                </header>
 
                 <form className="space-y-5" onSubmit={onSubmit}>
                     <InterventionFormFields

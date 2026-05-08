@@ -56,6 +56,7 @@ const resolveTierValue = (value = "tier2") => {
 
 const resolveDurationValue = (value = "") => {
     const normalized = normalizeText(value);
+    if (normalized === "custom") return "Custom";
     return /^\d+\s+weeks?$/.test(normalized) ? normalized.replace(/weeks?$/, "weeks") : "";
 };
 
@@ -91,13 +92,34 @@ const resolveGoalValue = (option = {}) => {
     return "";
 };
 
+const formatScoreLabel = (score, fallbackUnit = "score") => {
+    const value = resolveScoreValue(score);
+    if (!value) return "Not set";
+    const unit = resolveScoreUnit(score, fallbackUnit);
+    return unit ? `${value} ${unit}` : value;
+};
+
+const resolveOwnerLabel = (option = {}) =>
+    option?.mentor ||
+    option?.mentorName ||
+    option?.owner ||
+    option?.teacher ||
+    option?.createdByName ||
+    "Unassigned";
+
+const resolveStatusLabel = (option = {}) =>
+    option?.statusLabel ||
+    option?.statusKey ||
+    option?.status ||
+    "Active";
+
 const buildInterventionFormFromAssignment = (student, option = {}) => {
     const fallbackUnit = option.metricLabel || "score";
     const baselineUnit = resolveScoreUnit(option.baselineScore, fallbackUnit);
 
     return {
         ...createDefaultInterventionForm(),
-        studentId: student?.id || student?._id || "",
+        studentId: student?.baseStudentId || student?.id || student?._id || "",
         studentName: student?.name || "",
         grade: student?.grade || student?.currentGrade || "",
         className: student?.className || "",
@@ -178,10 +200,22 @@ export const useTeacherDashboardState = (tabs, { onSaveSuccess, viewerUser } = {
         const selectedOption = assignmentOption || resolveEditableAssignmentOption(student);
         if (!selectedOption?.assignmentId) return false;
 
+        const metricUnit = selectedOption.metricLabel || "score";
+        const subjectLabel =
+            selectedOption.focus ||
+            selectedOption.focusAreas?.[0] ||
+            selectedOption.strategyName ||
+            "Focused Support";
+
         setEditingPlan({
             assignmentId: selectedOption.assignmentId,
             studentName: student?.name || "Student",
-            focusLabel: selectedOption.focus || selectedOption.strategyName || "Intervention",
+            focusLabel: subjectLabel,
+            subject: subjectLabel,
+            owner: resolveOwnerLabel(selectedOption),
+            goal: resolveGoalValue(selectedOption) || "Not set",
+            baseline: formatScoreLabel(selectedOption.baselineScore, metricUnit),
+            status: resolveStatusLabel(selectedOption),
         });
         setInterventionForm(buildInterventionFormFromAssignment(student, selectedOption));
         setActiveTab("edit");
@@ -304,10 +338,11 @@ export const useTeacherDashboardState = (tabs, { onSaveSuccess, viewerUser } = {
                         summary: progressForm.notes || "Progress update",
                         value: progressForm.scoreValue ? Number(progressForm.scoreValue) : undefined,
                         unit: progressForm.scoreUnit || "score",
-                        performed: progressForm.performed === "yes" || progressForm.performed === true,
-                        skipReason: progressForm.performed === "no" ? (progressForm.skipReason || undefined) : undefined,
-                        skipReasonNote: progressForm.performed === "no" && progressForm.skipReason === "other" ? (progressForm.skipReasonNote || undefined) : undefined,
-                        celebration: progressForm.badge || undefined,
+	                        performed: progressForm.performed === "yes" || progressForm.performed === true,
+	                        skipReason: progressForm.performed === "no" ? (progressForm.skipReason || undefined) : undefined,
+	                        skipReasonNote: progressForm.performed === "no" && progressForm.skipReason === "other" ? (progressForm.skipReasonNote || undefined) : undefined,
+                            lateReason: progressForm.lateReason?.trim() || undefined,
+	                        celebration: progressForm.badge || undefined,
                     }],
                 };
 

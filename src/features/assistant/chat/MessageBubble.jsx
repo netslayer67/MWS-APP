@@ -1,4 +1,5 @@
 import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Flag, ThumbsDown } from 'lucide-react';
 import { ASSISTANT_WIDGET_TYPES, isWidgetTypeSupported } from '@/features/assistant/runtime/widgetRegistry';
 
 const LazyChatBarChartWidget = lazy(() => import('@/features/assistant/chat/widgets/ChatBarChartWidget'));
@@ -459,9 +460,10 @@ const AssistantWidgets = React.memo(({ widgets, isUser, onWidgetAction, canHydra
 });
 AssistantWidgets.displayName = 'AssistantWidgets';
 
-const MessageBubble = React.memo(({ message, isUser, onWidgetAction }) => {
+const MessageBubble = React.memo(({ message, isUser, onWidgetAction, onMessageFeedback }) => {
     const [showReactions, setShowReactions] = useState(false);
     const [selectedReaction, setSelectedReaction] = useState(null);
+    const [feedbackStatus, setFeedbackStatus] = useState(null);
     const [canHydrateRichContent, setCanHydrateRichContent] = useState(isUser);
     const bubbleRef = useRef(null);
     const formattedContent = useMemo(
@@ -475,6 +477,17 @@ const MessageBubble = React.memo(({ message, isUser, onWidgetAction }) => {
         setSelectedReaction(reaction);
         setShowReactions(false);
     }, []);
+
+    const handleMessageFeedback = useCallback(async (reason) => {
+        if (!onMessageFeedback || feedbackStatus === 'saving') return;
+        setFeedbackStatus('saving');
+        try {
+            await onMessageFeedback({ message, reason });
+            setFeedbackStatus(reason);
+        } catch {
+            setFeedbackStatus('error');
+        }
+    }, [feedbackStatus, message, onMessageFeedback]);
 
     useEffect(() => {
         if (isUser || canHydrateRichContent) return;
@@ -523,6 +536,34 @@ const MessageBubble = React.memo(({ message, isUser, onWidgetAction }) => {
                     onWidgetAction={onWidgetAction}
                     canHydrateRichWidgets={canHydrateRichContent}
                 />
+
+                {!isUser && !message.isError && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-200/60 pt-2 dark:border-white/10">
+                        <button
+                            type="button"
+                            onClick={() => handleMessageFeedback('not_useful')}
+                            disabled={feedbackStatus === 'saving'}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-slate-300/80 bg-white/80 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-100 disabled:opacity-60 dark:border-white/15 dark:bg-white/10 dark:text-slate-200 dark:hover:bg-white/15"
+                        >
+                            <ThumbsDown className="h-3.5 w-3.5" />
+                            Not useful
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleMessageFeedback('wrong_answer')}
+                            disabled={feedbackStatus === 'saving'}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-rose-300/80 bg-rose-50/80 px-2.5 py-1 text-[11px] font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-60 dark:border-rose-400/30 dark:bg-rose-950/30 dark:text-rose-200"
+                        >
+                            <Flag className="h-3.5 w-3.5" />
+                            Report wrong answer
+                        </button>
+                        {feedbackStatus && feedbackStatus !== 'saving' && (
+                            <span className={`text-[11px] font-semibold ${feedbackStatus === 'error' ? 'text-rose-600 dark:text-rose-300' : 'text-emerald-600 dark:text-emerald-300'}`}>
+                                {feedbackStatus === 'error' ? 'Could not save feedback' : 'Feedback sent'}
+                            </span>
+                        )}
+                    </div>
+                )}
 
                 {!isUser && showReactions && (
                     <div className="absolute -bottom-8 left-0 flex gap-1 bg-white dark:bg-gray-800 rounded-full px-2 py-1 shadow-lg border border-gray-200/50 dark:border-white/10">

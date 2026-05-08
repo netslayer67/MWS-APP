@@ -2,6 +2,9 @@ import { useCallback } from "react";
 import { updateMentorAssignment, uploadEvidence } from "@/services/mtssService";
 import { canUserSubmitProgressForAssignment } from "../utils/editPlanAccess";
 
+const getTodayInputValue = () => new Date().toISOString().slice(0, 10);
+const isLateProgressDate = (dateValue) => Boolean(dateValue && dateValue < getTodayInputValue());
+
 const useTeacherDashboardActions = ({
     students,
     progressForm,
@@ -13,12 +16,31 @@ const useTeacherDashboardActions = ({
     onCloseQuickUpdate,
 }) => {
     const handleProgressSubmitForm = useCallback(
-        async (event) => {
-            event.preventDefault();
+        async (event, evidenceFiles = [], resetEvidenceFiles) => {
+            event?.preventDefault?.();
             if (!progressForm.studentId || !progressForm.date || progressForm.scoreValue === "") {
                 toast({
                     title: "Complete the required fields",
                     description: "Student, date, and score are required to submit progress.",
+                    variant: "destructive",
+                });
+                return;
+            }
+	            if (
+	                progressForm.performed !== "yes" &&
+	                (!progressForm.skipReason || (progressForm.skipReason === "other" && !progressForm.skipReasonNote?.trim()))
+	            ) {
+                toast({
+                    title: "Skip reason required",
+                    description: "Choose why this intervention was skipped before saving the update.",
+                    variant: "destructive",
+                });
+	                return;
+	            }
+            if (isLateProgressDate(progressForm.date) && !progressForm.lateReason?.trim()) {
+                toast({
+                    title: "Late reason required",
+                    description: "Add why this progress update is being submitted after the support date.",
                     variant: "destructive",
                 });
                 return;
@@ -56,6 +78,12 @@ const useTeacherDashboardActions = ({
                 const trimmedNotes = progressForm.notes?.trim() || "";
                 const parsedScoreValue = progressForm.scoreValue !== "" ? Number(progressForm.scoreValue) : undefined;
                 setSubmittingProgress(true);
+                let evidencePayload;
+                if (evidenceFiles.length > 0) {
+                    const rawFiles = evidenceFiles.map((f) => f.file).filter(Boolean);
+                    const uploadResult = await uploadEvidence(rawFiles);
+                    evidencePayload = uploadResult?.data?.evidence;
+                }
                 await updateMentorAssignment(assignmentId, {
                     checkIns: [
                         {
@@ -64,17 +92,22 @@ const useTeacherDashboardActions = ({
                             nextSteps: trimmedNotes || undefined,
                             value: Number.isFinite(parsedScoreValue) ? parsedScoreValue : undefined,
                             unit: progressForm.scoreUnit,
-                            performed: progressForm.performed === "yes",
-                            skipReason: progressForm.performed !== "yes" ? (progressForm.skipReason || undefined) : undefined,
-                            skipReasonNote: progressForm.performed !== "yes" && progressForm.skipReason === "other" ? (progressForm.skipReasonNote || undefined) : undefined,
+	                            performed: progressForm.performed === "yes",
+	                            skipReason: progressForm.performed !== "yes" ? (progressForm.skipReason || undefined) : undefined,
+	                            skipReasonNote: progressForm.performed !== "yes" && progressForm.skipReason === "other" ? (progressForm.skipReasonNote || undefined) : undefined,
+                                lateReason: isLateProgressDate(progressForm.date) ? (progressForm.lateReason?.trim() || undefined) : undefined,
+	                            evidence: evidencePayload?.length ? evidencePayload : undefined,
                         },
                     ],
                 });
                 toast({
                     title: "Progress saved",
-                    description: `${selectedStudent.name}'s update is now on the dashboard.`,
+                    description: evidencePayload?.length
+                        ? `${selectedStudent.name}'s update is now on the dashboard with ${evidencePayload.length} evidence file${evidencePayload.length === 1 ? "" : "s"}.`
+                        : `${selectedStudent.name}'s update is now on the dashboard.`,
                 });
                 resetProgressForm();
+                resetEvidenceFiles?.();
                 refresh();
             } catch (error) {
                 toast({
@@ -103,6 +136,25 @@ const useTeacherDashboardActions = ({
             const selectedOption = Array.isArray(student?.assignmentOptions)
                 ? student.assignmentOptions.find((option) => option?.assignmentId === assignmentId)
                 : null;
+	            if (
+	                formState.performed !== "yes" &&
+	                (!formState.skipReason || (formState.skipReason === "other" && !formState.skipReasonNote?.trim()))
+	            ) {
+                toast({
+                    title: "Skip reason required",
+                    description: "Choose why this intervention was skipped before saving the update.",
+                    variant: "destructive",
+                });
+	                return;
+	            }
+            if (isLateProgressDate(formState.date) && !formState.lateReason?.trim()) {
+                toast({
+                    title: "Late reason required",
+                    description: "Add why this progress update is being submitted after the support date.",
+                    variant: "destructive",
+                });
+                return;
+            }
             if (!canUserSubmitProgressForAssignment(selectedOption)) {
                 toast({
                     title: "Progress permission denied",
@@ -131,17 +183,20 @@ const useTeacherDashboardActions = ({
                             nextSteps: trimmedNotes || undefined,
                             value: Number.isFinite(parsedScoreValue) ? parsedScoreValue : undefined,
                             unit: formState.scoreUnit,
-                            performed: formState.performed === "yes",
-                            skipReason: formState.performed !== "yes" ? (formState.skipReason || undefined) : undefined,
-                            skipReasonNote: formState.performed !== "yes" && formState.skipReason === "other" ? (formState.skipReasonNote || undefined) : undefined,
-                            celebration: formState.badge || undefined,
+	                            performed: formState.performed === "yes",
+	                            skipReason: formState.performed !== "yes" ? (formState.skipReason || undefined) : undefined,
+	                            skipReasonNote: formState.performed !== "yes" && formState.skipReason === "other" ? (formState.skipReasonNote || undefined) : undefined,
+                                lateReason: isLateProgressDate(formState.date) ? (formState.lateReason?.trim() || undefined) : undefined,
+	                            celebration: formState.badge || undefined,
                             evidence: evidencePayload?.length ? evidencePayload : undefined,
                         },
                     ],
                 });
                 toast({
                     title: "Progress update saved",
-                    description: `${student.name}'s update was recorded!`,
+                    description: evidencePayload?.length
+                        ? `${student.name}'s update was recorded with ${evidencePayload.length} evidence file${evidencePayload.length === 1 ? "" : "s"}.`
+                        : `${student.name}'s update was recorded!`,
                 });
                 onCloseQuickUpdate();
                 refresh();

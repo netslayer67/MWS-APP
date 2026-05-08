@@ -53,6 +53,7 @@ const AdminDashboardPage = memo(() => {
 
     const {
         students,
+        supportUnits,
         statCards,
         systemSnapshot,
         recentActivity,
@@ -70,6 +71,7 @@ const AdminDashboardPage = memo(() => {
         error,
         refresh,
     } = useAdminDashboardData();
+    const dashboardRows = supportUnits?.length ? supportUnits : students;
 
     const {
         activeTab,
@@ -85,11 +87,12 @@ const AdminDashboardPage = memo(() => {
         mentorOptions,
         handleViewStudent,
         handleQuickUpdate,
+        clearFilters,
         selectedIds,
         toggleSelection,
         resetSelection,
     } = useAdminDashboardState(
-        students,
+        dashboardRows,
         dashboardTabs.map((tab) => tab.key),
     );
 
@@ -148,7 +151,8 @@ const AdminDashboardPage = memo(() => {
                         typeOptions={typeOptions}
                         mentorOptions={mentorOptions}
                         filteredStudents={filteredStudents}
-                        allStudents={students}
+                        allStudents={dashboardRows}
+                        onClearFilters={clearFilters}
                         visibleCount={visibleCount}
                         onVisibleCountChange={setVisibleCount}
                         onViewStudent={handleViewStudent}
@@ -193,6 +197,7 @@ const AdminDashboardPage = memo(() => {
     }, [
         activeTab,
         filters,
+        dashboardRows,
         gradeOptions,
         tierOptions,
         typeOptions,
@@ -203,6 +208,7 @@ const AdminDashboardPage = memo(() => {
         handleFilterChange,
         handleViewStudent,
         handleQuickUpdate,
+        clearFilters,
         selectedIds,
         toggleSelection,
         resetSelection,

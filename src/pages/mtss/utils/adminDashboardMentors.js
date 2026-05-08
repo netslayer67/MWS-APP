@@ -1,4 +1,23 @@
 import { formatDateLabel } from "./adminDashboardTrends";
+import {
+    getAssignmentFocusLabels,
+    getAssignmentStudentKeys,
+    getAssignmentSupportUnitCount,
+} from "./supportUnitUtils";
+
+const normalizeTierCode = (tier = "") => {
+    const normalized = String(tier || "").toLowerCase().replace(/\s+/g, "");
+    if (normalized.includes("3")) return "tier3";
+    if (normalized.includes("1")) return "tier1";
+    return "tier2";
+};
+
+const mapTierLabel = (tier = "") => {
+    const code = normalizeTierCode(tier);
+    if (code === "tier3") return "Tier 3";
+    if (code === "tier1") return "Tier 1";
+    return "Tier 2";
+};
 
 export const buildMentorSpotlights = (assignments = []) => {
     const map = new Map();
@@ -14,13 +33,12 @@ export const buildMentorSpotlights = (assignments = []) => {
             });
         }
         const entry = map.get(mentorName);
-        entry.total += 1;
-        entry.caseload += assignment.studentIds?.length || 0;
-        if (assignment.focusAreas?.length) {
-            assignment.focusAreas.forEach((area) => entry.focusAreas.add(area));
-        }
+        const supportUnitCount = getAssignmentSupportUnitCount(assignment);
+        entry.total += supportUnitCount;
+        entry.caseload += supportUnitCount;
+        getAssignmentFocusLabels(assignment).forEach((area) => entry.focusAreas.add(area));
         if (["completed", "active"].includes(assignment.status)) {
-            entry.success += 1;
+            entry.success += supportUnitCount;
         }
     });
 
@@ -50,13 +68,32 @@ export const buildMentorRoster = (assignments = []) => {
                 students: 0,
                 total: 0,
                 completed: 0,
+                coverage: new Map(),
             });
         }
         const entry = map.get(mentorKey);
-        entry.students += assignment.studentIds?.length || 0;
-        entry.total += 1;
+        const studentCount = Math.max(getAssignmentStudentKeys(assignment).length, 1);
+        const supportUnitCount = getAssignmentSupportUnitCount(assignment);
+        entry.students += supportUnitCount;
+        entry.total += supportUnitCount;
+        const focusLabels = getAssignmentFocusLabels(assignment);
+        const tierCode = normalizeTierCode(assignment.tier);
+        const tierLabel = mapTierLabel(assignment.tier);
+        focusLabels.forEach((focus) => {
+            const coverageKey = `${focus}|${tierCode}`;
+            const existingCoverage = entry.coverage.get(coverageKey) || {
+                focus,
+                tier: tierLabel,
+                tierCode,
+                count: 0,
+                assignmentCount: 0,
+            };
+            existingCoverage.count += studentCount;
+            existingCoverage.assignmentCount += 1;
+            entry.coverage.set(coverageKey, existingCoverage);
+        });
         if (assignment.status === "completed") {
-            entry.completed += 1;
+            entry.completed += supportUnitCount;
         }
     });
 
@@ -68,6 +105,13 @@ export const buildMentorRoster = (assignments = []) => {
             role: entry.role,
             activeStudents: entry.students,
             successRate: entry.total ? `${Math.round((entry.completed / entry.total) * 100)}%` : "0%",
+            coverage: Array.from(entry.coverage.values())
+                .sort((a, b) => {
+                    const tierRank = { tier3: 3, tier2: 2, tier1: 1 };
+                    const rankDiff = (tierRank[b.tierCode] || 0) - (tierRank[a.tierCode] || 0);
+                    if (rankDiff) return rankDiff;
+                    return b.count - a.count;
+                }),
         }))
         .sort((a, b) => b.activeStudents - a.activeStudents);
 };

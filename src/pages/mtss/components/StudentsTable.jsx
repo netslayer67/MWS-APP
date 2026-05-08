@@ -14,6 +14,9 @@ const HEADER_COLS = [
     { label: "Next Update", align: "text-left", width: "w-[14%]" },
 ];
 
+const getStudentRowId = (student = {}) =>
+    student.id || student._id || student.supportUnit?.assignmentId || student.baseStudentId || student.slug || student.name;
+
 const StudentsTable = memo(
     ({
         students,
@@ -43,7 +46,7 @@ const StudentsTable = memo(
             }
             return false;
         });
-        const hintedStudentKey = hintedStudent?.id || hintedStudent?._id || hintedStudent?.name || null;
+        const hintedStudentKey = hintedStudent ? getStudentRowId(hintedStudent) : null;
 
         return (
             <div className="space-y-5">
@@ -83,8 +86,8 @@ const StudentsTable = memo(
                         </thead>
                         <tbody>
                             {limitedStudents.map((student, index) => {
-                                const key = student.id || student._id || student.name;
-                                const selected = activeSelectedIds.includes(student.id || student._id);
+                                const key = getStudentRowId(student);
+                                const selected = activeSelectedIds.includes(key);
                                 return (
                                     <StudentsTableDesktopRow
                                         key={key}
@@ -111,8 +114,8 @@ const StudentsTable = memo(
                 {/* Mobile cards */}
                 <div className="md:hidden space-y-3">
                     {limitedStudents.map((student, index) => {
-                        const key = student.id || student._id || student.name;
-                        const selected = activeSelectedIds.includes(student.id || student._id);
+                        const key = getStudentRowId(student);
+                        const selected = activeSelectedIds.includes(key);
                         return (
                             <StudentsTableMobileCard
                                 key={key}

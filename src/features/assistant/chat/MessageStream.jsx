@@ -10,7 +10,8 @@ const MessageStream = React.memo(({
     renderedMessages,
     visibleStartIndex,
     isTyping,
-    onWidgetAction
+    onWidgetAction,
+    onMessageFeedback
 }) => (
     <>
         {canLoadOlderMessages && (
@@ -37,6 +38,7 @@ const MessageStream = React.memo(({
                     key={message.id || `message-${visibleStartIndex + index}`}
                     message={message}
                     onWidgetAction={onWidgetAction}
+                    onMessageFeedback={onMessageFeedback}
                 />
             ))}
         </Suspense>
@@ -63,6 +65,7 @@ const MessageStream = React.memo(({
     && previousProps.visibleStartIndex === nextProps.visibleStartIndex
     && previousProps.isTyping === nextProps.isTyping
     && previousProps.onWidgetAction === nextProps.onWidgetAction
+    && previousProps.onMessageFeedback === nextProps.onMessageFeedback
     && previousProps.onLoadOlderMessages === nextProps.onLoadOlderMessages
 ));
 

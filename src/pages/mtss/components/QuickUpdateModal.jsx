@@ -7,6 +7,7 @@ import { getProgressAssignmentOptions } from "../utils/editPlanAccess";
 import { SKIP_REASONS } from "../config/interventionFormConfig";
 import EvidenceUploader from "./EvidenceUploader";
 import InterventionActivityLog from "./InterventionActivityLog";
+import { lockBodyScroll } from "../utils/bodyScrollLock";
 
 const baseField =
     "w-full px-4 py-3 rounded-2xl bg-white/80 dark:bg-white/10 border border-primary/20 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-all";
@@ -35,6 +36,8 @@ const formatSubjectLabel = (option) => {
     return raw;
 };
 
+const isLateProgressDate = (dateValue, todayValue) => Boolean(dateValue && todayValue && dateValue < todayValue);
+
 const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false }) => {
     const initialDate = useMemo(() => new Date().toISOString().split("T")[0], []);
     const assignmentOptions = useMemo(() => getEscalatedOptions(getAssignmentOptions(student)), [student]);
@@ -43,9 +46,10 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
     const [formState, setFormState] = useState({
         date: initialDate,
         performed: "yes",
-        skipReason: "",
-        skipReasonNote: "",
-        scoreValue: "",
+            skipReason: "",
+            skipReasonNote: "",
+            lateReason: "",
+            scoreValue: "",
         scoreUnit: defaultOption?.metricLabel || "score",
         notes: "",
         badge: "🎉 Progress Party",
@@ -67,6 +71,12 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
     }, [selectedOption, student]);
     const lockedUnit = selectedOption?.metricLabel || formState.scoreUnit || "score";
     const gradeLabel = student?.grade || student?.currentGrade || "Grade";
+        const skipReasonValid =
+            formState.performed === "yes" ||
+            Boolean(formState.skipReason && (formState.skipReason !== "other" || formState.skipReasonNote?.trim()));
+        const lateSubmission = isLateProgressDate(formState.date, initialDate);
+        const lateReasonValid = !lateSubmission || Boolean(formState.lateReason?.trim());
+        const canSubmit = Boolean(formState.assignmentId && formState.date && skipReasonValid && lateReasonValid);
 
     useEffect(() => {
         if (typeof window === "undefined") return undefined;
@@ -85,23 +95,27 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
 
     useEffect(() => {
         if (!student) return undefined;
-        const previousOverflow = document.body.style.overflow;
-        document.body.style.overflow = "hidden";
-        return () => {
-            document.body.style.overflow = previousOverflow;
-        };
+        return lockBodyScroll();
     }, [student]);
 
     if (!student) return null;
 
-    const handleChange = (field, value) => {
-        if (field === "assignmentId") {
-            const option = assignmentOptions.find((opt) => opt.assignmentId === value);
-            setFormState((prev) => ({ ...prev, assignmentId: value, scoreUnit: option?.metricLabel || prev.scoreUnit }));
-            return;
-        }
-        setFormState((prev) => ({ ...prev, [field]: value }));
-    };
+        const handleChange = (field, value) => {
+            if (field === "assignmentId") {
+                const option = assignmentOptions.find((opt) => opt.assignmentId === value);
+                setFormState((prev) => ({ ...prev, assignmentId: value, scoreUnit: option?.metricLabel || prev.scoreUnit }));
+                return;
+            }
+            if (field === "date") {
+                setFormState((prev) => ({
+                    ...prev,
+                    date: value,
+                    lateReason: isLateProgressDate(value, initialDate) ? prev.lateReason : "",
+                }));
+                return;
+            }
+            setFormState((prev) => ({ ...prev, [field]: value }));
+        };
 
     const handleSubmit = (event) => {
         event.preventDefault();
@@ -132,6 +146,7 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                             <p className="text-xs sm:text-sm opacity-90">Share today's check-in and celebrations</p>
                         </div>
                         <button
+                            type="button"
                             onClick={onClose}
                             aria-label="Close"
                             className="shrink-0 p-2 bg-white/30 rounded-full hover:bg-white/50 transition"
@@ -207,13 +222,26 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
 
                                 <div className="flex flex-col gap-2">
                                     <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">Date</label>
-                                    <input
-                                        type="date"
-                                        className={baseField}
-                                        value={formState.date}
-                                        onChange={(event) => handleChange("date", event.target.value)}
-                                    />
-                                </div>
+                                        <input
+                                            type="date"
+                                            className={baseField}
+                                            value={formState.date}
+                                            onChange={(event) => handleChange("date", event.target.value)}
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            Use the actual date the support happened. Late entries need a short reason so the timeline stays clear.
+                                        </p>
+                                        {lateSubmission && (
+                                            <input
+                                                type="text"
+                                                className={baseField}
+                                                placeholder="Reason for late submission"
+                                                value={formState.lateReason}
+                                                onChange={(event) => handleChange("lateReason", event.target.value)}
+                                                required
+                                            />
+                                        )}
+                                    </div>
 
                                 <div className="flex flex-col gap-2">
                                     <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-muted-foreground">
@@ -227,6 +255,9 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                                         <option value="yes">Yes</option>
                                         <option value="no">No</option>
                                     </select>
+                                    <p className="text-xs text-muted-foreground">
+                                        Performed: the student completed the planned support. Skipped: the support did not happen and needs a reason.
+                                    </p>
                                 </div>
 
                                 {formState.performed === "no" && (
@@ -235,6 +266,9 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                                             <label className="text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.24em] text-amber-700 dark:text-amber-400">
                                                 Reason Not Performed
                                             </label>
+                                            <p className="text-xs text-amber-700/80 dark:text-amber-300/80">
+                                                Use Skipped when the planned support did not happen, such as student absent, schedule conflict, or assessment window.
+                                            </p>
                                             <select
                                                 className={baseField}
                                                 value={formState.skipReason}
@@ -306,8 +340,9 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                                         Evidence Upload
                                     </label>
                                     <EvidenceUploader
-                                        evidenceFiles={evidenceFiles}
-                                        setEvidenceFiles={setEvidenceFiles}
+                                        files={evidenceFiles}
+                                        setFiles={setEvidenceFiles}
+                                        uploading={submitting}
                                     />
                                 </div>
                             </section>
@@ -325,7 +360,7 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={submitting || !formState.assignmentId || !formState.date}
+                                    disabled={submitting || !canSubmit}
                                     className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
                                     {submitting ? "Saving..." : "Save Update"}

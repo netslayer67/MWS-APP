@@ -62,7 +62,7 @@ const AdminOverviewPanel = ({ statCards, systemSnapshot, recentActivity, mentorS
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2">
-                <OverviewPanelSection title="Students by Tier" icon={TierIcon}>
+                <OverviewPanelSection title="Support Units by Tier" icon={TierIcon}>
                     <div className="space-y-4">
                         {systemSnapshot.tierBreakdown.map((tier) => (
                             <div key={tier.label} className="flex items-center gap-4">
@@ -84,7 +84,7 @@ const AdminOverviewPanel = ({ statCards, systemSnapshot, recentActivity, mentorS
                     </div>
                 </OverviewPanelSection>
 
-                <OverviewPanelSection title="Active Intervention Types" icon={InterventionIcon} accent="text-sky-500">
+                <OverviewPanelSection title="Active Subjects / Focus Areas" icon={InterventionIcon} accent="text-sky-500">
                     {hasActiveInterventions ? (
                         <div className="space-y-4">
                             {systemSnapshot.interventions.map((item) => (
@@ -107,7 +107,7 @@ const AdminOverviewPanel = ({ statCards, systemSnapshot, recentActivity, mentorS
                             title={allTierOne ? "No active interventions in this view" : "No intervention plans are currently in scope"}
                             description={
                                 allTierOne
-                                    ? "Every visible student is currently staying in Tier 1 or universal support, so intervention types should remain empty until a Tier 2 or Tier 3 plan is created."
+                                    ? "Every visible support unit is currently staying in Tier 1 or universal support, so subject / focus area signals should remain empty until a Tier 2 or Tier 3 plan is created."
                                     : "No active intervention assignments were found for this segment yet."
                             }
                             icon={ShieldCheck}
@@ -162,7 +162,7 @@ const AdminOverviewPanel = ({ statCards, systemSnapshot, recentActivity, mentorS
                                         <p className="text-xs text-muted-foreground">{mentor.focus}</p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-sm font-semibold text-foreground dark:text-white">{mentor.caseload} students</p>
+                                        <p className="text-sm font-semibold text-foreground dark:text-white">{mentor.caseload} support units</p>
                                         <p className="text-xs font-semibold text-emerald-500">{mentor.trend}</p>
                                     </div>
                                 </div>

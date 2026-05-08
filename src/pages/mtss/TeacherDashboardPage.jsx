@@ -123,9 +123,14 @@ const TeacherDashboardPage = memo(() => {
 
     const handleOpenQuickUpdate = useCallback((student) => setQuickUpdateStudent(student), []);
     const canEditPlanForStudent = useCallback(
-        (student) => {
-            const assignmentOption = resolveEditableAssignmentForUser(effectiveTeacherUser, student);
-            return Boolean(assignmentOption?.assignmentId);
+        (student, assignmentOption = null) => {
+            const resolvedOption = assignmentOption?.assignmentId
+                ? assignmentOption
+                : resolveEditableAssignmentForUser(effectiveTeacherUser, student);
+            return Boolean(
+                resolvedOption?.assignmentId &&
+                canUserEditPlanForStudent(effectiveTeacherUser, student, resolvedOption),
+            );
         },
         [effectiveTeacherUser],
     );

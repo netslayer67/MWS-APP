@@ -52,6 +52,27 @@ const buildMergedInterventions = (student) => {
     });
 };
 
+const buildAttendanceContext = (interventions = []) => {
+    const histories = interventions.flatMap((intervention) =>
+        (Array.isArray(intervention.history) ? intervention.history : []).map((entry) => ({
+            ...entry,
+            interventionLabel: intervention.label || intervention.focusArea || intervention.type,
+        })),
+    );
+    const absenceEntries = histories.filter((entry) => entry.performed === false && entry.skipReason === "student_absent");
+    const attendanceIntervention = interventions.find((intervention) =>
+        /attendance|absence|present/i.test(`${intervention.label || ""} ${intervention.focusArea || ""} ${intervention.type || ""}`),
+    );
+    const rateValue = attendanceIntervention?.current ?? attendanceIntervention?.baseline;
+    const unit = attendanceIntervention?.progressUnit || "%";
+
+    return {
+        rate: hasValue(rateValue) ? `${rateValue}${unit === "%" ? "%" : ` ${unit}`}` : "Not recorded",
+        missedMtssSessions: absenceEntries.length,
+        lastAbsenceDate: absenceEntries[0]?.date || "No absence logged",
+    };
+};
+
 export const buildStudentProfileView = (student, selectedIntervention) => {
     if (!student) {
         return {
@@ -73,6 +94,7 @@ export const buildStudentProfileView = (student, selectedIntervention) => {
 
     const { profile = {} } = student;
     const mergedInterventions = buildMergedInterventions(student);
+    const attendanceContext = buildAttendanceContext(mergedInterventions);
 
     const sortedInterventions = [...mergedInterventions].sort((a, b) => {
         const tierOrder = { tier3: 0, tier2: 1, tier1: 2 };
@@ -108,7 +130,10 @@ export const buildStudentProfileView = (student, selectedIntervention) => {
     const notesLabel = hasValue(currentIntervention?.notes) ? currentIntervention.notes : null;
 
     return {
-        profile,
+	        profile: {
+                ...profile,
+                attendanceContext,
+            },
         highlight,
         sortedInterventions,
         currentIntervention,

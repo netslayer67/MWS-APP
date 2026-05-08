@@ -74,13 +74,16 @@ const AdminAnalyticsPanel = ({
                     <div className="flex items-center justify-between gap-4">
                         <div>
                             <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500 dark:text-white/55">Outcome by focus area</p>
-                            <h3 className="mt-2 text-2xl font-black text-slate-900 dark:text-white">Success rate by intervention type</h3>
+                            <h3 className="mt-2 text-2xl font-black text-slate-900 dark:text-white">Success rate by subject / focus area</h3>
                         </div>
                         <Sparkles className="h-5 w-5 text-yellow-400" />
                     </div>
 
-                    <div className="mt-6 space-y-4">
-                        {hasSuccessData ? (
+                        <div className="mt-6 space-y-4">
+                        <p className="rounded-2xl border border-sky-100 bg-sky-50/80 px-4 py-3 text-xs font-semibold leading-relaxed text-sky-700 dark:border-sky-400/20 dark:bg-sky-500/10 dark:text-sky-200">
+                            Read this as a subject-level sample: higher bars mean more plans are meeting their target; lower bars point to focus areas that need coaching or plan revision.
+                        </p>
+                            {hasSuccessData ? (
                             successByType.map((item, idx) => (
                                 <div
                                     key={item.label}
@@ -117,14 +120,17 @@ const AdminAnalyticsPanel = ({
                     <div className="flex items-center justify-between gap-4">
                         <div>
                             <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500 dark:text-white/55">Progress over time</p>
-                            <h3 className="mt-2 text-2xl font-black text-slate-900 dark:text-white">Student progress trend</h3>
+                            <h3 className="mt-2 text-2xl font-black text-slate-900 dark:text-white">Support unit progress trend</h3>
                         </div>
                         <Activity className="h-5 w-5 text-emerald-400" />
                     </div>
 
-                    {hasTrendData ? (
-                        <div className="mt-6 space-y-4">
-                            <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-500 dark:text-white/60">
+                        {hasTrendData ? (
+                            <div className="mt-6 space-y-4">
+                                <p className="rounded-2xl border border-amber-100 bg-amber-50/80 px-4 py-3 text-xs font-semibold leading-relaxed text-amber-700 dark:border-amber-400/20 dark:bg-amber-500/10 dark:text-amber-200">
+                                        Year-over-year comparison is unavailable until a prior MTSS cycle is stored. This view shows current-cycle support-unit check-ins only.
+                                </p>
+                                <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-500 dark:text-white/60">
                                 <span className="inline-flex items-center gap-2">
                                     <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
                                     On-track updates
@@ -160,10 +166,10 @@ const AdminAnalyticsPanel = ({
                             </div>
                         </div>
                     ) : (
-                        <EmptyAnalyticsState
-                            title="Progress trend is waiting for check-ins"
-                            description="This chart will populate after teachers save progress updates. A seeded pilot class with weekly check-ins will make the trend immediately visible."
-                        />
+                            <EmptyAnalyticsState
+                                title="Progress trend is waiting for check-ins"
+                                description="This chart will populate after teachers save progress updates. Year-over-year data is unavailable until a previous MTSS cycle exists."
+                            />
                     )}
                 </div>
             </section>
@@ -215,7 +221,7 @@ const AdminAnalyticsPanel = ({
                     <div className="flex items-center justify-between gap-4">
                         <div>
                             <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500 dark:text-white/55">Movement report</p>
-                            <h3 className="mt-2 text-2xl font-black text-slate-900 dark:text-white">Student movement signal</h3>
+                                <h3 className="mt-2 text-2xl font-black text-slate-900 dark:text-white">Support unit movement signal</h3>
                         </div>
                         <TrendingUp className="h-5 w-5 text-emerald-500" />
                     </div>

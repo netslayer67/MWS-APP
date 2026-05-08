@@ -515,10 +515,26 @@ const StepFeedbackDialog = ({
     onOpenChange,
     step,
     value,
-    onChange,
     onSave,
     syncState,
 }) => {
+    const [draft, setDraft] = useState(() => ({
+        ...createEmptyStepFeedback(),
+        ...(value || {}),
+    }));
+
+    useEffect(() => {
+        if (!open) return;
+        setDraft({
+            ...createEmptyStepFeedback(),
+            ...(value || {}),
+        });
+    }, [open, step?.id, value]);
+
+    const updateDraft = useCallback((patch) => {
+        setDraft((prev) => ({ ...prev, ...patch }));
+    }, []);
+
     if (!step) return null;
 
     return (
@@ -562,8 +578,8 @@ const StepFeedbackDialog = ({
                                 <select
                                     id={`completion-status-${step.id}`}
                                     className="w-full rounded-2xl border border-white/40 bg-white/80 px-4 py-3 text-sm text-slate-800 dark:border-white/10 dark:bg-white/5 dark:text-white"
-                                    value={value.completionStatus}
-                                    onChange={(event) => onChange({ ...value, completionStatus: event.target.value })}
+                                    value={draft.completionStatus}
+                                    onChange={(event) => updateDraft({ completionStatus: event.target.value })}
                                 >
                                     {stepCompletionOptions.map((option) => (
                                         <option key={option.value} value={option.value}>
@@ -580,9 +596,9 @@ const StepFeedbackDialog = ({
                                 <select
                                     id={`bug-severity-${step.id}`}
                                     className="w-full rounded-2xl border border-white/40 bg-white/80 px-4 py-3 text-sm text-slate-800 dark:border-white/10 dark:bg-white/5 dark:text-white"
-                                    value={value.bugSeverity}
-                                    onChange={(event) => onChange({ ...value, bugSeverity: event.target.value })}
-                                    disabled={!value.bugFound}
+                                    value={draft.bugSeverity}
+                                    onChange={(event) => updateDraft({ bugSeverity: event.target.value })}
+                                    disabled={!draft.bugFound}
                                 >
                                     {severityOptions.map((option) => (
                                         <option key={option.value} value={option.value}>
@@ -596,18 +612,18 @@ const StepFeedbackDialog = ({
                         <div className="grid gap-5 md:grid-cols-3">
                             <StepRatingField
                                 label="Ease"
-                                value={value.easeOfUse}
-                                onChange={(nextValue) => onChange({ ...value, easeOfUse: nextValue })}
+                                value={draft.easeOfUse}
+                                onChange={(nextValue) => updateDraft({ easeOfUse: nextValue })}
                             />
                             <StepRatingField
                                 label="Clarity"
-                                value={value.clarity}
-                                onChange={(nextValue) => onChange({ ...value, clarity: nextValue })}
+                                value={draft.clarity}
+                                onChange={(nextValue) => updateDraft({ clarity: nextValue })}
                             />
                             <StepRatingField
                                 label="Speed"
-                                value={value.performance}
-                                onChange={(nextValue) => onChange({ ...value, performance: nextValue })}
+                                value={draft.performance}
+                                onChange={(nextValue) => updateDraft({ performance: nextValue })}
                             />
                         </div>
                     </DialogSection>
@@ -624,8 +640,8 @@ const StepFeedbackDialog = ({
                                 </Label>
                                 <Textarea
                                     id={`helpful-${step.id}`}
-                                    value={value.helpfulNotes}
-                                    onChange={(event) => onChange({ ...value, helpfulNotes: event.target.value })}
+                                    value={draft.helpfulNotes}
+                                    onChange={(event) => updateDraft({ helpfulNotes: event.target.value })}
                                     className="min-h-[120px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
                                     placeholder="Example: The student list made it easy to find Tier 2 cases quickly."
                                 />
@@ -637,8 +653,8 @@ const StepFeedbackDialog = ({
                                 </Label>
                                 <Textarea
                                     id={`confusing-${step.id}`}
-                                    value={value.confusingNotes}
-                                    onChange={(event) => onChange({ ...value, confusingNotes: event.target.value })}
+                                    value={draft.confusingNotes}
+                                    onChange={(event) => updateDraft({ confusingNotes: event.target.value })}
                                     className="min-h-[120px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
                                     placeholder="Example: I could not tell which button to use first."
                                 />
@@ -646,7 +662,7 @@ const StepFeedbackDialog = ({
                         </div>
                     </DialogSection>
 
-                    {(value.completionStatus === "partial" || value.completionStatus === "no") && (
+                    {(draft.completionStatus === "partial" || draft.completionStatus === "no") && (
                         <DialogSection
                             eyebrow="Completion gap"
                             title="What stopped the step?"
@@ -658,8 +674,8 @@ const StepFeedbackDialog = ({
                                 </Label>
                                 <Textarea
                                     id={`partial-reason-${step.id}`}
-                                    value={value.partialReason}
-                                    onChange={(event) => onChange({ ...value, partialReason: event.target.value })}
+                                    value={draft.partialReason}
+                                    onChange={(event) => updateDraft({ partialReason: event.target.value })}
                                     className="min-h-[96px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
                                     placeholder="Example: missing data, unclear flow, permission issue, or bug."
                                 />
@@ -675,19 +691,14 @@ const StepFeedbackDialog = ({
                         <label className="flex items-center gap-3 text-sm font-semibold text-slate-800 dark:text-white">
                             <input
                                 type="checkbox"
-                                checked={value.bugFound}
-                                onChange={(event) =>
-                                    onChange({
-                                        ...value,
-                                        bugFound: event.target.checked,
-                                    })
-                                }
+                                checked={draft.bugFound}
+                                onChange={(event) => updateDraft({ bugFound: event.target.checked })}
                                 className="h-4 w-4 rounded border-slate-300"
                             />
                             This step had a bug or broken flow
                         </label>
 
-                        {value.bugFound && (
+                        {draft.bugFound && (
                             <div className="mt-4 grid gap-5 md:grid-cols-2">
                                 <div className="space-y-2 md:col-span-2">
                                     <Label htmlFor={`bug-summary-${step.id}`} className="text-sm font-semibold text-slate-700 dark:text-white">
@@ -695,8 +706,8 @@ const StepFeedbackDialog = ({
                                     </Label>
                                     <Textarea
                                         id={`bug-summary-${step.id}`}
-                                        value={value.bugSummary}
-                                        onChange={(event) => onChange({ ...value, bugSummary: event.target.value })}
+                                        value={draft.bugSummary}
+                                        onChange={(event) => updateDraft({ bugSummary: event.target.value })}
                                         className="min-h-[96px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
                                         placeholder="Example: The page opened, but the chart stayed blank."
                                     />
@@ -708,8 +719,8 @@ const StepFeedbackDialog = ({
                                     </Label>
                                     <Textarea
                                         id={`expected-result-${step.id}`}
-                                        value={value.expectedResult}
-                                        onChange={(event) => onChange({ ...value, expectedResult: event.target.value })}
+                                        value={draft.expectedResult}
+                                        onChange={(event) => updateDraft({ expectedResult: event.target.value })}
                                         className="min-h-[96px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
                                         placeholder="Example: The chart should load student progress."
                                     />
@@ -721,8 +732,8 @@ const StepFeedbackDialog = ({
                                     </Label>
                                     <Textarea
                                         id={`reproduction-${step.id}`}
-                                        value={value.reproductionSteps}
-                                        onChange={(event) => onChange({ ...value, reproductionSteps: event.target.value })}
+                                        value={draft.reproductionSteps}
+                                        onChange={(event) => updateDraft({ reproductionSteps: event.target.value })}
                                         className="min-h-[96px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
                                         placeholder="List the short steps that triggered the issue."
                                     />
@@ -734,8 +745,8 @@ const StepFeedbackDialog = ({
                                     </Label>
                                     <Input
                                         id={`bug-shot-${step.id}`}
-                                        value={value.screenshotLink}
-                                        onChange={(event) => onChange({ ...value, screenshotLink: event.target.value })}
+                                        value={draft.screenshotLink}
+                                        onChange={(event) => updateDraft({ screenshotLink: event.target.value })}
                                         className="rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
                                         placeholder="Paste a drive link if you captured the issue."
                                     />
@@ -749,7 +760,7 @@ const StepFeedbackDialog = ({
                     <Button variant="outline" onClick={() => onOpenChange(false)}>
                         Close
                     </Button>
-                    <Button variant="gradient" onClick={onSave}>
+                    <Button variant="gradient" onClick={() => onSave(draft)}>
                         Save and mark step done
                     </Button>
                 </DialogFooter>
@@ -758,56 +769,74 @@ const StepFeedbackDialog = ({
     );
 };
 
-const FinalFeedbackDialog = ({ open, onOpenChange, value, onChange, onSave, blocked, remainingCount, derivedOverallConfidence = null, syncState }) => (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[88vh] overflow-y-auto rounded-[28px] border-white/20 bg-white/95 dark:bg-slate-950/95">
-            <DialogHeader>
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                    <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white">Final pilot feedback</DialogTitle>
-                    <SyncBadge syncState={syncState} />
-                </div>
-                <DialogDescription className="text-sm text-slate-600 dark:text-white/70">
-                    {blocked
-                        ? `${remainingCount} guided ${remainingCount === 1 ? "step still needs" : "steps still need"} saved feedback before final feedback can be submitted.`
-                        : "Wrap up rollout readiness, strongest points, and the top fixes before wider use."}
-                </DialogDescription>
-            </DialogHeader>
+const FinalFeedbackDialog = ({ open, onOpenChange, value, onSave, blocked, remainingCount, derivedOverallConfidence = null, syncState }) => {
+    const [draft, setDraft] = useState(() => ({
+        ...createEmptyFinalFeedback(),
+        ...(value || {}),
+    }));
 
-            <div className="space-y-6">
-                <DialogSection
-                    eyebrow="Overall verdict"
-                    title="How ready does MTSS feel overall?"
-                    description={
-                        Number.isFinite(derivedOverallConfidence)
-                            ? `Use this final form to confirm the rollout view. Suggested confidence from saved step ratings: ${formatConfidenceScore(derivedOverallConfidence)}/5.`
-                            : "Use this final form to give a short rollout view after all guided steps are done."
-                    }
-                >
-                    <div className="grid gap-5 lg:grid-cols-[1fr_0.9fr]">
-                        <StepRatingField
-                            label="Overall confidence"
-                            value={value.overallConfidence}
-                            onChange={(nextValue) => onChange({ ...value, overallConfidence: nextValue })}
-                        />
-                        <div className="space-y-2">
-                            <Label htmlFor="readiness-select" className="text-sm font-semibold text-slate-700 dark:text-white">
-                                Ready for wider principal use?
-                            </Label>
-                            <select
-                                id="readiness-select"
-                                className="w-full rounded-2xl border border-white/40 bg-white/80 px-4 py-3 text-sm text-slate-800 dark:border-white/10 dark:bg-white/5 dark:text-white"
-                                value={value.readiness}
-                                onChange={(event) => onChange({ ...value, readiness: event.target.value })}
-                            >
-                                {readinessOptions.map((option) => (
-                                    <option key={option.value} value={option.value}>
-                                        {option.label}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+    useEffect(() => {
+        if (!open) return;
+        setDraft({
+            ...createEmptyFinalFeedback(),
+            ...(value || {}),
+        });
+    }, [open, value]);
+
+    const updateDraft = useCallback((patch) => {
+        setDraft((prev) => ({ ...prev, ...patch }));
+    }, []);
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-4xl max-h-[88vh] overflow-y-auto rounded-[28px] border-white/20 bg-white/95 dark:bg-slate-950/95">
+                <DialogHeader>
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                        <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white">Final pilot feedback</DialogTitle>
+                        <SyncBadge syncState={syncState} />
                     </div>
-                </DialogSection>
+                    <DialogDescription className="text-sm text-slate-600 dark:text-white/70">
+                        {blocked
+                            ? `${remainingCount} guided ${remainingCount === 1 ? "step still needs" : "steps still need"} saved feedback before final feedback can be submitted.`
+                            : "Wrap up rollout readiness, strongest points, and the top fixes before wider use."}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-6">
+                    <DialogSection
+                        eyebrow="Overall verdict"
+                        title="How ready does MTSS feel overall?"
+                        description={
+                            Number.isFinite(derivedOverallConfidence)
+                                ? `Use this final form to confirm the rollout view. Suggested confidence from saved step ratings: ${formatConfidenceScore(derivedOverallConfidence)}/5.`
+                                : "Use this final form to give a short rollout view after all guided steps are done."
+                        }
+                    >
+                        <div className="grid gap-5 lg:grid-cols-[1fr_0.9fr]">
+                            <StepRatingField
+                                label="Overall confidence"
+                                value={draft.overallConfidence}
+                                onChange={(nextValue) => updateDraft({ overallConfidence: nextValue })}
+                            />
+                            <div className="space-y-2">
+                                <Label htmlFor="readiness-select" className="text-sm font-semibold text-slate-700 dark:text-white">
+                                    Ready for wider principal use?
+                                </Label>
+                                <select
+                                    id="readiness-select"
+                                    className="w-full rounded-2xl border border-white/40 bg-white/80 px-4 py-3 text-sm text-slate-800 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                                    value={draft.readiness}
+                                    onChange={(event) => updateDraft({ readiness: event.target.value })}
+                                >
+                                    {readinessOptions.map((option) => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    </DialogSection>
 
                 <DialogSection
                     eyebrow="Fast wrap-up"
@@ -821,8 +850,8 @@ const FinalFeedbackDialog = ({ open, onOpenChange, value, onChange, onSave, bloc
                             </Label>
                             <Textarea
                                 id="most-useful-feature"
-                                value={value.mostUsefulFeature}
-                                onChange={(event) => onChange({ ...value, mostUsefulFeature: event.target.value })}
+                                value={draft.mostUsefulFeature}
+                                onChange={(event) => updateDraft({ mostUsefulFeature: event.target.value })}
                                 className="min-h-[108px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
                                 placeholder="What helped most during the pilot?"
                             />
@@ -834,8 +863,8 @@ const FinalFeedbackDialog = ({ open, onOpenChange, value, onChange, onSave, bloc
                             </Label>
                             <Textarea
                                 id="most-confusing-feature"
-                                value={value.mostConfusingFeature}
-                                onChange={(event) => onChange({ ...value, mostConfusingFeature: event.target.value })}
+                                value={draft.mostConfusingFeature}
+                                onChange={(event) => updateDraft({ mostConfusingFeature: event.target.value })}
                                 className="min-h-[108px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
                                 placeholder="What still needs simplification?"
                             />
@@ -847,8 +876,8 @@ const FinalFeedbackDialog = ({ open, onOpenChange, value, onChange, onSave, bloc
                             </Label>
                             <Textarea
                                 id="slowest-part"
-                                value={value.slowestPart}
-                                onChange={(event) => onChange({ ...value, slowestPart: event.target.value })}
+                                value={draft.slowestPart}
+                                onChange={(event) => updateDraft({ slowestPart: event.target.value })}
                                 className="min-h-[108px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
                                 placeholder="What felt slow or heavy?"
                             />
@@ -860,8 +889,8 @@ const FinalFeedbackDialog = ({ open, onOpenChange, value, onChange, onSave, bloc
                             </Label>
                             <Textarea
                                 id="missing-feature"
-                                value={value.missingFeature}
-                                onChange={(event) => onChange({ ...value, missingFeature: event.target.value })}
+                                value={draft.missingFeature}
+                                onChange={(event) => updateDraft({ missingFeature: event.target.value })}
                                 className="min-h-[108px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
                                 placeholder="What is still missing?"
                             />
@@ -881,8 +910,8 @@ const FinalFeedbackDialog = ({ open, onOpenChange, value, onChange, onSave, bloc
                             </Label>
                             <Textarea
                                 id="top-improvements"
-                                value={value.topImprovements}
-                                onChange={(event) => onChange({ ...value, topImprovements: event.target.value })}
+                                value={draft.topImprovements}
+                                onChange={(event) => updateDraft({ topImprovements: event.target.value })}
                                 className="min-h-[120px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
                                 placeholder={"1. ...\n2. ...\n3. ..."}
                             />
@@ -894,10 +923,10 @@ const FinalFeedbackDialog = ({ open, onOpenChange, value, onChange, onSave, bloc
                             </Label>
                             <Textarea
                                 id="additional-comments"
-                                value={value.additionalComments}
-                                onChange={(event) => onChange({ ...value, additionalComments: event.target.value })}
+                                value={draft.additionalComments}
+                                onChange={(event) => updateDraft({ additionalComments: event.target.value })}
                                 className="min-h-[120px] rounded-2xl border-white/40 bg-white/80 dark:border-white/10 dark:bg-white/5"
-                                placeholder="Any final note before broader rollout?"
+                                placeholder="Example: Ready for limited rollout after evidence upload and multi-subject dashboard fixes are verified. I would start with Grade 7, monitor teacher check-ins weekly, and revisit AI answer quality after two weeks."
                             />
                         </div>
                     </div>
@@ -908,13 +937,14 @@ const FinalFeedbackDialog = ({ open, onOpenChange, value, onChange, onSave, bloc
                 <Button variant="outline" onClick={() => onOpenChange(false)}>
                     Close
                 </Button>
-                <Button variant="gradient" onClick={onSave} disabled={blocked}>
+                <Button variant="gradient" onClick={() => onSave(draft)} disabled={blocked}>
                     Save final feedback
                 </Button>
             </DialogFooter>
         </DialogContent>
     </Dialog>
-);
+    );
+};
 
 const buildFeedbackExport = ({
     user,
@@ -1196,18 +1226,6 @@ const MTSSPilotTestingHubPage = memo(() => {
         return () => window.clearTimeout(timeoutId);
     }, [pilotState, user]);
 
-    const updateStepFeedback = useCallback((stepId, nextValue) => {
-        setPilotState((prev) =>
-            withTimestamp({
-                ...prev,
-                feedbackByStep: {
-                    ...prev.feedbackByStep,
-                    [stepId]: nextValue,
-                },
-            }),
-        );
-    }, []);
-
     const openPilotRoute = useCallback((route, description) => {
         if (route === "/mtss/pilot-testing") {
             window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1276,11 +1294,11 @@ const MTSSPilotTestingHubPage = memo(() => {
         }
     }, [allStepsReviewed, recordPilotEvent]);
 
-    const handleSaveStepFeedback = useCallback(() => {
+    const handleSaveStepFeedback = useCallback((draftValue) => {
         if (!activeStep) return;
 
         setPilotState((prev) => {
-            const draft = sanitizeFeedbackDraft(prev.feedbackByStep?.[activeStep.id]);
+            const draft = sanitizeFeedbackDraft(draftValue || prev.feedbackByStep?.[activeStep.id]);
             return withTimestamp({
                 ...prev,
                 feedbackByStep: {
@@ -1341,7 +1359,7 @@ const MTSSPilotTestingHubPage = memo(() => {
         );
     }, [derivedOverallConfidence, pilotState.finalFeedback?.overallConfidence, pilotState.finalFeedbackSavedAt]);
 
-    const handleSaveFinalFeedback = useCallback(() => {
+    const handleSaveFinalFeedback = useCallback((draftValue) => {
         if (!allStepsReviewed) {
             toast({
                 title: "Step feedback is incomplete",
@@ -1354,7 +1372,7 @@ const MTSSPilotTestingHubPage = memo(() => {
         setPilotState((prev) =>
             ({
                 ...prev,
-                finalFeedback: sanitizeFinalDraft(prev.finalFeedback),
+                finalFeedback: sanitizeFinalDraft(draftValue || prev.finalFeedback),
                 finalFeedbackSavedAt: savedAt,
                 liveContext: {
                     ...prev.liveContext,
@@ -1780,7 +1798,7 @@ const MTSSPilotTestingHubPage = memo(() => {
                                                 <StepDetailCard icon={ListChecks} title="Actions" items={step.actions} tone="sky" />
                                                 <StepDetailCard icon={CheckCircle2} title="Expected outcome" description={step.expectedOutcome} tone="mint" />
                                                 <StepDetailCard icon={ClipboardCheck} title="Principal task" description={step.principalTask} tone="peach" />
-                                                <StepDetailCard icon={Gauge} title="Technical focus" items={step.technicalFocus || []} tone="soft" />
+                                                <StepDetailCard icon={Gauge} title="What to check" items={step.technicalFocus || []} tone="soft" />
                                                 <StepDetailCard icon={Lightbulb} title="How to explain this to teachers" items={step.teacherTalkingPoints || []} tone="violet" />
                                             </div>
 
@@ -1815,7 +1833,7 @@ const MTSSPilotTestingHubPage = memo(() => {
                                                             })}
                                                         </div>
                                                         <p className="mt-3 text-[11px] leading-relaxed text-slate-500 dark:text-white/50">
-                                                            Gray route chips are references only because they need a dynamic ID from the current session.
+                                                            Gray page label badges are references only because they need a student or plan from the current session.
                                                         </p>
                                                     </div>
                                                 )}
@@ -2027,10 +2045,15 @@ const MTSSPilotTestingHubPage = memo(() => {
                                     Final feedback is locked until the remaining {remainingFeedbackCount} guided {remainingFeedbackCount === 1 ? "step saves" : "steps save"} feedback.
                                 </div>
                             )}
+                            {allStepsReviewed && !pilotState.finalFeedbackSavedAt && (
+                                <div className="rounded-2xl border border-rose-200 bg-rose-50/85 px-4 py-3 text-sm text-rose-800 dark:border-rose-400/20 dark:bg-rose-500/10 dark:text-rose-200">
+                                    All guided step feedback is saved, but final feedback is still missing. Submit final feedback before the pilot is treated as rollout-ready.
+                                </div>
+                            )}
                             <div className="flex flex-wrap gap-2">
                                 <Button variant="gradient" onClick={handleOpenFinalFeedback} disabled={!allStepsReviewed}>
                                     <MessageSquareText className="mr-2 h-4 w-4" />
-                                    Open final feedback
+                                    {pilotState.finalFeedbackSavedAt ? "Review final feedback" : "Submit final feedback"}
                                 </Button>
                                 <Button variant="glass" onClick={handleCopySummary}>
                                     <Copy className="mr-2 h-4 w-4" />
@@ -2061,21 +2084,6 @@ const MTSSPilotTestingHubPage = memo(() => {
                 }}
                 step={activeStep}
                 value={activeStep ? pilotState.feedbackByStep?.[activeStep.id] || createEmptyStepFeedback() : createEmptyStepFeedback()}
-                onChange={(nextValue) => {
-                    if (!activeStep) return;
-                    recordPilotEvent({
-                        type: "edit-step-feedback",
-                        label: `Editing feedback for ${activeStep.title}`,
-                        stepId: activeStep.id,
-                        stepTitle: activeStep.title,
-                        currentStepId: activeStep.id,
-                        currentStepTitle: activeStep.title,
-                        currentModal: "step-feedback",
-                        currentAction: `editing feedback for ${activeStep.title.toLowerCase()}`,
-                        appendToTrail: false,
-                    });
-                    updateStepFeedback(activeStep.id, nextValue);
-                }}
                 onSave={handleSaveStepFeedback}
                 syncState={syncState}
             />
@@ -2084,23 +2092,6 @@ const MTSSPilotTestingHubPage = memo(() => {
                 open={finalFeedbackOpen}
                 onOpenChange={handleFinalDialogChange}
                 value={pilotState.finalFeedback}
-                onChange={(nextValue) =>
-                    {
-                        recordPilotEvent({
-                            type: "edit-final-feedback",
-                            label: "Editing final feedback",
-                            currentModal: "final-feedback",
-                            currentAction: "editing final feedback",
-                            appendToTrail: false,
-                        });
-                        setPilotState((prev) =>
-                            withTimestamp({
-                                ...prev,
-                                finalFeedback: nextValue,
-                            }),
-                        );
-                    }
-                }
                 onSave={handleSaveFinalFeedback}
                 blocked={!allStepsReviewed}
                 remainingCount={remainingFeedbackCount}
