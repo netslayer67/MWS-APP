@@ -89,9 +89,9 @@ export const mapAssignmentsToStudents = (assignments = [], teacherName = "MTSS M
                             baselineScore: assignment.baselineScore || null,
                             targetScore: assignment.targetScore || null,
                             notes: assignment.notes || null,
-                            mentor: assignment.mentorId?.name || null,
+                            mentor: assignment.mentorId?.name || assignment.mentorName || null,
                             mentorNickname: assignment.mentorId?.username || null,
-                            mentorEmail: assignment.mentorId?.email || null,
+                            mentorEmail: assignment.mentorId?.email || assignment.mentorEmail || null,
                             createdAt: assignment.createdAt || assignment.startDate || null,
                             updatedAt: assignment.updatedAt || null,
                             lastUpdateAt,
@@ -118,6 +118,7 @@ export const mapAssignmentsToStudents = (assignments = [], teacherName = "MTSS M
                                 assignment.lastPlanUpdatedBy?.username ||
                                 assignment.createdBy?.name ||
                                 assignment.mentorId?.name ||
+                                assignment.mentorName ||
                                 null,
                         },
                     ]);
@@ -140,7 +141,7 @@ export const mapAssignmentsToStudents = (assignments = [], teacherName = "MTSS M
                 statusKey,
                 profile: {
                     teacher: teacherName,
-                    mentor: assignment.mentorId?.name || teacherName,
+                    mentor: assignment.mentorId?.name || assignment.mentorName || teacherName,
                     type: focus,
                     strategy: strategyName || assignment.focusAreas?.join(", ") || `Support focus - ${tier}`,
                     started: formatDate(assignment.startDate),
