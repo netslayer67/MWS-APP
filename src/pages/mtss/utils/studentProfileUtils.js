@@ -130,7 +130,7 @@ export const buildStudentProfileView = (student, selectedIntervention) => {
     const notesLabel = hasValue(currentIntervention?.notes) ? currentIntervention.notes : null;
 
     return {
-	        profile: {
+            profile: {
                 ...profile,
                 attendanceContext,
             },

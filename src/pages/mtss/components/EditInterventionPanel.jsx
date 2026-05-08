@@ -126,9 +126,9 @@ const EditInterventionPanel = memo(({
                     <p className="text-sm text-slate-600 dark:text-slate-200 max-w-2xl">
                         This workspace is dedicated for plan updates only, separate from create flow to avoid confusion.
                     </p>
-	                    <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/60 bg-cyan-50/80 px-3 py-1 text-xs font-semibold text-cyan-700 dark:border-cyan-500/40 dark:bg-cyan-900/30 dark:text-cyan-200">
-	                        Editing: {editingPlan?.studentName || "Student"} {editingPlan?.focusLabel ? `(${editingPlan.focusLabel})` : ""}
-	                    </div>
+                        <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/60 bg-cyan-50/80 px-3 py-1 text-xs font-semibold text-cyan-700 dark:border-cyan-500/40 dark:bg-cyan-900/30 dark:text-cyan-200">
+                            Editing: {editingPlan?.studentName || "Student"} {editingPlan?.focusLabel ? `(${editingPlan.focusLabel})` : ""}
+                        </div>
                         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                             {contextItems.map((item) => (
                                 <div
@@ -144,7 +144,7 @@ const EditInterventionPanel = memo(({
                                 </div>
                             ))}
                         </div>
-	                </header>
+                    </header>
 
                 <form className="space-y-5" onSubmit={onSubmit}>
                     <InterventionFormFields

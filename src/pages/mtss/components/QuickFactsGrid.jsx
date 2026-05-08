@@ -48,7 +48,7 @@ const QuickFactsGrid = memo(({ student, profile, mentorLabel }) => {
             </div>
 
             {/* ── Desktop: 4-column grid ─────────────────────── */}
-	            <div className="hidden sm:grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="hidden sm:grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {quickFacts.map((fact, i) => {
                     const Icon = fact.icon;
                     return (
@@ -71,7 +71,7 @@ const QuickFactsGrid = memo(({ student, profile, mentorLabel }) => {
                         </motion.div>
                     );
                 })}
-	            </div>
+                </div>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
                     {attendanceFacts.map((fact, i) => {
                         const Icon = fact.icon;
@@ -100,7 +100,7 @@ const QuickFactsGrid = memo(({ student, profile, mentorLabel }) => {
                         );
                     })}
                 </div>
-	        </>
+            </>
     );
 });
 

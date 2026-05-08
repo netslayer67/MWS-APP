@@ -1928,7 +1928,7 @@ export default function StudentAIChatPage() {
                             </div>
                         </motion.div>
                     )}
-	                </AnimatePresence>
+                    </AnimatePresence>
 
                 <AnimatePresence>
                     {assistantError && !isLoading && (

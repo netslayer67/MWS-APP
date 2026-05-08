@@ -26,17 +26,17 @@ const useTeacherDashboardActions = ({
                 });
                 return;
             }
-	            if (
-	                progressForm.performed !== "yes" &&
-	                (!progressForm.skipReason || (progressForm.skipReason === "other" && !progressForm.skipReasonNote?.trim()))
-	            ) {
+                if (
+                    progressForm.performed !== "yes" &&
+                    (!progressForm.skipReason || (progressForm.skipReason === "other" && !progressForm.skipReasonNote?.trim()))
+                ) {
                 toast({
                     title: "Skip reason required",
                     description: "Choose why this intervention was skipped before saving the update.",
                     variant: "destructive",
                 });
-	                return;
-	            }
+                    return;
+                }
             if (isLateProgressDate(progressForm.date) && !progressForm.lateReason?.trim()) {
                 toast({
                     title: "Late reason required",
@@ -92,11 +92,11 @@ const useTeacherDashboardActions = ({
                             nextSteps: trimmedNotes || undefined,
                             value: Number.isFinite(parsedScoreValue) ? parsedScoreValue : undefined,
                             unit: progressForm.scoreUnit,
-	                            performed: progressForm.performed === "yes",
-	                            skipReason: progressForm.performed !== "yes" ? (progressForm.skipReason || undefined) : undefined,
-	                            skipReasonNote: progressForm.performed !== "yes" && progressForm.skipReason === "other" ? (progressForm.skipReasonNote || undefined) : undefined,
+                                performed: progressForm.performed === "yes",
+                                skipReason: progressForm.performed !== "yes" ? (progressForm.skipReason || undefined) : undefined,
+                                skipReasonNote: progressForm.performed !== "yes" && progressForm.skipReason === "other" ? (progressForm.skipReasonNote || undefined) : undefined,
                                 lateReason: isLateProgressDate(progressForm.date) ? (progressForm.lateReason?.trim() || undefined) : undefined,
-	                            evidence: evidencePayload?.length ? evidencePayload : undefined,
+                                evidence: evidencePayload?.length ? evidencePayload : undefined,
                         },
                     ],
                 });
@@ -136,17 +136,17 @@ const useTeacherDashboardActions = ({
             const selectedOption = Array.isArray(student?.assignmentOptions)
                 ? student.assignmentOptions.find((option) => option?.assignmentId === assignmentId)
                 : null;
-	            if (
-	                formState.performed !== "yes" &&
-	                (!formState.skipReason || (formState.skipReason === "other" && !formState.skipReasonNote?.trim()))
-	            ) {
+                if (
+                    formState.performed !== "yes" &&
+                    (!formState.skipReason || (formState.skipReason === "other" && !formState.skipReasonNote?.trim()))
+                ) {
                 toast({
                     title: "Skip reason required",
                     description: "Choose why this intervention was skipped before saving the update.",
                     variant: "destructive",
                 });
-	                return;
-	            }
+                    return;
+                }
             if (isLateProgressDate(formState.date) && !formState.lateReason?.trim()) {
                 toast({
                     title: "Late reason required",
@@ -183,11 +183,11 @@ const useTeacherDashboardActions = ({
                             nextSteps: trimmedNotes || undefined,
                             value: Number.isFinite(parsedScoreValue) ? parsedScoreValue : undefined,
                             unit: formState.scoreUnit,
-	                            performed: formState.performed === "yes",
-	                            skipReason: formState.performed !== "yes" ? (formState.skipReason || undefined) : undefined,
-	                            skipReasonNote: formState.performed !== "yes" && formState.skipReason === "other" ? (formState.skipReasonNote || undefined) : undefined,
+                                performed: formState.performed === "yes",
+                                skipReason: formState.performed !== "yes" ? (formState.skipReason || undefined) : undefined,
+                                skipReasonNote: formState.performed !== "yes" && formState.skipReason === "other" ? (formState.skipReasonNote || undefined) : undefined,
                                 lateReason: isLateProgressDate(formState.date) ? (formState.lateReason?.trim() || undefined) : undefined,
-	                            celebration: formState.badge || undefined,
+                                celebration: formState.badge || undefined,
                             evidence: evidencePayload?.length ? evidencePayload : undefined,
                         },
                     ],

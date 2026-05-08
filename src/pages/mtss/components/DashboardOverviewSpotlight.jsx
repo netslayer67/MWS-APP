@@ -57,7 +57,7 @@ const DashboardOverviewSpotlight = ({ students, progressData, TierPill }) => {
                 <div className="space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
                         <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 dark:bg-white/10 border border-white/50 text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-600 dark:text-white/80">
-	                            Support Unit Spotlight
+                                Support Unit Spotlight
                         </span>
                         <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-indigo-500/15 via-fuchsia-500/10 to-emerald-500/10 text-[11px] font-semibold text-slate-700 dark:text-white/80 border border-white/40">
                             {weekLabel}
@@ -65,13 +65,13 @@ const DashboardOverviewSpotlight = ({ students, progressData, TierPill }) => {
                     </div>
                     <div>
                         <h2 className="text-2xl md:text-3xl font-black text-foreground dark:text-white">
-	                            {spotlightStudent?.supportUnit?.subject
+                                {spotlightStudent?.supportUnit?.subject
                                     ? `${spotlightStudent?.name || "Featured Student"} - ${spotlightStudent.supportUnit.subject}`
                                     : spotlightStudent?.name || "Featured Student"}
-	                        </h2>
-	                        <p className="text-sm text-muted-foreground mt-1 max-w-xl">
-	                            Quickly scan subject-level ownership, trends, and recent notes for this support unit.
-	                        </p>
+                            </h2>
+                            <p className="text-sm text-muted-foreground mt-1 max-w-xl">
+                                Quickly scan subject-level ownership, trends, and recent notes for this support unit.
+                            </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
                         <span className="px-3 py-1.5 rounded-full bg-sky-100/80 text-sky-700 dark:bg-sky-900/40 dark:text-sky-200">

@@ -338,11 +338,11 @@ export const useTeacherDashboardState = (tabs, { onSaveSuccess, viewerUser } = {
                         summary: progressForm.notes || "Progress update",
                         value: progressForm.scoreValue ? Number(progressForm.scoreValue) : undefined,
                         unit: progressForm.scoreUnit || "score",
-	                        performed: progressForm.performed === "yes" || progressForm.performed === true,
-	                        skipReason: progressForm.performed === "no" ? (progressForm.skipReason || undefined) : undefined,
-	                        skipReasonNote: progressForm.performed === "no" && progressForm.skipReason === "other" ? (progressForm.skipReasonNote || undefined) : undefined,
+                            performed: progressForm.performed === "yes" || progressForm.performed === true,
+                            skipReason: progressForm.performed === "no" ? (progressForm.skipReason || undefined) : undefined,
+                            skipReasonNote: progressForm.performed === "no" && progressForm.skipReason === "other" ? (progressForm.skipReasonNote || undefined) : undefined,
                             lateReason: progressForm.lateReason?.trim() || undefined,
-	                        celebration: progressForm.badge || undefined,
+                            celebration: progressForm.badge || undefined,
                     }],
                 };
 

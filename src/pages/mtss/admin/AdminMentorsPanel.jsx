@@ -40,12 +40,12 @@ const AdminMentorsPanel = ({ mentorRoster = [], mentorDirectory = [], students =
         const observer = new IntersectionObserver(
             (entries) => {
                 const [entry] = entries;
-	                if (entry.isIntersecting) {
-	                    setVisibleCount((prev) => {
-	                        if (prev >= filteredRoster.length) return prev;
-	                        return Math.min(filteredRoster.length, prev + CARD_BATCH_SIZE);
-	                    });
-	                }
+                    if (entry.isIntersecting) {
+                        setVisibleCount((prev) => {
+                            if (prev >= filteredRoster.length) return prev;
+                            return Math.min(filteredRoster.length, prev + CARD_BATCH_SIZE);
+                        });
+                    }
             },
             { threshold: 0.4 },
         );
@@ -93,8 +93,8 @@ const AdminMentorsPanel = ({ mentorRoster = [], mentorDirectory = [], students =
                     <div className="mb-6">
                         <PilotTaskHintBanner guide={pilotGuide} actionLabel="Follow this mentor check next" />
                     </div>
-	                )}
-	                <AdminMentorsHeader />
+                    )}
+                    <AdminMentorsHeader />
                     <div className="mb-5 flex flex-wrap items-center gap-2">
                         {[
                             { key: "all", label: "All", count: tierCounts.all },
@@ -121,8 +121,8 @@ const AdminMentorsPanel = ({ mentorRoster = [], mentorDirectory = [], students =
                             );
                         })}
                     </div>
-	                <div className="grid gap-5 lg:gap-6 md:grid-cols-2 xl:grid-cols-3" data-aos="fade-up" data-aos-delay="180">
-	                    {visibleMentors.map((mentor, index) => {
+                    <div className="grid gap-5 lg:gap-6 md:grid-cols-2 xl:grid-cols-3" data-aos="fade-up" data-aos-delay="180">
+                        {visibleMentors.map((mentor, index) => {
                         const theme = CARD_THEMES[index % CARD_THEMES.length];
                         const aosVariant = AOS_VARIANTS[(index + 2) % AOS_VARIANTS.length];
                         return (
@@ -138,10 +138,10 @@ const AdminMentorsPanel = ({ mentorRoster = [], mentorDirectory = [], students =
                             />
                         );
                     })}
-	                </div>
-	                <div ref={sentinelRef}>
-	                    <AdminMentorsFooter visibleCount={visibleMentors.length} total={filteredRoster.length} />
-	                </div>
+                    </div>
+                    <div ref={sentinelRef}>
+                        <AdminMentorsFooter visibleCount={visibleMentors.length} total={filteredRoster.length} />
+                    </div>
             </div>
         </div>
     );
