@@ -367,25 +367,38 @@ const GrowthJourneyMain = ({
 
             <NotesBottomSheet
                 open={notesSheetOpen}
-                onClose={() => setNotesSheetOpen(false)}
-                title={`${intervention.label} Notes`}
-                content={notesLabel}
+                onOpenChange={setNotesSheetOpen}
+                interventionLabel={intervention.label}
+                notes={notesLabel}
             />
 
-            <InfoCardDetailSheet
-                open={Boolean(detailSheet)}
-                onClose={closeDetail}
-                type={detailSheet}
-                values={{
-                    strategy: strategyLabel,
-                    duration: durationLabel,
-                    frequency: frequencyLabel,
-                    mentor: mentorLabel,
-                    goal: goalLabel,
-                    monitoring: monitoringMethodLabel,
-                    startDate: startDateLabel,
-                }}
-            />
+            {(() => {
+                const detailConfigs = {
+                    strategy:   { icon: Zap,          label: "Strategy",          gradient: "from-sky-500 to-blue-500",       value: strategyLabel },
+                    duration:   { icon: Clock,         label: "Duration",           gradient: "from-amber-500 to-orange-500",   value: durationLabel },
+                    frequency:  { icon: BarChart3,     label: "Frequency",          gradient: "from-emerald-500 to-teal-500",   value: frequencyLabel },
+                    mentor:     { icon: Award,         label: "Mentor",             gradient: "from-violet-500 to-fuchsia-500", value: mentorLabel },
+                    goal:       { icon: Target,        label: "Goal",               gradient: "from-rose-500 to-pink-500",      value: goalLabel },
+                    monitoring: { icon: ClipboardList, label: "Monitoring Method",  gradient: monitoringTone.bar,               value: monitoringMethodLabel },
+                    startDate:  { icon: CalendarDays,  label: "Start Date",         gradient: "from-indigo-500 to-purple-500",  value: startDateLabel },
+                };
+                const active = detailSheet ? detailConfigs[detailSheet] : null;
+                return (
+                    <InfoCardDetailSheet
+                        open={Boolean(active)}
+                        onOpenChange={(isOpen) => { if (!isOpen) closeDetail(); }}
+                        icon={active?.icon}
+                        label={active?.label}
+                        gradient={active?.gradient}
+                    >
+                        {active?.value && (
+                            <p className="text-sm sm:text-base font-medium text-foreground dark:text-white leading-relaxed">
+                                {active.value}
+                            </p>
+                        )}
+                    </InfoCardDetailSheet>
+                );
+            })()}
         </div>
     );
 };
