@@ -1,6 +1,6 @@
-import React, { memo, useState, useEffect, useMemo } from "react";
+import { memo, useState, useEffect, useMemo, useCallback } from "react";
 import { X, TrendingUp, Calendar, User, Activity, AlertTriangle, ExternalLink } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getUserTrends } from "../../../services/dashboardService";
 import { useNavigate } from "react-router-dom";
 
@@ -10,13 +10,7 @@ const UserDetailModal = memo(({ user, isOpen, onClose }) => {
     const [loading, setLoading] = useState(false);
     const [selectedPeriod, setSelectedPeriod] = useState('month');
 
-    useEffect(() => {
-        if (isOpen && user?.id) {
-            fetchUserTrends();
-        }
-    }, [isOpen, user, selectedPeriod]);
-
-    const fetchUserTrends = async () => {
+    const fetchUserTrends = useCallback(async () => {
         if (!user?.id) return;
 
         setLoading(true);
@@ -31,7 +25,13 @@ const UserDetailModal = memo(({ user, isOpen, onClose }) => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [selectedPeriod, user?.id]);
+
+    useEffect(() => {
+        if (isOpen && user?.id) {
+            fetchUserTrends();
+        }
+    }, [fetchUserTrends, isOpen, user?.id]);
 
     const derivedSummary = useMemo(() => {
         if (userTrends?.summary) {
@@ -112,7 +112,9 @@ const UserDetailModal = memo(({ user, isOpen, onClose }) => {
                     </div>
                     <div className="flex items-center gap-2">
                         <button
-                            onClick={() => navigate(`/emotional-wellness/${user.id}`)}
+                            onClick={() => navigate(`/emotional-wellness/${user.id}`, {
+                                state: { user, fromDashboard: true }
+                            })}
                             className="flex items-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm"
                             title="View full individual report"
                         >
@@ -447,4 +449,3 @@ const UserDetailModal = memo(({ user, isOpen, onClose }) => {
 UserDetailModal.displayName = 'UserDetailModal';
 
 export default UserDetailModal;
-
