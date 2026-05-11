@@ -78,6 +78,10 @@ export const mergeRosterWithAssignments = (
             const displaySource = useAssignment ? assignment : student;
             const assignmentOptions = assignment?.assignmentOptions || [];
             const assignmentInterventions = buildInterventionsFromAssignments(assignmentOptions);
+            const primaryPairing = assignment?.studentSubjectMentorPair
+                || assignment?.profile?.studentSubjectMentorPair
+                || assignmentOptions[0]?.studentSubjectMentorPair
+                || null;
 
             return {
                 id,
@@ -92,6 +96,8 @@ export const mergeRosterWithAssignments = (
                 lastUpdate: displaySource?.lastUpdate || student.lastUpdate || null,
                 assignmentId: assignment?.assignmentId || null,
                 assignmentOptions,
+                pairingLabel: assignment?.pairingLabel || assignment?.profile?.pairingLabel || assignmentOptions[0]?.pairingLabel || null,
+                studentSubjectMentorPair: primaryPairing,
                 profile: displaySource?.profile || assignment?.profile || student.profile,
                 interventions: assignmentInterventions.length ? assignmentInterventions : student.interventions,
                 primaryIntervention: student.primaryIntervention,

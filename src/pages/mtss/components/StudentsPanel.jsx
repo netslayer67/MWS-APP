@@ -16,6 +16,59 @@ const DEFAULT_VIEW_STATE = {
     visibleCount: STUDENTS_PANEL_BATCH,
 };
 
+const getStudentRowId = (student = {}) =>
+    student.id || student._id || student.supportUnit?.assignmentId || student.baseStudentId || student.slug || student.name;
+
+const getBaseStudentId = (student = {}) =>
+    student.baseStudentId || student._id || student.id || student.slug || student.name;
+
+const dedupeBy = (items = [], keyFn) => {
+    const seen = new Set();
+    return items.filter((item, index) => {
+        const key = keyFn(item, index);
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+};
+
+const groupStudentsForRoster = (students = []) => {
+    const grouped = new Map();
+
+    students.forEach((student) => {
+        const baseId = getBaseStudentId(student) || getStudentRowId(student);
+        if (!baseId) return;
+        if (!grouped.has(baseId)) {
+            grouped.set(baseId, {
+                ...student,
+                id: baseId,
+                baseStudentId: baseId,
+                supportUnitRows: [],
+                assignmentOptions: [],
+                interventions: [],
+            });
+        }
+
+        const entry = grouped.get(baseId);
+        entry.supportUnitRows.push(student);
+        entry.assignmentOptions.push(...(Array.isArray(student.assignmentOptions) ? student.assignmentOptions : []));
+        entry.interventions.push(...(Array.isArray(student.interventions) ? student.interventions : []));
+    });
+
+    return Array.from(grouped.values()).map((student) => ({
+        ...student,
+        supportUnitCount: student.supportUnitRows.length,
+        assignmentOptions: dedupeBy(
+            student.assignmentOptions,
+            (option, index) => `${option.assignmentId || index}:${option.focus || option.subject || option.focusArea || index}`,
+        ),
+        interventions: dedupeBy(
+            student.interventions,
+            (intervention, index) => `${intervention.id || index}:${intervention.label || intervention.type || index}`,
+        ),
+    }));
+};
+
 const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh, onEditPlan, canEditPlanForStudent, pilotGuide = null }) => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -29,24 +82,34 @@ const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh, onEd
     const visibleCount = Math.max(Number(viewState?.visibleCount) || STUDENTS_PANEL_BATCH, STUDENTS_PANEL_BATCH);
 
     const deferredQuery = useDeferredValue(query.trim().toLowerCase());
+    const rosterStudents = useMemo(() => groupStudentsForRoster(students), [students]);
 
     const filteredStudents = useMemo(() =>
-        students.filter((student) => {
+        rosterStudents.filter((student) => {
+            const supportRows = Array.isArray(student.supportUnitRows) && student.supportUnitRows.length
+                ? student.supportUnitRows
+                : [student];
             const interventions = ensureStudentInterventions(student.interventions);
             const criticalInfo = getMostCriticalForDisplay(interventions, student.profile, student);
-            const tierLabel = criticalInfo?.tier || student.tier;
-            const matchesTier = activeTier === "All" || tierLabel === activeTier;
+            const matchesTier = activeTier === "All" || supportRows.some((row) => {
+                const rowInterventions = ensureStudentInterventions(row.interventions);
+                const rowCritical = getMostCriticalForDisplay(rowInterventions, row.profile, row);
+                return (rowCritical?.tier || row.tier) === activeTier;
+            });
             if (!deferredQuery) return matchesTier;
             const chipLabels = interventions.map((entry) => entry.label).join(" ");
             const assignmentLabels = Array.isArray(student.assignmentOptions)
                 ? student.assignmentOptions
-                    .map((option) => `${option.focus || ""} ${(option.focusAreas || []).join(" ")} ${option.mentor || ""}`)
+                    .map((option) => `${option.focus || ""} ${(option.focusAreas || []).join(" ")} ${option.mentor || ""} ${option.pairingLabel || ""}`)
                     .join(" ")
                 : "";
-            const searchPool = `${student.name} ${student.type || ""} ${student.grade || ""} ${student.className || ""} ${assignmentLabels} ${criticalInfo?.label || ""} ${chipLabels}`.toLowerCase();
+            const supportUnitLabels = supportRows
+                .map((row) => `${row.supportUnit?.pairingLabel || row.pairingLabel || ""} ${row.supportUnit?.subject || ""} ${row.mentor || ""}`)
+                .join(" ");
+            const searchPool = `${student.name} ${student.type || ""} ${student.grade || ""} ${student.className || ""} ${supportUnitLabels} ${assignmentLabels} ${criticalInfo?.label || ""} ${chipLabels}`.toLowerCase();
             return matchesTier && searchPool.includes(deferredQuery);
         }),
-    [students, activeTier, deferredQuery]);
+    [rosterStudents, activeTier, deferredQuery]);
 
     const visibleStudents = useMemo(
         () => filteredStudents.slice(0, Math.min(visibleCount, filteredStudents.length)),

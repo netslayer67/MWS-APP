@@ -12,6 +12,16 @@ const getSupportRowKey = (unit = {}, index = 0) =>
 const getSupportSubjectLabel = (unit = {}) =>
     unit.supportUnit?.subject || unit.profile?.type || unit.type || "Focused Support";
 
+const getSupportOwnerLabel = (unit = {}) =>
+    unit.supportUnit?.owner || unit.studentSubjectMentorPair?.mentorName || unit.profile?.studentSubjectMentorPair?.mentorName || unit.mentor || unit.profile?.mentor || "-";
+
+const getSupportPairingLabel = (unit = {}) =>
+    unit.supportUnit?.pairingLabel || unit.pairingLabel || unit.profile?.pairingLabel || [
+        unit.name,
+        getSupportSubjectLabel(unit),
+        getSupportOwnerLabel(unit),
+    ].filter(Boolean).join(" - ");
+
 const getGroupedProgressLabel = (rows = []) => {
     const statuses = rows.map((unit) => unit.progress).filter(Boolean);
     const unique = Array.from(new Set(statuses));
@@ -53,9 +63,10 @@ const StudentsTableDesktopRow = memo(
         );
         const isGrouped = supportRows.length > 1;
         const primaryStudent = supportRows[0] || student;
+        const actionStudent = isGrouped ? student : primaryStudent;
         const interventions = ensureStudentInterventions(student.interventions);
         const classLabel = student.className || "\u2014";
-        const mentorLabel = student.mentor || student.profile?.mentor || "-";
+        const mentorLabel = getSupportOwnerLabel(primaryStudent);
         const supportSubjectLabel = isGrouped
             ? `${supportRows.length} support units`
             : student.supportUnit?.subject || student.profile?.type || student.type || "";
@@ -69,6 +80,7 @@ const StudentsTableDesktopRow = memo(
             [supportRows],
         );
         const subjectSummary = useMemo(() => getSubjectSummary(supportRows), [supportRows]);
+        const pairingLabel = useMemo(() => getSupportPairingLabel(primaryStudent), [primaryStudent]);
 
         /* ── Assignment & action logic ─────────────────────────── */
         const assignmentOptions = Array.isArray(student.assignmentOptions) ? student.assignmentOptions : [];
@@ -83,10 +95,10 @@ const StudentsTableDesktopRow = memo(
         const nextUpdateDisplay = getStudentNextUpdateDisplay(primaryStudent);
         const canEditPlan = hasInterventionPlan && Boolean(onEditPlan) && (
             typeof canEditPlanForStudent === "function"
-                ? canEditPlanForStudent(primaryStudent)
+                ? canEditPlanForStudent(actionStudent)
                 : Boolean(primaryAssignment?.assignmentId || student.assignmentId)
         );
-        const progressAssignment = resolveProgressAssignmentForStudent(primaryStudent);
+        const progressAssignment = resolveProgressAssignmentForStudent(actionStudent);
         const canSubmitProgress = Boolean(progressAssignment?.assignmentId);
 
         const actionButtons = [];
@@ -94,7 +106,7 @@ const StudentsTableDesktopRow = memo(
             actionButtons.push({
                 key: "progress",
                 label: "Progress Update",
-                onClick: (e) => { e.stopPropagation(); onUpdate?.(primaryStudent); },
+                onClick: (e) => { e.stopPropagation(); onUpdate?.(actionStudent); },
                 icon: TrendingUp,
                 className: "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200/60 dark:border-amber-700/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 hover:shadow-amber-200/30 dark:hover:shadow-amber-900/20",
             });
@@ -105,7 +117,7 @@ const StudentsTableDesktopRow = memo(
                 label: "Edit Plan",
                 onClick: (e) => {
                     e.stopPropagation();
-                    onEditPlan?.({ student: primaryStudent });
+                    onEditPlan?.({ student: actionStudent });
                 },
                 icon: FilePenLine,
                 className: "bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-300 border-cyan-200/60 dark:border-cyan-700/40 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 hover:shadow-cyan-200/30 dark:hover:shadow-cyan-900/20",
@@ -173,6 +185,11 @@ const StudentsTableDesktopRow = memo(
                     <span className="block text-[10px] text-slate-500 dark:text-slate-300 mt-0.5 truncate" title={`Mentor: ${mentorLabel}`}>
                         {mentorLabel}
                     </span>
+                    {!isGrouped && pairingLabel && (
+                        <span className="mt-1 block truncate text-[10px] font-semibold text-sky-600 dark:text-sky-200" title={pairingLabel}>
+                            {pairingLabel}
+                        </span>
+                    )}
                 </td>
 
                 {/* Interventions — top 2 inline, rest collapsed */}
@@ -298,12 +315,13 @@ const StudentsTableDesktopRow = memo(
                                 const lastDisplay = getStudentLastUpdateDisplay(unit);
                                 const nextDisplay = getStudentNextUpdateDisplay(unit);
                                 const subject = getSupportSubjectLabel(unit);
+                                const unitPairing = getSupportPairingLabel(unit);
                                 return (
                                     <div
                                         key={getSupportRowKey(unit, unitIndex)}
                                         className="grid grid-cols-[1.1fr_1.2fr_0.8fr_0.8fr_0.8fr] items-center gap-3 border-b border-slate-100 px-4 py-3 last:border-b-0 dark:border-white/10"
                                     >
-                                        <p className="truncate text-xs font-bold text-slate-800 dark:text-white" title={subject}>
+                                        <p className="truncate text-xs font-bold text-slate-800 dark:text-white" title={unitPairing}>
                                             {subject}
                                         </p>
                                         <InterventionChips interventions={ensureStudentInterventions(unit.interventions)} compact />

@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Activity, BarChart3, Sparkles, TrendingUp } from "lucide-react";
+import { Activity, BarChart3, Sparkles, TrendingUp, UsersRound } from "lucide-react";
 
 const AnalyticsMetricCard = ({ item, index }) => (
     <div
@@ -29,10 +29,12 @@ const AdminAnalyticsPanel = ({
     analyticsNarrative,
     strategyHighlights,
     tierMovement,
+    mentorSubjectCoverageRows = [],
 }) => {
     const hasSuccessData = Array.isArray(successByType) && successByType.length > 0;
     const hasTrendData = Array.isArray(trendData) && trendData.length > 0;
     const hasStrategyData = Array.isArray(strategyHighlights) && strategyHighlights.length > 0;
+    const hasCoverageData = Array.isArray(mentorSubjectCoverageRows) && mentorSubjectCoverageRows.length > 0;
 
     return (
         <div className="space-y-6">
@@ -62,6 +64,54 @@ const AdminAnalyticsPanel = ({
                         <AnalyticsMetricCard key={item.key} item={item} index={index} />
                     ))}
                 </div>
+            </section>
+
+            <section
+                className="glass glass-card mtss-card-surface rounded-[32px] p-6 shadow-[0_24px_80px_rgba(15,23,42,0.14)]"
+                data-aos="fade-up"
+                data-aos-duration="700"
+                data-aos-delay="60"
+            >
+                <div className="flex items-center justify-between gap-4">
+                    <div>
+                        <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500 dark:text-white/55">Mentor-subject coverage</p>
+                        <h3 className="mt-2 text-2xl font-black text-slate-900 dark:text-white">Student - subject - mentor pairings</h3>
+                    </div>
+                    <UsersRound className="h-5 w-5 text-cyan-500" />
+                </div>
+
+                {hasCoverageData ? (
+                    <div className="mt-5 grid gap-3 lg:grid-cols-2">
+                        {mentorSubjectCoverageRows.slice(0, 8).map((row) => {
+                            const studentNames = (row.students || []).map((student) => student.name).filter(Boolean);
+                            const preview = studentNames.slice(0, 3).join(", ");
+                            const studentLabel = studentNames.length > 3 ? `${preview} +${studentNames.length - 3}` : preview;
+                            return (
+                                <div
+                                    key={`${row.mentorName}-${row.subject}-${row.tierCode}`}
+                                    className="rounded-[22px] border border-white/45 bg-white/75 px-4 py-3 dark:border-white/10 dark:bg-white/5"
+                                >
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <p className="text-sm font-black text-slate-900 dark:text-white">{row.subject}</p>
+                                        <span className="rounded-full bg-cyan-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-cyan-700 dark:bg-cyan-500/10 dark:text-cyan-100">
+                                            {row.tier}
+                                        </span>
+                                    </div>
+                                    <p className="mt-2 text-xs font-semibold text-slate-600 dark:text-white/70">
+                                        {row.mentorName} - {studentLabel || "No students"}
+                                    </p>
+                                </div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <div className="mt-5">
+                        <EmptyAnalyticsState
+                            title="No mentor-subject coverage yet"
+                            description="Subject-level coverage appears after intervention plans include assigned students, focus areas, and mentors."
+                        />
+                    </div>
+                )}
             </section>
 
             <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">

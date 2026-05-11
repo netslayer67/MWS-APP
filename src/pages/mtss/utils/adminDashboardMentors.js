@@ -19,6 +19,12 @@ const mapTierLabel = (tier = "") => {
     return "Tier 2";
 };
 
+const normalizeText = (value = "") => String(value || "").trim();
+const getAssignmentStudents = (assignment = {}) =>
+    Array.isArray(assignment.studentIds) ? assignment.studentIds.filter(Boolean) : [];
+const buildPairingLabel = (studentName = "", subject = "", mentorName = "") =>
+    [studentName, subject, mentorName].map(normalizeText).filter(Boolean).join(" - ");
+
 export const buildMentorSpotlights = (assignments = []) => {
     const map = new Map();
     assignments.forEach((assignment) => {
@@ -77,6 +83,7 @@ export const buildMentorRoster = (assignments = []) => {
         entry.students += supportUnitCount;
         entry.total += supportUnitCount;
         const focusLabels = getAssignmentFocusLabels(assignment);
+        const students = getAssignmentStudents(assignment);
         const tierCode = normalizeTierCode(assignment.tier);
         const tierLabel = mapTierLabel(assignment.tier);
         focusLabels.forEach((focus) => {
@@ -87,9 +94,19 @@ export const buildMentorRoster = (assignments = []) => {
                 tierCode,
                 count: 0,
                 assignmentCount: 0,
+                students: new Map(),
             };
             existingCoverage.count += studentCount;
             existingCoverage.assignmentCount += 1;
+            students.forEach((student) => {
+                const studentId = student?._id?.toString?.() || student?.id?.toString?.() || student?.name;
+                if (!studentId) return;
+                existingCoverage.students.set(studentId, {
+                    id: studentId,
+                    name: student.name || "Student",
+                    pairingLabel: buildPairingLabel(student.name || "Student", focus, entry.name),
+                });
+            });
             entry.coverage.set(coverageKey, existingCoverage);
         });
         if (assignment.status === "completed") {
@@ -106,6 +123,10 @@ export const buildMentorRoster = (assignments = []) => {
             activeStudents: entry.students,
             successRate: entry.total ? `${Math.round((entry.completed / entry.total) * 100)}%` : "0%",
             coverage: Array.from(entry.coverage.values())
+                .map((item) => ({
+                    ...item,
+                    students: Array.from(item.students?.values?.() || []),
+                }))
                 .sort((a, b) => {
                     const tierRank = { tier3: 3, tier2: 2, tier1: 1 };
                     const rankDiff = (tierRank[b.tierCode] || 0) - (tierRank[a.tierCode] || 0);
@@ -116,25 +137,82 @@ export const buildMentorRoster = (assignments = []) => {
         .sort((a, b) => b.activeStudents - a.activeStudents);
 };
 
+export const buildMentorSubjectCoverageRows = (assignments = []) => {
+    const map = new Map();
+
+    assignments.forEach((assignment = {}) => {
+        const mentorName = assignment.mentorId?.name || assignment.mentorName || "Unassigned Mentor";
+        const mentorId = assignment.mentorId?._id?.toString?.() || assignment.mentorId?.id || assignment.mentorId || null;
+        const mentorEmail = assignment.mentorId?.email || assignment.mentorEmail || null;
+        const tierCode = normalizeTierCode(assignment.tier);
+        const tier = mapTierLabel(assignment.tier);
+        const students = getAssignmentStudents(assignment);
+
+        getAssignmentFocusLabels(assignment).forEach((focus) => {
+            const key = `${mentorId || mentorName}|${focus}|${tierCode}`;
+            const entry = map.get(key) || {
+                mentorId,
+                mentorName,
+                mentorEmail,
+                subject: focus,
+                focusArea: focus,
+                tier,
+                tierCode,
+                students: new Map(),
+                assignmentIds: new Set(),
+            };
+
+            students.forEach((student) => {
+                const id = student?._id?.toString?.() || student?.id?.toString?.() || student?.name;
+                if (!id) return;
+                entry.students.set(id, {
+                    id,
+                    name: student.name || "Student",
+                    pairingLabel: buildPairingLabel(student.name || "Student", focus, mentorName),
+                });
+            });
+            const assignmentId = assignment._id?.toString?.() || assignment.id || assignment.assignmentId;
+            if (assignmentId) entry.assignmentIds.add(assignmentId);
+            map.set(key, entry);
+        });
+    });
+
+    return Array.from(map.values())
+        .map((entry) => ({
+            mentorId: entry.mentorId,
+            mentorName: entry.mentorName,
+            mentorEmail: entry.mentorEmail,
+            subject: entry.subject,
+            focusArea: entry.focusArea,
+            tier: entry.tier,
+            tierCode: entry.tierCode,
+            studentCount: entry.students.size,
+            students: Array.from(entry.students.values()).sort((a, b) => a.name.localeCompare(b.name)),
+            assignmentIds: Array.from(entry.assignmentIds),
+        }))
+        .sort((a, b) => b.studentCount - a.studentCount || a.mentorName.localeCompare(b.mentorName));
+};
+
 export const buildRecentActivity = (assignments = []) => {
     const entries = [];
     assignments.forEach((assignment) => {
         const studentName = assignment.studentIds?.[0]?.name || "Student group";
         const mentorName = assignment.mentorId?.name || "Mentor team";
+        const subject = getAssignmentFocusLabels(assignment)[0] || "Focused Support";
         const checkIn = assignment.checkIns?.slice(-1)[0];
         if (checkIn) {
             entries.push({
                 date: checkIn.date,
                 student: studentName,
                 mentor: mentorName,
-                activity: checkIn.summary || "Progress update recorded",
+                activity: `${subject}: ${checkIn.summary || "Progress update recorded"}`,
             });
         } else {
             entries.push({
                 date: assignment.updatedAt || assignment.startDate || assignment.createdAt,
                 student: studentName,
                 mentor: mentorName,
-                activity: `Status updated to ${assignment.status}`,
+                activity: `${subject}: status updated to ${assignment.status}`,
             });
         }
     });

@@ -19,6 +19,13 @@ const MentorCard = memo(({ mentor, theme, aosVariant, index, batchSize, onAssign
             .filter((item) => item?.focus)
             .slice(0, 4)
         : [];
+    const formatCoverageStudents = (item = {}) => {
+        const students = Array.isArray(item.students) ? item.students : [];
+        if (!students.length) return "No students";
+        const names = students.map((student) => student.name).filter(Boolean);
+        const preview = names.slice(0, 2).join(", ");
+        return names.length > 2 ? `${preview} +${names.length - 2}` : preview;
+    };
 
     return (
         <motion.div
@@ -75,13 +82,19 @@ const MentorCard = memo(({ mentor, theme, aosVariant, index, batchSize, onAssign
                         Subject Coverage
                     </p>
                     {coverageTags.length > 0 ? (
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="grid gap-1.5">
                             {coverageTags.map((item) => (
                                 <span
                                     key={`${mentor.name}-${item.focus}-${item.tierCode}`}
-                                    className="rounded-full border border-cyan-200/70 bg-cyan-50/90 px-2.5 py-1 text-cyan-700 dark:border-cyan-500/25 dark:bg-cyan-500/10 dark:text-cyan-100"
+                                    className="rounded-xl border border-cyan-200/70 bg-cyan-50/90 px-2.5 py-2 text-cyan-700 dark:border-cyan-500/25 dark:bg-cyan-500/10 dark:text-cyan-100"
+                                    title={`${mentor.name} - ${item.focus} - ${formatCoverageStudents(item)}`}
                                 >
-                                    {item.focus} · {item.tier || "Tier"} · {item.count || 0}
+                                    <span className="block truncate">
+                                        {mentor.name} - {item.focus} - {formatCoverageStudents(item)}
+                                    </span>
+                                    <span className="mt-0.5 block text-[0.55rem] uppercase tracking-[0.2em] text-cyan-600/75 dark:text-cyan-100/60">
+                                        {item.tier || "Tier"} - {item.count || 0} support units
+                                    </span>
                                 </span>
                             ))}
                         </div>

@@ -99,6 +99,7 @@ const GrowthJourneyMain = ({
     durationLabel,
     frequencyLabel,
     mentorLabel,
+    pairingLabel,
     goalLabel,
     monitoringMethodLabel,
     startDateLabel,
@@ -108,6 +109,7 @@ const GrowthJourneyMain = ({
     const hasDuration = isMeaningfulValue(durationLabel);
     const hasFrequency = isMeaningfulValue(frequencyLabel);
     const hasMentor = isMeaningfulValue(mentorLabel);
+    const hasPairing = isMeaningfulValue(pairingLabel);
     const hasGoal = isMeaningfulValue(goalLabel);
     const hasMonitoring = isMeaningfulValue(monitoringMethodLabel);
     const hasStartDate = isMeaningfulValue(startDateLabel);
@@ -145,6 +147,13 @@ const GrowthJourneyMain = ({
                     {intervention.progress ?? 0}%
                 </span>
             </div>
+
+            {hasPairing && (
+                <div className="flex items-center gap-2 rounded-xl border border-sky-100 bg-sky-50/80 px-3 py-2 text-xs font-semibold text-sky-700 dark:border-sky-400/20 dark:bg-sky-500/10 dark:text-sky-100 sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm">
+                    <ClipboardList className="h-4 w-4 shrink-0" />
+                    <span className="truncate" title={pairingLabel}>{pairingLabel}</span>
+                </div>
+            )}
 
             <div className="relative rounded-xl sm:rounded-2xl p-2.5 sm:p-4 bg-white/80 dark:bg-slate-800/60 border border-white/60 dark:border-slate-700/40">
                 <div className="h-40 sm:h-64">

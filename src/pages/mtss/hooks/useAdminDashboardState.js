@@ -322,6 +322,7 @@ export const useAdminDashboardState = (students = [], availableTabs = ["overview
                 filters.type === "all" ||
                 subjectValues.includes(filters.type);
             const mentorLabel = scopedStudent.mentor || scopedStudent.profile?.mentor;
+            const pairingLabel = scopedStudent.supportUnit?.pairingLabel || scopedStudent.pairingLabel || scopedStudent.profile?.pairingLabel;
             const teacherRoster = getStudentMentorRoster(scopedStudent);
             const matchesMentor = filters.mentor === "all" || teacherRoster.includes(filters.mentor);
             const matchesQuery =
@@ -332,6 +333,7 @@ export const useAdminDashboardState = (students = [], availableTabs = ["overview
                 subjectLabels.some((label) => label.includes(query)) ||
                 (student.className || "").toLowerCase().includes(query) ||
                 mentorLabel?.toLowerCase().includes(query) ||
+                pairingLabel?.toLowerCase().includes(query) ||
                 teacherRoster.some((teacher) => teacher.toLowerCase().includes(query));
 
             if (matchesGrade && matchesTier && matchesType && matchesMentor && matchesQuery) {

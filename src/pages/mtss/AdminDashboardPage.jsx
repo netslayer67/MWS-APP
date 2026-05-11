@@ -59,6 +59,7 @@ const AdminDashboardPage = memo(() => {
         recentActivity,
         mentorSpotlights,
         mentorRoster,
+        mentorSubjectCoverageRows,
         mentors,
         successByType,
         trendData,
@@ -185,6 +186,7 @@ const AdminDashboardPage = memo(() => {
                         analyticsNarrative={analyticsNarrative}
                         strategyHighlights={strategyHighlights}
                         tierMovement={tierMovement}
+                        mentorSubjectCoverageRows={mentorSubjectCoverageRows}
                     />
                 );
             case "pilot-feedback":
@@ -213,6 +215,7 @@ const AdminDashboardPage = memo(() => {
         toggleSelection,
         resetSelection,
         mentorRoster,
+        mentorSubjectCoverageRows,
         mentors,
         statCards,
         systemSnapshot,

@@ -22,7 +22,7 @@ const buildMergedInterventions = (student) => {
     const { interventionDetails = [] } = student;
     const allInterventions = ensureStudentInterventions(student.interventions);
 
-    return allInterventions.map((intervention) => {
+    const merged = allInterventions.map((intervention) => {
         const detail = interventionDetails.find((item) =>
             item.type?.toUpperCase() === intervention.type?.toUpperCase(),
         );
@@ -50,6 +50,12 @@ const buildMergedInterventions = (student) => {
             hasRealData: false,
         };
     });
+    const mergedDetailIds = new Set(merged.map((intervention) => intervention.id).filter(Boolean));
+    const detailOnlyInterventions = interventionDetails
+        .filter((detail) => detail?.id && !mergedDetailIds.has(detail.id))
+        .map((detail) => ({ ...detail, hasRealData: true }));
+
+    return [...merged, ...detailOnlyInterventions];
 };
 
 const buildAttendanceContext = (interventions = []) => {
@@ -84,6 +90,8 @@ export const buildStudentProfileView = (student, selectedIntervention) => {
             durationLabel: null,
             frequencyLabel: null,
             mentorLabel: null,
+            pairingLabel: null,
+            studentSubjectMentorPair: null,
             goalLabel: null,
             monitoringMethodLabel: null,
             startDateLabel: null,
@@ -122,6 +130,14 @@ export const buildStudentProfileView = (student, selectedIntervention) => {
         username: currentIntervention?.mentorUsername || profile?.mentorUsername || student.mentorUsername,
         gender: currentIntervention?.mentorGender || profile?.mentorGender || student.mentorGender,
     });
+    const pairingSubject = currentIntervention?.studentSubjectMentorPair?.subject
+        || currentIntervention?.focusArea
+        || currentIntervention?.label
+        || currentIntervention?.type
+        || null;
+    const pairingLabel = currentIntervention?.pairingLabel
+        || currentIntervention?.studentSubjectMentorPair?.pairingLabel
+        || [student.name, pairingSubject, mentorLabel].filter(Boolean).join(" - ");
     const goalLabel = resolveGoalLabel(currentIntervention) || null;
     const monitoringMethodLabel = currentIntervention?.monitoringMethod || currentIntervention?.monitorMethod || null;
     const startDateLabel = currentIntervention?.startDate
@@ -141,6 +157,8 @@ export const buildStudentProfileView = (student, selectedIntervention) => {
         durationLabel,
         frequencyLabel,
         mentorLabel,
+        pairingLabel,
+        studentSubjectMentorPair: currentIntervention?.studentSubjectMentorPair || null,
         goalLabel,
         monitoringMethodLabel,
         startDateLabel,

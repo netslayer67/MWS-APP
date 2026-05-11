@@ -30,6 +30,7 @@ const DashboardOverviewSpotlightDetails = ({
     const formatValue = (value) => (value == null ? "-" : `${value} ${progressUnit}`);
     const classLabel = spotlightStudent?.className || spotlightStudent?.class || "-";
     const lastCheckIn = history?.[0]?.date || "No recent updates";
+    const pairingLabel = spotlightStudent?.supportUnit?.pairingLabel || spotlightStudent?.pairingLabel || spotlightProfile?.pairingLabel || null;
 
     return (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" data-aos="fade-up" data-aos-delay="80">
@@ -61,6 +62,11 @@ const DashboardOverviewSpotlightDetails = ({
                         <span>Mentor</span>
                         <span className="font-semibold text-foreground dark:text-white">{spotlightProfile.mentor ?? "-"}</span>
                     </div>
+                    {pairingLabel && (
+                        <div className="rounded-xl bg-sky-50 px-3 py-2 text-sky-700 dark:bg-sky-500/10 dark:text-sky-100">
+                            <span className="block truncate font-semibold" title={pairingLabel}>{pairingLabel}</span>
+                        </div>
+                    )}
                     <div className="flex items-center justify-between text-muted-foreground">
                         <span>Tier</span>
                         {spotlightStudent?.tier ? (

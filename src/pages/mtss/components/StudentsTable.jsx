@@ -17,6 +17,61 @@ const HEADER_COLS = [
 const getStudentRowId = (student = {}) =>
     student.id || student._id || student.supportUnit?.assignmentId || student.baseStudentId || student.slug || student.name;
 
+const getBaseStudentId = (student = {}) =>
+    student.baseStudentId || student._id || student.id || student.slug || student.name;
+
+const dedupeBy = (items = [], keyFn) => {
+    const seen = new Set();
+    return items.filter((item, index) => {
+        const key = keyFn(item, index);
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+};
+
+const getSourceRows = (student = {}) =>
+    Array.isArray(student.supportUnitRows) && student.supportUnitRows.length
+        ? student.supportUnitRows
+        : [student];
+
+const groupStudentsForTable = (students = []) => {
+    const grouped = new Map();
+
+    (Array.isArray(students) ? students : []).forEach((student) => {
+        getSourceRows(student).forEach((row) => {
+            const baseId = getBaseStudentId(row) || getStudentRowId(row);
+            if (!baseId) return;
+            if (!grouped.has(baseId)) {
+                grouped.set(baseId, {
+                    ...row,
+                    supportUnitRows: [],
+                    assignmentOptions: [],
+                    interventions: [],
+                });
+            }
+
+            const entry = grouped.get(baseId);
+            entry.supportUnitRows.push(row);
+            entry.assignmentOptions.push(...(Array.isArray(row.assignmentOptions) ? row.assignmentOptions : []));
+            entry.interventions.push(...(Array.isArray(row.interventions) ? row.interventions : []));
+        });
+    });
+
+    return Array.from(grouped.values()).map((student) => ({
+        ...student,
+        supportUnitCount: student.supportUnitRows.length,
+        assignmentOptions: dedupeBy(
+            student.assignmentOptions,
+            (option, index) => `${option.assignmentId || index}:${option.focus || option.subject || option.focusArea || index}`,
+        ),
+        interventions: dedupeBy(
+            student.interventions,
+            (intervention, index) => `${intervention.id || index}:${intervention.label || intervention.type || index}`,
+        ),
+    }));
+};
+
 const StudentsTable = memo(
     ({
         students,
@@ -33,7 +88,8 @@ const StudentsTable = memo(
         onSelect,
     }) => {
         const activeSelectedIds = selectedIds || [];
-        const limitedStudents = students.slice(0, Math.min(MAX_RENDER, students.length));
+        const groupedStudents = groupStudentsForTable(students);
+        const limitedStudents = groupedStudents.slice(0, Math.min(MAX_RENDER, groupedStudents.length));
         const hintedStudent = limitedStudents.find((student) => {
             if (pilotHintAction === "view") return true;
             if (pilotHintAction === "progress") {

@@ -36,7 +36,7 @@ const AdminStudentsRoster = ({
                 <p className="text-sm text-muted-foreground max-w-xl">
                     {activeSubjectLabel
                         ? `Showing ${activeSubjectLabel} support only, so chips, owner, and update dates match the selected subject.`
-                        : "Each row is one student + subject support unit, so multi-subject students appear separately with their own owner, chip, and update dates."}
+                        : "Each row is one student; multi-subject support units open in Details with their own chip, progress, and update dates."}
                 </p>
             </div>
             {!isReadOnly && (
@@ -120,7 +120,7 @@ const AdminStudentsRoster = ({
             data-aos-delay="200"
         >
             <span>
-                Showing {visibleStudents.length} of {filteredRowCount ?? filteredCount} student rows for {filteredCount} support units
+                Showing {visibleStudents.length} of {filteredRowCount ?? filteredCount} student rows across {filteredCount} support units
             </span>
             {hasMoreStudents ? (
                 <span className="px-3 py-1 rounded-full border border-white/50 dark:border-white/20 bg-white/70 dark:bg-white/5 text-[0.7rem] uppercase tracking-[0.3em]">

@@ -16,6 +16,7 @@ import {
     buildStrategyHighlights,
     buildTierMovement,
     buildRecentActivity,
+    buildMentorSubjectCoverageRows,
     calculateSuccessRate,
     buildSummaryFromStudents,
     buildAnalyticsSummary,
@@ -74,6 +75,9 @@ const getGoalLabel = (assignment = {}) => {
 const getMentorLabel = (assignment = {}) =>
     normalizeText(assignment.mentorId?.name || assignment.mentorName || assignment.mentor || assignment.owner) || "Unassigned";
 
+const buildPairingLabel = (studentName = "", subject = "", mentor = "") =>
+    [studentName, subject, mentor].map(normalizeText).filter(Boolean).join(" - ");
+
 const getLatestCheckIn = (assignment = {}) =>
     Array.isArray(assignment.checkIns) && assignment.checkIns.length
         ? assignment.checkIns[assignment.checkIns.length - 1]
@@ -87,6 +91,9 @@ const buildAssignmentOptionsByStudent = (assignments = []) => {
         if (!assignmentId) return;
 
         const focus = getFocusLabel(assignment);
+        const focusAreas = Array.isArray(assignment.focusLabels) && assignment.focusLabels.length
+            ? assignment.focusLabels
+            : (Array.isArray(assignment.focusAreas) && assignment.focusAreas.length ? assignment.focusAreas : [focus]);
         const tierCode = normalizeTierCode(assignment.tier);
         const latestCheckIn = getLatestCheckIn(assignment);
         const lastUpdateAt = latestCheckIn?.date || assignment.updatedAt || assignment.lastPlanUpdatedAt || assignment.createdAt || assignment.startDate;
@@ -96,9 +103,9 @@ const buildAssignmentOptionsByStudent = (assignments = []) => {
             subject: focus,
             type: focus,
             focusArea: focus,
-            focusAreas: Array.isArray(assignment.focusAreas) && assignment.focusAreas.length ? assignment.focusAreas : [focus],
+            focusAreas,
             interventionType: focus,
-            interventionTypes: [focus],
+            interventionTypes: focusAreas,
             tier: assignment.tier,
             tierCode,
             tierValue: tierCode,
@@ -128,13 +135,33 @@ const buildAssignmentOptionsByStudent = (assignments = []) => {
             lastUpdateAt,
             lastUpdateSubject: focus,
             nextUpdate: assignment.nextUpdate,
+            pairings: Array.isArray(assignment.pairings) ? assignment.pairings : [],
         };
 
         (assignment.studentIds || []).forEach((student) => {
             const key = getStudentKey(student);
             if (!key) return;
             const existing = map.get(key) || [];
-            existing.push(option);
+            const studentPairings = option.pairings.filter((pairing = {}) => {
+                const pairingStudentKey = getStudentKey(pairing.studentId || pairing.student || pairing.studentId);
+                return !pairingStudentKey || pairingStudentKey === key;
+            });
+            const primaryPairing = studentPairings[0] || null;
+            const studentOption = {
+                ...option,
+                studentName: student?.name || primaryPairing?.studentName || "Student",
+                pairings: studentPairings.length ? studentPairings : option.pairings,
+                pairingLabel: primaryPairing?.pairingLabel || buildPairingLabel(student?.name, focus, option.mentor),
+                studentSubjectMentorPair: primaryPairing || {
+                    studentId: key,
+                    studentName: student?.name || "Student",
+                    subject: focus,
+                    focusArea: focus,
+                    mentorName: option.mentor,
+                    pairingLabel: buildPairingLabel(student?.name, focus, option.mentor),
+                },
+            };
+            existing.push(studentOption);
             map.set(key, existing);
         });
     });
@@ -366,6 +393,7 @@ const useAdminDashboardData = () => {
     const { trendData, trendPaths } = useMemo(() => buildTrendData(assignments), [assignments]);
     const mentorSpotlights = useMemo(() => buildMentorSpotlights(assignments), [assignments]);
     const mentorRoster = useMemo(() => buildMentorRoster(assignments), [assignments]);
+    const mentorSubjectCoverageRows = useMemo(() => buildMentorSubjectCoverageRows(assignments), [assignments]);
     const strategyHighlights = useMemo(() => buildStrategyHighlights(assignments), [assignments]);
     const tierMovement = useMemo(() => buildTierMovement(supportUnits, assignments), [supportUnits, assignments]);
     const analyticsSummary = useMemo(() => buildAnalyticsSummary(assignments), [assignments]);
@@ -386,6 +414,7 @@ const useAdminDashboardData = () => {
         analyticsNarrative,
         mentorSpotlights,
         mentorRoster,
+        mentorSubjectCoverageRows,
         strategyHighlights,
         tierMovement,
         recentActivity,

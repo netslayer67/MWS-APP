@@ -12,6 +12,16 @@ const getSupportRowKey = (unit = {}, index = 0) =>
 const getSupportSubjectLabel = (unit = {}) =>
     unit.supportUnit?.subject || unit.profile?.type || unit.type || "Focused Support";
 
+const getSupportOwnerLabel = (unit = {}) =>
+    unit.supportUnit?.owner || unit.studentSubjectMentorPair?.mentorName || unit.profile?.studentSubjectMentorPair?.mentorName || unit.mentor || unit.profile?.mentor || "";
+
+const getSupportPairingLabel = (unit = {}) =>
+    unit.supportUnit?.pairingLabel || unit.pairingLabel || unit.profile?.pairingLabel || [
+        unit.name,
+        getSupportSubjectLabel(unit),
+        getSupportOwnerLabel(unit),
+    ].filter(Boolean).join(" - ");
+
 const getGroupedProgressLabel = (rows = []) => {
     const statuses = rows.map((unit) => unit.progress).filter(Boolean);
     const unique = Array.from(new Set(statuses));
@@ -57,9 +67,10 @@ const StudentsTableMobileCard = memo(
         );
         const isGrouped = supportRows.length > 1;
         const primaryStudent = supportRows[0] || student;
+        const actionStudent = isGrouped ? student : primaryStudent;
         const interventions = ensureStudentInterventions(student.interventions);
         const maxTier = getMaxTierCode(interventions);
-        const mentorLabel = student.mentor || student.profile?.mentor || "";
+        const mentorLabel = getSupportOwnerLabel(primaryStudent);
         const supportSubjectLabel = isGrouped
             ? `${supportRows.length} support units`
             : student.supportUnit?.subject || student.profile?.type || student.type || "";
@@ -73,6 +84,7 @@ const StudentsTableMobileCard = memo(
             [supportRows],
         );
         const subjectSummary = useMemo(() => getSubjectSummary(supportRows), [supportRows]);
+        const pairingLabel = useMemo(() => getSupportPairingLabel(primaryStudent), [primaryStudent]);
 
         /* ── Assignment & action logic ─────────────────────────── */
         const assignmentOptions = Array.isArray(student.assignmentOptions) ? student.assignmentOptions : [];
@@ -87,10 +99,10 @@ const StudentsTableMobileCard = memo(
         const nextUpdateDisplay = getStudentNextUpdateDisplay(primaryStudent);
         const canEditPlan = hasInterventionPlan && Boolean(onEditPlan) && (
             typeof canEditPlanForStudent === "function"
-                ? canEditPlanForStudent(primaryStudent)
+                ? canEditPlanForStudent(actionStudent)
                 : Boolean(primaryAssignment?.assignmentId || student.assignmentId)
         );
-        const progressAssignment = resolveProgressAssignmentForStudent(primaryStudent);
+        const progressAssignment = resolveProgressAssignmentForStudent(actionStudent);
         const canSubmitProgress = Boolean(progressAssignment?.assignmentId);
 
         const actionButtons = [];
@@ -98,7 +110,7 @@ const StudentsTableMobileCard = memo(
             actionButtons.push({
                 key: "progress",
                 label: "Update",
-                onClick: (e) => { e.stopPropagation(); onUpdate?.(primaryStudent); },
+                onClick: (e) => { e.stopPropagation(); onUpdate?.(actionStudent); },
                 icon: TrendingUp,
                 className: "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200/50 dark:border-amber-700/40",
             });
@@ -109,7 +121,7 @@ const StudentsTableMobileCard = memo(
                 label: "Edit Plan",
                 onClick: (e) => {
                     e.stopPropagation();
-                    onEditPlan?.({ student: primaryStudent });
+                    onEditPlan?.({ student: actionStudent });
                 },
                 icon: FilePenLine,
                 className: "bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-300 border-cyan-200/50 dark:border-cyan-700/40",
@@ -172,6 +184,11 @@ const StudentsTableMobileCard = memo(
                                     </span>
                                 )}
                             </div>
+                            {!isGrouped && pairingLabel && (
+                                <p className="mt-1 truncate text-[10px] font-semibold text-sky-600 dark:text-sky-200" title={pairingLabel}>
+                                    {pairingLabel}
+                                </p>
+                            )}
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0 pt-0.5" onClick={(e) => e.stopPropagation()}>
                             {selectable && (
@@ -229,6 +246,8 @@ const StudentsTableMobileCard = memo(
                                         const lastDisplay = getStudentLastUpdateDisplay(unit);
                                         const nextDisplay = getStudentNextUpdateDisplay(unit);
                                         const subject = getSupportSubjectLabel(unit);
+                                        const owner = getSupportOwnerLabel(unit);
+                                        const unitPairing = getSupportPairingLabel(unit);
                                         return (
                                             <div
                                                 key={getSupportRowKey(unit, unitIndex)}
@@ -240,6 +259,9 @@ const StudentsTableMobileCard = memo(
                                                     </p>
                                                     <ProgressBadge status={unit.progress} compact />
                                                 </div>
+                                                <p className="mt-1 truncate text-[10px] font-semibold text-sky-600 dark:text-sky-200" title={unitPairing}>
+                                                    {owner}
+                                                </p>
                                                 <div className="mt-2 grid grid-cols-[1.2fr_0.9fr_0.9fr] gap-2">
                                                     <InterventionChips interventions={ensureStudentInterventions(unit.interventions)} compact />
                                                     <StudentUpdateValue

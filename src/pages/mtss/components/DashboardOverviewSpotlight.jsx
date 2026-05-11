@@ -23,7 +23,7 @@ const DashboardOverviewSpotlight = ({ students, progressData, TierPill }) => {
         });
     }, [supportUnits.length]);
 
-    const { spotlightStudent, spotlightProfile, progressUnit, spotlightStatus, weekLabel, chartSeries, history } = useMemo(() => {
+    const { spotlightStudent, spotlightProfile, progressUnit, spotlightStatus, weekLabel, chartSeries, history, pairingLabel } = useMemo(() => {
         const student = supportUnits?.[spotlightIndex] ?? supportUnits?.[0] ?? null;
         const profile = student?.profile || {};
         const unit = profile.progressUnit || (student?.type === "Behavior" ? "pts" : student?.type === "Attendance" ? "%" : "wpm");
@@ -40,6 +40,7 @@ const DashboardOverviewSpotlight = ({ students, progressData, TierPill }) => {
                 ? `Week ${Math.min(currentWeek, totalWeeks)} of ${totalWeeks}`
                 : profile.duration || "Weekly check-in";
         const historyList = profile.history || [];
+        const pairingLabel = student?.supportUnit?.pairingLabel || student?.pairingLabel || profile?.pairingLabel || null;
         return {
             spotlightStudent: student,
             spotlightProfile: profile,
@@ -48,6 +49,7 @@ const DashboardOverviewSpotlight = ({ students, progressData, TierPill }) => {
             weekLabel: label,
             chartSeries: series,
             history: historyList,
+            pairingLabel,
         };
     }, [supportUnits, progressData, spotlightIndex]);
 
@@ -65,9 +67,9 @@ const DashboardOverviewSpotlight = ({ students, progressData, TierPill }) => {
                     </div>
                     <div>
                         <h2 className="text-2xl md:text-3xl font-black text-foreground dark:text-white">
-                                {spotlightStudent?.supportUnit?.subject
+                                {pairingLabel || (spotlightStudent?.supportUnit?.subject
                                     ? `${spotlightStudent?.name || "Featured Student"} - ${spotlightStudent.supportUnit.subject}`
-                                    : spotlightStudent?.name || "Featured Student"}
+                                    : spotlightStudent?.name || "Featured Student")}
                             </h2>
                             <p className="text-sm text-muted-foreground mt-1 max-w-xl">
                                 Quickly scan subject-level ownership, trends, and recent notes for this support unit.

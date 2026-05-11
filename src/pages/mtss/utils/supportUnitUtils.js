@@ -14,6 +14,8 @@ const TIER_CODE_MAP = {
 
 const normalizeText = (value = "") => String(value || "").trim();
 const normalizeKey = (value = "") => normalizeText(value).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const buildPairingLabel = (studentName = "", subject = "", mentor = "") =>
+    [studentName, subject, mentor].map(normalizeText).filter(Boolean).join(" - ");
 
 const normalizeTierCode = (value = "") => {
     const normalized = normalizeText(value).toLowerCase().replace(/\s+/g, " ");
@@ -30,7 +32,9 @@ const getFocusLabel = (assignment = {}) =>
     || "Focused Support";
 
 const getFocusLabels = (assignment = {}) => {
-    const labels = Array.isArray(assignment.focusAreas)
+    const labels = Array.isArray(assignment.focusLabels) && assignment.focusLabels.length
+        ? assignment.focusLabels.map(normalizeText).filter(Boolean)
+        : Array.isArray(assignment.focusAreas)
         ? assignment.focusAreas.map(normalizeText).filter(Boolean)
         : [];
     if (!labels.length) labels.push(getFocusLabel(assignment));
@@ -63,12 +67,30 @@ export const getAssignmentSupportUnitKeys = (assignment = {}) => {
 };
 
 const getOwnerLabel = (assignment = {}, student = {}) =>
-    normalizeText(assignment.mentor)
+    normalizeText(assignment.studentSubjectMentorPair?.mentorName)
+    || normalizeText(assignment.mentor)
     || normalizeText(assignment.mentorName)
     || normalizeText(assignment.owner)
     || normalizeText(student.mentor)
     || normalizeText(student.profile?.mentor)
     || "Unassigned";
+
+const getStudentKey = (student = {}) =>
+    normalizeText(student.baseStudentId || student._id || student.id || student.studentId);
+
+const findAssignmentPairing = (assignment = {}, student = {}, focus = "") => {
+    const pairings = Array.isArray(assignment.pairings) ? assignment.pairings : [];
+    if (!pairings.length) return assignment.studentSubjectMentorPair || null;
+
+    const studentKey = getStudentKey(student);
+    const focusKey = normalizeKey(focus);
+    return pairings.find((pairing = {}) => {
+        const pairingStudentKey = normalizeText(pairing.studentId || pairing.student?._id || pairing.student?.id);
+        const pairingFocusKey = normalizeKey(pairing.subject || pairing.focusArea);
+        return (!studentKey || !pairingStudentKey || pairingStudentKey === studentKey)
+            && (!focusKey || !pairingFocusKey || pairingFocusKey === focusKey);
+    }) || null;
+};
 
 const getScoreLabel = (score, fallbackUnit = "") => {
     if (score === null || score === undefined || score === "") return "Not set";
@@ -121,36 +143,60 @@ export const buildStudentSupportUnit = (student = {}, assignment = {}, index = 0
         focusArea: focus,
         focusAreas: [focus],
     };
-    const owner = getOwnerLabel(scopedAssignment, student);
+    const pairing = findAssignmentPairing(assignment, student, focus);
+    const owner = normalizeText(pairing?.mentorName) || getOwnerLabel(scopedAssignment, student);
+    const pairingLabel = normalizeText(pairing?.pairingLabel)
+        || buildPairingLabel(student.name, focus, owner);
+    const studentSubjectMentorPair = {
+        ...(pairing || {}),
+        studentId: pairing?.studentId || student._id || student.id || student.baseStudentId || null,
+        studentName: pairing?.studentName || student.name || "Student",
+        subject: pairing?.subject || focus,
+        focusArea: pairing?.focusArea || focus,
+        mentorName: owner,
+        pairingLabel,
+    };
+    const scopedPairingAssignment = {
+        ...scopedAssignment,
+        mentor: owner,
+        mentorName: owner,
+        pairingLabel,
+        studentSubjectMentorPair,
+        pairings: [studentSubjectMentorPair],
+    };
     const metricUnit = assignment.metricLabel || student.profile?.progressUnit || "score";
-    const intervention = buildSupportIntervention(scopedAssignment, focus);
+    const intervention = buildSupportIntervention(scopedPairingAssignment, focus);
 
     return {
         ...student,
         id: `${baseId}:${assignmentId}:${focusKey}`,
         baseStudentId: baseId,
         assignmentId,
-        assignmentOptions: [scopedAssignment],
+        assignmentOptions: [scopedPairingAssignment],
         supportUnit: {
             assignmentId,
             subject: focus,
             focusKey,
             owner,
+            pairingLabel,
+            studentSubjectMentorPair,
             tier: intervention.tier,
             tierCode: intervention.tierCode,
-            status: scopedAssignment.statusLabel || scopedAssignment.statusKey || scopedAssignment.status || "active",
-            goal: getGoalLabel(scopedAssignment),
-            baseline: getScoreLabel(scopedAssignment.baselineScore, metricUnit),
+            status: scopedPairingAssignment.statusLabel || scopedPairingAssignment.statusKey || scopedPairingAssignment.status || "active",
+            goal: getGoalLabel(scopedPairingAssignment),
+            baseline: getScoreLabel(scopedPairingAssignment.baselineScore, metricUnit),
         },
+        pairingLabel,
+        studentSubjectMentorPair,
         type: focus,
         tier: intervention.tier,
-        progress: scopedAssignment.statusLabel || student.progress,
+        progress: scopedPairingAssignment.statusLabel || student.progress,
         mentor: owner,
-        nextUpdate: scopedAssignment.nextUpdate || student.nextUpdate,
-        lastUpdate: scopedAssignment.lastUpdateAt
+        nextUpdate: scopedPairingAssignment.nextUpdate || student.nextUpdate,
+        lastUpdate: scopedPairingAssignment.lastUpdateAt
             ? {
-                at: scopedAssignment.lastUpdateAt,
-                subject: scopedAssignment.lastUpdateSubject || focus,
+                at: scopedPairingAssignment.lastUpdateAt,
+                subject: scopedPairingAssignment.lastUpdateSubject || focus,
             }
             : student.lastUpdate,
         interventions: [intervention],
@@ -158,12 +204,14 @@ export const buildStudentSupportUnit = (student = {}, assignment = {}, index = 0
             ...(student.profile || {}),
             type: focus,
             mentor: owner,
-            strategy: scopedAssignment.strategyName || student.profile?.strategy,
-            baseline: scopedAssignment.baselineScore?.value ?? student.profile?.baseline,
-            target: scopedAssignment.targetScore?.value ?? student.profile?.target,
+            pairingLabel,
+            studentSubjectMentorPair,
+            strategy: scopedPairingAssignment.strategyName || student.profile?.strategy,
+            baseline: scopedPairingAssignment.baselineScore?.value ?? student.profile?.baseline,
+            target: scopedPairingAssignment.targetScore?.value ?? student.profile?.target,
             progressUnit: metricUnit,
-            chart: scopedAssignment.chart || student.profile?.chart,
-            history: scopedAssignment.history || student.profile?.history,
+            chart: scopedPairingAssignment.chart || student.profile?.chart,
+            history: scopedPairingAssignment.history || student.profile?.history,
         },
     };
 };

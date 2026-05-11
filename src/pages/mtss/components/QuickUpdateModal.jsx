@@ -36,6 +36,13 @@ const formatSubjectLabel = (option) => {
     return raw;
 };
 
+const formatPairingLabel = (option = {}, student = {}) => {
+    if (option.pairingLabel) return option.pairingLabel;
+    const subject = formatSubjectLabel(option);
+    const mentor = option.studentSubjectMentorPair?.mentorName || option.mentor || student?.profile?.mentor || student?.mentor;
+    return [student?.name, subject, mentor].filter(Boolean).join(" - ");
+};
+
 const isLateProgressDate = (dateValue, todayValue) => Boolean(dateValue && todayValue && dateValue < todayValue);
 
 const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false }) => {
@@ -66,6 +73,7 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
         return {
             ...selectedOption,
             label: formatSubjectLabel(selectedOption),
+            pairingLabel: formatPairingLabel(selectedOption, student),
             mentor: selectedOption.mentor || student?.profile?.mentor || student?.mentor || null,
         };
     }, [selectedOption, student]);
@@ -191,13 +199,18 @@ const QuickUpdateModal = memo(({ student, onClose, onSubmit, submitting = false 
                                         {assignmentOptions.length ? (
                                             assignmentOptions.map((option) => (
                                                 <option key={option.assignmentId} value={option.assignmentId}>
-                                                    {formatSubjectLabel(option)}
+                                                    {formatPairingLabel(option, student)}
                                                 </option>
                                             ))
                                         ) : (
                                             <option value="">No subjects you can update</option>
                                         )}
                                     </select>
+                                    {selectedOption && (
+                                        <p className="rounded-2xl border border-sky-100 bg-sky-50/80 px-4 py-3 text-xs font-semibold text-sky-700 dark:border-sky-400/20 dark:bg-sky-500/10 dark:text-sky-100">
+                                            {formatPairingLabel(selectedOption, student)}
+                                        </p>
+                                    )}
                                 </div>
                             </section>
 
