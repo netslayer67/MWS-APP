@@ -82,11 +82,12 @@ const HeadUnitStaffPanel = memo(({ staff = [], summary, isDirectorate = false, s
 
     const computedSummary = useMemo(() => {
         if (summary) {
-            const staffFlagged = staffWithSupportRequests.filter(member =>
-                member.activeSupportRequest ||
-                member.lastCheckin?.needsSupport ||
-                (member.periodSummary?.needsSupportDays || 0) > 0
-            ).length;
+            const staffFlagged = staffWithSupportRequests.filter(member => {
+                const isHealthyScores = member.lastCheckin?.presenceLevel >= 7 && member.lastCheckin?.capacityLevel >= 7;
+                return member.activeSupportRequest ||
+                    (member.lastCheckin?.needsSupport && !isHealthyScores) ||
+                    (member.periodSummary?.needsSupportDays || 0) > 0;
+            }).length;
             const summaryFlagged = summary.flaggedMembers ?? 0;
 
             return {
@@ -105,11 +106,12 @@ const HeadUnitStaffPanel = memo(({ staff = [], summary, isDirectorate = false, s
             compare.setHours(0, 0, 0, 0);
             return formatCalendarDateKey(compare) === todayKey;
         }).length;
-        const flagged = staffWithSupportRequests.filter(member =>
-            member.activeSupportRequest ||
-            member.lastCheckin?.needsSupport ||
-            (member.periodSummary?.needsSupportDays || 0) > 0
-        ).length;
+        const flagged = staffWithSupportRequests.filter(member => {
+            const isHealthyScores = member.lastCheckin?.presenceLevel >= 7 && member.lastCheckin?.capacityLevel >= 7;
+            return member.activeSupportRequest ||
+                (member.lastCheckin?.needsSupport && !isHealthyScores) ||
+                (member.periodSummary?.needsSupportDays || 0) > 0;
+        }).length;
         const submissions = staffWithSupportRequests.filter(member => (member.periodSummary?.submissions || 0) > 0).length;
 
         return {
@@ -258,7 +260,8 @@ const HeadUnitStaffPanel = memo(({ staff = [], summary, isDirectorate = false, s
                                                 <MessageCircle className="w-3 h-3" /> {requestStatusLabel}
                                             </Badge>
                                         )}
-                                        {!activeRequest && member.lastCheckin?.needsSupport && (
+                                        {!activeRequest && member.lastCheckin?.needsSupport &&
+                                         !(member.lastCheckin?.presenceLevel >= 7 && member.lastCheckin?.capacityLevel >= 7) && (
                                             <Badge variant="destructive" className="flex items-center gap-1">
                                                 <AlertTriangle className="w-3 h-3" /> Needs support
                                             </Badge>

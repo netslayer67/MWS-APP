@@ -1180,9 +1180,10 @@ export default function StudentAIChatPage() {
         }
     }, [handleClientAction, handleExecuteOperation]);
 
-    const handleAssistantFeedback = useCallback(async ({ message, reason }) => {
+    const handleAssistantFeedback = useCallback(async ({ message, reason, context }) => {
         const responseText = String(message?.content || '').trim();
         const feedbackReason = String(reason || '').trim();
+        const feedbackContext = String(context || '').trim();
         if (!responseText || !feedbackReason) return;
 
         await aiChatService.submitAssistantFeedback({
@@ -1191,15 +1192,19 @@ export default function StudentAIChatPage() {
             prompt: message?.prompt || '',
             response: responseText,
             reason: feedbackReason,
+            context: feedbackContext,
             metadata: {
                 role: normalizedRole,
-                route: location.pathname
+                route: location.pathname,
+                context: feedbackContext
             }
         });
 
         toast({
             title: feedbackReason === 'wrong_answer' ? 'Wrong answer reported' : 'Feedback recorded',
-            description: 'Thanks. The AI response has been flagged for review.'
+            description: feedbackContext
+                ? 'Thanks. Your context was attached to the review.'
+                : 'Thanks. The AI response has been flagged for review.'
         });
     }, [location.pathname, normalizedRole, sessionId, toast]);
 
@@ -1331,7 +1336,6 @@ export default function StudentAIChatPage() {
             })
             .catch(() => { });
     }, [
-        clearError,
         dispatch,
         handleClientAction,
         handleThemeCommandIntent,
@@ -1374,10 +1378,18 @@ export default function StudentAIChatPage() {
         dispatchChatMessage(inputValue);
     }, [dispatchChatMessage, inputValue]);
 
-    const handleRetryAssistantMessage = useCallback(() => {
-        if (!lastRetryMessage || isLoading) return;
-        dispatchChatMessage(lastRetryMessage);
+    const handleRetryAssistantMessage = useCallback((promptOverride = '') => {
+        const retryMessage = String(promptOverride || lastRetryMessage || '').trim();
+        if (!retryMessage || isLoading) return;
+        dispatchChatMessage(retryMessage);
     }, [dispatchChatMessage, isLoading, lastRetryMessage]);
+
+    const handleAssistantPromptSuggestion = useCallback((suggestion) => {
+        const nextValue = String(suggestion || '').trim();
+        if (!nextValue) return;
+        setLocalInputValue(nextValue);
+        inputRef.current?.focus();
+    }, []);
 
     const handleDismissAssistantError = useCallback(() => {
         dispatch(clearError());
@@ -1878,6 +1890,9 @@ export default function StudentAIChatPage() {
                                 isTyping={isTyping}
                                 onWidgetAction={handleWidgetAction}
                                 onMessageFeedback={handleAssistantFeedback}
+                                onRegenerate={handleRetryAssistantMessage}
+                                onPromptSuggestion={handleAssistantPromptSuggestion}
+                                isRegenerating={isLoading}
                             />
                         )}
                     </div>

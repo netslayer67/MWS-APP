@@ -1,10 +1,17 @@
 import { memo } from "react";
 import { motion } from "framer-motion";
 
-const MentorCard = memo(({ mentor, theme, aosVariant, index, batchSize, onAssign, highlightAssign = false }) => {
+const MentorCard = memo(({ mentor, theme, aosVariant, index, batchSize, onAssign, workloadMax = 0, highlightAssign = false }) => {
     const classOwnedStudents = Number(mentor.classOwnedStudents ?? mentor.activeStudents) || 0;
     const interventionStudents = Number(mentor.interventionStudents) || 0;
     const manualAssignedStudents = Number(mentor.manualAssignedStudents ?? interventionStudents) || 0;
+    const totalWorkload = classOwnedStudents + manualAssignedStudents;
+    const workloadPct = workloadMax ? Math.max(4, Math.round((totalWorkload / workloadMax) * 100)) : 0;
+    const workloadTone = workloadPct >= 85
+        ? "from-rose-500 to-orange-500"
+        : workloadPct >= 55
+            ? "from-amber-400 to-yellow-500"
+            : "from-emerald-400 to-teal-500";
     const successValue = Number(String(mentor.successRate ?? "0").replace(/[^\d.]/g, "")) || 0;
     const successTone = successValue >= 85 ? "text-emerald-400" : successValue >= 60 ? "text-amber-400" : "text-rose-400";
     const classTags = Array.isArray(mentor.classes)
@@ -116,6 +123,22 @@ const MentorCard = memo(({ mentor, theme, aosVariant, index, batchSize, onAssign
                         <p className="text-[0.55rem] uppercase tracking-[0.35em] text-slate-500 dark:text-white/60">Success</p>
                         <p className={`text-2xl font-black ${successTone}`}>{mentor.successRate}</p>
                     </div>
+                </div>
+
+                <div className="rounded-2xl border border-white/50 bg-white/70 p-3 dark:border-white/10 dark:bg-white/5">
+                    <div className="flex items-center justify-between gap-3 text-xs font-semibold text-slate-600 dark:text-white/70">
+                        <span>Workload</span>
+                        <span className="tabular-nums text-slate-900 dark:text-white">{totalWorkload} total</span>
+                    </div>
+                    <div className="mt-2 h-2.5 rounded-full bg-slate-200/80 dark:bg-white/10">
+                        <div
+                            className={`h-full rounded-full bg-gradient-to-r ${workloadTone}`}
+                            style={{ width: `${workloadPct}%` }}
+                        />
+                    </div>
+                    <p className="mt-2 text-[0.65rem] font-semibold text-slate-500 dark:text-white/55">
+                        {classOwnedStudents} class roster + {manualAssignedStudents} support-unit handoff{manualAssignedStudents === 1 ? "" : "s"}
+                    </p>
                 </div>
 
                 <div className="flex flex-wrap gap-2 text-[0.65rem] font-semibold text-slate-600 dark:text-white/70">

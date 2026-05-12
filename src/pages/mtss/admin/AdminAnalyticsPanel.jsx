@@ -21,6 +21,15 @@ const EmptyAnalyticsState = ({ title, description }) => (
     </div>
 );
 
+const getTrendPoint = (point, index, length, key) => {
+    const width = 600;
+    const height = 200;
+    const maxIndex = Math.max(length - 1, 1);
+    const x = (index / maxIndex) * width;
+    const y = height - ((point[key] || 0) / 100) * height;
+    return { x, y };
+};
+
 const AdminAnalyticsPanel = ({
     successByType,
     trendPaths,
@@ -35,6 +44,15 @@ const AdminAnalyticsPanel = ({
     const hasTrendData = Array.isArray(trendData) && trendData.length > 0;
     const hasStrategyData = Array.isArray(strategyHighlights) && strategyHighlights.length > 0;
     const hasCoverageData = Array.isArray(mentorSubjectCoverageRows) && mentorSubjectCoverageRows.length > 0;
+    const maxStrategyVal = hasStrategyData ? Math.max(...strategyHighlights.map((s) => Number(s.value) || 0), 1) : 1;
+    const progressTrendDelta = hasTrendData && trendData.length >= 2
+        ? trendData[trendData.length - 1].met - trendData[0].met
+        : 0;
+    const progressTrendLabel = progressTrendDelta > 0
+        ? `↑ ${progressTrendDelta}% on-track`
+        : progressTrendDelta < 0
+            ? `↓ ${Math.abs(progressTrendDelta)}% on-track`
+            : "↔ On-track steady";
 
     return (
         <div className="space-y-6">
@@ -172,7 +190,18 @@ const AdminAnalyticsPanel = ({
                             <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500 dark:text-white/55">Progress over time</p>
                             <h3 className="mt-2 text-2xl font-black text-slate-900 dark:text-white">Support unit progress trend</h3>
                         </div>
-                        <Activity className="h-5 w-5 text-emerald-400" />
+                        <div className="flex items-center gap-3">
+                            {hasTrendData && (
+                                <span className={`rounded-full px-3 py-1 text-xs font-black ${
+                                    progressTrendDelta >= 0
+                                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200"
+                                        : "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-200"
+                                }`}>
+                                    {progressTrendLabel}
+                                </span>
+                            )}
+                            <Activity className="h-5 w-5 text-emerald-400" />
+                        </div>
                     </div>
 
                         {hasTrendData ? (
@@ -204,6 +233,32 @@ const AdminAnalyticsPanel = ({
                                     </defs>
                                     <path d={trendPaths.met} fill="none" stroke="url(#metLine)" strokeWidth="4" strokeLinecap="round" />
                                     <path d={trendPaths.support} fill="none" stroke="url(#supportLine)" strokeWidth="4" strokeLinecap="round" />
+                                    {trendData.map((point, index) => {
+                                        const metPoint = getTrendPoint(point, index, trendData.length, "met");
+                                        const supportPoint = getTrendPoint(point, index, trendData.length, "support");
+                                        return (
+                                            <g key={`${point.label}-labels`}>
+                                                <circle cx={metPoint.x} cy={metPoint.y} r="5" fill="#22c55e" stroke="#ffffff" strokeWidth="2" />
+                                                <text
+                                                    x={metPoint.x}
+                                                    y={Math.max(14, metPoint.y - 12)}
+                                                    textAnchor="middle"
+                                                    className="fill-slate-700 text-[11px] font-black dark:fill-white"
+                                                >
+                                                    {point.met}%
+                                                </text>
+                                                <circle cx={supportPoint.x} cy={supportPoint.y} r="5" fill="#fb7185" stroke="#ffffff" strokeWidth="2" />
+                                                <text
+                                                    x={supportPoint.x}
+                                                    y={Math.min(214, supportPoint.y + 22)}
+                                                    textAnchor="middle"
+                                                    className="fill-slate-700 text-[11px] font-black dark:fill-white"
+                                                >
+                                                    {point.support}%
+                                                </text>
+                                            </g>
+                                        );
+                                    })}
                                 </svg>
                                 <div className="mt-2 grid grid-cols-6 gap-2 text-xs text-slate-500 dark:text-white/60">
                                     {trendData.map((point) => (
@@ -241,18 +296,34 @@ const AdminAnalyticsPanel = ({
 
                     <div className="mt-6 space-y-3 text-sm">
                         {hasStrategyData ? (
-                            strategyHighlights.map((strategy, idx) => (
-                                <div
-                                    key={strategy.label}
-                                    className="flex items-center justify-between rounded-2xl bg-white/75 px-4 py-3 dark:bg-white/5"
-                                    data-aos="fade-right"
-                                    data-aos-delay={100 + idx * 40}
-                                    data-aos-duration="600"
-                                >
-                                    <span className="font-semibold text-foreground dark:text-white">{strategy.label}</span>
-                                    <span className="text-lg font-black text-primary">{strategy.value}</span>
-                                </div>
-                            ))
+                            strategyHighlights.map((strategy, idx) => {
+                                const pct = Math.round((Number(strategy.value) / maxStrategyVal) * 100);
+                                const barColor = pct >= 75
+                                    ? "from-sky-500 to-blue-600"
+                                    : pct >= 40
+                                        ? "from-cyan-400 to-sky-500"
+                                        : "from-slate-300 to-slate-400 dark:from-white/30 dark:to-white/20";
+                                return (
+                                    <div
+                                        key={strategy.label}
+                                        className="rounded-2xl bg-white/75 px-4 py-3 dark:bg-white/5"
+                                        data-aos="fade-right"
+                                        data-aos-delay={100 + idx * 40}
+                                        data-aos-duration="600"
+                                    >
+                                        <div className="flex items-center justify-between gap-3">
+                                            <span className="font-semibold text-foreground dark:text-white">{strategy.label}</span>
+                                            <span className="text-base font-black text-primary tabular-nums">{strategy.value}</span>
+                                        </div>
+                                        <div className="mt-2 h-2 rounded-full bg-slate-200/80 dark:bg-white/10">
+                                            <div
+                                                className={`h-full rounded-full bg-gradient-to-r ${barColor} transition-all duration-700`}
+                                                style={{ width: `${pct}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })
                         ) : (
                             <EmptyAnalyticsState
                                 title="No focus area distribution yet"

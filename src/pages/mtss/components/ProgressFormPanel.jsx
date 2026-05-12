@@ -264,11 +264,11 @@ const ProgressFormPanel = memo(
                                 value={formState.performed}
                                 onChange={(e) => onChange("performed", e.target.value)}
                             >
-                                <option value="yes">Yes</option>
-                                <option value="no">No</option>
+                                <option value="yes">Yes — session happened</option>
+                                <option value="no">Skipped — session did not happen</option>
                             </select>
                             <p className="text-xs text-muted-foreground">
-                                Performed: the student completed the planned support. Skipped: the support did not happen and needs a reason.
+                                Choose <strong>Skipped</strong> if the session did not take place — e.g. student was absent, had a scheduled test, or there was a last-minute schedule conflict. A reason is required.
                             </p>
                         </div>
                     </div>

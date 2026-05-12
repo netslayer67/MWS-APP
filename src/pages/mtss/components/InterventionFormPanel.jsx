@@ -19,6 +19,17 @@ const InterventionFormPanel = memo(({
 }) => {
     const [strategies, setStrategies] = useState([]);
     const [loadingStrategies, setLoadingStrategies] = useState(false);
+    const [confirmPending, setConfirmPending] = useState(false);
+
+    const handleFormSubmit = (e) => {
+        if (isEditing && !confirmPending) {
+            e.preventDefault();
+            setConfirmPending(true);
+            return;
+        }
+        setConfirmPending(false);
+        onSubmit(e);
+    };
 
     useEffect(() => {
         let mounted = true;
@@ -109,9 +120,14 @@ const InterventionFormPanel = memo(({
                             Editing: {editingPlan?.studentName || "Student"} {editingPlan?.focusLabel ? `(${editingPlan.focusLabel})` : ""}
                         </div>
                     )}
+                    {isEditing && (
+                        <div className="rounded-2xl border border-amber-200/60 bg-amber-50/70 px-4 py-3 text-xs leading-relaxed text-amber-800 dark:border-amber-500/30 dark:bg-amber-900/20 dark:text-amber-200">
+                            <strong>What changes:</strong> strategy, goal, frequency, and monitoring method are updated on the active plan. <strong>What stays:</strong> all progress logs already recorded for this student are preserved and unaffected.
+                        </div>
+                    )}
                 </header>
 
-                <form className="space-y-5" onSubmit={onSubmit}>
+                <form className="space-y-5" onSubmit={handleFormSubmit}>
                     <InterventionFormFields
                         formState={formState}
                         onChange={onChange}
@@ -128,21 +144,45 @@ const InterventionFormPanel = memo(({
                     />
 
                     <div className="flex flex-wrap gap-3 pt-2">
-                        <button
-                            type="submit"
-                            disabled={!isValid || submitting}
-                            className={`relative inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-600 text-white font-semibold shadow-[0_18px_45px_rgba(14,116,214,0.28)] transition hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed ${
-                                pilotGuide?.formAction === "save-plan" ? "ring-2 ring-amber-400/90 ring-offset-2 ring-offset-white dark:ring-amber-300 dark:ring-offset-slate-900 animate-pulse" : ""
-                            }`}
-                        >
-                            {pilotGuide?.formAction === "save-plan" && (
-                                <span className="pointer-events-none absolute -top-3 right-2 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-white shadow-lg animate-bounce">
-                                    Save here
-                                </span>
-                            )}
-                            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                            {submitting ? "Saving..." : "Save Intervention Plan"}
-                        </button>
+                        {!confirmPending ? (
+                            <button
+                                type="submit"
+                                disabled={!isValid || submitting}
+                                className={`relative inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-600 text-white font-semibold shadow-[0_18px_45px_rgba(14,116,214,0.28)] transition hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                    pilotGuide?.formAction === "save-plan" ? "ring-2 ring-amber-400/90 ring-offset-2 ring-offset-white dark:ring-amber-300 dark:ring-offset-slate-900 animate-pulse" : ""
+                                }`}
+                            >
+                                {pilotGuide?.formAction === "save-plan" && (
+                                    <span className="pointer-events-none absolute -top-3 right-2 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-white shadow-lg animate-bounce">
+                                        Save here
+                                    </span>
+                                )}
+                                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                {submitting ? "Saving..." : "Save Intervention Plan"}
+                            </button>
+                        ) : (
+                            <div className="w-full rounded-2xl border border-rose-200/60 bg-rose-50/70 px-4 py-4 dark:border-rose-500/30 dark:bg-rose-900/20">
+                                <p className="text-sm font-semibold text-rose-800 dark:text-rose-200 mb-3">
+                                    Save changes to this active plan? Strategy, goal, and frequency will be updated. Existing progress logs are unaffected.
+                                </p>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="submit"
+                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-rose-500 text-white text-xs font-semibold hover:bg-rose-600 transition"
+                                    >
+                                        {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                                        Yes, save changes
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setConfirmPending(false)}
+                                        className="inline-flex items-center px-4 py-2 rounded-full border border-rose-300/60 text-rose-700 dark:text-rose-200 text-xs font-semibold hover:bg-rose-100 dark:hover:bg-rose-900/30 transition"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </form>
             </div>

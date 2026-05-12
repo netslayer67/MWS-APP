@@ -76,7 +76,8 @@ const CheckInRow = memo(({ checkin, isLast }) => {
 
     const WeatherIcon = WEATHER_ICONS[checkin.weatherType] || Sun;
     const weatherColor = WEATHER_COLORS[checkin.weatherType] || "text-amber-500";
-    const aiNeedsSupport = checkin.aiAnalysis?.needsSupport;
+    const aiNeedsSupport = checkin.aiAnalysis?.needsSupport &&
+        !(checkin.presenceLevel >= 7 && checkin.capacityLevel >= 7);
     const userRequestedSupport = !!(checkin.supportContactUserId || checkin.supportContactLegacyLabel);
     const hasAnySupportFlag = aiNeedsSupport || userRequestedSupport;
 
@@ -312,7 +313,7 @@ const IndividualView = memo(({ selectedUser, targetUserId }) => {
     const { user: currentUser } = useSelector((state) => state.auth);
     const { checkinHistory } = useSelector((state) => state.checkin);
 
-    const [period, setPeriod] = useState("all");
+    const [period, setPeriod] = useState("month");
     const [historyLoading, setHistoryLoading] = useState(false);
     const [historyError, setHistoryError] = useState(null);
     const [hasLoadedHistory, setHasLoadedHistory] = useState(false);
@@ -349,7 +350,7 @@ const IndividualView = memo(({ selectedUser, targetUserId }) => {
 
         dispatch(getCheckinHistory({
             page: 1,
-            limit: 200,
+            limit: period === "all" ? 120 : 60,
             userId: resolvedUserId,
             startDate: dateRange.startDate,
             endDate: dateRange.endDate
@@ -372,7 +373,7 @@ const IndividualView = memo(({ selectedUser, targetUserId }) => {
         return () => {
             isMounted = false;
         };
-    }, [dispatch, resolvedUserId, dateRange.startDate, dateRange.endDate, reloadToken]);
+    }, [dispatch, resolvedUserId, period, dateRange.startDate, dateRange.endDate, reloadToken]);
 
     const checkins = useMemo(() => {
         if (!hasLoadedHistory) return [];
@@ -393,7 +394,7 @@ const IndividualView = memo(({ selectedUser, targetUserId }) => {
             totalP += c.presenceLevel || 0;
             totalC += c.capacityLevel || 0;
             if (c.supportContactUserId || c.supportContactLegacyLabel) supportRequests++;
-            else if (c.aiAnalysis?.needsSupport) aiFlags++;
+            else if (c.aiAnalysis?.needsSupport && !(c.presenceLevel >= 7 && c.capacityLevel >= 7)) aiFlags++;
             (c.selectedMoods || []).forEach((m) => {
                 moodFreq[m] = (moodFreq[m] || 0) + 1;
             });
