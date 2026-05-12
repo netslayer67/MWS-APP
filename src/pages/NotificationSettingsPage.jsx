@@ -173,7 +173,7 @@ export default function NotificationSettingsPage() {
         };
         clearTimeout(timerRef.current);
         timerRef.current = setTimeout(() => save(p), SAVE_DEBOUNCE_MS);
-    }, [deliveryMode, dailyTime, emailEnabled, quietEnabled, quietStart, quietEnd, quietWeekends, alertPrefs, advanceDays, smartGroup, save]); // eslint-disable-line
+    }, [deliveryMode, dailyTime, emailEnabled, quietEnabled, quietStart, quietEnd, quietWeekends, alertPrefs, advanceDays, smartGroup, save]);
 
     useEffect(() => () => { clearTimeout(timerRef.current); clearTimeout(labelTimer.current); }, []);
 
