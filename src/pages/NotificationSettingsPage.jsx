@@ -1,411 +1,476 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Helmet } from "react-helmet";
 import { Link } from "react-router-dom";
-import { motion, MotionConfig, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence, MotionConfig, useReducedMotion } from "framer-motion";
 import {
-    ArrowLeft, Bell, BellOff, CalendarClock, CheckCircle2, Clock,
-    Mail, MailCheck, MailX, Moon,
+    AlertTriangle, ArrowLeft, Bell, BellOff, BookOpen, CalendarClock,
+    ChevronDown, Clock, Layers, Lightbulb, Mail, MailCheck, MailX,
+    Moon, Sparkles, TrendingDown, Zap,
 } from "lucide-react";
 import AnimatedPage from "@/components/AnimatedPage";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import api from "@/services/authService";
 
-// ─── constants ────────────────────────────────────────────────────────────────
+// ─── data ─────────────────────────────────────────────────────────────────────
 
 const DELIVERY_MODES = [
-    {
-        value: "digest_daily",
-        label: "Daily Digest",
-        desc: "One summary email per day at your chosen time. Recommended — no spam.",
-        icon: MailCheck,
-        accent: "emerald",
-    },
-    {
-        value: "immediate",
-        label: "Immediate",
-        desc: "Email sent right away for every MTSS update. Up to 5 per 2-hour window.",
-        icon: Bell,
-        accent: "sky",
-    },
-    {
-        value: "dashboard_only",
-        label: "Dashboard Only",
-        desc: "No emails at all. View updates only inside the app.",
-        icon: BellOff,
-        accent: "slate",
-    },
+    { value: "digest_daily", label: "Daily",   icon: MailCheck, color: "text-emerald-500 dark:text-emerald-400" },
+    { value: "immediate",    label: "Instant",  icon: Bell,      color: "text-sky-500 dark:text-sky-400"     },
+    { value: "dashboard_only", label: "In-app", icon: BellOff,   color: "text-slate-500 dark:text-slate-400" },
 ];
 
-const ACCENT_CLASSES = {
-    emerald: {
-        ring: "ring-emerald-500 dark:ring-emerald-400",
-        bg: "bg-emerald-50 dark:bg-emerald-900/20",
-        icon: "text-emerald-600 dark:text-emerald-400",
-        badge: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
-    },
-    sky: {
-        ring: "ring-sky-500 dark:ring-sky-400",
-        bg: "bg-sky-50 dark:bg-sky-900/20",
-        icon: "text-sky-600 dark:text-sky-400",
-        badge: "bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300",
-    },
-    slate: {
-        ring: "ring-slate-400 dark:ring-slate-500",
-        bg: "bg-slate-50 dark:bg-slate-800/30",
-        icon: "text-slate-500 dark:text-slate-400",
-        badge: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-    },
+const DELIVERY_DESC = {
+    digest_daily:    "One email per day — all updates bundled, no spam.",
+    immediate:       "Email per update, up to 5 every 2 hours.",
+    dashboard_only:  "No emails. Check the app for updates.",
 };
 
-const SAVE_DEBOUNCE_MS = 900;
+const ALERT_TYPES = [
+    { key: "intervention_needed",    label: "Intervention",  icon: AlertTriangle, dot: "bg-red-500"    },
+    { key: "academic_struggle",      label: "Academic",      icon: BookOpen,      dot: "bg-orange-400" },
+    { key: "progress_decline",       label: "Decline",       icon: TrendingDown,  dot: "bg-amber-400"  },
+    { key: "emotional_pattern",      label: "Emotional",     icon: Zap,           dot: "bg-violet-400" },
+    { key: "breakthrough",           label: "Breakthrough",  icon: Sparkles,      dot: "bg-emerald-400"},
+    { key: "learning_style_detected",label: "Learning",      icon: Lightbulb,     dot: "bg-sky-400"    },
+    { key: "engagement_low",         label: "Engagement",    icon: Bell,          dot: "bg-slate-400"  },
+];
 
-// ─── sub-components ───────────────────────────────────────────────────────────
+const SEV_OPTS = [
+    { value: "low",    label: "All"     },
+    { value: "medium", label: "Med+"    },
+    { value: "high",   label: "High+"   },
+    { value: "urgent", label: "Urgent"  },
+];
 
-function Toggle({ checked, onChange, ariaLabel }) {
+const ADVANCE_OPTS = [
+    { value: 0, label: "Off"        },
+    { value: 1, label: "1 day"      },
+    { value: 2, label: "2 days"     },
+    { value: 3, label: "3 days"     },
+    { value: 7, label: "1 week"     },
+];
+
+const DEFAULT_ALERT_PREFS = {
+    academic_struggle:       { enabled: true,  minSeverity: "medium" },
+    learning_style_detected: { enabled: true,  minSeverity: "low"    },
+    emotional_pattern:       { enabled: true,  minSeverity: "medium" },
+    progress_decline:        { enabled: true,  minSeverity: "medium" },
+    engagement_low:          { enabled: false, minSeverity: "medium" },
+    breakthrough:            { enabled: true,  minSeverity: "low"    },
+    intervention_needed:     { enabled: true,  minSeverity: "urgent" },
+};
+
+const SAVE_DEBOUNCE_MS = 800;
+
+// ─── tiny components ──────────────────────────────────────────────────────────
+
+function Toggle({ checked, onChange, size = "md" }) {
+    const w = size === "sm" ? "w-9 h-5" : "w-11 h-6";
+    const knob = size === "sm" ? "h-4 w-4" : "h-5 w-5";
+    const tx = checked ? (size === "sm" ? "translate-x-4" : "translate-x-5") : "translate-x-0.5";
     return (
         <button
             role="switch"
             aria-checked={checked}
-            aria-label={ariaLabel}
             onClick={() => onChange(!checked)}
-            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 ring-1 ring-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
-                checked ? "bg-primary" : "bg-muted/40"
-            }`}
+            className={`relative inline-flex shrink-0 items-center rounded-full ring-1 ring-border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${w} ${checked ? "bg-primary" : "bg-muted/50"}`}
         >
-            <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${
-                    checked ? "translate-x-5" : "translate-x-0.5"
-                }`}
-            />
+            <span className={`inline-block transform rounded-full bg-white shadow transition-transform duration-200 ${knob} ${tx}`} />
         </button>
     );
 }
 
-function SectionLabel({ children }) {
+function Chip({ children, className = "" }) {
     return (
-        <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${className}`}>
             {children}
-        </p>
+        </span>
     );
 }
 
-function Card({ children, className = "" }) {
-    return (
-        <div className={`rounded-2xl border border-border bg-card/60 backdrop-blur-sm px-4 py-3.5 ${className}`}>
-            {children}
-        </div>
-    );
-}
-
-// ─── main page ────────────────────────────────────────────────────────────────
+// ─── page ─────────────────────────────────────────────────────────────────────
 
 export default function NotificationSettingsPage() {
     const reduce = useReducedMotion();
     const { toast } = useToast();
 
-    const [loading, setLoading] = useState(true);
-    const [saveStatus, setSaveStatus] = useState("idle"); // "idle" | "saving" | "saved" | "error"
+    const [loading, setLoading]             = useState(true);
+    const [saveLabel, setSaveLabel]         = useState("idle"); // idle | saving | saved | error
 
-    // prefs state
-    const [deliveryMode, setDeliveryMode] = useState("digest_daily");
-    const [dailyTime, setDailyTime] = useState("08:00");
-    const [emailEnabled, setEmailEnabled] = useState(true);
-    const [quietEnabled, setQuietEnabled] = useState(true);
-    const [quietStart, setQuietStart] = useState("18:00");
-    const [quietEnd, setQuietEnd] = useState("07:00");
-    const [quietWeekendsOnly, setQuietWeekendsOnly] = useState(false);
+    const [deliveryMode, setDeliveryMode]   = useState("digest_daily");
+    const [dailyTime, setDailyTime]         = useState("08:00");
+    const [emailEnabled, setEmailEnabled]   = useState(true);
+    const [quietEnabled, setQuietEnabled]   = useState(true);
+    const [quietStart, setQuietStart]       = useState("18:00");
+    const [quietEnd, setQuietEnd]           = useState("07:00");
+    const [quietWeekends, setQuietWeekends] = useState(false);
+    const [alertPrefs, setAlertPrefs]       = useState(DEFAULT_ALERT_PREFS);
+    const [advanceDays, setAdvanceDays]     = useState(1);
+    const [smartGroup, setSmartGroup]       = useState(true);
 
-    const initializedRef = useRef(false);
-    const debounceRef = useRef(null);
+    const [alertOpen, setAlertOpen]         = useState(false);
 
-    // ── load preferences ──────────────────────────────────────────────────
+    const readyRef   = useRef(false);
+    const timerRef   = useRef(null);
+    const labelTimer = useRef(null);
+
+    // ── load ─────────────────────────────────────────────────────────────
     useEffect(() => {
-        let cancelled = false;
+        let dead = false;
         api.get("/notifications/preferences")
             .then((res) => {
-                if (cancelled) return;
+                if (dead) return;
                 const d = res.data?.data || res.data || {};
                 setDeliveryMode(d.deliveryMode || "digest_daily");
                 setDailyTime(d.digestSchedule?.dailyTime || "08:00");
                 setEmailEnabled(d.emailNotifications?.enabled !== false);
                 setQuietEnabled(d.quietHours?.enabled !== false);
                 setQuietStart(d.quietHours?.start || "18:00");
-                setQuietEnd(d.quietHours?.end || "07:00");
-                setQuietWeekendsOnly(d.quietHours?.weekendsOnly || false);
+                setQuietEnd(d.quietHours?.end   || "07:00");
+                setQuietWeekends(d.quietHours?.weekendsOnly || false);
+                setAlertPrefs(d.alertPreferences || DEFAULT_ALERT_PREFS);
+                setAdvanceDays(d.advanceNoticeDays ?? 1);
+                setSmartGroup(d.smartSummary?.enabled !== false);
             })
             .catch(() => {
-                if (!cancelled)
-                    toast({ title: "Could not load preferences", variant: "destructive", duration: 3000 });
+                if (!dead) toast({ title: "Could not load preferences", variant: "destructive", duration: 3000 });
             })
             .finally(() => {
-                if (!cancelled) {
-                    setLoading(false);
-                    // Mark as ready after a tick so the state above settles first
-                    setTimeout(() => { initializedRef.current = true; }, 0);
-                }
+                if (!dead) { setLoading(false); setTimeout(() => { readyRef.current = true; }, 50); }
             });
-        return () => { cancelled = true; };
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+        return () => { dead = true; };
+    }, []); // eslint-disable-line
 
-    // ── auto-save (debounced) ─────────────────────────────────────────────
-    const doSave = useCallback(async (payload) => {
-        setSaveStatus("saving");
+    // ── helpers ───────────────────────────────────────────────────────────
+    const setAlertPref = useCallback((key, field, val) => {
+        setAlertPrefs((p) => ({ ...p, [key]: { ...p[key], [field]: val } }));
+    }, []);
+
+    // ── auto-save ─────────────────────────────────────────────────────────
+    const save = useCallback(async (payload) => {
+        setSaveLabel("saving");
+        clearTimeout(labelTimer.current);
         try {
             await api.put("/notifications/preferences", payload);
-            setSaveStatus("saved");
-            setTimeout(() => setSaveStatus("idle"), 2000);
+            setSaveLabel("saved");
+            labelTimer.current = setTimeout(() => setSaveLabel("idle"), 1800);
         } catch {
-            setSaveStatus("error");
-            toast({ title: "Could not save", description: "Please try again.", variant: "destructive", duration: 3000 });
-            setTimeout(() => setSaveStatus("idle"), 3000);
+            setSaveLabel("error");
+            labelTimer.current = setTimeout(() => setSaveLabel("idle"), 3000);
+            toast({ title: "Could not save", variant: "destructive", duration: 3000 });
         }
     }, [toast]);
 
     useEffect(() => {
-        if (!initializedRef.current) return;
-
-        const payload = {
-            deliveryMode,
-            digestSchedule: { dailyTime },
+        if (!readyRef.current) return;
+        const p = {
+            deliveryMode, digestSchedule: { dailyTime },
             emailNotifications: { enabled: emailEnabled },
-            quietHours: {
-                enabled: quietEnabled,
-                start: quietStart,
-                end: quietEnd,
-                weekendsOnly: quietWeekendsOnly,
-            },
+            quietHours: { enabled: quietEnabled, start: quietStart, end: quietEnd, weekendsOnly: quietWeekends },
+            alertPreferences: alertPrefs, advanceNoticeDays: advanceDays,
+            smartSummary: { enabled: smartGroup },
         };
+        clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => save(p), SAVE_DEBOUNCE_MS);
+    }, [deliveryMode, dailyTime, emailEnabled, quietEnabled, quietStart, quietEnd, quietWeekends, alertPrefs, advanceDays, smartGroup, save]); // eslint-disable-line
 
-        clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(() => doSave(payload), SAVE_DEBOUNCE_MS);
-    }, [deliveryMode, dailyTime, emailEnabled, quietEnabled, quietStart, quietEnd, quietWeekendsOnly, doSave]);
+    useEffect(() => () => { clearTimeout(timerRef.current); clearTimeout(labelTimer.current); }, []);
 
-    // cleanup debounce on unmount
-    useEffect(() => () => clearTimeout(debounceRef.current), []);
+    // ── motion ─────────────────────────────────────────────────────────────
+    const fadeUp = reduce
+        ? { hidden: { opacity: 0 }, show: { opacity: 1 } }
+        : { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { duration: 0.24 } } };
 
-    const container = {
-        hidden: { opacity: 0 },
-        show: { opacity: 1, transition: { staggerChildren: reduce ? 0 : 0.06 } },
-    };
-    const item = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.28 } } };
+    const stagger = { hidden: {}, show: { transition: { staggerChildren: reduce ? 0 : 0.05 } } };
+
+    const statusText = {
+        idle:   "Changes save automatically",
+        saving: "Saving…",
+        saved:  "Saved",
+        error:  "Save failed — check connection",
+    }[saveLabel];
+
+    const statusColor = {
+        idle:   "text-muted-foreground",
+        saving: "text-muted-foreground animate-pulse",
+        saved:  "text-emerald-600 dark:text-emerald-400",
+        error:  "text-destructive",
+    }[saveLabel];
 
     return (
         <AnimatedPage>
-            <Helmet>
-                <title>Notification Settings — MWS IntegraLearn</title>
-            </Helmet>
-
+            <Helmet><title>Notification Settings — MWS IntegraLearn</title></Helmet>
             <MotionConfig reducedMotion="user">
-                <motion.main
+                <motion.div
                     initial="hidden"
                     animate={loading ? "hidden" : "show"}
-                    variants={container}
-                    className="relative mx-auto max-w-lg px-3 sm:px-4 pb-10 pt-4 sm:pt-6"
+                    variants={stagger}
+                    className="mx-auto max-w-md px-4 pt-5 pb-16 space-y-5"
                 >
-                    {/* ── Header ──────────────────────────────────────────── */}
-                    <motion.header variants={item} className="mb-6 flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                asChild
-                                className="rounded-full bg-card/40 backdrop-blur-md hover:bg-card/60"
-                                aria-label="Back"
-                            >
-                                <Link to={-1}>
-                                    <ArrowLeft className="h-5 w-5" />
-                                </Link>
-                            </Button>
-                            <div>
-                                <h1 className="text-base font-semibold text-foreground">Notification Settings</h1>
-                                <p className="text-[11px] text-muted-foreground">
-                                    Changes save automatically
-                                </p>
-                            </div>
-                        </div>
 
-                        {/* save status indicator */}
-                        <div className="min-w-[64px] flex justify-end">
-                            {loading && (
-                                <span className="text-xs text-muted-foreground animate-pulse">Loading…</span>
-                            )}
-                            {!loading && saveStatus === "saving" && (
-                                <span className="text-xs text-muted-foreground animate-pulse">Saving…</span>
-                            )}
-                            {!loading && saveStatus === "saved" && (
-                                <span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
-                                    <CheckCircle2 className="h-3.5 w-3.5" />
-                                    Saved
-                                </span>
-                            )}
-                            {!loading && saveStatus === "error" && (
-                                <span className="text-xs text-destructive">Error</span>
-                            )}
+                    {/* ─── Header ───────────────────────────────────────── */}
+                    <motion.div variants={fadeUp} className="flex items-center gap-3">
+                        <Button variant="ghost" size="icon" asChild
+                            className="rounded-full h-9 w-9 shrink-0 bg-card/50 backdrop-blur hover:bg-card/80">
+                            <Link to={-1} aria-label="Back"><ArrowLeft className="h-4 w-4" /></Link>
+                        </Button>
+                        <div className="flex-1 min-w-0">
+                            <h1 className="text-base font-semibold text-foreground leading-none">Notification Settings</h1>
+                            <p className={`text-[11px] mt-0.5 transition-colors duration-300 ${statusColor}`}>
+                                {statusText}
+                            </p>
                         </div>
-                    </motion.header>
+                    </motion.div>
 
-                    {/* ── Delivery mode ────────────────────────────────────── */}
-                    <motion.section variants={item} className="mb-6">
-                        <SectionLabel>Email Delivery Mode</SectionLabel>
-                        <div className="space-y-2.5">
-                            {DELIVERY_MODES.map((mode) => {
-                                const active = deliveryMode === mode.value;
-                                const ac = ACCENT_CLASSES[mode.accent];
-                                const Icon = mode.icon;
+                    {/* ─── Delivery mode ────────────────────────────────── */}
+                    <motion.div variants={fadeUp} className="space-y-2">
+                        <Label>How you receive</Label>
+
+                        {/* Segmented selector */}
+                        <div className="grid grid-cols-3 gap-1 rounded-2xl bg-muted/40 p-1">
+                            {DELIVERY_MODES.map(({ value, label, icon: Icon, color }) => {
+                                const active = deliveryMode === value;
                                 return (
-                                    <button
-                                        key={mode.value}
-                                        onClick={() => setDeliveryMode(mode.value)}
-                                        className={`w-full text-left rounded-2xl border px-4 py-3.5 transition-all duration-200 flex items-start gap-3 ${
-                                            active
-                                                ? `ring-2 ${ac.ring} ${ac.bg} border-transparent`
-                                                : "border-border bg-card/50 hover:bg-card/80"
+                                    <button key={value} onClick={() => setDeliveryMode(value)}
+                                        className={`flex flex-col items-center gap-1.5 rounded-xl py-3.5 transition-all duration-200 ${
+                                            active ? "bg-card shadow-sm ring-1 ring-border/60" : "hover:bg-muted/60"
                                         }`}
                                     >
-                                        <div className={`mt-0.5 rounded-lg p-1.5 ${active ? ac.bg : "bg-muted/30"}`}>
-                                            <Icon className={`h-4 w-4 ${active ? ac.icon : "text-muted-foreground"}`} />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <span className={`text-sm font-medium ${active ? "text-foreground" : "text-foreground/80"}`}>
-                                                    {mode.label}
-                                                </span>
-                                                {active && (
-                                                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${ac.badge}`}>
-                                                        Active
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                                                {mode.desc}
-                                            </p>
-                                        </div>
+                                        <Icon className={`h-4 w-4 transition-colors ${active ? color : "text-muted-foreground"}`} />
+                                        <span className={`text-xs font-medium transition-colors ${active ? "text-foreground" : "text-muted-foreground"}`}>
+                                            {label}
+                                        </span>
                                     </button>
                                 );
                             })}
                         </div>
-                    </motion.section>
 
-                    {/* ── Digest time (shown only for digest modes) ─────────── */}
-                    {(deliveryMode === "digest_daily" || deliveryMode === "digest_weekly") && (
-                        <motion.section variants={item} className="mb-6">
-                            <SectionLabel>Digest Send Time</SectionLabel>
-                            <Card className="flex items-center gap-3">
-                                <CalendarClock className="h-4 w-4 text-muted-foreground shrink-0" />
-                                <div className="flex-1">
-                                    <p className="text-sm text-foreground">
-                                        {deliveryMode === "digest_daily" ? "Daily" : "Weekly"} digest sent at
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                        All MTSS updates from the day compiled into one email
-                                    </p>
-                                </div>
-                                <input
-                                    type="time"
-                                    value={dailyTime}
-                                    onChange={(e) => setDailyTime(e.target.value)}
-                                    className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                                />
-                            </Card>
-                        </motion.section>
-                    )}
+                        {/* Delivery description */}
+                        <p className="text-[12px] text-muted-foreground px-1">
+                            {DELIVERY_DESC[deliveryMode]}
+                        </p>
 
-                    {/* ── Email channel toggle ─────────────────────────────── */}
-                    <motion.section variants={item} className="mb-6">
-                        <SectionLabel>Email Channel</SectionLabel>
-                        <Card className="flex items-center gap-3">
-                            {emailEnabled
-                                ? <Mail className="h-4 w-4 text-primary shrink-0" />
-                                : <MailX className="h-4 w-4 text-muted-foreground shrink-0" />
-                            }
-                            <div className="flex-1">
-                                <p className="text-sm font-medium text-foreground">Email Notifications</p>
-                                <p className="text-xs text-muted-foreground">
-                                    {emailEnabled
-                                        ? "Emails will be delivered per your delivery mode above."
-                                        : "No emails will be sent for any MTSS activity."}
-                                </p>
-                            </div>
-                            <Toggle
+                        {/* Digest time — only when relevant */}
+                        <AnimatePresence>
+                            {(deliveryMode === "digest_daily" || deliveryMode === "digest_weekly") && (
+                                <motion.div
+                                    key="digest-time"
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="overflow-hidden"
+                                >
+                                    <Row icon={<CalendarClock className="h-4 w-4 text-muted-foreground" />}
+                                         label="Send time">
+                                        <input type="time" value={dailyTime}
+                                            onChange={(e) => setDailyTime(e.target.value)}
+                                            className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                        />
+                                    </Row>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </motion.div>
+
+                    {/* ─── Quick controls ───────────────────────────────── */}
+                    <motion.div variants={fadeUp} className="space-y-2">
+                        <Label>Controls</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                            <QuickCard
+                                icon={<Layers className="h-4 w-4" />}
+                                label="Smart Summary"
+                                sub={smartGroup ? "Groups similar alerts" : "Off — one row per event"}
+                                checked={smartGroup}
+                                onChange={setSmartGroup}
+                            />
+                            <QuickCard
+                                icon={emailEnabled ? <Mail className="h-4 w-4" /> : <MailX className="h-4 w-4" />}
+                                label="Email"
+                                sub={emailEnabled ? "Active" : "Off"}
                                 checked={emailEnabled}
                                 onChange={setEmailEnabled}
-                                ariaLabel="Toggle email notifications"
                             />
-                        </Card>
-                    </motion.section>
+                        </div>
 
-                    {/* ── Quiet hours ───────────────────────────────────────── */}
-                    <motion.section variants={item} className="mb-6">
-                        <SectionLabel>Quiet Hours</SectionLabel>
-                        <div className="space-y-2.5">
-                            <Card className="flex items-center gap-3">
-                                <Moon className="h-4 w-4 text-muted-foreground shrink-0" />
-                                <div className="flex-1">
-                                    <p className="text-sm font-medium text-foreground">Enable quiet hours</p>
-                                    <p className="text-xs text-muted-foreground">No emails sent during this window</p>
-                                </div>
-                                <Toggle
-                                    checked={quietEnabled}
-                                    onChange={setQuietEnabled}
-                                    ariaLabel="Toggle quiet hours"
-                                />
-                            </Card>
+                        {/* Advance notice */}
+                        <Row icon={<CalendarClock className="h-4 w-4 text-muted-foreground" />}
+                             label="Advance reminder">
+                            <select value={advanceDays}
+                                onChange={(e) => setAdvanceDays(Number(e.target.value))}
+                                className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            >
+                                {ADVANCE_OPTS.map((o) => (
+                                    <option key={o.value} value={o.value}>{o.label}</option>
+                                ))}
+                            </select>
+                        </Row>
+                    </motion.div>
 
-                            {quietEnabled && (
-                                <>
-                                    <Card className="flex items-center gap-3">
-                                        <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
-                                        <p className="text-sm text-foreground flex-1">Start</p>
-                                        <input
-                                            type="time"
-                                            value={quietStart}
-                                            onChange={(e) => setQuietStart(e.target.value)}
-                                            className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                                        />
-                                    </Card>
-                                    <Card className="flex items-center gap-3">
-                                        <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
-                                        <p className="text-sm text-foreground flex-1">End</p>
-                                        <input
-                                            type="time"
-                                            value={quietEnd}
-                                            onChange={(e) => setQuietEnd(e.target.value)}
-                                            className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                                        />
-                                    </Card>
-                                    <Card className="flex items-center gap-3">
-                                        <span className="text-sm shrink-0">🏖️</span>
-                                        <div className="flex-1">
-                                            <p className="text-sm font-medium text-foreground">Weekends only</p>
-                                            <p className="text-xs text-muted-foreground">
-                                                Apply quiet hours only on Saturday &amp; Sunday
-                                            </p>
-                                        </div>
-                                        <Toggle
-                                            checked={quietWeekendsOnly}
-                                            onChange={setQuietWeekendsOnly}
-                                            ariaLabel="Quiet hours weekends only"
-                                        />
-                                    </Card>
-                                </>
+                    {/* ─── Alert types (collapsible) ────────────────────── */}
+                    <motion.div variants={fadeUp} className="space-y-2">
+                        <button
+                            onClick={() => setAlertOpen((v) => !v)}
+                            className="w-full flex items-center justify-between"
+                            aria-expanded={alertOpen}
+                        >
+                            <Label as="span">Alert types</Label>
+                            <div className="flex items-center gap-2">
+                                <Chip className="bg-muted text-muted-foreground">
+                                    {ALERT_TYPES.filter((t) => alertPrefs[t.key]?.enabled !== false).length}/{ALERT_TYPES.length} on
+                                </Chip>
+                                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${alertOpen ? "rotate-180" : ""}`} />
+                            </div>
+                        </button>
+
+                        <AnimatePresence initial={false}>
+                            {alertOpen && (
+                                <motion.div
+                                    key="alert-list"
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.22 }}
+                                    className="overflow-hidden"
+                                >
+                                    <div className="rounded-2xl border border-border bg-card/60 overflow-hidden">
+                                        {ALERT_TYPES.map(({ key, label, dot }, i) => {
+                                            const pref = alertPrefs[key] || { enabled: true, minSeverity: "medium" };
+                                            return (
+                                                <div
+                                                    key={key}
+                                                    className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? "border-t border-border/40" : ""}`}
+                                                >
+                                                    <span className={`shrink-0 h-2 w-2 rounded-full ${dot} ${!pref.enabled ? "opacity-30" : ""}`} />
+                                                    <span className={`flex-1 text-sm transition-colors ${pref.enabled ? "text-foreground" : "text-muted-foreground/60"}`}>
+                                                        {label}
+                                                    </span>
+                                                    <AnimatePresence>
+                                                        {pref.enabled && (
+                                                            <motion.select
+                                                                key="sev"
+                                                                initial={{ opacity: 0, width: 0 }}
+                                                                animate={{ opacity: 1, width: "auto" }}
+                                                                exit={{ opacity: 0, width: 0 }}
+                                                                value={pref.minSeverity}
+                                                                onChange={(e) => setAlertPref(key, "minSeverity", e.target.value)}
+                                                                className="rounded-lg border border-border bg-background px-1.5 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 mr-2"
+                                                            >
+                                                                {SEV_OPTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                                                            </motion.select>
+                                                        )}
+                                                    </AnimatePresence>
+                                                    <Toggle size="sm"
+                                                        checked={pref.enabled}
+                                                        onChange={(v) => setAlertPref(key, "enabled", v)}
+                                                    />
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </motion.div>
                             )}
-                        </div>
-                    </motion.section>
+                        </AnimatePresence>
+                    </motion.div>
 
-                    {/* ── Info banner ───────────────────────────────────────── */}
-                    <motion.section variants={item} className="mb-8">
-                        <div className="rounded-2xl border border-amber-200/70 bg-amber-50/60 dark:border-amber-800/40 dark:bg-amber-900/10 px-4 py-3 flex gap-2.5">
-                            <span className="text-base shrink-0 mt-0.5">💡</span>
-                            <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
-                                <strong>Tip:</strong> "Daily Digest" is recommended for most teachers — all MTSS
-                                updates arrive in one tidy email each morning instead of separate notifications
-                                for each action.
-                            </p>
+                    {/* ─── Quiet hours (collapsible) ────────────────────── */}
+                    <motion.div variants={fadeUp} className="space-y-2">
+                        <Label>Schedule</Label>
+                        <div className="rounded-2xl border border-border bg-card/60 overflow-hidden">
+                            <div className="flex items-center gap-3 px-4 py-3.5">
+                                <Moon className="h-4 w-4 text-muted-foreground shrink-0" />
+                                <span className="flex-1 text-sm font-medium text-foreground">Quiet hours</span>
+                                {quietEnabled && (
+                                    <span className="text-xs text-muted-foreground mr-2 tabular-nums">
+                                        {quietStart} – {quietEnd}
+                                    </span>
+                                )}
+                                <Toggle checked={quietEnabled} onChange={setQuietEnabled} />
+                            </div>
+
+                            <AnimatePresence initial={false}>
+                                {quietEnabled && (
+                                    <motion.div
+                                        key="qh"
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: "auto" }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="border-t border-border/40 px-4 py-3 space-y-3">
+                                            <div className="flex items-center gap-2">
+                                                <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                                <span className="text-xs text-muted-foreground w-8">From</span>
+                                                <input type="time" value={quietStart}
+                                                    onChange={(e) => setQuietStart(e.target.value)}
+                                                    className="rounded-lg border border-border bg-background px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                                />
+                                                <span className="text-xs text-muted-foreground">to</span>
+                                                <input type="time" value={quietEnd}
+                                                    onChange={(e) => setQuietEnd(e.target.value)}
+                                                    className="rounded-lg border border-border bg-background px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs text-muted-foreground flex-1">Weekends only</span>
+                                                <Toggle size="sm" checked={quietWeekends} onChange={setQuietWeekends} />
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
-                    </motion.section>
-                </motion.main>
+                    </motion.div>
+
+                    {/* ─── Tip ─────────────────────────────────────────── */}
+                    <motion.div variants={fadeUp}
+                        className="rounded-2xl bg-amber-50/70 dark:bg-amber-900/10 border border-amber-200/60 dark:border-amber-800/30 px-4 py-3 flex gap-2.5"
+                    >
+                        <span className="text-sm shrink-0">💡</span>
+                        <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                            Best combo: <strong>Daily</strong> + <strong>Smart Group</strong> + <strong>1-day reminder</strong> — one clean morning email, no noise.
+                        </p>
+                    </motion.div>
+
+                </motion.div>
             </MotionConfig>
         </AnimatedPage>
+    );
+}
+
+// ─── layout helpers ───────────────────────────────────────────────────────────
+
+function Label({ children, as: Tag = "p" }) {
+    return (
+        <Tag className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground px-0.5">
+            {children}
+        </Tag>
+    );
+}
+
+function Row({ icon, label, children }) {
+    return (
+        <div className="rounded-2xl border border-border bg-card/60 px-4 py-3 flex items-center gap-3">
+            <span className="shrink-0">{icon}</span>
+            <span className="flex-1 text-sm text-foreground">{label}</span>
+            {children}
+        </div>
+    );
+}
+
+function QuickCard({ icon, label, sub, checked, onChange }) {
+    return (
+        <div className="rounded-2xl border border-border bg-card/60 px-3.5 py-3 flex flex-col gap-2.5">
+            <div className="flex items-center justify-between">
+                <span className={`transition-colors ${checked ? "text-primary" : "text-muted-foreground"}`}>{icon}</span>
+                <Toggle size="sm" checked={checked} onChange={onChange} />
+            </div>
+            <div>
+                <p className="text-sm font-medium text-foreground leading-none">{label}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>
+            </div>
+        </div>
     );
 }
