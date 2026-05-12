@@ -179,7 +179,7 @@ export default function NotificationSettingsPage() {
 
         clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => doSave(payload), SAVE_DEBOUNCE_MS);
-    }, [deliveryMode, dailyTime, emailEnabled, quietEnabled, quietStart, quietEnd, quietWeekendsOnly, doSave]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [deliveryMode, dailyTime, emailEnabled, quietEnabled, quietStart, quietEnd, quietWeekendsOnly, doSave]);
 
     // cleanup debounce on unmount
     useEffect(() => () => clearTimeout(debounceRef.current), []);
