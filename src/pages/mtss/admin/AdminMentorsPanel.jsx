@@ -69,6 +69,46 @@ const AdminMentorsPanel = ({ mentorRoster = [], mentorDirectory = [], students =
             guidance,
         };
     }, [filteredRoster]);
+    const ownershipRows = useMemo(() => {
+        const rows = [];
+        filteredRoster.forEach((mentor) => {
+            (mentor.coverage || []).forEach((coverage) => {
+                const subject = coverage.focus || "Focused Support";
+                const studentsForCoverage = Array.isArray(coverage.students) ? coverage.students : [];
+                if (!studentsForCoverage.length) {
+                    rows.push({
+                        key: `${mentor.name}-${subject}-${coverage.tierCode}-empty`,
+                        mentorName: mentor.name,
+                        subject,
+                        tier: coverage.tier,
+                        tierCode: coverage.tierCode,
+                        studentName: "No students assigned",
+                        pairingLabel: `${mentor.name} - ${subject}`,
+                    });
+                    return;
+                }
+
+                studentsForCoverage.forEach((student) => {
+                    rows.push({
+                        key: `${mentor.name}-${subject}-${coverage.tierCode}-${student.id || student.name}`,
+                        mentorName: mentor.name,
+                        subject,
+                        tier: coverage.tier,
+                        tierCode: coverage.tierCode,
+                        studentName: student.name || "Student",
+                        pairingLabel: student.pairingLabel || `${student.name || "Student"} - ${subject} - ${mentor.name}`,
+                    });
+                });
+            });
+        });
+
+        const tierRank = { tier3: 3, tier2: 2, tier1: 1 };
+        return rows.sort((a, b) => (
+            (tierRank[b.tierCode] || 0) - (tierRank[a.tierCode] || 0) ||
+            a.studentName.localeCompare(b.studentName) ||
+            a.subject.localeCompare(b.subject)
+        ));
+    }, [filteredRoster]);
 
     const [visibleCount, setVisibleCount] = useState(CARD_BATCH_SIZE);
     const sentinelRef = useRef(null);
@@ -227,6 +267,45 @@ const AdminMentorsPanel = ({ mentorRoster = [], mentorDirectory = [], students =
                                 );
                             })}
                         </div>
+                    </div>
+                    <div className="mb-6 rounded-[28px] border border-cyan-200 bg-cyan-50/80 p-5 dark:border-cyan-400/20 dark:bg-cyan-500/10">
+                        <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <BarChart3 className="h-5 w-5 text-cyan-600 dark:text-cyan-200" />
+                                    <p className="text-[11px] font-black uppercase tracking-[0.28em] text-cyan-700 dark:text-cyan-100">
+                                        Student-subject ownership map
+                                    </p>
+                                </div>
+                                <p className="mt-2 max-w-3xl text-sm font-semibold leading-relaxed text-cyan-900/80 dark:text-cyan-100/75">
+                                    Each row is one student + subject support unit, so mentor coverage is visible even when one student has multiple active focus areas.
+                                </p>
+                            </div>
+                            <span className="rounded-full bg-white/75 px-3 py-1 text-xs font-black text-cyan-700 dark:bg-white/10 dark:text-cyan-100">
+                                {ownershipRows.length} pairings
+                            </span>
+                        </div>
+                        {ownershipRows.length ? (
+                            <div className="mt-4 grid gap-2 lg:grid-cols-2">
+                                {ownershipRows.slice(0, 8).map((row) => (
+                                    <div key={row.key} className="rounded-2xl bg-white/80 px-3 py-2 text-xs shadow-sm dark:bg-white/5">
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <p className="font-black text-slate-900 dark:text-white">{row.studentName}</p>
+                                            <span className="rounded-full bg-cyan-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-700 dark:bg-cyan-400/15 dark:text-cyan-100">
+                                                {row.tier}
+                                            </span>
+                                        </div>
+                                        <p className="mt-1 truncate font-semibold text-cyan-800 dark:text-cyan-100" title={row.pairingLabel}>
+                                            {row.subject} - {row.mentorName}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="mt-4 rounded-2xl bg-white/75 px-4 py-3 text-sm font-semibold text-cyan-900/70 dark:bg-white/5 dark:text-cyan-100/70">
+                                No student-subject pairings yet. Create or assign an intervention plan to populate ownership coverage.
+                            </p>
+                        )}
                     </div>
                     <div className="grid gap-5 lg:gap-6 md:grid-cols-2 xl:grid-cols-3" data-aos="fade-up" data-aos-delay="180">
                         {visibleMentors.map((mentor, index) => {

@@ -185,6 +185,7 @@ const ObserverDashboardPage = memo(() => {
         mentorSpotlights, mentorRoster, mentors,
         successByType, trendData, trendPaths,
         strategyHighlights, tierMovement, mentorSubjectCoverageRows,
+        subjectStudentBreakdown,
         loading, error, refresh,
     } = useAdminDashboardData();
     const dashboardRows = supportUnits?.length ? supportUnits : students;
@@ -266,6 +267,7 @@ const ObserverDashboardPage = memo(() => {
                     <AdminOverviewPanel
                         statCards={statCards}
                         systemSnapshot={systemSnapshot}
+                        subjectStudentBreakdown={subjectStudentBreakdown}
                         recentActivity={recentActivity}
                         mentorSpotlights={mentorSpotlights}
                         icons={overviewIcons}
@@ -317,6 +319,7 @@ const ObserverDashboardPage = memo(() => {
         }
     }, [
         activeTab, statCards, systemSnapshot, recentActivity, mentorSpotlights,
+        subjectStudentBreakdown,
         filters, handleFilterChange, gradeOptions, tierOptions, typeOptions,
         mentorOptions, filteredStudents, dashboardRows, visibleCount, setVisibleCount, handleViewStudent, mentors,
         refresh, mentorRoster, successByType, trendPaths, trendData,

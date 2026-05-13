@@ -94,6 +94,9 @@ const AdminAnalyticsPanel = ({
                     <div>
                         <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500 dark:text-white/55">Mentor-subject coverage</p>
                         <h3 className="mt-2 text-2xl font-black text-slate-900 dark:text-white">Student - subject - mentor pairings</h3>
+                        <p className="mt-2 max-w-2xl text-xs font-semibold leading-relaxed text-slate-500 dark:text-white/60">
+                            Use this as the ownership check: every active support unit should show one student, one subject / focus area, and one accountable mentor.
+                        </p>
                     </div>
                     <UsersRound className="h-5 w-5 text-cyan-500" />
                 </div>
@@ -295,6 +298,9 @@ const AdminAnalyticsPanel = ({
                     </div>
 
                     <div className="mt-6 space-y-3 text-sm">
+                        <p className="rounded-2xl border border-sky-100 bg-sky-50/80 px-4 py-3 text-xs font-semibold leading-relaxed text-sky-700 dark:border-sky-400/20 dark:bg-sky-500/10 dark:text-sky-200">
+                            Read this as demand volume, not effectiveness: a high count means many active student-subject units need adult follow-up in that focus area.
+                        </p>
                         {hasStrategyData ? (
                             strategyHighlights.map((strategy, idx) => {
                                 const pct = Math.round((Number(strategy.value) / maxStrategyVal) * 100);
@@ -348,6 +354,9 @@ const AdminAnalyticsPanel = ({
                     </div>
 
                     <div className="mt-6 rounded-[28px] bg-gradient-to-br from-[#f8fafc] to-[#e0f2fe] p-6 dark:from-white/10 dark:to-white/5">
+                        <p className="mb-4 rounded-2xl border border-emerald-100 bg-emerald-50/80 px-4 py-3 text-xs font-semibold leading-relaxed text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200">
+                            Movement is based on current-cycle progress signals. Use Needs Support to decide which student-subject units need plan review before tier changes.
+                        </p>
                         <div className="grid gap-5 md:grid-cols-3">
                             {tierMovement.map((item, idx) => {
                                 const Icon = item.icon;

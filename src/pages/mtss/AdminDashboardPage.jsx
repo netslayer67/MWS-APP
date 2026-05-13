@@ -60,6 +60,7 @@ const AdminDashboardPage = memo(() => {
         mentorSpotlights,
         mentorRoster,
         mentorSubjectCoverageRows,
+        subjectStudentBreakdown,
         mentors,
         successByType,
         trendData,
@@ -136,6 +137,7 @@ const AdminDashboardPage = memo(() => {
                         pilotGuide={pilotGuide}
                         statCards={statCards}
                         systemSnapshot={systemSnapshot}
+                        subjectStudentBreakdown={subjectStudentBreakdown}
                         recentActivity={recentActivity}
                         mentorSpotlights={mentorSpotlights}
                         icons={overviewIcons}
@@ -216,6 +218,7 @@ const AdminDashboardPage = memo(() => {
         resetSelection,
         mentorRoster,
         mentorSubjectCoverageRows,
+        subjectStudentBreakdown,
         mentors,
         statCards,
         systemSnapshot,

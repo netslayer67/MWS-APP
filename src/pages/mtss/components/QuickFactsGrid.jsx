@@ -14,7 +14,14 @@ const QuickFactsGrid = memo(({ student, profile, mentorLabel }) => {
     const attendanceFacts = [
         { label: "Attendance Rate", value: attendanceContext.rate || "Not recorded", icon: CalendarDays, gradient: "from-indigo-500 to-violet-500" },
         { label: "Missed MTSS Sessions", value: attendanceContext.missedMtssSessions ?? 0, icon: Users, gradient: "from-amber-500 to-orange-500" },
-        { label: "Last Absence", value: attendanceContext.lastAbsenceDate || "No absence logged", icon: Award, gradient: "from-rose-500 to-pink-500" },
+        {
+            label: "Last Absence",
+            value: attendanceContext.lastAbsenceSubject
+                ? `${attendanceContext.lastAbsenceDate} - ${attendanceContext.lastAbsenceSubject}`
+                : attendanceContext.lastAbsenceDate || "No absence logged",
+            icon: Award,
+            gradient: "from-rose-500 to-pink-500",
+        },
     ];
 
     return (

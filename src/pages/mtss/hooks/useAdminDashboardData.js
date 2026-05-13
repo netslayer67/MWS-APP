@@ -78,6 +78,60 @@ const getMentorLabel = (assignment = {}) =>
 const buildPairingLabel = (studentName = "", subject = "", mentor = "") =>
     [studentName, subject, mentor].map(normalizeText).filter(Boolean).join(" - ");
 
+const getSupportSubjectLabel = (unit = {}) =>
+    normalizeText(unit.supportUnit?.subject || unit.profile?.type || unit.type) || "Focused Support";
+
+const getSupportOwnerLabel = (unit = {}) =>
+    normalizeText(
+        unit.supportUnit?.owner ||
+        unit.studentSubjectMentorPair?.mentorName ||
+        unit.profile?.studentSubjectMentorPair?.mentorName ||
+        unit.mentor ||
+        unit.profile?.mentor,
+    ) || "Unassigned";
+
+const buildSubjectStudentBreakdown = (supportUnits = []) => {
+    const map = new Map();
+
+    supportUnits.forEach((unit = {}) => {
+        const subject = getSupportSubjectLabel(unit);
+        const owner = getSupportOwnerLabel(unit);
+        const studentId = normalizeText(unit.baseStudentId || unit._id || unit.id || unit.slug || unit.name);
+        const studentName = normalizeText(unit.name) || "Student";
+        const key = subject.toLowerCase();
+        const entry = map.get(key) || {
+            subject,
+            supportUnitCount: 0,
+            students: new Map(),
+            owners: new Set(),
+            tierCodes: new Set(),
+        };
+
+        entry.supportUnitCount += 1;
+        entry.students.set(studentId || studentName, {
+            id: studentId || studentName,
+            name: studentName,
+            owner,
+            tier: unit.supportUnit?.tier || unit.tier || "Tier 1",
+            pairingLabel: unit.supportUnit?.pairingLabel || buildPairingLabel(studentName, subject, owner),
+        });
+        entry.owners.add(owner);
+        entry.tierCodes.add(normalizeTierCode(unit.supportUnit?.tierCode || unit.tier));
+        map.set(key, entry);
+    });
+
+    return Array.from(map.values())
+        .map((entry) => ({
+            subject: entry.subject,
+            supportUnitCount: entry.supportUnitCount,
+            studentCount: entry.students.size,
+            owners: Array.from(entry.owners).filter(Boolean).sort((a, b) => a.localeCompare(b)),
+            tierCodes: Array.from(entry.tierCodes),
+            students: Array.from(entry.students.values()).sort((a, b) => a.name.localeCompare(b.name)),
+        }))
+        .sort((a, b) => b.supportUnitCount - a.supportUnitCount || a.subject.localeCompare(b.subject));
+};
+
 const getLatestCheckIn = (assignment = {}) =>
     Array.isArray(assignment.checkIns) && assignment.checkIns.length
         ? assignment.checkIns[assignment.checkIns.length - 1]
@@ -394,6 +448,7 @@ const useAdminDashboardData = () => {
     const mentorSpotlights = useMemo(() => buildMentorSpotlights(assignments), [assignments]);
     const mentorRoster = useMemo(() => buildMentorRoster(assignments), [assignments]);
     const mentorSubjectCoverageRows = useMemo(() => buildMentorSubjectCoverageRows(assignments), [assignments]);
+    const subjectStudentBreakdown = useMemo(() => buildSubjectStudentBreakdown(supportUnits), [supportUnits]);
     const strategyHighlights = useMemo(() => buildStrategyHighlights(assignments), [assignments]);
     const tierMovement = useMemo(() => buildTierMovement(supportUnits, assignments), [supportUnits, assignments]);
     const analyticsSummary = useMemo(() => buildAnalyticsSummary(assignments), [assignments]);
@@ -415,6 +470,7 @@ const useAdminDashboardData = () => {
         mentorSpotlights,
         mentorRoster,
         mentorSubjectCoverageRows,
+        subjectStudentBreakdown,
         strategyHighlights,
         tierMovement,
         recentActivity,

@@ -99,6 +99,27 @@ const formatScoreLabel = (score, fallbackUnit = "score") => {
     return unit ? `${value} ${unit}` : value;
 };
 
+const formatDateTimeLabel = (value) => {
+    if (!value) return "No progress yet";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return "No progress yet";
+    return new Intl.DateTimeFormat("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    }).format(parsed);
+};
+
+const resolveLastProgressUpdate = (option = {}) => {
+    const checkIns = Array.isArray(option.checkIns) ? option.checkIns : [];
+    const latestCheckIn = checkIns
+        .filter((entry) => entry?.date)
+        .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+    return latestCheckIn?.date || option.lastUpdateAt || option.updatedAt || null;
+};
+
 const resolveOwnerLabel = (option = {}) =>
     option?.mentor ||
     option?.mentorName ||
@@ -215,6 +236,8 @@ export const useTeacherDashboardState = (tabs, { onSaveSuccess, viewerUser } = {
             owner: resolveOwnerLabel(selectedOption),
             goal: resolveGoalValue(selectedOption) || "Not set",
             baseline: formatScoreLabel(selectedOption.baselineScore, metricUnit),
+            target: formatScoreLabel(selectedOption.targetScore, metricUnit),
+            lastProgressUpdate: formatDateTimeLabel(resolveLastProgressUpdate(selectedOption)),
             status: resolveStatusLabel(selectedOption),
         });
         setInterventionForm(buildInterventionFormFromAssignment(student, selectedOption));

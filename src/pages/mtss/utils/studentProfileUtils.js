@@ -65,17 +65,24 @@ const buildAttendanceContext = (interventions = []) => {
             interventionLabel: intervention.label || intervention.focusArea || intervention.type,
         })),
     );
-    const absenceEntries = histories.filter((entry) => entry.performed === false && entry.skipReason === "student_absent");
+    const absenceEntries = histories
+        .filter((entry) => entry.performed === false && entry.skipReason === "student_absent")
+        .sort((left, right) => new Date(right.timestamp || right.date || 0) - new Date(left.timestamp || left.date || 0));
     const attendanceIntervention = interventions.find((intervention) =>
         /attendance|absence|present/i.test(`${intervention.label || ""} ${intervention.focusArea || ""} ${intervention.type || ""}`),
     );
     const rateValue = attendanceIntervention?.current ?? attendanceIntervention?.baseline;
     const unit = attendanceIntervention?.progressUnit || "%";
+    const lastAbsenceRaw = absenceEntries[0]?.timestamp || absenceEntries[0]?.date || null;
+    const lastAbsenceDate = lastAbsenceRaw
+        ? formatDate(lastAbsenceRaw, { month: "short", day: "numeric", year: "numeric" })
+        : "No absence logged";
 
     return {
         rate: hasValue(rateValue) ? `${rateValue}${unit === "%" ? "%" : ` ${unit}`}` : "Not recorded",
         missedMtssSessions: absenceEntries.length,
-        lastAbsenceDate: absenceEntries[0]?.date || "No absence logged",
+        lastAbsenceDate,
+        lastAbsenceSubject: absenceEntries[0]?.interventionLabel || null,
     };
 };
 

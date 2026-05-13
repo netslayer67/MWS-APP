@@ -85,6 +85,13 @@ const StudentsTableDesktopRow = memo(
         /* ── Assignment & action logic ─────────────────────────── */
         const assignmentOptions = Array.isArray(student.assignmentOptions) ? student.assignmentOptions : [];
         const primaryAssignment = assignmentOptions[0] || null;
+        const editableAssignment = useMemo(() => {
+            if (!assignmentOptions.length) return primaryAssignment;
+            if (typeof canEditPlanForStudent !== "function") return primaryAssignment;
+            return assignmentOptions.find((option) => (
+                option?.assignmentId && canEditPlanForStudent(actionStudent, option)
+            )) || primaryAssignment;
+        }, [actionStudent, assignmentOptions, canEditPlanForStudent, primaryAssignment]);
         const hasInterventionPlan = Boolean(
             assignmentOptions.some((option) => option?.assignmentId) ||
             student.assignmentId ||
@@ -95,8 +102,8 @@ const StudentsTableDesktopRow = memo(
         const nextUpdateDisplay = getStudentNextUpdateDisplay(primaryStudent);
         const canEditPlan = hasInterventionPlan && Boolean(onEditPlan) && (
             typeof canEditPlanForStudent === "function"
-                ? canEditPlanForStudent(actionStudent)
-                : Boolean(primaryAssignment?.assignmentId || student.assignmentId)
+                ? Boolean(editableAssignment?.assignmentId && canEditPlanForStudent(actionStudent, editableAssignment))
+                : Boolean(editableAssignment?.assignmentId || student.assignmentId)
         );
         const progressAssignment = resolveProgressAssignmentForStudent(actionStudent);
         const canSubmitProgress = Boolean(progressAssignment?.assignmentId);
@@ -117,7 +124,7 @@ const StudentsTableDesktopRow = memo(
                 label: "Edit Plan",
                 onClick: (e) => {
                     e.stopPropagation();
-                    onEditPlan?.({ student: actionStudent });
+                    onEditPlan?.({ student: actionStudent, assignmentOption: editableAssignment });
                 },
                 icon: FilePenLine,
                 className: "bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-300 border-cyan-200/60 dark:border-cyan-700/40 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 hover:shadow-cyan-200/30 dark:hover:shadow-cyan-900/20",
