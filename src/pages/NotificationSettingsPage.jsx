@@ -52,13 +52,13 @@ const ADVANCE_OPTS = [
 ];
 
 const DEFAULT_ALERT_PREFS = {
-    academic_struggle:       { enabled: true,  minSeverity: "medium" },
-    learning_style_detected: { enabled: true,  minSeverity: "low"    },
-    emotional_pattern:       { enabled: true,  minSeverity: "medium" },
-    progress_decline:        { enabled: true,  minSeverity: "medium" },
+    academic_struggle:       { enabled: false, minSeverity: "medium" },
+    learning_style_detected: { enabled: false, minSeverity: "low"    },
+    emotional_pattern:       { enabled: false, minSeverity: "medium" },
+    progress_decline:        { enabled: false, minSeverity: "medium" },
     engagement_low:          { enabled: false, minSeverity: "medium" },
-    breakthrough:            { enabled: true,  minSeverity: "low"    },
-    intervention_needed:     { enabled: true,  minSeverity: "urgent" },
+    breakthrough:            { enabled: false, minSeverity: "low"    },
+    intervention_needed:     { enabled: false, minSeverity: "urgent" },
 };
 
 const SAVE_DEBOUNCE_MS = 800;
@@ -98,16 +98,16 @@ export default function NotificationSettingsPage() {
     const [loading, setLoading]             = useState(true);
     const [saveLabel, setSaveLabel]         = useState("idle"); // idle | saving | saved | error
 
-    const [deliveryMode, setDeliveryMode]   = useState("digest_daily");
+    const [deliveryMode, setDeliveryMode]   = useState("dashboard_only");
     const [dailyTime, setDailyTime]         = useState("08:00");
-    const [emailEnabled, setEmailEnabled]   = useState(true);
-    const [quietEnabled, setQuietEnabled]   = useState(true);
+    const [emailEnabled, setEmailEnabled]   = useState(false);
+    const [quietEnabled, setQuietEnabled]   = useState(false);
     const [quietStart, setQuietStart]       = useState("18:00");
     const [quietEnd, setQuietEnd]           = useState("07:00");
     const [quietWeekends, setQuietWeekends] = useState(false);
     const [alertPrefs, setAlertPrefs]       = useState(DEFAULT_ALERT_PREFS);
-    const [advanceDays, setAdvanceDays]     = useState(1);
-    const [smartGroup, setSmartGroup]       = useState(true);
+    const [advanceDays, setAdvanceDays]     = useState(0);
+    const [smartGroup, setSmartGroup]       = useState(false);
 
     const [alertOpen, setAlertOpen]         = useState(false);
 
@@ -122,16 +122,16 @@ export default function NotificationSettingsPage() {
             .then((res) => {
                 if (dead) return;
                 const d = res.data?.data || res.data || {};
-                setDeliveryMode(d.deliveryMode || "digest_daily");
+                setDeliveryMode(d.deliveryMode || "dashboard_only");
                 setDailyTime(d.digestSchedule?.dailyTime || "08:00");
-                setEmailEnabled(d.emailNotifications?.enabled !== false);
-                setQuietEnabled(d.quietHours?.enabled !== false);
+                setEmailEnabled(d.emailNotifications?.enabled === true);
+                setQuietEnabled(d.quietHours?.enabled === true);
                 setQuietStart(d.quietHours?.start || "18:00");
                 setQuietEnd(d.quietHours?.end   || "07:00");
                 setQuietWeekends(d.quietHours?.weekendsOnly || false);
                 setAlertPrefs(d.alertPreferences || DEFAULT_ALERT_PREFS);
-                setAdvanceDays(d.advanceNoticeDays ?? 1);
-                setSmartGroup(d.smartSummary?.enabled !== false);
+                setAdvanceDays(d.advanceNoticeDays ?? 0);
+                setSmartGroup(d.smartSummary?.enabled === true);
             })
             .catch(() => {
                 if (!dead) toast({ title: "Could not load preferences", variant: "destructive", duration: 3000 });
