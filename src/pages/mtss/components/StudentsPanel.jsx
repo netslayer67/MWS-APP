@@ -268,6 +268,7 @@ const StudentsPanel = memo(({ students, TierPill, ProgressBadge, onRefresh, onEd
 
             {modalState.type === "update" && (
                 <QuickUpdateModal
+                    key={modalState.student?._id}
                     student={modalState.student}
                     onClose={handleClose}
                     onSubmit={handleQuickSubmit}

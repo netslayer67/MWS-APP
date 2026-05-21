@@ -6,12 +6,19 @@ const LazyChatBarChartWidget = lazy(() => import('@/features/assistant/chat/widg
 const LazyMarkdownRenderer = lazy(() => import('@/features/assistant/chat/widgets/MarkdownRenderer'));
 const EMPTY_ARRAY = Object.freeze([]);
 
+const escapeHtmlEntities = (value) => String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+
 const preprocessMarkdownContent = (content = '') =>
     String(content || '')
         .replace(/&lt;br\s*\/?&gt;/gi, '\n')
         .replace(/<br\s*\/?>/gi, '\n')
         .replace(/\r\n/g, '\n')
-        .replace(/\+\+([^\n+][\s\S]*?)\+\+/g, '<u>$1</u>');
+        .replace(/\+\+([^\n+][\s\S]*?)\+\+/g, (_, captured) => `<u>${escapeHtmlEntities(captured)}</u>`);
 
 const normalizeRichText = (value = '') =>
     String(value || '')

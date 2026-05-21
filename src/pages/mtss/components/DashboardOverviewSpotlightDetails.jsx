@@ -37,7 +37,7 @@ const DashboardOverviewSpotlightDetails = ({
             <div className="rounded-2xl border border-sky-200/60 dark:border-sky-800/40 bg-gradient-to-br from-sky-50/90 via-white/80 to-white/70 dark:from-sky-950/40 dark:via-slate-900/40 dark:to-slate-900/30 p-4 space-y-3 shadow-inner">
                 <div className="flex items-center justify-between">
                     <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.35em] text-slate-500 dark:text-white/60">
-                        <UserRound className="w-4 h-4 text-sky-500" />
+                        <UserRound className="w-4 h-4 text-sky-500 dark:text-sky-400" />
                         Student
                     </div>
                     <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 dark:bg-white/10 border border-white/50 text-[11px] font-semibold text-foreground dark:text-white">
@@ -80,7 +80,7 @@ const DashboardOverviewSpotlightDetails = ({
 
             <div className="rounded-2xl border border-violet-200/60 dark:border-violet-800/40 bg-gradient-to-br from-violet-50/80 via-white/80 to-white/70 dark:from-violet-950/40 dark:via-slate-900/40 dark:to-slate-900/30 p-4 space-y-3">
                 <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.35em] text-slate-500 dark:text-white/60">
-                    <Layers className="w-4 h-4 text-violet-500" />
+                    <Layers className="w-4 h-4 text-violet-500 dark:text-violet-400" />
                     Intervention
                 </div>
                 <ul className="space-y-2 text-sm text-foreground dark:text-white">
@@ -103,7 +103,7 @@ const DashboardOverviewSpotlightDetails = ({
 
             <div className="rounded-2xl border border-emerald-200/60 dark:border-emerald-800/40 bg-gradient-to-br from-emerald-50/80 via-white/80 to-white/70 dark:from-emerald-950/40 dark:via-slate-900/40 dark:to-slate-900/30 p-4 space-y-3">
                 <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.35em] text-slate-500 dark:text-white/60">
-                    <TrendingUp className="w-4 h-4 text-emerald-500" />
+                    <TrendingUp className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
                     Progress
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm text-foreground dark:text-white">
@@ -140,7 +140,7 @@ const DashboardOverviewSpotlightDetails = ({
 
             <div className="rounded-2xl border border-amber-200/60 dark:border-amber-800/40 bg-gradient-to-br from-amber-50/80 via-white/80 to-white/70 dark:from-amber-950/40 dark:via-slate-900/40 dark:to-slate-900/30 p-4 space-y-3">
                 <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.35em] text-slate-500 dark:text-white/60">
-                    <MessageSquareText className="w-4 h-4 text-amber-500" />
+                    <MessageSquareText className="w-4 h-4 text-amber-500 dark:text-amber-400" />
                     Recent Notes
                 </div>
                 <div className="space-y-2 max-h-40 overflow-y-auto pr-1">

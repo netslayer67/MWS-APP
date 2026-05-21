@@ -21,9 +21,9 @@ const formatBytes = (bytes) => {
 };
 
 const FileIcon_ = ({ type }) => {
-    if (IMAGE_TYPES.has(type)) return <ImageIcon className="w-4 h-4 text-blue-500" />;
-    if (type === "application/pdf") return <FileText className="w-4 h-4 text-red-500" />;
-    return <File className="w-4 h-4 text-slate-500" />;
+    if (IMAGE_TYPES.has(type)) return <ImageIcon className="w-4 h-4 text-blue-500 dark:text-blue-400" />;
+    if (type === "application/pdf") return <FileText className="w-4 h-4 text-red-500 dark:text-red-400" />;
+    return <File className="w-4 h-4 text-slate-500 dark:text-slate-400" />;
 };
 
 const getExtension = (name = "") => name.split(".").pop()?.toLowerCase() || "";
@@ -167,7 +167,7 @@ const EvidenceUploader = memo(({ files = [], setFiles, maxFiles = 5, uploading =
                             </div>
                             {!uploading && (
                                 <button type="button" onClick={() => removeFile(idx)} className="p-0.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
-                                    <X className="w-3.5 h-3.5 text-red-500" />
+                                    <X className="w-3.5 h-3.5 text-red-500 dark:text-red-400" />
                                 </button>
                             )}
                         </div>

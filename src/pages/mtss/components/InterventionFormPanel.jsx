@@ -93,8 +93,8 @@ const InterventionFormPanel = memo(({
             data-aos-duration="700"
         >
             <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute -top-20 -left-10 h-56 w-56 bg-gradient-to-br from-[#f472b6]/25 via-[#60a5fa]/20 to-transparent blur-[120px]" />
-                <div className="absolute -bottom-16 right-0 h-64 w-64 bg-gradient-to-br from-[#22d3ee]/20 via-[#a855f7]/15 to-transparent blur-[140px]" />
+                <div className="absolute -top-20 -left-10 h-56 w-56 bg-gradient-to-br from-[var(--mtss-glow-pink)]/25 via-[var(--mtss-glow-blue)]/20 to-transparent blur-[120px]" />
+                <div className="absolute -bottom-16 right-0 h-64 w-64 bg-gradient-to-br from-[var(--mtss-glow-cyan)]/20 via-[var(--mtss-glow-purple)]/15 to-transparent blur-[140px]" />
                 <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.6),_transparent_60%)] dark:opacity-20" />
             </div>
             <div className="relative space-y-6">
@@ -107,7 +107,7 @@ const InterventionFormPanel = memo(({
                         <Sparkles className="w-4 h-4 text-primary" />
                         Plan Builder
                     </div>
-                    <h2 className="text-2xl sm:text-3xl font-black leading-tight bg-gradient-to-r from-[#0f172a] via-[#334155] to-[#2563eb] dark:from-white dark:via-[#c7d2fe] dark:to-[#f472b6] text-transparent bg-clip-text">
+                    <h2 className="text-2xl sm:text-3xl font-black leading-tight bg-gradient-to-r from-[var(--mtss-heading-light-from)] via-[var(--mtss-heading-light-via)] to-[var(--mtss-heading-light-to)] dark:from-white dark:via-[var(--mtss-heading-dark-via)] dark:to-[var(--mtss-heading-dark-to)] text-transparent bg-clip-text">
                         {isEditing ? "Adjust the active intervention" : "Set up a focused MTSS intervention"}
                     </h2>
                     <p className="text-sm text-slate-600 dark:text-slate-200 max-w-2xl">

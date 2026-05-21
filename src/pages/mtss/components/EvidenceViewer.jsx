@@ -61,9 +61,9 @@ const EvidenceViewer = memo(({ evidence = [] }) => {
                         title={downloadingUrl === ev.url ? "Downloading..." : (ev.fileName || "Download")}
                     >
                         {ev.fileType === "application/pdf" ? (
-                            <FileText className="w-3 h-3 text-red-500 flex-shrink-0" />
+                            <FileText className="w-3 h-3 text-red-500 dark:text-red-400 flex-shrink-0" />
                         ) : (
-                            <File className="w-3 h-3 text-blue-500 flex-shrink-0" />
+                            <File className="w-3 h-3 text-blue-500 dark:text-blue-400 flex-shrink-0" />
                         )}
                         <span className="text-[8px] sm:text-[9px] font-medium text-foreground dark:text-white truncate max-w-[60px]">
                             {ev.fileName || "File"}

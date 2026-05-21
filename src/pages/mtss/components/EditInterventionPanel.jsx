@@ -83,7 +83,7 @@ const EditInterventionPanel = memo(({
         return (
             <section className="mtss-theme relative overflow-hidden rounded-[36px] border border-white/50 dark:border-white/10 bg-white/75 dark:bg-slate-900/50 shadow-[0_30px_90px_rgba(15,23,42,0.18)] p-6 sm:p-8 space-y-5 backdrop-blur-2xl">
                 <header className="space-y-2">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-amber-50/80 border border-amber-200/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.32em] text-amber-700">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-amber-50/80 dark:bg-amber-900/30 border border-amber-200/60 dark:border-amber-700/40 px-3 py-1 text-xs font-semibold uppercase tracking-[0.32em] text-amber-700 dark:text-amber-300">
                         <ShieldAlert className="w-4 h-4" />
                         Edit Workspace
                     </div>

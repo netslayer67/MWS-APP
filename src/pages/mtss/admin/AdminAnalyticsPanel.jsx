@@ -69,7 +69,7 @@ const AdminAnalyticsPanel = ({
                             {analyticsNarrative?.body || "Use this panel to review how intervention plans are progressing, where support is stuck, and which strategies are producing the clearest gains."}
                         </p>
                     </div>
-                    <div className="rounded-[28px] border border-white/50 bg-gradient-to-br from-[#fff7ed]/90 via-white to-[#eff6ff]/85 p-5 shadow-inner dark:border-white/10 dark:from-white/5 dark:via-white/10 dark:to-white/5">
+                    <div className="rounded-[28px] border border-white/50 bg-gradient-to-br from-[var(--mtss-panel-warm)]/90 via-white to-[var(--mtss-panel-cool)]/85 p-5 shadow-inner dark:border-white/10 dark:from-white/5 dark:via-white/10 dark:to-white/5">
                         <p className="text-[11px] font-black uppercase tracking-[0.28em] text-slate-500 dark:text-white/55">Lead takeaway</p>
                         <p className="mt-3 text-lg font-black text-slate-900 dark:text-white">
                             {analyticsNarrative?.title || "No intervention activity has been recorded yet"}
@@ -222,16 +222,16 @@ const AdminAnalyticsPanel = ({
                                     Needs-support updates
                                 </span>
                             </div>
-                            <div className="w-full overflow-x-auto rounded-[24px] border border-white/45 bg-gradient-to-br from-[#f8fafc] via-white to-[#ecfeff] p-4 dark:border-white/10 dark:from-white/5 dark:via-white/10 dark:to-white/5">
+                            <div className="w-full overflow-x-auto rounded-[24px] border border-white/45 bg-gradient-to-br from-[var(--mtss-panel-gray)] via-white to-[var(--mtss-panel-cyan)] p-4 dark:border-white/10 dark:from-white/5 dark:via-white/10 dark:to-white/5">
                                 <svg viewBox="0 0 600 220" className="h-56 w-full">
                                     <defs>
                                         <linearGradient id="metLine" x1="0%" x2="100%" y1="0%" y2="0%">
-                                            <stop offset="0%" stopColor="#6ee7b7" />
-                                            <stop offset="100%" stopColor="#22c55e" />
+                                            <stop offset="0%" stopColor="var(--mtss-chart-emerald-from)" />
+                                            <stop offset="100%" stopColor="var(--mtss-chart-emerald-to)" />
                                         </linearGradient>
                                         <linearGradient id="supportLine" x1="0%" x2="100%" y1="0%" y2="0%">
-                                            <stop offset="0%" stopColor="#fb7185" />
-                                            <stop offset="100%" stopColor="#f97316" />
+                                            <stop offset="0%" stopColor="var(--mtss-chart-rose-from)" />
+                                            <stop offset="100%" stopColor="var(--mtss-chart-rose-to)" />
                                         </linearGradient>
                                     </defs>
                                     <path d={trendPaths.met} fill="none" stroke="url(#metLine)" strokeWidth="4" strokeLinecap="round" />
@@ -241,7 +241,7 @@ const AdminAnalyticsPanel = ({
                                         const supportPoint = getTrendPoint(point, index, trendData.length, "support");
                                         return (
                                             <g key={`${point.label}-labels`}>
-                                                <circle cx={metPoint.x} cy={metPoint.y} r="5" fill="#22c55e" stroke="#ffffff" strokeWidth="2" />
+                                                <circle cx={metPoint.x} cy={metPoint.y} r="5" fill="var(--mtss-chart-emerald-to)" stroke="#ffffff" strokeWidth="2" />
                                                 <text
                                                     x={metPoint.x}
                                                     y={Math.max(14, metPoint.y - 12)}
@@ -250,7 +250,7 @@ const AdminAnalyticsPanel = ({
                                                 >
                                                     {point.met}%
                                                 </text>
-                                                <circle cx={supportPoint.x} cy={supportPoint.y} r="5" fill="#fb7185" stroke="#ffffff" strokeWidth="2" />
+                                                <circle cx={supportPoint.x} cy={supportPoint.y} r="5" fill="var(--mtss-chart-rose-from)" stroke="#ffffff" strokeWidth="2" />
                                                 <text
                                                     x={supportPoint.x}
                                                     y={Math.min(214, supportPoint.y + 22)}
@@ -353,7 +353,7 @@ const AdminAnalyticsPanel = ({
                         <TrendingUp className="h-5 w-5 text-emerald-500" />
                     </div>
 
-                    <div className="mt-6 rounded-[28px] bg-gradient-to-br from-[#f8fafc] to-[#e0f2fe] p-6 dark:from-white/10 dark:to-white/5">
+                    <div className="mt-6 rounded-[28px] bg-gradient-to-br from-[var(--mtss-panel-gray)] to-[var(--mtss-panel-sky)] p-6 dark:from-white/10 dark:to-white/5">
                         <p className="mb-4 rounded-2xl border border-emerald-100 bg-emerald-50/80 px-4 py-3 text-xs font-semibold leading-relaxed text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200">
                             Movement is based on current-cycle progress signals. Use Needs Support to decide which student-subject units need plan review before tier changes.
                         </p>

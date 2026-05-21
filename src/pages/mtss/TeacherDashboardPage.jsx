@@ -85,6 +85,12 @@ const TeacherDashboardPage = memo(() => {
         error: dataError,
         refresh,
     } = useTeacherDashboardData(effectiveTeacherUser);
+    // Compute allowed tabs before the state hook so requestedTab validation
+    // uses the observer-filtered list, preventing URL ?tab= bypass.
+    const allowedTabs = useMemo(() => {
+        const hiddenKeys = isObserver ? ["edit", "create", "submit"] : ["edit"];
+        return tabs.filter((tab) => !hiddenKeys.includes(tab.key));
+    }, [isObserver]);
     const {
         activeTab,
         setActiveTab,
@@ -101,7 +107,7 @@ const TeacherDashboardPage = memo(() => {
         submittingPlan,
         setSubmittingProgress,
         submittingProgress,
-    } = useTeacherDashboardState(tabs, { onSaveSuccess: refresh, viewerUser: effectiveTeacherUser });
+    } = useTeacherDashboardState(allowedTabs, { onSaveSuccess: refresh, viewerUser: effectiveTeacherUser });
     const [quickUpdateStudent, setQuickUpdateStudent] = useState(null);
     const [savingQuickUpdate, setSavingQuickUpdate] = useState(false);
 
@@ -166,10 +172,6 @@ const TeacherDashboardPage = memo(() => {
         cancelEditingPlan();
         setActiveTab("students");
     }, [cancelEditingPlan, setActiveTab]);
-    const heroTabs = useMemo(() => {
-        const hiddenKeys = isObserver ? ["edit", "create", "submit"] : ["edit"];
-        return tabs.filter((tab) => !hiddenKeys.includes(tab.key));
-    }, [isObserver]);
     const handleHeroTabChange = useCallback(
         (nextTab) => {
             if (nextTab === "edit" && !isEditingPlan) {
@@ -237,7 +239,7 @@ const TeacherDashboardPage = memo(() => {
                 >
                     <TeacherHeroSection
                         heroBadge={heroBadge}
-                        tabs={heroTabs}
+                        tabs={allowedTabs}
                         activeTab={activeTab}
                         onTabChange={handleHeroTabChange}
                         pilotGuide={pilotGuide?.pageType === "teacher" ? pilotGuide : null}

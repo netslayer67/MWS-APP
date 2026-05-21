@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence, MotionConfig, useReducedMotion } from "framer-motion";
 import {
     AlertTriangle, ArrowLeft, Bell, BellOff, BookOpen, CalendarClock,
-    ChevronDown, Clock, Layers, Lightbulb, Mail, MailCheck, MailX,
+    ChevronDown, Clock, Hash, Layers, Lightbulb, Mail, MailCheck, MailX,
     Moon, Sparkles, TrendingDown, Zap,
 } from "lucide-react";
 import AnimatedPage from "@/components/AnimatedPage";
@@ -108,6 +108,7 @@ export default function NotificationSettingsPage() {
     const [alertPrefs, setAlertPrefs]       = useState(DEFAULT_ALERT_PREFS);
     const [advanceDays, setAdvanceDays]     = useState(0);
     const [smartGroup, setSmartGroup]       = useState(false);
+    const [slackEnabled, setSlackEnabled]   = useState(false);
 
     const [alertOpen, setAlertOpen]         = useState(false);
 
@@ -132,6 +133,7 @@ export default function NotificationSettingsPage() {
                 setAlertPrefs(d.alertPreferences || DEFAULT_ALERT_PREFS);
                 setAdvanceDays(d.advanceNoticeDays ?? 0);
                 setSmartGroup(d.smartSummary?.enabled === true);
+                setSlackEnabled(d.slackNotifications?.enabled === true);
             })
             .catch(() => {
                 if (!dead) toast({ title: "Could not load preferences", variant: "destructive", duration: 3000 });
@@ -170,10 +172,11 @@ export default function NotificationSettingsPage() {
             quietHours: { enabled: quietEnabled, start: quietStart, end: quietEnd, weekendsOnly: quietWeekends },
             alertPreferences: alertPrefs, advanceNoticeDays: advanceDays,
             smartSummary: { enabled: smartGroup },
+            slackNotifications: { enabled: slackEnabled },
         };
         clearTimeout(timerRef.current);
         timerRef.current = setTimeout(() => save(p), SAVE_DEBOUNCE_MS);
-    }, [deliveryMode, dailyTime, emailEnabled, quietEnabled, quietStart, quietEnd, quietWeekends, alertPrefs, advanceDays, smartGroup, save]);
+    }, [deliveryMode, dailyTime, emailEnabled, quietEnabled, quietStart, quietEnd, quietWeekends, alertPrefs, advanceDays, smartGroup, slackEnabled, save]);
 
     useEffect(() => () => { clearTimeout(timerRef.current); clearTimeout(labelTimer.current); }, []);
 
@@ -277,11 +280,11 @@ export default function NotificationSettingsPage() {
                     {/* ─── Quick controls ───────────────────────────────── */}
                     <motion.div variants={fadeUp} className="space-y-2">
                         <Label>Controls</Label>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-3 gap-2">
                             <QuickCard
                                 icon={<Layers className="h-4 w-4" />}
                                 label="Smart Summary"
-                                sub={smartGroup ? "Groups similar alerts" : "Off — one row per event"}
+                                sub={smartGroup ? "Groups alerts" : "Off"}
                                 checked={smartGroup}
                                 onChange={setSmartGroup}
                             />
@@ -291,6 +294,13 @@ export default function NotificationSettingsPage() {
                                 sub={emailEnabled ? "Active" : "Off"}
                                 checked={emailEnabled}
                                 onChange={setEmailEnabled}
+                            />
+                            <QuickCard
+                                icon={<Hash className="h-4 w-4" />}
+                                label="Slack"
+                                sub={slackEnabled ? "DM alerts" : "Off"}
+                                checked={slackEnabled}
+                                onChange={setSlackEnabled}
                             />
                         </div>
 

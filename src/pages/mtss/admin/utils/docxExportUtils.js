@@ -275,3 +275,38 @@ export const downloadBlob = (blob, filename) => {
     anchor.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
+
+/**
+ * AI-16: Audit-logged DOCX download.
+ * actor: { id, name, role } — pass from auth state at the call site.
+ */
+export const downloadBlobWithAudit = (blob, filename, report, actor = {}) => {
+    downloadBlob(blob, filename);
+
+    const entry = {
+        event: "docx_download",
+        filename,
+        reportTitle: report?.title || filename,
+        sourcePage: report?.sourcePage || window.location.pathname,
+        actorId: actor.id || actor._id || null,
+        actorName: actor.name || null,
+        actorRole: actor.role || null,
+        timestamp: new Date().toISOString(),
+    };
+
+    console.info("[AuditLog] DOCX download", entry);
+
+    try {
+        const payload = JSON.stringify(entry);
+        const sent = typeof navigator.sendBeacon === "function"
+            && navigator.sendBeacon("/api/v1/audit/events", new Blob([payload], { type: "application/json" }));
+        if (!sent) {
+            fetch("/api/v1/audit/events", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: payload,
+                keepalive: true,
+            }).catch(() => {});
+        }
+    } catch (_) {}
+};

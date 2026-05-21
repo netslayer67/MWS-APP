@@ -206,6 +206,9 @@ export const useTeacherDashboardState = (tabs, { onSaveSuccess, viewerUser } = {
     }, [activeTab, requestedTab, setStoredActiveTab]);
 
     const setActiveTab = useCallback((value) => {
+        if (value === "create") {
+            setInterventionForm(createDefaultInterventionForm());
+        }
         setStoredActiveTab(value);
     }, [setStoredActiveTab]);
 

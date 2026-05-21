@@ -127,7 +127,7 @@ const AdminStudentsRoster = ({
                     Scroll to load more
                 </span>
             ) : (
-                <span className="px-3 py-1 rounded-full border border-emerald-200/50 bg-emerald-50 text-emerald-500 text-[0.7rem] uppercase tracking-[0.3em]">
+                <span className="px-3 py-1 rounded-full border border-emerald-200/50 dark:border-emerald-700/40 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 dark:text-emerald-400 text-[0.7rem] uppercase tracking-[0.3em]">
                     All caught up
                 </span>
             )}

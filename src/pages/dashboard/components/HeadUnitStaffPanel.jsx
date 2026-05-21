@@ -209,9 +209,9 @@ const HeadUnitStaffPanel = memo(({ staff = [], summary, isDirectorate = false, s
                         </div>
                         <div className="p-4 bg-card/40 border border-border/40 rounded-xl">
                             <p className="text-xs uppercase tracking-wide text-muted-foreground flex items-center gap-1">
-                                <AlertTriangle className="w-3.5 h-3.5 text-red-500" /> Needs Support
+                                <AlertTriangle className="w-3.5 h-3.5 text-red-500 dark:text-red-400" /> Needs Support
                             </p>
-                            <p className="text-2xl font-semibold text-red-500 mt-1">{computedSummary.flagged}</p>
+                            <p className="text-2xl font-semibold text-red-500 dark:text-red-400 mt-1">{computedSummary.flagged}</p>
                         </div>
                     </div>
 

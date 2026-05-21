@@ -78,7 +78,7 @@ const UserDetailModal = memo(({ user, isOpen, onClose }) => {
                                 </p>
                             )}
                             {data.needsSupport && (
-                                <p className="text-xs text-red-500 font-medium">
+                                <p className="text-xs text-red-500 dark:text-red-400 font-medium">
                                     Support requested
                                 </p>
                             )}
@@ -158,7 +158,7 @@ const UserDetailModal = memo(({ user, isOpen, onClose }) => {
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div className="glass glass-card p-4">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <Activity className="w-4 h-4 text-emerald-500" />
+                                    <Activity className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
                                     <span className="text-sm font-medium text-foreground">Avg Presence</span>
                                 </div>
                                 <p className="text-2xl font-bold text-foreground">
@@ -167,7 +167,7 @@ const UserDetailModal = memo(({ user, isOpen, onClose }) => {
                             </div>
                             <div className="glass glass-card p-4">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <TrendingUp className="w-4 h-4 text-blue-500" />
+                                    <TrendingUp className="w-4 h-4 text-blue-500 dark:text-blue-400" />
                                     <span className="text-sm font-medium text-foreground">Avg Capacity</span>
                                 </div>
                                 <p className="text-2xl font-bold text-foreground">
@@ -176,7 +176,7 @@ const UserDetailModal = memo(({ user, isOpen, onClose }) => {
                             </div>
                             <div className="glass glass-card p-4">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <AlertTriangle className="w-4 h-4 text-red-500" />
+                                    <AlertTriangle className="w-4 h-4 text-red-500 dark:text-red-400" />
                                     <span className="text-sm font-medium text-foreground">Support Needed</span>
                                 </div>
                                 <p className="text-2xl font-bold text-foreground">
@@ -185,7 +185,7 @@ const UserDetailModal = memo(({ user, isOpen, onClose }) => {
                             </div>
                             <div className="glass glass-card p-4">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <Activity className="w-4 h-4 text-purple-500" />
+                                    <Activity className="w-4 h-4 text-purple-500 dark:text-purple-400" />
                                     <span className="text-sm font-medium text-foreground">Emotional Stability</span>
                                 </div>
                                 <p className="text-2xl font-bold text-foreground">
@@ -428,7 +428,7 @@ const UserDetailModal = memo(({ user, isOpen, onClose }) => {
                                             )}
                                             {checkin.needsSupport && (
                                                 <div className="mt-2">
-                                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">
+                                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200">
                                                         <AlertTriangle className="w-3 h-3 mr-1" />
                                                         Support requested
                                                     </span>

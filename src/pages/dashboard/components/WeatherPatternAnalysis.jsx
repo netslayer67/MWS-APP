@@ -107,12 +107,12 @@ const WeatherPatternAnalysis = memo(({ data = {}, period = 'month' }) => {
     };
 
     const weatherColors = {
-        sunny: '#fbbf24',
-        cloudy: '#6b7280',
-        rain: '#3b82f6',
-        storm: '#7c3aed',
-        tornado: '#dc2626',
-        snow: '#06b6d4'
+        sunny:   'var(--dash-weather-sunny)',
+        cloudy:  'var(--dash-weather-cloudy)',
+        rain:    'var(--dash-weather-rain)',
+        storm:   'var(--dash-weather-storm)',
+        tornado: 'var(--dash-weather-tornado)',
+        snow:    'var(--dash-weather-snow)',
     };
 
     const CustomTooltip = ({ active, payload, label }) => {
@@ -121,9 +121,9 @@ const WeatherPatternAnalysis = memo(({ data = {}, period = 'month' }) => {
             return (
                 <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
                     <p className="font-medium text-foreground mb-2">{label}</p>
-                    <p className="text-sm text-emerald-600">Presence: {data.avgPresence}/10</p>
-                    <p className="text-sm text-blue-600">Capacity: {data.avgCapacity}/10</p>
-                    <p className="text-sm text-purple-600">Check-ins: {data.totalCheckins}</p>
+                    <p className="text-sm text-emerald-600 dark:text-emerald-400">Presence: {data.avgPresence}/10</p>
+                    <p className="text-sm text-blue-600 dark:text-blue-400">Capacity: {data.avgCapacity}/10</p>
+                    <p className="text-sm text-purple-600 dark:text-purple-400">Check-ins: {data.totalCheckins}</p>
                     <p className="text-sm text-muted-foreground capitalize">
                         Weather: {data.dominantWeather} ({data.weatherCount})
                     </p>
