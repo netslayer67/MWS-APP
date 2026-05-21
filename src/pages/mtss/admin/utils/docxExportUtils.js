@@ -306,7 +306,7 @@ export const downloadBlobWithAudit = (blob, filename, report, actor = {}) => {
                 headers: { "Content-Type": "application/json" },
                 body: payload,
                 keepalive: true,
-            }).catch(() => {});
+            }).catch((_) => { /* fire-and-forget */ });
         }
-    } catch (_) {}
+    } catch (_) { /* export error is non-fatal */ }
 };
